@@ -1,0 +1,9 @@
+# One-command lab environment for Module 06 — Web Attacks: Injection.
+# `make up` starts the vulnerable app; attack it from the host at localhost:8080
+# (sqlmap, curl, a browser) or run `make demo` for the worked example.
+services:
+  webapp:
+    build: .
+    image: plaintext/web-injection
+    ports:
+      - "8080:5000"   # the deliberately vulnerable app, on the host at :8080
