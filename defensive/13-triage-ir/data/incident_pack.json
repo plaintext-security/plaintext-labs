@@ -1,0 +1,70 @@
+{
+  "incident_id": "INC-2024-0315-001",
+  "created": "2024-03-15T09:45:00Z",
+  "title": "Possible Malware Infection — WS-JSMITH",
+  "initial_alert": {
+    "source": "IDS",
+    "ts": "2024-03-15T09:13:10Z",
+    "signature": "ET POLICY PE EXE or DLL Windows file download HTTP",
+    "src_ip": "10.0.1.55",
+    "dst_ip": "185.220.101.47",
+    "severity": "high",
+    "raw": "1:2000419:4 ET POLICY PE EXE or DLL Windows file download HTTP"
+  },
+  "observables": [
+    {"type": "ip",   "value": "185.220.101.47",                                 "note": "C2/download server"},
+    {"type": "ip",   "value": "10.0.1.55",                                      "note": "victim workstation (jsmith)"},
+    {"type": "hash", "value": "sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1", "note": "updater.exe — dropped payload"},
+    {"type": "file", "value": "C:\\ProgramData\\updater.exe",                   "note": "dropped PE, runs on logon"},
+    {"type": "file", "value": "C:\\Users\\jsmith\\Downloads\\Invoice_March2024.docm", "note": "phishing macro document"},
+    {"type": "url",  "value": "http://185.220.101.47/updater.exe",              "note": "certutil download URL"},
+    {"type": "regkey", "value": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\WindowsUpdateHelper",
+     "note": "persistence — set to updater.exe"},
+    {"type": "task", "value": "WindowsUpdateHelper (ONLOGON)",                  "note": "scheduled task persistence"}
+  ],
+  "timeline": [
+    {"ts": "2024-03-15T09:12:03Z", "event": "jsmith opens Invoice_March2024.docm via WINWORD.EXE"},
+    {"ts": "2024-03-15T09:12:47Z", "event": "WINWORD spawns cmd.exe with encoded PS payload"},
+    {"ts": "2024-03-15T09:12:48Z", "event": "PowerShell -nop -w hidden -enc drops stage1.exe to %TEMP%"},
+    {"ts": "2024-03-15T09:12:55Z", "event": "schtasks.exe creates WindowsUpdateHelper (ONLOGON, updater.exe)"},
+    {"ts": "2024-03-15T09:13:01Z", "event": "reg.exe writes HKCU Run\\WindowsUpdateHelper = updater.exe"},
+    {"ts": "2024-03-15T09:13:08Z", "event": "certutil.exe downloads updater.exe from 185.220.101.47 to C:\\ProgramData\\"},
+    {"ts": "2024-03-15T09:13:10Z", "event": "IDS fires: PE download over HTTP to 185.220.101.47"},
+    {"ts": "2024-03-15T10:05:11Z", "event": "updater.exe executes via taskhostw.exe (scheduled task fires on logon)"}
+  ],
+  "threat_intel": {
+    "185.220.101.47": {"verdict": "malicious", "malware": "Cobalt Strike C2", "confidence": 90,
+                       "source": "ThreatFox", "first_seen": "2023-11-01", "ioc_type": "ip:port"},
+    "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1": {"verdict": "malicious", "malware": "CobaltStrike.Beacon",
+                       "confidence": 75, "source": "MalwareBazaar", "first_seen": "2024-03-10"}
+  },
+  "affected_assets": [
+    {"hostname": "WS-JSMITH", "ip": "10.0.1.55", "owner": "jsmith@meridian.local",
+     "role": "Finance analyst workstation", "network_segment": "FINANCE-VLAN"},
+    {"hostname": "SRV-01",    "ip": "10.0.1.100", "owner": "ops-team@meridian.local",
+     "role": "Internal Linux server", "network_segment": "SERVER-VLAN"}
+  ],
+  "questions": {
+    "triage": [
+      "Is this a true positive or false positive? What evidence tips the balance?",
+      "What is the severity — critical, high, medium? What criteria drove your choice?",
+      "What is the scope — one host, or is there lateral movement evidence?"
+    ],
+    "contain": [
+      "What is the minimum action to stop active harm right now?",
+      "What should you NOT do (actions that destroy forensic evidence or tip off the attacker)?"
+    ],
+    "eradicate": [
+      "List every persistence mechanism to remove, in order.",
+      "How do you confirm eradication is complete — not just assumed?"
+    ],
+    "recover": [
+      "What checks before jsmith's machine is returned to production?",
+      "What monitoring should remain elevated after recovery?"
+    ],
+    "post_incident": [
+      "What was the root cause — the initial vector that let this happen?",
+      "What one control, if in place, would have broken this kill chain earliest?"
+    ]
+  }
+}

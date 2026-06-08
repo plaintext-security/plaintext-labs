@@ -1,0 +1,8 @@
+services:
+  lab:
+    build: .
+    image: plaintext/triage-ir
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
