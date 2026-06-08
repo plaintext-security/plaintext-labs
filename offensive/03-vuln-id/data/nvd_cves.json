@@ -1,0 +1,102 @@
+[
+  {
+    "id": "CVE-2021-44228",
+    "sourceIdentifier": "secalert@apache.org",
+    "published": "2021-12-10T10:15:00.000",
+    "lastModified": "2023-04-03T00:00:00.000",
+    "vulnStatus": "Analyzed",
+    "descriptions": [
+      {
+        "lang": "en",
+        "value": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled."
+      }
+    ],
+    "metrics": {
+      "cvssMetricV31": [{
+        "cvssData": {
+          "version": "3.1",
+          "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+          "baseScore": 10.0,
+          "baseSeverity": "CRITICAL"
+        },
+        "exploitabilityScore": 3.9,
+        "impactScore": 6.0
+      }]
+    },
+    "weaknesses": [{"description": [{"lang": "en", "value": "CWE-502"}]}],
+    "references": [
+      {"url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228", "source": "NVD"},
+      {"url": "https://logging.apache.org/log4j/2.x/security.html", "source": "vendor"}
+    ],
+    "affected_products": ["Apache Log4j2 2.0-beta9 through 2.15.0"],
+    "patch_available": true,
+    "fix_version": "2.15.0 (partial), 2.16.0 (complete), 2.17.0 (recommended)"
+  },
+  {
+    "id": "CVE-2023-44487",
+    "sourceIdentifier": "cve@mitre.org",
+    "published": "2023-10-10T14:15:00.000",
+    "lastModified": "2024-01-04T00:00:00.000",
+    "vulnStatus": "Analyzed",
+    "descriptions": [
+      {
+        "lang": "en",
+        "value": "The HTTP/2 protocol allows a denial of service (server resource consumption) because request cancellation can reset many streams quickly, as exploited in the wild in August through October 2023. This is also known as the Rapid Reset Attack."
+      }
+    ],
+    "metrics": {
+      "cvssMetricV31": [{
+        "cvssData": {
+          "version": "3.1",
+          "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "baseScore": 7.5,
+          "baseSeverity": "HIGH"
+        },
+        "exploitabilityScore": 3.9,
+        "impactScore": 3.6
+      }]
+    },
+    "weaknesses": [{"description": [{"lang": "en", "value": "CWE-400"}]}],
+    "references": [
+      {"url": "https://nvd.nist.gov/vuln/detail/CVE-2023-44487", "source": "NVD"},
+      {"url": "https://nginx.org/en/CHANGES", "source": "vendor"}
+    ],
+    "affected_products": ["nginx before 1.25.3", "nginx before 1.24.0 patch"],
+    "patch_available": true,
+    "fix_version": "nginx 1.25.3 / 1.24.0 with ngx_http_v2_module patch"
+  },
+  {
+    "id": "CVE-2024-21762",
+    "sourceIdentifier": "psirt@fortinet.com",
+    "published": "2024-02-09T00:00:00.000",
+    "lastModified": "2024-02-15T00:00:00.000",
+    "vulnStatus": "Analyzed",
+    "descriptions": [
+      {
+        "lang": "en",
+        "value": "An out-of-bounds write vulnerability [CWE-787] in FortiOS and FortiProxy SSL VPN may allow a remote unauthenticated attacker to execute arbitrary code or command via specifically crafted HTTP requests."
+      }
+    ],
+    "metrics": {
+      "cvssMetricV31": [{
+        "cvssData": {
+          "version": "3.1",
+          "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+          "baseScore": 9.8,
+          "baseSeverity": "CRITICAL"
+        },
+        "exploitabilityScore": 3.9,
+        "impactScore": 5.9
+      }]
+    },
+    "weaknesses": [{"description": [{"lang": "en", "value": "CWE-787"}]}],
+    "references": [
+      {"url": "https://nvd.nist.gov/vuln/detail/CVE-2024-21762", "source": "NVD"},
+      {"url": "https://fortiguard.fortinet.com/psirt/FG-IR-24-015", "source": "vendor"}
+    ],
+    "affected_products": ["FortiOS 7.4.0-7.4.2", "FortiOS 7.2.0-7.2.6", "FortiOS 7.0.0-7.0.13",
+                          "FortiProxy 7.4.0-7.4.2"],
+    "patch_available": true,
+    "fix_version": "FortiOS 7.4.3, 7.2.7, 7.0.14"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {"port": "80",  "service": "http",  "product": "nginx", "version": "1.24.0"},
+  {"port": "443", "service": "https", "product": "nginx", "version": "1.24.0"},
+  {"port": "8080","service": "http",  "product": "Apache Tomcat", "version": "9.0.82"},
+  {"port": "22",  "service": "ssh",   "product": "OpenSSH", "version": "8.9"}
+]

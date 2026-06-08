@@ -1,0 +1,39 @@
+{
+  "title": "CISA Known Exploited Vulnerabilities Catalog (subset)",
+  "catalogVersion": "2024.02",
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2021-44228",
+      "vendorProject": "Apache",
+      "product": "Log4j2",
+      "vulnerabilityName": "Apache Log4j2 Remote Code Execution Vulnerability",
+      "dateAdded": "2021-12-10",
+      "shortDescription": "Apache Log4j2 contains a remote code execution vulnerability (Log4Shell) where attackers can execute arbitrary code.",
+      "requiredAction": "Apply updates per vendor instructions.",
+      "dueDate": "2021-12-24",
+      "notes": "This vulnerability affects Log4j2 library used across thousands of products."
+    },
+    {
+      "cveID": "CVE-2023-44487",
+      "vendorProject": "IETF",
+      "product": "HTTP/2",
+      "vulnerabilityName": "HTTP/2 Rapid Reset Attack (affects multiple vendors)",
+      "dateAdded": "2023-10-10",
+      "shortDescription": "The HTTP/2 Rapid Reset Attack can cause denial of service by resetting streams rapidly.",
+      "requiredAction": "Apply vendor-specific patches for affected HTTP/2 implementations.",
+      "dueDate": "2023-10-31",
+      "notes": "Affects nginx, Apache, IIS, and cloud providers."
+    },
+    {
+      "cveID": "CVE-2024-21762",
+      "vendorProject": "Fortinet",
+      "product": "FortiOS",
+      "vulnerabilityName": "Fortinet FortiOS Out-of-Bound Write Vulnerability",
+      "dateAdded": "2024-02-09",
+      "shortDescription": "FortiOS SSL VPN contains an out-of-bounds write vulnerability allowing unauthenticated RCE.",
+      "requiredAction": "Apply updates per vendor instructions or disable SSL VPN.",
+      "dueDate": "2024-02-16",
+      "notes": "Actively exploited by nation-state threat actors."
+    }
+  ]
+}
