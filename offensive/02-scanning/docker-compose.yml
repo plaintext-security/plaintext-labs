@@ -1,0 +1,21 @@
+services:
+  victim:
+    build: victim/
+    image: plaintext/scan-victim
+    networks:
+      lab:
+        aliases: [target]
+
+  lab:
+    build: .
+    image: plaintext/scan-lab
+    depends_on: [victim]
+    networks: [lab]
+    cap_add: [NET_RAW, NET_ADMIN]
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
+
+networks:
+  lab:
