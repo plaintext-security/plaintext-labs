@@ -1,0 +1,2 @@
+# Re-include seed Zeek logs — these are curated data, not generated artifacts.
+!*.log

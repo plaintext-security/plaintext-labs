@@ -1,0 +1,9 @@
+# One-command lab environment for Module 12 — Network Hunting.
+services:
+  lab:
+    build: .
+    image: plaintext/hunting-network
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
