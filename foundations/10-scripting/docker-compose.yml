@@ -1,0 +1,9 @@
+services:
+  lab:
+    build: .
+    image: plaintext/scripting-lab
+    # Mount current directory so the learner's script persists on the host
+    volumes:
+      - .:/work
+    working_dir: /work
+    command: sleep infinity

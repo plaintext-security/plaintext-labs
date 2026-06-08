@@ -1,0 +1,16 @@
+# --- FIXED version: non-root, read-only fs, pinned base image ---
+# This is what you should build after finding the root-by-default issue.
+
+FROM python:3.12.9-slim
+
+# Create a non-root user
+RUN adduser --disabled-password --gecos "" appuser
+
+WORKDIR /app
+COPY app.py .
+
+# Drop privileges before running
+USER appuser
+
+EXPOSE 8000
+CMD ["python3", "app.py"]

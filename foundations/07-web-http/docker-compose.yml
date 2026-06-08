@@ -1,0 +1,12 @@
+services:
+  echo-server:
+    build: app/
+    image: plaintext/http-echo-server
+
+  lab:
+    image: python:3.12-slim
+    depends_on: [echo-server]
+    command: sleep infinity
+    volumes:
+      - .:/lab
+    working_dir: /lab

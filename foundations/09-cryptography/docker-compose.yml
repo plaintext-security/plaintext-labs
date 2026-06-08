@@ -1,0 +1,5 @@
+services:
+  lab:
+    build: .
+    image: plaintext/crypto-lab
+    command: sleep infinity

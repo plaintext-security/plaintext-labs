@@ -1,0 +1,37 @@
+# Annotated packet capture: DNS query + TCP handshake for http://server/
+# This is what 'tcpdump -r cap.pcap' shows. The real .pcap is NOT committed.
+# Generate your own: tcpdump -i any -w cap.pcap &; curl http://server/
+
+# ── DNS query and response ──────────────────────────────────────────────
+# Packet 1: DNS query (A record for 'server')
+07:14:33.001  lab.12345 > 127.0.0.11.53: A? server.
+07:14:33.002  127.0.0.11.53 > lab.12345: A server 172.20.0.2
+
+# ── TCP handshake (three-way) ───────────────────────────────────────────
+# Packet 2: SYN — client opens connection
+07:14:33.003  lab.45678 > 172.20.0.2.80: Flags [S], seq 0, win 64240
+# Packet 3: SYN-ACK — server accepts
+07:14:33.004  172.20.0.2.80 > lab.45678: Flags [S.], seq 0, ack 1, win 65535
+# Packet 4: ACK — client confirms (handshake complete)
+07:14:33.005  lab.45678 > 172.20.0.2.80: Flags [.], ack 1, win 64240
+
+# ── HTTP exchange ───────────────────────────────────────────────────────
+# Packet 5: HTTP GET
+07:14:33.006  lab.45678 > 172.20.0.2.80: Flags [P.], seq 1:78, ack 1
+  HTTP GET / HTTP/1.1\r\nHost: server\r\n\r\n
+# Packet 6: HTTP 200 OK
+07:14:33.007  172.20.0.2.80 > lab.45678: Flags [P.], seq 1:220, ack 78
+  HTTP/1.0 200 OK\r\nContent-Length: 63\r\n\r\n<html>...
+# Packet 7: FIN — server closes
+07:14:33.008  172.20.0.2.80 > lab.45678: Flags [F.], seq 220, ack 78
+# Packet 8: ACK
+07:14:33.009  lab.45678 > 172.20.0.2.80: Flags [.], ack 221
+
+# KEY ANSWERS:
+#   DNS query:        Packet 1 (A? server)
+#   DNS answer:       Packet 2 (A 172.20.0.2)
+#   TCP SYN:          Packet 2 — Flags [S]
+#   TCP SYN-ACK:      Packet 3 — Flags [S.]
+#   TCP ACK:          Packet 4 — Flags [.]
+#   Packets before data: 4 (DNS query + DNS answer + SYN + SYN-ACK before ACK)
+#   Client port: 45678 (ephemeral)   Server port: 80 (HTTP)
