@@ -1,0 +1,26 @@
+{
+  "185.220.101.47": {
+    "verdict": "malicious",
+    "malware": "Cobalt Strike C2",
+    "confidence": 90,
+    "source": "ThreatFox",
+    "first_seen": "2023-11-01",
+    "tags": ["c2", "cobaltstrike", "apt"]
+  },
+  "45.155.204.42": {
+    "verdict": "malicious",
+    "malware": "BruteForce/SSH scanner",
+    "confidence": 85,
+    "source": "AbuseIPDB",
+    "first_seen": "2024-01-15",
+    "tags": ["bruteforce", "scanner"]
+  },
+  "93.184.220.29": {
+    "verdict": "clean",
+    "malware": null,
+    "confidence": 95,
+    "source": "internal-allowlist",
+    "first_seen": null,
+    "tags": ["cdn", "example.com"]
+  }
+}

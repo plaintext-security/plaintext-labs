@@ -1,0 +1,51 @@
+[
+  {
+    "id": "ALERT-001",
+    "ts": "2024-03-15T09:13:10Z",
+    "source": "IDS",
+    "signature": "ET POLICY PE EXE or DLL Windows file download HTTP",
+    "src_ip": "10.0.1.55",
+    "dst_ip": "185.220.101.47",
+    "dst_port": 80,
+    "host": "WS-JSMITH",
+    "user": "jsmith@meridian.local",
+    "severity": "high",
+    "additional": {
+      "sysmon_parent": "WINWORD.EXE → cmd.exe → powershell.exe -enc",
+      "bytes_out": 8650000
+    }
+  },
+  {
+    "id": "ALERT-002",
+    "ts": "2024-03-15T10:30:00Z",
+    "source": "IDS",
+    "signature": "ET POLICY PE EXE or DLL Windows file download HTTP",
+    "src_ip": "10.0.1.22",
+    "dst_ip": "93.184.220.29",
+    "dst_port": 80,
+    "host": "WS-BMARTIN",
+    "user": "bmartin@meridian.local",
+    "severity": "medium",
+    "additional": {
+      "sysmon_parent": "chrome.exe → (direct)",
+      "bytes_out": 42000
+    }
+  },
+  {
+    "id": "ALERT-003",
+    "ts": "2024-03-15T11:05:00Z",
+    "source": "SIEM",
+    "signature": "SSH Brute Force — Multiple Failures from Single Source",
+    "src_ip": "45.155.204.42",
+    "dst_ip": "10.0.1.100",
+    "dst_port": 22,
+    "host": "SRV-01",
+    "user": "root,admin,jsmith,jenkins,backup-svc",
+    "severity": "critical",
+    "additional": {
+      "failure_count": 5,
+      "success_after_failures": true,
+      "success_user": "backup-svc"
+    }
+  }
+]
