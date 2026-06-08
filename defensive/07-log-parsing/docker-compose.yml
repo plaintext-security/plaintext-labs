@@ -1,0 +1,9 @@
+# One-command lab environment for Module 07 — Log Parsing & Normalisation.
+services:
+  lab:
+    build: .
+    image: plaintext/log-parsing
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
