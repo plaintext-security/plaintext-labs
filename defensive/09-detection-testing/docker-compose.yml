@@ -1,0 +1,9 @@
+# One-command lab environment for Module 09 — Detection Testing.
+services:
+  lab:
+    build: .
+    image: plaintext/detection-testing
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

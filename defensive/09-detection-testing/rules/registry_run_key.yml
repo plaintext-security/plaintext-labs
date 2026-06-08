@@ -1,0 +1,13 @@
+title: Run Key Persistence
+id: c1d2e3f4-a5b6-47c8-9d0e-1f2a3b4c5d6e
+logsource:
+  category: registry_set
+  product: windows
+detection:
+  selection:
+    TargetObject|contains: '\Software\Microsoft\Windows\CurrentVersion\Run'
+  condition: selection
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1547.001
