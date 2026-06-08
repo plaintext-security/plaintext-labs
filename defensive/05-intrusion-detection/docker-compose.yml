@@ -1,0 +1,22 @@
+# One-command lab environment for Module 05 — Intrusion Detection.
+# The 'lab' service runs parse_alerts.py over the bundled eve.json.
+# The 'suricata' service is for interactive use: drop a PCAP here and run
+# `PCAP=my.pcap make suricata` to generate real eve.json output.
+services:
+  lab:
+    build: .
+    image: plaintext/intrusion-detection
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
+  suricata:
+    image: jasonish/suricata:7.0
+    working_dir: /data
+    volumes:
+      - ./:/data
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    profiles:
+      - suricata
