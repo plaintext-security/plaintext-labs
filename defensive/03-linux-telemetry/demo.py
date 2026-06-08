@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-AUDIT_LOG = Path(__file__).parent / "data" / "audit.log"
+AUDIT_LOG = Path(__file__).parent / "data" / "audit_events.txt"
 
 # ─────────────────────── audit.log parser ─────────────────────────
 
@@ -138,7 +138,7 @@ def main() -> int:
 
     print_osquery_section()
 
-    print("Tip: the audit rules that generated this log are in data/audit.rules")
+    print("Tip: the audit rules that generated this data are in data/audit.rules")
     print("     — deploy them with: auditctl -R data/audit.rules")
     return 0
 
