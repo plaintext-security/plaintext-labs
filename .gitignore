@@ -1,0 +1,45 @@
+# .gitignore — plaintext-labs
+# These labs run tools (tcpdump, openssl, volatility, metasploit, prowler, …) that emit
+# captures, keys, dumps and logs. Small curated seed data under data/ is committed on
+# purpose; the heavy/dangerous artifacts below never are — labs download or generate them.
+
+# === Secrets — never commit ===
+.env
+.env.*
+*.pem
+*.key
+*_rsa
+*_dsa
+*_ed25519
+*.kdbx
+*.token
+credentials
+
+# === Generated lab artifacts: captures, memory/disk images, logs ===
+*.pcap
+*.pcapng
+*.cap
+*.log
+*.dmp
+*.mem
+*.vmem
+*.raw
+*.lime
+*.E01
+*.aff4
+
+# === Malware samples — keep out of the repo entirely ===
+samples/
+*.malware
+
+# === Python tooling ===
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# === OS / editor cruft ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,26 @@
+title: PowerShell Encoded Command Execution
+id: 7b2c0a1e-3d4f-4a5b-9c8d-1e2f3a4b5c6d
+status: experimental
+description: >
+  Detects PowerShell launched with an encoded command (-enc / -EncodedCommand),
+  a common way attackers hide what a script actually does from casual log review.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+author: Plaintext (reference lab)
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains:
+      - ' -enc '
+      - ' -encodedcommand '
+  condition: selection
+falsepositives:
+  - Rare admin tooling that legitimately passes encoded commands.
+  - Note the ' -enc ' fragment can collide with ' -Encoding ' — see the lab's FP step.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001

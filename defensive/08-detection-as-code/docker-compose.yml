@@ -1,0 +1,13 @@
+# One-command lab environment for Module 08 — Detection-as-Code.
+# `make up` builds it; `make shell` drops you in; `make demo` runs the worked example.
+services:
+  lab:
+    build: .
+    image: plaintext/detection-as-code
+    working_dir: /lab
+    # Mount the module dir so the rule you write is editable on the host and
+    # immediately visible in the container.
+    volumes:
+      - ./:/lab
+    # Keep it alive for `make shell` / interactive work.
+    command: sleep infinity
