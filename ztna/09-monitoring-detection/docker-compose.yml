@@ -1,0 +1,10 @@
+# Lab 09 — Monitoring & Detection in Zero Trust
+# Builds the sigma/python detection container and mounts the module dir.
+services:
+  lab:
+    build: .
+    image: plaintext/zt-monitoring-detection
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

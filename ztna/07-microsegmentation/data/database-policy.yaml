@@ -1,0 +1,39 @@
+# Cilium network policy for the microsegmentation lab.
+# Enforces: only pods with app=backend in the backend namespace may reach
+# pods with tier=database in the database namespace.
+# All other ingress to database pods is dropped (default deny by policy presence).
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: database-backend-only
+  namespace: database
+spec:
+  # Govern all pods in the database namespace with this label.
+  endpointSelector:
+    matchLabels:
+      tier: database
+
+  # Ingress: allow only from backend pods.
+  # The fromEndpoints selector matches pods in any namespace with app=backend.
+  # Step 6 of the lab asks you to tighten this to also require namespace=backend.
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+
+  # Also allow kube-dns responses so the database pod can resolve names.
+  # Without this, DNS from database pods breaks if you add egress rules.
+  # (Ingress direction: DNS responses come in from kube-system/kube-dns.)
+  - fromEndpoints:
+      - matchLabels:
+          k8s:io.kubernetes.pod.namespace: kube-system
+    toPorts:
+      - ports:
+          - port: "53"
+            protocol: UDP
+          - port: "53"
+            protocol: TCP

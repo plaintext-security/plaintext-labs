@@ -1,0 +1,14 @@
+# Module 08 — CI/CD Pipeline Security
+# Single container: gitleaks + trivy. No cloud credentials needed for gitleaks.
+# trivy pulls public image metadata for the image scan exercise.
+services:
+  lab:
+    build: .
+    image: plaintext/cicd-security:1.0
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+      # Mount Docker socket so trivy can scan images (optional — image scan works without)
+      # Uncomment if you want to scan locally-built images:
+      # - /var/run/docker.sock:/var/run/docker.sock
+    command: sleep infinity

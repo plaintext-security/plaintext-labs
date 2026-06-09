@@ -1,0 +1,10 @@
+# Lab 15 — Cloud Logging & Detection
+# Single lab container with Python detection tooling and bundled CloudTrail data.
+services:
+  lab:
+    build: .
+    image: plaintext/cloud-logging-detection
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

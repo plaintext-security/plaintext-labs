@@ -1,0 +1,47 @@
+{
+  "Reservations": [
+    {
+      "Instances": [
+        {
+          "InstanceId": "i-00000001",
+          "InstanceType": "t3.medium",
+          "PrivateIpAddress": "10.0.1.10",
+          "PublicIpAddress": "54.210.100.5",
+          "State": {"Code": 16, "Name": "running"},
+          "SubnetId": "subnet-00000001",
+          "VpcId": "vpc-00000001",
+          "SecurityGroups": [{"GroupId": "sg-00000001", "GroupName": "meridian-alb-sg"}],
+          "Tags": [{"Key": "Name", "Value": "meridian-alb-01"}]
+        }
+      ]
+    },
+    {
+      "Instances": [
+        {
+          "InstanceId": "i-00000002",
+          "InstanceType": "t3.medium",
+          "PrivateIpAddress": "10.0.10.20",
+          "State": {"Code": 16, "Name": "running"},
+          "SubnetId": "subnet-00000002",
+          "VpcId": "vpc-00000001",
+          "SecurityGroups": [{"GroupId": "sg-00000002", "GroupName": "meridian-app-sg"}],
+          "Tags": [{"Key": "Name", "Value": "meridian-app-01"}]
+        }
+      ]
+    },
+    {
+      "Instances": [
+        {
+          "InstanceId": "i-00000003",
+          "InstanceType": "t3.medium",
+          "PrivateIpAddress": "10.0.20.30",
+          "State": {"Code": 16, "Name": "running"},
+          "SubnetId": "subnet-00000003",
+          "VpcId": "vpc-00000001",
+          "SecurityGroups": [{"GroupId": "sg-00000003", "GroupName": "meridian-db-sg"}],
+          "Tags": [{"Key": "Name", "Value": "meridian-db-01"}]
+        }
+      ]
+    }
+  ]
+}

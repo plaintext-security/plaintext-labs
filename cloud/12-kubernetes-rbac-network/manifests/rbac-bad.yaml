@@ -1,0 +1,30 @@
+# MISCONFIGURED — for lab purposes only.
+# This ServiceAccount has cluster-admin — simulating what Meridian Financial's
+# CI/CD pipeline was given "to get things working."
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-deployer
+  namespace: default
+  annotations:
+    plaintext-lab: "misconfigured — do not copy to production"
+# Finding: automountServiceAccountToken defaults to true — the token is mounted
+# into every pod that references this SA, even if the pod doesn't use it.
+---
+# Finding: ClusterRoleBinding to cluster-admin — grants unrestricted API access
+# across every namespace in the cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ci-deployer-admin
+  annotations:
+    plaintext-lab: "misconfigured — cluster-admin is far too broad for a CI deployer"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: ci-deployer
+    namespace: default

@@ -1,0 +1,67 @@
+{
+  "SchemaVersion": "2.0",
+  "AccountId": "123456789012",
+  "Region": "us-east-1",
+  "Partition": "aws",
+  "Id": "1ab2c3d4e5f6789012abcdef1234567890",
+  "Arn": "arn:aws:guardduty:us-east-1:123456789012:detector/abc123def456/finding/1ab2c3d4e5f6789012abcdef1234567890",
+  "Type": "UnauthorizedAccess:IAMUser/TorIPCaller",
+  "Region2": "us-east-1",
+  "Severity": 8.0,
+  "CreatedAt": "2024-11-14T14:11:10Z",
+  "UpdatedAt": "2024-11-14T14:11:10Z",
+  "Title": "API calls were made from a Tor exit node using AWS temporary credentials.",
+  "Description": "APIs were called by an IAM user from a Tor network exit node IP address 185.220.101.55. Tor is often used by attackers to obfuscate their identity. If this activity is unexpected, your credentials may be compromised.",
+  "Service": {
+    "ServiceName": "guardduty",
+    "DetectorId": "abc123def456",
+    "Action": {
+      "ActionType": "AWS_API_CALL",
+      "AwsApiCallAction": {
+        "Api": "GetObject",
+        "ServiceName": "s3.amazonaws.com",
+        "CallerType": "IPAddress",
+        "RemoteIpDetails": {
+          "IpAddressV4": "185.220.101.55",
+          "Organization": {
+            "Asn": "205100",
+            "AsnOrg": "F3 Netze e.V.",
+            "Isp": "F3 Netze e.V.",
+            "Org": "F3 Netze e.V."
+          },
+          "Country": {
+            "CountryCode": "DE",
+            "CountryName": "Germany"
+          },
+          "City": {
+            "CityName": "Frankfurt"
+          },
+          "GeoLocation": {
+            "Lat": 50.1169,
+            "Lon": 8.6837
+          }
+        },
+        "ErrorCode": "",
+        "UserAgent": "Boto3/1.9.0 Python/2.7.18 Linux/4.15.0-generic"
+      }
+    },
+    "ResourceRole": "TARGET",
+    "AdditionalInfo": {
+      "Value": "{\"recentApiCalls\":[{\"count\":1,\"api\":\"GetObject\"}]}",
+      "Type": "default"
+    },
+    "EventFirstSeen": "2024-11-14T14:11:08Z",
+    "EventLastSeen": "2024-11-14T14:11:08Z",
+    "Archived": false,
+    "Count": 1
+  },
+  "Resource": {
+    "ResourceType": "AccessKey",
+    "AccessKeyDetails": {
+      "AccessKeyId": "AKIAIOSFODNN7EXAMPLE",
+      "PrincipalId": "AIDAIOSFODNN7EXAMPLE01",
+      "UserType": "IAMUser",
+      "UserName": "dev-alice"
+    }
+  }
+}

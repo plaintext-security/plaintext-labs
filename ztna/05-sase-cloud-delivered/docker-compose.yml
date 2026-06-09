@@ -1,0 +1,19 @@
+# Module 05 — SASE & Cloud-Delivered Zero Trust
+# Local nginx container acting as the private application to publish through Cloudflare Tunnel.
+# The tunnel (cloudflared) runs on the host, not in Docker, and connects to the Cloudflare edge.
+# make up: start nginx on port 8090
+# make demo: print setup instructions for Cloudflare tunnel and Access policy
+
+services:
+  nginx:
+    image: nginx:1.27.0-alpine
+    volumes:
+      - ./data/meridian-app.html:/usr/share/nginx/html/index.html:ro
+      - ./data/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8090:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

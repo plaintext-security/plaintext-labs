@@ -1,0 +1,40 @@
+{
+  "Subnets": [
+    {
+      "AvailabilityZone": "us-east-1a",
+      "AvailabilityZoneId": "use1-az1",
+      "AvailableIpAddressCount": 250,
+      "CidrBlock": "10.0.1.0/24",
+      "DefaultForAz": false,
+      "MapPublicIpOnLaunch": true,
+      "State": "available",
+      "SubnetId": "subnet-00000001",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-public-subnet-1a"}]
+    },
+    {
+      "AvailabilityZone": "us-east-1a",
+      "AvailabilityZoneId": "use1-az1",
+      "AvailableIpAddressCount": 250,
+      "CidrBlock": "10.0.10.0/24",
+      "DefaultForAz": false,
+      "MapPublicIpOnLaunch": false,
+      "State": "available",
+      "SubnetId": "subnet-00000002",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-app-subnet-1a"}]
+    },
+    {
+      "AvailabilityZone": "us-east-1a",
+      "AvailabilityZoneId": "use1-az1",
+      "AvailableIpAddressCount": 250,
+      "CidrBlock": "10.0.20.0/24",
+      "DefaultForAz": false,
+      "MapPublicIpOnLaunch": false,
+      "State": "available",
+      "SubnetId": "subnet-00000003",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-db-subnet-1a"}]
+    }
+  ]
+}

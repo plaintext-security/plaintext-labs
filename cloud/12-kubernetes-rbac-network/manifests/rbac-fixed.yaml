@@ -1,0 +1,43 @@
+# FIXED — least-privilege replacement for rbac-bad.yaml.
+# The ci-deployer SA now has only the verbs it needs in the 'default' namespace.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-deployer
+  namespace: default
+# Fix: explicitly disable auto-mount; the pipeline injects the token via CI secrets manager
+automountServiceAccountToken: false
+---
+# Namespace-scoped Role — only the verbs the CI pipeline actually needs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-deployer-role
+  namespace: default
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  # Pods: get/list for health checks; no create (pods come from Deployments)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# RoleBinding — namespace-scoped, not cluster-wide.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-deployer-binding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ci-deployer-role
+subjects:
+  - kind: ServiceAccount
+    name: ci-deployer
+    namespace: default

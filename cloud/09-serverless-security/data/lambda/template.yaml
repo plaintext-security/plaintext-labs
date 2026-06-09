@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Meridian Financial — payment notification processor (INTENTIONALLY MISCONFIGURED — training only)
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+
+Resources:
+  # MISCONFIGURATION: over-privileged execution role
+  # Should be restricted to the specific DynamoDB table and SNS topic the function needs.
+  MeridianNotifierRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: meridian-notifier-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # MISCONFIGURATION: trust policy allows any principal to assume this role
+          - Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: MeridianNotifierPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # MISCONFIGURATION: wildcard S3 permissions
+              - Effect: Allow
+                Action: s3:*
+                Resource: "*"
+              # MISCONFIGURATION: wildcard IAM permissions — allows privilege escalation
+              - Effect: Allow
+                Action: iam:*
+                Resource: "*"
+              # MISCONFIGURATION: wildcard STS permissions
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: "*"
+              # Basic execution: Lambda needs this
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+
+  MeridianNotifierFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: meridian-notifier
+      CodeUri: ./
+      Handler: handler.lambda_handler
+      Role: !GetAtt MeridianNotifierRole.Arn
+      Environment:
+        Variables:
+          # MISCONFIGURATION: sensitive values in environment variables
+          # Should be retrieved at runtime from Vault or AWS Secrets Manager.
+          MERIDIAN_API_KEY: "mrd_live_sk_EXAMPLEKEY1234567890abcdef"
+          DB_CONNECTION_STRING: "postgresql://appuser:db-password-example@db.internal.meridian.example/payments"
+          ENVIRONMENT: "production"
+          # This flag makes the injection worse — disables any (non-existent) input validation
+          INPUT_VALIDATION: "false"
+      Events:
+        PaymentApi:
+          Type: Api
+          Properties:
+            Path: /notify
+            Method: post

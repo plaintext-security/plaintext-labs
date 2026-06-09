@@ -1,0 +1,83 @@
+{
+  "_comment": "Meridian Financial — fictional device posture policy. Maps to Cloudflare Access posture checks and Tailscale ACL tags. For Lab 03 analysis only.",
+  "policy_name": "meridian-device-posture-v1",
+  "organization": "Meridian Financial",
+  "effective_date": "2025-01-01",
+  "tiers": {
+    "corp-managed": {
+      "description": "Corporate-issued, domain-joined Windows or macOS device, fully managed",
+      "required_checks": [
+        {
+          "check": "edr_enrolled",
+          "provider": "crowdstrike",
+          "parameter": "zero_trust_assessment_score",
+          "operator": ">=",
+          "value": 70,
+          "failure_action": "block",
+          "rationale": "Minimum CrowdStrike ZTA score; below 70 indicates missing sensor components or policy violations"
+        },
+        {
+          "check": "os_version",
+          "platforms": {
+            "windows": { "minimum_build": "19045", "name": "Windows 11 22H2" },
+            "macos": { "minimum_version": "14.0", "name": "Sonoma" }
+          },
+          "failure_action": "block",
+          "rationale": "Ensures OS is within supported patch window; older builds indicate failed patch management"
+        },
+        {
+          "check": "disk_encryption",
+          "windows": "bitlocker",
+          "macos": "filevault",
+          "required_state": "enabled",
+          "failure_action": "block",
+          "rationale": "Data at rest protection required by PCI-DSS and SOX; unencrypted disk is an unacceptable data exposure risk"
+        },
+        {
+          "check": "firewall",
+          "required_state": "enabled",
+          "failure_action": "warn",
+          "rationale": "Host-based firewall reduces lateral movement risk on untrusted networks"
+        },
+        {
+          "check": "screen_lock",
+          "maximum_idle_seconds": 300,
+          "failure_action": "warn",
+          "rationale": "Unattended session risk on shared or office environments"
+        }
+      ],
+      "allowed_resources": ["tag:corp-managed", "tag:contractor-allowed"],
+      "cloudflare_access_policy": "require corp-managed posture + user identity"
+    },
+    "contractor-byod": {
+      "description": "Contractor personal device — BYOD, no corporate MDM enrollment",
+      "required_checks": [
+        {
+          "check": "browser_check",
+          "provider": "cloudflare_warp",
+          "required_state": "installed",
+          "failure_action": "block",
+          "rationale": "WARP client provides minimum device signal for BYOD; without it there is no device posture signal at all"
+        },
+        {
+          "check": "os_version",
+          "platforms": {
+            "windows": { "minimum_build": "19041", "name": "Windows 10 20H1" },
+            "macos": { "minimum_version": "13.0", "name": "Ventura" }
+          },
+          "failure_action": "block",
+          "rationale": "Minimum supportable OS for Cloudflare WARP; older versions have known exploited vulnerabilities"
+        }
+      ],
+      "allowed_resources": ["tag:contractor-allowed"],
+      "denied_resources": ["tag:corp-managed", "tag:financial-systems", "tag:swift-gateway"],
+      "cloudflare_access_policy": "require WARP enrollment + user identity; deny access to financial systems",
+      "notes": "Contractors may not access core banking, SWIFT gateway, or any PCI-DSS cardholder data environment regardless of posture score"
+    }
+  },
+  "default_posture": {
+    "description": "Devices with no registered posture signal",
+    "action": "deny_all",
+    "rationale": "No posture signal = no access. This is the Zero Trust default: deny unless posture is verified, not trust unless posture fails."
+  }
+}

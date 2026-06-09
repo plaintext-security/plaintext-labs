@@ -1,0 +1,81 @@
+{
+  "SecurityGroups": [
+    {
+      "Description": "ALB security group — public web traffic",
+      "GroupName": "meridian-alb-sg",
+      "IpPermissions": [
+        {
+          "FromPort": 443,
+          "IpProtocol": "tcp",
+          "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "HTTPS from internet"}],
+          "ToPort": 443
+        },
+        {
+          "FromPort": 80,
+          "IpProtocol": "tcp",
+          "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "HTTP redirect only"}],
+          "ToPort": 80
+        }
+      ],
+      "IpPermissionsEgress": [
+        {"IpProtocol": "-1", "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}
+      ],
+      "GroupId": "sg-00000001",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-alb-sg"}],
+      "_note": "Intentional: public ALB needs 443/80 from 0.0.0.0/0"
+    },
+    {
+      "Description": "App tier security group",
+      "GroupName": "meridian-app-sg",
+      "IpPermissions": [
+        {
+          "FromPort": 8080,
+          "IpProtocol": "tcp",
+          "UserIdGroupPairs": [{"GroupId": "sg-00000001", "Description": "From ALB only"}],
+          "IpRanges": [],
+          "ToPort": 8080
+        },
+        {
+          "FromPort": 22,
+          "IpProtocol": "tcp",
+          "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "SSH — FINDING: should be restricted to bastion or VPN CIDR"}],
+          "ToPort": 22,
+          "_finding": "MISCONFIGURATION: SSH open to 0.0.0.0/0 on app tier"
+        }
+      ],
+      "IpPermissionsEgress": [
+        {"IpProtocol": "-1", "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}
+      ],
+      "GroupId": "sg-00000002",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-app-sg"}]
+    },
+    {
+      "Description": "Database security group",
+      "GroupName": "meridian-db-sg",
+      "IpPermissions": [
+        {
+          "FromPort": 5432,
+          "IpProtocol": "tcp",
+          "UserIdGroupPairs": [{"GroupId": "sg-00000002", "Description": "From app tier"}],
+          "IpRanges": [],
+          "ToPort": 5432
+        },
+        {
+          "FromPort": 5432,
+          "IpProtocol": "tcp",
+          "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "FINDING: PostgreSQL open to internet — critical misconfiguration"}],
+          "ToPort": 5432,
+          "_finding": "CRITICAL MISCONFIGURATION: PostgreSQL port 5432 open to 0.0.0.0/0"
+        }
+      ],
+      "IpPermissionsEgress": [
+        {"IpProtocol": "-1", "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}
+      ],
+      "GroupId": "sg-00000003",
+      "VpcId": "vpc-00000001",
+      "Tags": [{"Key": "Name", "Value": "meridian-db-sg"}]
+    }
+  ]
+}

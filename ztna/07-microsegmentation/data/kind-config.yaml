@@ -1,0 +1,12 @@
+# kind cluster configuration for the microsegmentation lab.
+# disableDefaultCNI: true is required so Cilium can take over as the CNI.
+# kubeProxyMode: none is required when Cilium replaces kube-proxy (eBPF mode).
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker

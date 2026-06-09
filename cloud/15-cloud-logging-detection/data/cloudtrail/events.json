@@ -1,0 +1,535 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:01:12Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "ListBuckets",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "eventID": "f1e2d3c4-b5a6-9870-fedc-ba0987654321",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:02:05Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "bucketName": "meridian-ci-artifacts",
+        "key": "builds/api-service/v1.2.3/api-service.zip"
+      },
+      "responseElements": null,
+      "requestID": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "eventID": "e2d3c4b5-a6f7-9801-edcb-a09876543210",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:15:30Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "GetUser",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "userName": "dev-alice"
+      },
+      "responseElements": null,
+      "requestID": "c3d4e5f6-a7b8-9012-cdef-234567890123",
+      "eventID": "d3c4b5a6-f7e8-0912-dcba-987654321098",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T09:03:44Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "ListRoles",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "d4e5f6a7-b8c9-0123-defa-345678901234",
+      "eventID": "c4b5a6f7-e8d9-1023-cbad-876543210987",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "accountId": "123456789012",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "principalId": "AROAIOSFODNN7EXAMPLE03",
+            "arn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+            "accountId": "123456789012",
+            "userName": "MeridianDataPipelineRole"
+          },
+          "webIdFederationData": {},
+          "attributes": {
+            "creationDate": "2024-11-14T09:20:00Z",
+            "mfaAuthenticated": "false"
+          }
+        }
+      },
+      "eventTime": "2024-11-14T09:20:15Z",
+      "eventSource": "sts.amazonaws.com",
+      "eventName": "AssumeRole",
+      "awsRegion": "eu-west-2",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "roleArn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+        "roleSessionName": "attacker-session-1731574800",
+        "durationSeconds": 3600
+      },
+      "responseElements": {
+        "credentials": {
+          "accessKeyId": "ASIAIOSFODNN7EXAMPLE",
+          "sessionToken": "FQoDYXdzEJr//////////wEaDHexample...",
+          "expiration": "2024-11-14T10:20:15Z"
+        }
+      },
+      "requestID": "e5f6a7b8-c9d0-1234-efab-456789012345",
+      "eventID": "b5a6f7e8-d9c0-2134-bace-765432109876",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "SUSPICIOUS: AssumeRole from eu-west-2 (unexpected region for Meridian). Source IP is not in corporate IP range. MFA was not authenticated."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T09:21:03Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q3-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "f6a7b8c9-d0e1-2345-fabc-567890123456",
+      "eventID": "a6f7e8d9-c0b1-3245-acbd-654321098765",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "SUSPICIOUS: GetObject on sensitive financial bucket from assumed-role session in unexpected region. User-agent is boto3 script, not the expected application."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T09:21:07Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q2-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "a7b8c9d0-e1f2-3456-abcd-678901234567",
+      "eventID": "f7e8d9c0-b1a2-4356-fbac-543210987654",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T09:21:11Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q1-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "b8c9d0e1-f2a3-4567-bcde-789012345678",
+      "eventID": "e8d9c0b1-a2f3-5467-ecbd-432109876543",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE05",
+        "arn": "arn:aws:iam::123456789012:user/svc-backup",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI2SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T09:30:00Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.2.12",
+      "userAgent": "Backup-Service/4.2.1 aws-sdk-java/1.12.0",
+      "requestParameters": {
+        "bucketName": "meridian-audit-logs-archive",
+        "key": "cloudtrail/2024/11/13/meridian_CloudTrail_us-east-1_20241113.json.gz"
+      },
+      "responseElements": null,
+      "requestID": "c9d0e1f2-a3b4-5678-cdef-890123456789",
+      "eventID": "d9c0b1a2-f3e4-6578-dcba-321098765432",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE06",
+        "arn": "arn:aws:iam::123456789012:user/attacker-provisioned",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI3SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T10:05:22Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "CreateUser",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "userName": "backup-svc-restore",
+        "path": "/"
+      },
+      "responseElements": {
+        "user": {
+          "path": "/",
+          "userName": "backup-svc-restore",
+          "userId": "AIDAIOSFODNN7EXAMPLE99",
+          "arn": "arn:aws:iam::123456789012:user/backup-svc-restore",
+          "createDate": "2024-11-14T10:05:22Z"
+        }
+      },
+      "requestID": "d0e1f2a3-b4c5-6789-defa-901234567890",
+      "eventID": "c0b1a2f3-e4d5-7689-cbad-210987654321",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "CRITICAL — IAM CreateUser from external IP 203.0.113.42. Part of admin escalation sequence (CreateUser → AttachUserPolicy)."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE06",
+        "arn": "arn:aws:iam::123456789012:user/attacker-provisioned",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI3SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T10:05:31Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "AttachUserPolicy",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "userName": "backup-svc-restore",
+        "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
+      },
+      "responseElements": null,
+      "requestID": "e1f2a3b4-c5d6-7890-efab-012345678901",
+      "eventID": "b1a2f3e4-d5c6-8790-bace-109876543210",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "CRITICAL — AdministratorAccess attached to newly created user within 9 seconds of CreateUser. Same source IP as CreateUser. This is T1098 (Account Manipulation) / privilege escalation."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T10:20:00Z",
+      "eventSource": "ec2.amazonaws.com",
+      "eventName": "DescribeInstances",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "f2a3b4c5-d6e7-8901-fabc-123456789012",
+      "eventID": "a2f3e4d5-c6b7-9801-afed-098765432109",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T10:22:15Z",
+      "eventSource": "lambda.amazonaws.com",
+      "eventName": "ListFunctions",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "a3b4c5d6-e7f8-9012-abcd-234567890123",
+      "eventID": "f3e4d5c6-b7a8-0912-fedc-987654321098",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE02",
+        "arn": "arn:aws:iam::123456789012:user/dev-bob",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI4SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T11:00:05Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "PutObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.67",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "bucketName": "meridian-ci-artifacts",
+        "key": "builds/payment-service/v2.0.1/payment-service.zip"
+      },
+      "responseElements": {
+        "x-amz-server-side-encryption": "AES256"
+      },
+      "requestID": "b4c5d6e7-f8a9-0123-bcde-345678901234",
+      "eventID": "e4d5c6b7-a8f9-1023-edcb-876543210987",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "Root",
+        "principalId": "123456789012",
+        "arn": "arn:aws:iam::123456789012:root",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T11:30:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "198.51.100.22",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "requestParameters": null,
+      "responseElements": {
+        "ConsoleLogin": "Success"
+      },
+      "requestID": "c5d6e7f8-a9b0-1234-cdef-456789012345",
+      "eventID": "d5c6b7a8-f9e0-2134-dcba-765432109876",
+      "eventType": "AwsConsoleSignIn",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "additionalEventData": {
+        "MFAUsed": "No",
+        "LoginTo": "https://console.aws.amazon.com/console/home",
+        "MobileVersion": "No"
+      },
+      "ANALYST_NOTE": "WARNING: Root account console login without MFA. AWS best practice is to never use root credentials; this should alert."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE07",
+        "arn": "arn:aws:iam::123456789012:user/svc-monitoring",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI5SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T12:00:00Z",
+      "eventSource": "cloudwatch.amazonaws.com",
+      "eventName": "PutMetricData",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.3.8",
+      "userAgent": "Datadog-Agent/7.48.0",
+      "requestParameters": {
+        "namespace": "MeridianApp/API"
+      },
+      "responseElements": null,
+      "requestID": "d6e7f8a9-b0c1-2345-defa-567890123456",
+      "eventID": "c6b7a8f9-e0d1-3245-cbad-654321098765",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T14:11:08Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "185.220.101.55",
+      "userAgent": "Boto3/1.9.0 Python/2.7.18 Linux/4.15.0-generic",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "internal/salaries/2024-compensation.xlsx"
+      },
+      "responseElements": null,
+      "requestID": "e7f8a9b0-c1d2-3456-efab-678901234567",
+      "eventID": "b7a8f9e0-d1c2-4356-bace-543210987654",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "SUSPICIOUS: GetObject on sensitive financial bucket with unusual user-agent (Boto3/1.9 is outdated; Python 2.7 EOL; source IP is Tor exit node 185.220.101.55)."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE08",
+        "arn": "arn:aws:iam::123456789012:user/ops-carlos",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI6SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T15:45:00Z",
+      "eventSource": "ec2.amazonaws.com",
+      "eventName": "AuthorizeSecurityGroupIngress",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.88",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "groupId": "sg-0a1b2c3d4e5f67890",
+        "ipPermissions": {
+          "items": [
+            {
+              "ipProtocol": "tcp",
+              "fromPort": 22,
+              "toPort": 22,
+              "ipRanges": {
+                "items": [{"cidrIp": "0.0.0.0/0"}]
+              }
+            }
+          ]
+        }
+      },
+      "responseElements": {
+        "requestId": "e7f8a9b0-c1d2-3456-efab-678901234567",
+        "_return": true
+      },
+      "requestID": "f8a9b0c1-d2e3-4567-fabc-789012345678",
+      "eventID": "a8f9e0d1-c2b3-5467-afed-432109876543",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "ANALYST_NOTE": "WARNING: SSH port 22 opened to 0.0.0.0/0. Security misconfiguration — should alert on broad ingress rule."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T16:30:45Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.1.45",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "bucketName": "meridian-ci-artifacts",
+        "key": "builds/auth-service/v3.1.0/auth-service.zip"
+      },
+      "responseElements": null,
+      "requestID": "a9b0c1d2-e3f4-5678-abcd-890123456789",
+      "eventID": "f9e0d1c2-b3a4-6578-fedc-321098765432",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012"
+    }
+  ]
+}

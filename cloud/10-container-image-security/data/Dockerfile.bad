@@ -1,0 +1,30 @@
+# Meridian Financial — internal API image
+# DO NOT USE IN PRODUCTION — this Dockerfile is intentionally misconfigured for lab purposes.
+
+# Finding 1: Unpinned 'latest' tag — non-reproducible builds, unauditable changes
+FROM python:latest
+
+# Finding 2: Secret in ENV — baked into the image manifest, readable by anyone
+# with registry access via `docker inspect` or `docker history`
+ENV DB_PASSWORD=Meridian$uperSecret2024
+ENV AWS_SECRET_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE/wJalrXUtnFEMI/K7MDENG
+
+# Finding 3: Running apt without --no-install-recommends inflates image size
+# and pulls in transitive packages with their own CVE surface
+RUN apt-get update && apt-get install -y curl wget netcat-openbsd
+
+# Finding 4: COPY everything including .git, .env, local secrets
+COPY . /app
+
+WORKDIR /app
+
+# Finding 5: Installing packages as root with no version pin
+RUN pip install flask requests boto3 cryptography
+
+# Finding 6: Exposing a debug port in production image
+EXPOSE 5000
+EXPOSE 5678
+
+# Finding 7: No USER directive — container runs as root (UID 0)
+# If process is compromised, attacker has root inside the container
+CMD ["python", "app.py"]

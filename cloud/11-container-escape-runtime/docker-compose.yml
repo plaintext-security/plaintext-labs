@@ -1,0 +1,60 @@
+# One-command lab environment for Module 11 — Container Escape & Runtime Security.
+# `make up` starts all services; `make demo` runs the escape + Falco detection scenario.
+services:
+
+  # ── Scenario A: privileged container (the "attacker" workload) ──────────
+  attacker:
+    build:
+      context: .
+      dockerfile: Dockerfile.attacker
+    image: plaintext/escape-attacker:latest
+    # The escape vector: --privileged grants all capabilities and drops namespace protections.
+    privileged: true
+    volumes:
+      # Expose the host-secret file via a bind mount to simulate a co-located hostPath volume.
+      # In a real cluster this is a Kubernetes hostPath volume pointing at a node path.
+      - ./data/host-secret.txt:/host-secret.txt:ro
+      # Mount /dev so the container can enumerate and mount block devices
+      - /dev:/dev
+    command: sleep infinity
+    networks:
+      - lab-net
+
+  # ── Target: a companion workload whose secrets are on the shared host path ──
+  target:
+    image: alpine:3.19
+    volumes:
+      - ./data/host-secret.txt:/host-secret.txt:ro
+    command: sh -c 'echo "Meridian internal credential: S3cr3tToken-PROD-4829" > /host-secret.txt && sleep infinity'
+    networks:
+      - lab-net
+
+  # ── Scenario B: Falco runtime detection ─────────────────────────────────
+  falco:
+    image: falcosecurity/falco-no-driver:0.37.1
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+      - /etc:/host/etc:ro
+      - ./data/falco-rules.yaml:/etc/falco/rules.d/lab-rules.yaml:ro
+    environment:
+      - FALCO_BPF_PROBE=
+    # Falco writes structured JSON alerts to stdout
+    command: >
+      falco
+        --modern-bpf
+        -o "json_output=true"
+        -o "log_stderr=true"
+        -o "log_level=info"
+        -r /etc/falco/falco_rules.yaml
+        -r /etc/falco/rules.d/lab-rules.yaml
+    networks:
+      - lab-net
+
+networks:
+  lab-net:
+    driver: bridge

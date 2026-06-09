@@ -1,0 +1,22 @@
+{
+  "Vpcs": [
+    {
+      "CidrBlock": "10.0.0.0/16",
+      "DhcpOptionsId": "dopt-00000001",
+      "State": "available",
+      "VpcId": "vpc-00000001",
+      "OwnerId": "000000000001",
+      "InstanceTenancy": "default",
+      "Ipv6CidrBlockAssociationSet": [],
+      "CidrBlockAssociationSet": [
+        {
+          "AssociationId": "vpc-cidr-assoc-00000001",
+          "CidrBlock": "10.0.0.0/16",
+          "CidrBlockState": {"State": "associated"}
+        }
+      ],
+      "IsDefault": false,
+      "Tags": [{"Key": "Name", "Value": "meridian-prod-vpc"}]
+    }
+  ]
+}

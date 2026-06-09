@@ -1,0 +1,174 @@
+{
+  "session_name": "meridian-dev-audit",
+  "aws_account_id": "123456789012",
+  "key_alias": "meridian-dev-ci",
+  "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+  "modules_run": [
+    {
+      "module": "iam__enum_users_roles_policies_groups",
+      "technique": "T1069.003",
+      "timestamp": "2024-11-14T09:12:04Z",
+      "findings": {
+        "users": [
+          {
+            "UserName": "ci-deploy",
+            "UserId": "AIDAIOSFODNN7EXAMPLE01",
+            "Arn": "arn:aws:iam::123456789012:user/ci-deploy",
+            "CreateDate": "2023-03-15T18:00:00Z",
+            "PasswordLastUsed": null,
+            "AttachedPolicies": [
+              {
+                "PolicyName": "CIDeployPolicy",
+                "PolicyArn": "arn:aws:iam::123456789012:policy/CIDeployPolicy"
+              }
+            ]
+          },
+          {
+            "UserName": "dev-alice",
+            "UserId": "AIDAIOSFODNN7EXAMPLE02",
+            "Arn": "arn:aws:iam::123456789012:user/dev-alice",
+            "CreateDate": "2023-01-10T12:00:00Z",
+            "PasswordLastUsed": "2024-11-13T17:42:00Z",
+            "AttachedPolicies": [
+              {
+                "PolicyName": "DeveloperReadAccess",
+                "PolicyArn": "arn:aws:iam::123456789012:policy/DeveloperReadAccess"
+              }
+            ]
+          }
+        ],
+        "roles": [
+          {
+            "RoleName": "MeridianDataPipelineRole",
+            "RoleId": "AROAIOSFODNN7EXAMPLE03",
+            "Arn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+            "CreateDate": "2023-06-01T09:00:00Z",
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "AWS": "arn:aws:iam::123456789012:root"
+                  },
+                  "Action": "sts:AssumeRole"
+                }
+              ]
+            },
+            "AttachedPolicies": [
+              {
+                "PolicyName": "AmazonS3FullAccess",
+                "PolicyArn": "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              },
+              {
+                "PolicyName": "AmazonDynamoDBFullAccess",
+                "PolicyArn": "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+              }
+            ]
+          },
+          {
+            "RoleName": "LambdaExecutionRole",
+            "RoleId": "AROAIOSFODNN7EXAMPLE04",
+            "Arn": "arn:aws:iam::123456789012:role/LambdaExecutionRole",
+            "CreateDate": "2023-08-22T14:30:00Z",
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  },
+                  "Action": "sts:AssumeRole"
+                }
+              ]
+            },
+            "AttachedPolicies": [
+              {
+                "PolicyName": "AWSLambdaBasicExecutionRole",
+                "PolicyArn": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              }
+            ]
+          }
+        ],
+        "privilege_escalation_findings": [
+          {
+            "finding": "ROLE_ASSUMABLE_BY_ANY_ACCOUNT_PRINCIPAL",
+            "risk": "HIGH",
+            "detail": "MeridianDataPipelineRole trust policy allows any principal in account 123456789012 to assume it. The compromised ci-deploy user can call sts:AssumeRole to obtain S3FullAccess and DynamoDBFullAccess — far beyond its own CIDeployPolicy permissions.",
+            "technique": "T1078.004",
+            "remediation": "Restrict AssumeRole trust to specific service principals or specific role ARNs; add an sts:ExternalId condition for cross-account use."
+          },
+          {
+            "finding": "OVERPRIVILEGED_MANAGED_POLICY",
+            "risk": "MEDIUM",
+            "detail": "MeridianDataPipelineRole has AmazonS3FullAccess attached, granting s3:* on *. Any role assumption gives full read/write/delete across all buckets.",
+            "technique": "T1530",
+            "remediation": "Scope S3 permissions to specific bucket ARNs and restrict to s3:GetObject for read-only pipeline steps."
+          }
+        ]
+      }
+    },
+    {
+      "module": "s3__enum_buckets_acls",
+      "technique": "T1530",
+      "timestamp": "2024-11-14T09:14:22Z",
+      "findings": {
+        "buckets": [
+          {
+            "Name": "meridian-financial-reports-prod",
+            "CreationDate": "2023-02-01T00:00:00Z",
+            "Region": "us-east-1",
+            "PublicAccessBlock": {
+              "BlockPublicAcls": true,
+              "IgnorePublicAcls": true,
+              "BlockPublicPolicy": true,
+              "RestrictPublicBuckets": true
+            },
+            "BucketPolicy": "RESTRICTED",
+            "ObjectCount": 2847,
+            "EstimatedSizeGB": 14.2,
+            "SensitivityNote": "Contains quarterly earnings reports, customer PII exports, transaction summaries."
+          },
+          {
+            "Name": "meridian-audit-logs-archive",
+            "CreationDate": "2023-01-15T00:00:00Z",
+            "Region": "us-east-1",
+            "PublicAccessBlock": {
+              "BlockPublicAcls": true,
+              "IgnorePublicAcls": true,
+              "BlockPublicPolicy": true,
+              "RestrictPublicBuckets": true
+            },
+            "BucketPolicy": "RESTRICTED",
+            "ObjectCount": 18920,
+            "EstimatedSizeGB": 6.7,
+            "SensitivityNote": "CloudTrail logs and VPC flow logs archive."
+          },
+          {
+            "Name": "meridian-ci-artifacts",
+            "CreationDate": "2023-03-20T00:00:00Z",
+            "Region": "us-east-1",
+            "PublicAccessBlock": {
+              "BlockPublicAcls": false,
+              "IgnorePublicAcls": false,
+              "BlockPublicPolicy": false,
+              "RestrictPublicBuckets": false
+            },
+            "BucketPolicy": "PUBLIC_READ",
+            "ObjectCount": 342,
+            "EstimatedSizeGB": 2.1,
+            "SensitivityNote": "WARNING: Bucket has public read ACL. Contains CI build artifacts including compiled Lambda packages."
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "critical": 1,
+    "high": 2,
+    "medium": 1,
+    "low": 0,
+    "attack_path_narrative": "Compromised ci-deploy key → sts:AssumeRole MeridianDataPipelineRole → AmazonS3FullAccess on all buckets → mass GetObject on meridian-financial-reports-prod → PutBucketReplication to attacker-controlled external account."
+  }
+}

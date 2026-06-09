@@ -1,0 +1,37 @@
+title: Zero Trust — Login from Unexpected Country
+id: 9f3a2b1e-7c4d-4e5f-8a9b-0c1d2e3f4a5b
+status: experimental
+description: >
+  Detects a successful access_allowed event for a user from a country code that
+  is outside Meridian's expected operating countries (US, CA, GB, DE, AU).
+  In a Zero Trust environment every access event is logged; unexpected geography
+  on an authenticated session is a high-fidelity signal for credential misuse or
+  account compromise.
+references:
+  - https://attack.mitre.org/techniques/T1078/
+  - https://www.cisa.gov/sites/default/files/2023-03/zero_trust_maturity_model_v2_0.pdf
+author: Plaintext (reference lab)
+logsource:
+  # ZT access logs: Pomerium/Cloudflare Access-shaped JSONL
+  product: ztna
+  category: access
+detection:
+  selection:
+    event_type: "access_allowed"
+  filter:
+    country:
+      - "US"
+      - "CA"
+      - "GB"
+      - "DE"
+      - "AU"
+  condition: selection and not filter
+falsepositives:
+  - Legitimate travel (employee on a business trip or vacation).
+  - VPN exit nodes that resolve to unexpected countries.
+  - Mitigate false positives by correlating with a recent travel notice in the HR system.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1078
+  - attack.t1078.004

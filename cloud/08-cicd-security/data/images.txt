@@ -1,0 +1,12 @@
+# Container images to scan with trivy in Module 08 — CI/CD Security.
+# These are public images with known CVE counts for training purposes.
+# Use: trivy image <image-ref>
+
+# Old Python — end-of-life, many known CVEs
+python:3.8-slim
+
+# Older Node — past LTS support
+node:16-slim
+
+# Current Python — for comparison (should have far fewer findings)
+python:3.12-slim

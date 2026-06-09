@@ -1,0 +1,24 @@
+# Lab 08 — Policy as Code
+# Runs OPA (Open Policy Agent) with policies and inputs mounted from ./data/
+services:
+  opa:
+    image: openpolicyagent/opa:0.68.0
+    container_name: opa-lab
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data:ro
+      - ./:/lab
+    command: ["run", "--server", "--log-level=error", "/lab/data/policies/"]
+    ports:
+      - "8181:8181"
+
+  # Helper service: runs opa eval / opa test one-shots in the same image.
+  # Used by Makefile demo/eval/test targets.
+  lab:
+    image: openpolicyagent/opa:0.68.0
+    container_name: opa-runner
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data
+      - ./:/lab
+    command: ["sleep", "infinity"]

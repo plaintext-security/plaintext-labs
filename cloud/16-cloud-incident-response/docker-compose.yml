@@ -1,0 +1,10 @@
+# Lab 16 — Cloud Incident Response
+# Single lab container with triage.py and bundled incident data.
+services:
+  lab:
+    build: .
+    image: plaintext/cloud-incident-response
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

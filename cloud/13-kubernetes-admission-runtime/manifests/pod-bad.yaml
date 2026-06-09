@@ -1,0 +1,20 @@
+# NON-COMPLIANT pod — violates both Kyverno policies.
+# This manifest should be DENIED by the admission webhook.
+# Use: kubectl apply -f manifests/pod-bad.yaml (expect an error)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lab-noncompliant
+  namespace: default
+  labels:
+    app: lab-noncompliant
+    module: "13"
+spec:
+  containers:
+    - name: main
+      image: alpine:3.19
+      # Violation 1: privileged: true — triggers disallow-privileged-containers policy
+      securityContext:
+        privileged: true
+        # Violation 2: no runAsNonRoot or runAsUser — triggers require-run-as-non-root policy
+      command: ["sleep", "infinity"]

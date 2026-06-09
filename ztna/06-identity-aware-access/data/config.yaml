@@ -1,0 +1,54 @@
+# Pomerium configuration for the identity-aware-access lab.
+# Uses Pomerium's built-in mock/test IdP so no external IdP account is needed.
+# In production you replace the authenticate section with your real IdP's
+# OIDC discovery URL, client_id, and client_secret.
+
+# ── Shared secrets ──────────────────────────────────────────────────────────
+# These are lab-only values. In production use a secrets manager.
+shared_secret: "lab-shared-secret-change-in-production-32char"
+cookie_secret: "lab-cookie-secret-change-in-production-32!"
+
+# ── Authenticate service ─────────────────────────────────────────────────────
+# Pomerium's built-in test IdP issues tokens for any address ending in
+# @example.com. We use this to simulate Meridian's Okta issuing tokens for
+# @meridian.com users without needing a real IdP account.
+authenticate_service_url: https://authenticate.localhost.pomerium.io
+
+# idp_provider / idp_client_id / idp_client_secret are left unset, which
+# activates the built-in test identity provider in the all-in-one binary.
+
+# ── TLS ─────────────────────────────────────────────────────────────────────
+# Pomerium generates a self-signed cert at startup when no cert is provided.
+# Clients must use -k / --insecure or trust the auto-generated CA.
+
+# ── Routes ──────────────────────────────────────────────────────────────────
+# A route wires an external URL that Pomerium listens on to an internal
+# upstream service. The backend (whoami) has no published port — it is only
+# reachable through this route.
+routes:
+  - from: https://whoami.localhost.pomerium.io
+    to: http://whoami:80
+    # Policy: allow any user whose email ends with @example.com (the mock IdP
+    # domain). In production this becomes your corporate domain or an IdP group.
+    policy:
+      - allow:
+          or:
+            - email:
+                is: user@example.com
+            - email:
+                ends_with: "@example.com"
+    # Inject the signed JWT into upstream requests so the backend can read
+    # caller identity from the X-Pomerium-Jwt-Assertion header.
+    pass_identity_headers: true
+
+  # ── Lab exercise route (module step 4) ────────────────────────────────────
+  # Add a second route here to protect /admin with a stricter group claim.
+  # Example (uncomment and adjust):
+  # - from: https://admin.localhost.pomerium.io
+  #   to: http://whoami:80
+  #   policy:
+  #     - allow:
+  #         or:
+  #           - groups:
+  #               has: "finance-admins"
+  #   pass_identity_headers: true

@@ -1,0 +1,34 @@
+# One-command lab environment for Module 10 — Container & Image Security.
+# `make up` pulls scanner images; `make demo` runs the full scan pipeline.
+services:
+  scanner:
+    image: aquasec/trivy:0.51.2
+    entrypoint: ["trivy"]
+    volumes:
+      - trivy-cache:/root/.cache/trivy
+      - ./data:/data
+    profiles:
+      - cli   # called directly by Makefile targets, not kept alive
+
+  grype:
+    image: anchore/grype:v0.76.0
+    entrypoint: ["grype"]
+    volumes:
+      - grype-db:/home/grype/.cache
+    profiles:
+      - cli
+
+  # Long-running shell container with both tools installed for `make shell`
+  lab:
+    build: .
+    image: plaintext/container-image-security:latest
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+      - trivy-cache:/root/.cache/trivy
+      - grype-db:/root/.cache/grype
+    command: sleep infinity
+
+volumes:
+  trivy-cache:
+  grype-db:

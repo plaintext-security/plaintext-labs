@@ -1,0 +1,11 @@
+# Lab 04 — Cloud Network Security
+# Single lab container: cloudmapper + Python analysis scripts.
+# No LocalStack needed — analysis runs entirely against bundled JSON data.
+services:
+  lab:
+    build: .
+    image: plaintext/cloud-network-security
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

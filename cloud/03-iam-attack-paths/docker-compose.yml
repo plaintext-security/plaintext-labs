@@ -1,0 +1,48 @@
+# Lab 03 — IAM Attack Paths
+# Services: LocalStack (simulated AWS) + lab container (Python + pmapper + awscli)
+services:
+  localstack:
+    image: localstack/localstack:3.7.0
+    environment:
+      - SERVICES=iam,sts,lambda,s3
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  seed:
+    build: .
+    image: plaintext/iam-attack-paths
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - ./:/lab
+    command: bash /lab/data/setup.sh
+    restart: "no"
+
+  lab:
+    build: .
+    image: plaintext/iam-attack-paths
+    depends_on:
+      - seed
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    volumes:
+      - ./:/lab
+    command: sleep infinity

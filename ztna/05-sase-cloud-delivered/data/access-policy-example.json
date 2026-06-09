@@ -1,0 +1,93 @@
+{
+  "_comment": "Representative Cloudflare Access application policy JSON. For Lab 05 analysis. Not a real deployment artifact.",
+  "name": "Meridian Lab App",
+  "domain": "meridian-lab.example.com",
+  "type": "self_hosted",
+  "session_duration": "24h",
+  "auto_redirect_to_identity": false,
+  "allowed_idps": [],
+  "policies": [
+    {
+      "name": "email-auth-basic",
+      "decision": "allow",
+      "precedence": 1,
+      "include": [
+        {
+          "email": {
+            "email": "analyst@meridian.com"
+          }
+        }
+      ],
+      "require": [],
+      "exclude": [],
+      "_note": "Basic: allows only a specific email address. No device posture required. This is the starting policy for the lab."
+    },
+    {
+      "name": "corp-email-domain",
+      "decision": "allow",
+      "precedence": 2,
+      "include": [
+        {
+          "email_domain": {
+            "domain": "meridian.com"
+          }
+        }
+      ],
+      "require": [],
+      "exclude": [],
+      "_note": "Improved: allows any @meridian.com email. Still no posture requirement. Lab step 6: change from specific email to domain."
+    },
+    {
+      "name": "corp-email-with-warp",
+      "decision": "allow",
+      "precedence": 3,
+      "include": [
+        {
+          "email_domain": {
+            "domain": "meridian.com"
+          }
+        }
+      ],
+      "require": [
+        {
+          "device_posture": {
+            "integration_uid": "warp-enrollment-check",
+            "_check_type": "warp",
+            "_note": "Requires WARP client enrollment. Replaces include with AND: email domain AND WARP enrolled."
+          }
+        }
+      ],
+      "exclude": [],
+      "_note": "ZT-aligned: requires both corporate email domain AND WARP enrollment. 'include' is OR; 'require' is AND."
+    },
+    {
+      "name": "corp-email-with-posture-score",
+      "decision": "allow",
+      "precedence": 4,
+      "include": [
+        {
+          "email_domain": {
+            "domain": "meridian.com"
+          }
+        }
+      ],
+      "require": [
+        {
+          "device_posture": {
+            "integration_uid": "crowdstrike-ztascore",
+            "_check_type": "crowdstrike_s2s",
+            "_minimum_score": 70,
+            "_note": "Requires CrowdStrike ZTA score >= 70. Requires Cloudflare-CrowdStrike integration configured in Zero Trust settings."
+          }
+        }
+      ],
+      "exclude": [],
+      "_note": "Production-grade: corporate email AND CrowdStrike posture score. Closest to ZT maturity model 'Advanced' for device pillar."
+    }
+  ],
+  "_policy_types_explained": {
+    "include": "OR condition — any of these rules matching is sufficient to include the user",
+    "require": "AND condition — ALL of these rules must match; typically used for device posture in addition to identity",
+    "exclude": "Override — if this matches, the user is excluded even if include and require pass"
+  }
+}

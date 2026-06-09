@@ -1,0 +1,98 @@
+{
+  "_comment": "Seed data: simulated Meridian Financial IAM snapshot. This file is committed; it contains no real credentials.",
+  "Account": {
+    "Id": "000000000001",
+    "Alias": "meridian-financial-dev"
+  },
+  "Users": [
+    {
+      "UserName": "admin-svc",
+      "Arn": "arn:aws:iam::000000000001:user/admin-svc",
+      "AttachedPolicies": [
+        { "PolicyName": "AdministratorAccess", "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess" }
+      ],
+      "Note": "Service account used for initial setup. Has not been rotated."
+    },
+    {
+      "UserName": "dev-alice",
+      "Arn": "arn:aws:iam::000000000001:user/dev-alice",
+      "AttachedPolicies": [
+        { "PolicyName": "MeridianDevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy" }
+      ],
+      "Note": "Developer account. Custom policy was copy-pasted from a blog post and never reviewed."
+    }
+  ],
+  "Policies": [
+    {
+      "PolicyName": "MeridianDevPolicy",
+      "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy",
+      "DefaultVersionId": "v1",
+      "Document": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "S3FullAccess",
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": "*",
+            "Note": "FINDING: wildcard resource grants access to all buckets, not just meridian-uploads."
+          },
+          {
+            "Sid": "EC2Describe",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:Describe*",
+              "ec2:List*"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "IAMPassRole",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": "*",
+            "Note": "FINDING: iam:PassRole with wildcard resource allows privilege escalation via role assumption."
+          }
+        ]
+      }
+    }
+  ],
+  "Roles": [
+    {
+      "RoleName": "MeridianEC2InstanceRole",
+      "Arn": "arn:aws:iam::000000000001:role/MeridianEC2InstanceRole",
+      "TrustPolicy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": { "Service": "ec2.amazonaws.com" },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "AttachedPolicies": [
+        { "PolicyName": "MeridianDevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy" },
+        { "PolicyName": "AmazonSSMManagedInstanceCore", "PolicyArn": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" }
+      ]
+    }
+  ],
+  "S3Buckets": [
+    {
+      "Name": "meridian-uploads-dev",
+      "Region": "us-east-1",
+      "PublicAccessBlock": {
+        "BlockPublicAcls": false,
+        "IgnorePublicAcls": false,
+        "BlockPublicPolicy": false,
+        "RestrictPublicBuckets": false,
+        "Note": "FINDING: all four public-access-block settings are disabled (provider default). Bucket is at risk."
+      },
+      "ACL": {
+        "Grants": [
+          { "Grantee": "AllUsers", "Permission": "READ", "Note": "FINDING: public READ grant on bucket ACL." }
+        ]
+      }
+    }
+  ]
+}

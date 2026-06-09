@@ -1,0 +1,37 @@
+# COMPLIANT pod — satisfies all seeded Kyverno policies.
+# This manifest should be ADMITTED by the admission webhook.
+# Use: kubectl apply -f manifests/pod-good.yaml (expect success)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lab-compliant
+  namespace: default
+  labels:
+    app: lab-compliant
+    module: "13"
+spec:
+  # Disable automatic SA token mount — this pod doesn't need API access
+  automountServiceAccountToken: false
+  containers:
+    - name: main
+      image: alpine:3.19
+      securityContext:
+        # Compliant: not privileged
+        privileged: false
+        # Compliant: runs as a non-root user (UID 1000)
+        runAsNonRoot: true
+        runAsUser: 1000
+        # Defence in depth: drop all capabilities, disallow privilege escalation
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        readOnlyRootFilesystem: true
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          memory: "32Mi"
+          cpu: "10m"
+        limits:
+          memory: "64Mi"
+          cpu: "50m"
+  restartPolicy: Never

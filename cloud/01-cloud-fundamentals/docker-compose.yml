@@ -1,0 +1,49 @@
+# Lab 01 — Cloud Fundamentals & Shared Responsibility
+# Services: LocalStack (simulated AWS) + lab container (awscli tooling)
+# `make up` starts both; `make shell` drops into the lab container.
+services:
+  localstack:
+    image: localstack/localstack:3.7.0
+    environment:
+      - SERVICES=iam,s3,ec2,sts
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  seed:
+    build: .
+    image: plaintext/cloud-fundamentals
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./:/lab
+    # Run setup once then exit
+    command: bash /lab/data/setup.sh
+    restart: "no"
+
+  lab:
+    build: .
+    image: plaintext/cloud-fundamentals
+    depends_on:
+      - seed
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      # Point awslocal at the LocalStack container by name
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - ./:/lab
+    command: sleep infinity

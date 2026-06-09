@@ -1,0 +1,47 @@
+# Simple web server in the payments namespace — used to demonstrate NetworkPolicy.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: payments
+  labels:
+    app: payments-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: web
+          image: hashicorp/http-echo:1.0.0
+          args: ["-text=Meridian Payments API — seed data"]
+          ports:
+            - containerPort: 5678
+              name: http
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
+              cpu: "50m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-api
+  namespace: payments
+spec:
+  selector:
+    app: payments-api
+  ports:
+    - port: 8080
+      targetPort: 5678
+      name: http

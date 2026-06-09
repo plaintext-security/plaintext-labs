@@ -1,0 +1,13 @@
+# NetworkPolicy: default-deny all ingress to the payments namespace.
+# Apply this first, then selectively open ports with targeted policies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: payments
+spec:
+  # Empty podSelector matches ALL pods in the namespace
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  # No ingress rules = deny all inbound traffic

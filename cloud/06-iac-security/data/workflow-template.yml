@@ -1,0 +1,47 @@
+# data/workflow-template.yml
+# Sample GitHub Actions workflow — IaC security scanning on pull requests.
+# Copy this to .github/workflows/iac-scan.yml in your repository and adapt.
+name: IaC Security Scan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '**.tf'
+
+jobs:
+  checkov:
+    name: checkov IaC scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+          # Fail the PR on HIGH or CRITICAL — suppress MEDIUM with a comment + rationale
+          soft_fail_on: MEDIUM,LOW,INFO
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+
+  tfsec:
+    name: tfsec scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform/
+          # tfsec exits non-zero on any finding by default
+          # Use --minimum-severity HIGH to only fail on HIGH+
+          additional_args: '--minimum-severity HIGH'

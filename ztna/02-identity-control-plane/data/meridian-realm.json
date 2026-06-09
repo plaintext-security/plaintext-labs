@@ -1,0 +1,101 @@
+{
+  "realm": "meridian",
+  "enabled": true,
+  "displayName": "Meridian Financial",
+  "displayNameHtml": "<strong>Meridian Financial</strong>",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "identityProviders": [],
+  "roles": {
+    "realm": [
+      {
+        "name": "analyst",
+        "description": "Security analyst — read access to dashboards and logs",
+        "composite": false
+      },
+      {
+        "name": "admin",
+        "description": "Security administrator — full access including configuration changes",
+        "composite": false
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "analyst",
+      "enabled": true,
+      "email": "analyst@meridian.local",
+      "firstName": "Sam",
+      "lastName": "Analyst",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "analyst123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["analyst"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@meridian.local",
+      "firstName": "Alex",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["analyst", "admin"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "meridian-app",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "meridian-app-secret",
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "defaultClientScopes": ["openid", "profile", "email", "roles"],
+      "optionalClientScopes": ["address", "phone", "offline_access"],
+      "attributes": {
+        "access.token.lifespan": "300"
+      }
+    },
+    {
+      "clientId": "meridian-api",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "meridian-api-secret",
+      "publicClient": false,
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "defaultClientScopes": ["openid", "roles"],
+      "optionalClientScopes": [],
+      "attributes": {
+        "access.token.lifespan": "60"
+      }
+    }
+  ]
+}

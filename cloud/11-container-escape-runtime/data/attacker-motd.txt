@@ -1,0 +1,7 @@
+=====================================================================
+ Module 11 — Container Escape Lab
+ Meridian Financial: compromised data-processing job
+ You are inside a --privileged container.
+ Objective: reach /host-secret.txt via a host filesystem path.
+ Remember to run `make logs-falco` in a second terminal first.
+=====================================================================

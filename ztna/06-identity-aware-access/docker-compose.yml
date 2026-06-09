@@ -1,0 +1,32 @@
+# Lab 06 — Identity-Aware Access
+# Starts Pomerium (all-in-one) and a whoami backend.
+# The whoami service has NO published port — it is only reachable via Pomerium.
+
+services:
+  pomerium:
+    image: pomerium/pomerium:v0.27.2
+    container_name: pomerium
+    ports:
+      - "8443:443"
+    volumes:
+      - ./data/config.yaml:/pomerium/config.yaml:ro
+    networks:
+      - ztna-lab
+    # Pomerium auto-generates a self-signed cert when none is mounted.
+    # Clients must use -k / curl --insecure.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "--no-check-certificate", "https://localhost/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  whoami:
+    image: traefik/whoami:v1.10.3
+    container_name: whoami
+    # No ports: published — this service is only reachable through Pomerium.
+    networks:
+      - ztna-lab
+
+networks:
+  ztna-lab:
+    driver: bridge

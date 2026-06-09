@@ -1,0 +1,143 @@
+# Three-tier application manifests for the microsegmentation lab.
+# Three namespaces: frontend, backend, database.
+# Each tier runs a single pod using the traefik/whoami image (echoes request
+# headers and returns 200) — lightweight and sufficient to demonstrate
+# allow/deny network connectivity without application complexity.
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend
+  labels:
+    name: backend
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: database
+  labels:
+    name: database
+
+---
+# Frontend deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: traefik/whoami:v1.10.3
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+
+---
+# Backend deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: backend
+    spec:
+      containers:
+        - name: backend
+          image: traefik/whoami:v1.10.3
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 80
+      targetPort: 80
+
+---
+# Database deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: database
+        tier: database
+    spec:
+      containers:
+        - name: database
+          image: traefik/whoami:v1.10.3
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: database
+spec:
+  selector:
+    app: database
+  ports:
+    - port: 80
+      targetPort: 80

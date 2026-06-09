@@ -1,0 +1,31 @@
+# Module 07 — Secrets Management & Detection
+# lab container (trufflehog + vault CLI) + vault server in dev mode.
+services:
+  vault:
+    image: hashicorp/vault:1.17.2
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root-dev-token
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://localhost:8200"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lab:
+    build: .
+    image: plaintext/secrets-management:1.0
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=root-dev-token
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    depends_on:
+      vault:
+        condition: service_healthy
+    command: sleep infinity

@@ -1,0 +1,38 @@
+# Kyverno ClusterPolicy: deny privileged containers.
+# Reference: https://kyverno.io/policies/pod-security/baseline/disallow-privileged-containers/
+# ATT&CK: T1611 (Escape to Host)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-containers
+  annotations:
+    policies.kyverno.io/title: Disallow Privileged Containers
+    policies.kyverno.io/category: Pod Security Standards (Baseline)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Privileged containers share namespaces with the host system and are granted
+      all Linux capabilities — effectively root on the node. This policy denies
+      any pod that sets privileged=true in any container or initContainer.
+      Meridian Financial: required for PCI DSS control 6.3 (secure system components).
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: deny-privileged-containers
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: >
+          Privileged containers are not allowed. Remove 'securityContext.privileged: true'
+          from all containers and initContainers. See: https://kyverno.io/policies/pod-security/baseline/disallow-privileged-containers/
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.containers[].securityContext.privileged | contains(@, true) }}"
+                operator: Equals
+                value: true
+              - key: "{{ request.object.spec.initContainers[].securityContext.privileged | contains(@, true) }}"
+                operator: Equals
+                value: true

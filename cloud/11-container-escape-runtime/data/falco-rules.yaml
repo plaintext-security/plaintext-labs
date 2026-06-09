@@ -1,0 +1,73 @@
+# Falco rules for Module 11 — Container Escape & Runtime Security lab
+# These supplement the default Falco rule set.
+# Reference: https://falco.org/docs/rules/
+
+# ── Rule 1: Write to /etc/passwd inside a container ─────────────────────
+- rule: Write /etc/passwd in Container
+  desc: >
+    Detects any process inside a container writing to /etc/passwd.
+    ATT&CK: T1098 (Account Manipulation), T1611 (Escape to Host via credential file).
+  condition: >
+    container
+    and open_write
+    and fd.name = /etc/passwd
+  output: >
+    CRITICAL: /etc/passwd written inside container
+    (user=%user.name user_uid=%user.uid container=%container.name
+     image=%container.image.repository:%container.image.tag
+     pid=%proc.pid cmdline=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, T1098, T1611, meridian-lab]
+
+# ── Rule 2: Container launched with --privileged ─────────────────────────
+- rule: Privileged Container Started
+  desc: >
+    A new container was started with the --privileged flag.
+    This grants all Linux capabilities and drops most namespace protections.
+    ATT&CK: T1610 (Deploy Container).
+  condition: >
+    container.privileged = true
+    and evt.type = container
+  output: >
+    WARNING: Privileged container started
+    (container=%container.name image=%container.image.repository:%container.image.tag
+     user=%user.name)
+  priority: WARNING
+  tags: [container, T1610, meridian-lab]
+
+# ── Rule 3: Mount of host filesystem inside a container ──────────────────
+- rule: Container Mounts Host Filesystem
+  desc: >
+    A process inside a container issued a mount(2) syscall.
+    Combined with --privileged and /dev access this is the first step
+    in the host filesystem escape technique.
+    ATT&CK: T1611 (Escape to Host).
+  condition: >
+    container
+    and evt.type = mount
+    and not proc.name in (falco, dockerd)
+  output: >
+    CRITICAL: mount syscall inside container — possible escape attempt
+    (user=%user.name container=%container.name
+     image=%container.image.repository:%container.image.tag
+     pid=%proc.pid cmdline=%proc.cmdline mounts=%evt.args)
+  priority: CRITICAL
+  tags: [container, T1611, meridian-lab]
+
+# ── Rule 4: Read of sensitive credential-like files ──────────────────────
+- rule: Read Sensitive File in Container
+  desc: >
+    A process read a file with credential-like path patterns inside a container.
+    ATT&CK: T1552.001 (Unsecured Credentials: Credentials In Files).
+  condition: >
+    container
+    and open_read
+    and (fd.name contains "secret" or fd.name contains "credential" or fd.name = /host-secret.txt)
+    and not proc.name in (falco)
+  output: >
+    WARNING: Sensitive file read in container
+    (file=%fd.name user=%user.name container=%container.name
+     image=%container.image.repository:%container.image.tag
+     pid=%proc.pid cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [container, T1552.001, meridian-lab]

@@ -1,0 +1,19 @@
+# Attacker container for Module 11 — privileged escape scenario.
+# Alpine base with standard Linux utilities for the escape walkthrough.
+FROM alpine:3.19
+
+RUN apk add --no-cache \
+    bash \
+    util-linux \
+    procps \
+    findmnt \
+    coreutils \
+    file
+
+WORKDIR /root
+
+# Drop a README so learners orient themselves quickly
+COPY data/attacker-motd.txt /etc/motd
+RUN echo 'cat /etc/motd' >> /root/.bashrc
+
+CMD ["bash"]

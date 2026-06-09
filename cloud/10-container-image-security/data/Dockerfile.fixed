@@ -1,0 +1,35 @@
+# Meridian Financial — internal API image
+# Fixed version: addresses all seven findings from Dockerfile.bad
+
+# Fix 1: Pin to a specific digest for reproducible, auditable builds
+# Rebuild on a schedule (Dependabot or weekly CI job) to get CVE patches
+FROM python:3.12-slim@sha256:2b1bfae5c6f1fb59143aef7c17bb3e87e38a62e84b58fe7d69b50e5de2ca74a8
+
+# Fix 2: Secrets never in ENV/ARG — use runtime injection (AWS Secrets Manager,
+# environment variables injected by the orchestrator, or a secrets CSI driver)
+# DB_PASSWORD and AWS_SECRET_ACCESS_KEY are consumed at runtime, not baked in.
+
+# Fix 3: Lean install with --no-install-recommends, clean up apt cache
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+WORKDIR /app
+
+# Fix 4: Copy only what is needed — not the whole build context
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+
+# Fix 5: packages pinned in requirements.txt (flask==3.0.3, etc.)
+
+# Fix 6: Only expose the application port; no debug ports in production
+EXPOSE 5000
+
+# Fix 7: Run as non-root user
+USER appuser
+
+CMD ["python", "src/app.py"]

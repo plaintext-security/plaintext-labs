@@ -1,0 +1,17 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "no-secctx-pod",
+    "namespace": "default"
+  },
+  "spec": {
+    "securityContext": {},
+    "containers": [
+      {
+        "name": "app",
+        "image": "nginx:1.27.3"
+      }
+    ]
+  }
+}

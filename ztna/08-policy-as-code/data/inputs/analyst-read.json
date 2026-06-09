@@ -1,0 +1,9 @@
+{
+  "user": {
+    "role": "analyst",
+    "email": "jdoe@meridian.com",
+    "sub": "auth0|user_analyst_001"
+  },
+  "action": "read",
+  "resource": "/api/v1/records"
+}

@@ -1,0 +1,61 @@
+# Falco rules for Module 13 — Kubernetes Admission & Runtime lab
+# Supplement the default Falco rule set with Kubernetes-context-aware rules.
+
+# ── Rule 1: Read /etc/passwd or /etc/shadow in a container ───────────────
+- rule: Read Sensitive File in Kubernetes Pod
+  desc: >
+    Detects a process reading /etc/passwd or /etc/shadow inside a Kubernetes pod.
+    A compliant pod (non-root, no privilege escalation) was admitted — but an attacker
+    running inside it may still attempt credential harvesting.
+    ATT&CK: T1552.001 (Credentials In Files).
+  condition: >
+    container
+    and open_read
+    and (fd.name = /etc/passwd or fd.name = /etc/shadow)
+    and not proc.name in (falco, sshd, login, systemd)
+  output: >
+    WARNING: Sensitive file read in Kubernetes pod
+    (file=%fd.name user=%user.name uid=%user.uid
+     container=%container.name pod=%k8s.pod.name ns=%k8s.ns.name
+     image=%container.image.repository:%container.image.tag
+     pid=%proc.pid cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [container, k8s, T1552.001, meridian-lab]
+
+# ── Rule 2: Binary executed from /tmp in a container ─────────────────────
+- rule: Execution from /tmp in Container
+  desc: >
+    A process was executed from /tmp inside a container.
+    Attackers copy tools to world-writable directories to evade read-only rootfs policies.
+    ATT&CK: T1059 (Command and Scripting Interpreter).
+  condition: >
+    container
+    and spawned_process
+    and proc.exepath startswith "/tmp"
+  output: >
+    CRITICAL: Process executed from /tmp in container
+    (exe=%proc.exepath user=%user.name uid=%user.uid
+     container=%container.name pod=%k8s.pod.name ns=%k8s.ns.name
+     image=%container.image.repository:%container.image.tag
+     pid=%proc.pid parent=%proc.pname cmdline=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, k8s, T1059, meridian-lab]
+
+# ── Rule 3: Unexpected outbound connection from a pod ────────────────────
+- rule: Unexpected Outbound Connection from Pod
+  desc: >
+    A process in a pod initiated a TCP connection to a non-RFC1918 address on a
+    non-standard port. This can indicate a reverse shell or C2 beacon.
+    ATT&CK: T1071 (Application Layer Protocol), T1059 (Command and Scripting Interpreter).
+  condition: >
+    outbound
+    and container
+    and not fd.sip in (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+    and not fd.sport in (80, 443, 53)
+    and not proc.name in (kubelet, containerd, falco)
+  output: >
+    WARNING: Unexpected outbound connection from pod
+    (process=%proc.name pod=%k8s.pod.name ns=%k8s.ns.name
+     dst=%fd.rip:%fd.rport proto=%fd.proto cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [container, k8s, T1071, meridian-lab]

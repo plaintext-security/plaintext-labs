@@ -1,0 +1,11 @@
+# Module 06 — Infrastructure-as-Code Security
+# Single container: checkov + tfsec + trivy against local Terraform files.
+# No cloud credentials or running infrastructure needed.
+services:
+  lab:
+    build: .
+    image: plaintext/iac-security:1.0
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

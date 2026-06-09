@@ -1,0 +1,35 @@
+# Kyverno ClusterPolicy: require containers to run as a non-root user.
+# Reference: https://kyverno.io/policies/pod-security/restricted/require-run-as-non-root-user/
+# ATT&CK: T1611 (Escape to Host — root in container = root on host after escape)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-run-as-non-root
+  annotations:
+    policies.kyverno.io/title: Require Run As Non-Root User
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >
+      Containers must not run as the root user (UID 0). Either runAsNonRoot: true
+      or a specific runAsUser > 0 must be set. Running as root means that if a
+      container escape occurs the attacker lands as root on the node.
+      Meridian Financial: required by internal container security policy CS-04.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-non-root-user
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: >
+          Containers must not run as root. Set 'securityContext.runAsNonRoot: true'
+          or 'securityContext.runAsUser' to a value greater than 0 on each container.
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  =(runAsNonRoot): "true"
+                  =(runAsUser): ">0"

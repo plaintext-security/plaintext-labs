@@ -1,0 +1,38 @@
+# Lab 14 — Cloud Attack Techniques
+# Two services: LocalStack (fake AWS) and the lab container with attack tools.
+services:
+  localstack:
+    image: localstack/localstack:3.4.0
+    environment:
+      - SERVICES=s3,sts,iam
+      - DEBUG=0
+      - LOCALSTACK_HOST=localstack
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - localstack-data:/var/lib/localstack
+
+  lab:
+    build: .
+    image: plaintext/cloud-attack-techniques
+    working_dir: /lab
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - ./:/lab
+    command: sleep infinity
+
+volumes:
+  localstack-data:

@@ -1,0 +1,37 @@
+# Module 09 — Serverless Security
+# LocalStack (Lambda + IAM + S3) + lab container (SAM CLI + cloudfox).
+services:
+  localstack:
+    image: localstack/localstack:3.4.0
+    environment:
+      - SERVICES=lambda,iam,s3,sts,logs
+      - DEBUG=0
+      - DEFAULT_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      # Enable Lambda execution
+      - LAMBDA_EXECUTOR=local
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  lab:
+    build: .
+    image: plaintext/serverless-security:1.0
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    depends_on:
+      localstack:
+        condition: service_healthy
+    command: sleep infinity

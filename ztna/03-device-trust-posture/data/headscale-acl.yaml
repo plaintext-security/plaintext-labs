@@ -1,0 +1,58 @@
+# Meridian Financial — headscale ACL policy (fictional, for Lab 03 analysis)
+# HuJSON format as used by headscale/Tailscale ACL engine.
+# This policy implements the "corp-managed" device tier from device-posture-policy.json.
+#
+# Key principle: default-deny. Only explicitly named tag combinations can communicate.
+# An unregistered device or a device without the corp-managed tag gets nothing.
+
+---
+# Tag owners: who can assign these tags when registering a device.
+# In a production deployment, only IT automation (Okta Device Trust, Intune, etc.)
+# should be a tagOwner — not individual users.
+tagOwners:
+  tag:corp-managed:
+    - autogroup:admin
+  tag:target:
+    - autogroup:admin
+  tag:contractor-allowed:
+    - autogroup:admin
+
+# Access control rules.
+# Format: src -> dst (list of allowed tags/groups -> list of allowed tags/groups).
+acls:
+  # Corporate managed devices can reach the target service.
+  - action: accept
+    src:
+      - tag:corp-managed
+    dst:
+      - tag:target:443
+      - tag:target:80
+
+  # The target service can respond back to corp-managed devices.
+  - action: accept
+    src:
+      - tag:target
+    dst:
+      - tag:corp-managed:0
+
+  # All other traffic is implicitly denied (default-deny — ZT posture).
+  # There is no catch-all "allow *" here.
+
+# DNS configuration (optional, for name resolution within the mesh).
+dns:
+  nameservers:
+    - 1.1.1.1
+  domains:
+    - meridian.local
+  magic_dns: true
+
+# SSH access policy (headscale SSH feature, optional).
+# Only corp-managed devices can SSH to other corp-managed devices.
+ssh:
+  - action: accept
+    src:
+      - tag:corp-managed
+    dst:
+      - tag:corp-managed
+    users:
+      - autogroup:nonroot

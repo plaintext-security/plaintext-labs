@@ -1,0 +1,9 @@
+{
+  "user": {
+    "role": "admin",
+    "email": "secadmin@meridian.com",
+    "sub": "auth0|user_admin_001"
+  },
+  "action": "write",
+  "resource": "/api/v1/records"
+}

@@ -1,0 +1,53 @@
+title: AWS IAM CreateUser Followed by AttachUserPolicy (Privilege Escalation)
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: stable
+description: |
+  Detects a privilege escalation sequence where a new IAM user is created and then
+  immediately granted AdministratorAccess or another admin policy within a short time
+  window. This pattern is commonly used by attackers who have compromised credentials
+  with iam:CreateUser and iam:AttachUserPolicy permissions to establish persistent
+  admin-level access.
+
+  Maps to MITRE ATT&CK T1098 (Account Manipulation) and is a strong indicator of
+  post-compromise persistence activity.
+references:
+  - https://attack.mitre.org/techniques/T1098/
+  - https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/
+  - https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html
+author: Meridian Financial SOC
+date: 2024-11-14
+modified: 2024-11-14
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1098
+  - attack.t1136.003
+logsource:
+  product: aws
+  service: cloudtrail
+detection:
+  create_user:
+    eventSource: iam.amazonaws.com
+    eventName: CreateUser
+  attach_policy:
+    eventSource: iam.amazonaws.com
+    eventName: AttachUserPolicy
+    requestParameters.policyArn|contains:
+      - 'AdministratorAccess'
+      - 'PowerUserAccess'
+      - 'IAMFullAccess'
+  timeframe: 5m
+  condition: create_user followed by attach_policy
+falsepositives:
+  - Legitimate automated account provisioning workflows (ensure these use well-known
+    service accounts and originate from known CIDR ranges, not external IPs).
+  - Break-glass emergency account creation (should trigger a separate workflow alert
+    and be documented).
+level: critical
+fields:
+  - eventTime
+  - userIdentity.arn
+  - sourceIPAddress
+  - userAgent
+  - requestParameters.userName
+  - requestParameters.policyArn
