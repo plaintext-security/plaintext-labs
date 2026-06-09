@@ -42,11 +42,14 @@ Then follow that module's `lab.md` in the [curriculum](https://github.com/plaint
 
 ## Zero local setup (optional)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/plaintext-security/plaintext-labs)
+[![Open in DevPod!](https://devpod.sh/assets/open-in-devpod.svg)](https://devpod.sh/open#https://github.com/plaintext-security/plaintext-labs)
+
 Don't want to install Docker locally? This repo ships a [`.devcontainer`](.devcontainer/devcontainer.json),
 so it opens with everything ready (Docker-in-Docker + tooling) in any of:
 
-- **GitHub Codespaces** — one click ("Code → Codespaces → Create"), runs in your browser, free monthly tier.
-- **DevPod** — open-source and provider-agnostic (`devpod up`), runs the same workspace locally or on any cloud.
+- **GitHub Codespaces** — click the badge above or "Code → Codespaces → Create"; runs in your browser on the free monthly tier.
+- **DevPod** — click the badge above; open-source and provider-agnostic, runs the same workspace locally or on any cloud.
 - **VS Code Dev Containers** — "Reopen in Container" locally.
 
 Then `cd <track>/<module> && make up` as usual.
