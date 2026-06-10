@@ -41,6 +41,37 @@ GRADER_HMAC_KEY=... python3 scripts/verify_receipt.py receipt.json   # + HMAC
 
 It recomputes the digest (and HMAC if keyed) and reports VALID/INVALID — tamper-evident.
 
+## `track_certificate.py` — the track-completion credential
+
+A **track certificate** is the layer above the per-lab receipts: it attests to a whole track —
+every module lab *plus* the capstone — by aggregating their receipts into one `certificate.json`
+and re-digesting the bundle. It is built **on** `verify_receipt.py` (it imports and reuses the same
+digest/HMAC scheme and receipt-validation logic), so a certificate is exactly "a bundle of receipts
+the verifier already trusts, plus a roll-up digest."
+
+```bash
+# Mint — gather a track's receipts from your portfolio and emit certificate.json.
+# Refuses to mint if any receipt is edited, unsigned-when-keyed, or has a failing check.
+python3 scripts/track_certificate.py mint \
+    --track 00-foundations --name "Ada Lovelace" \
+    --receipts ~/portfolio/00-foundations --out certificate.json
+
+# Verify — recompute the cert digest + confirm each embedded receipt (reviewer / CI).
+python3 scripts/track_certificate.py verify certificate.json
+GRADER_HMAC_KEY=... python3 scripts/track_certificate.py verify certificate.json   # + HMAC
+
+# Badge — a self-contained SVG + a README snippet (green only when the cert verifies).
+python3 scripts/track_certificate.py badge certificate.json --out-svg badge.svg
+```
+
+The certificate's trust model is **identical** to the receipt's (see above): VALID means
+tamper-evident and internally consistent, not proctored. The **public verification page** on the
+MkDocs site (`tracks/verify.md` in the `plaintext` repo) runs the same digest check in-browser via
+SubtleCrypto — its JS canonicaliser is kept byte-identical to Python's
+`json.dumps(sort_keys=True)` (sorted keys, `", "`/`": "` separators, `\uXXXX` escaping) so a
+learner can verify a certificate without installing anything, and honestly explains the open-repo
+trust model.
+
 ### Design / paper labs (ai_rubric)
 Labs that can't be auto-graded (threat modeling, reporting) use the `ai_rubric` check type: always
 advisory, it surfaces the rubric for self/peer review and, if `AI_GRADER_CMD` is set, runs an
