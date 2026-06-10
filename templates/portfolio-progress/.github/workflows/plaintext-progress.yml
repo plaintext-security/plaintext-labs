@@ -1,0 +1,66 @@
+# Plaintext — portfolio progress badge
+# ----------------------------------------------------------------------------
+# Copy this file to `.github/workflows/plaintext-progress.yml` in YOUR portfolio
+# repo (the repo where you commit each lab's `receipt.json`). On every push that
+# touches a receipt, it regenerates a progress badge + a per-track table in your
+# README — so your profile shows your Plaintext progress with zero manual posting.
+#
+# It only READS your committed receipts and verifies them with Plaintext's
+# open-source verifier; it never phones home. See templates/portfolio-progress/README.md.
+# ----------------------------------------------------------------------------
+name: Plaintext progress
+
+on:
+  push:
+    paths:
+      - "**/receipt.json"
+      - "**/certificate.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write          # to commit the regenerated badge + README
+
+# Pin the Plaintext scripts to a tag or commit SHA instead of a moving branch when
+# you want supply-chain stability. `main` is fine to start.
+env:
+  PLAINTEXT_REF: main
+
+jobs:
+  badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch Plaintext badge scripts
+        run: |
+          set -euo pipefail
+          mkdir -p .plaintext-bin
+          base="https://raw.githubusercontent.com/plaintext-security/plaintext-labs/${PLAINTEXT_REF}/scripts"
+          for f in verify_receipt.py progress_badge.py; do
+            curl -fsSL "$base/$f" -o ".plaintext-bin/$f"
+          done
+
+      - name: Generate progress badge
+        run: |
+          python3 .plaintext-bin/progress_badge.py \
+            --receipts . \
+            --readme README.md \
+            --out-svg .plaintext/progress.svg
+
+      - name: Commit if changed
+        run: |
+          set -euo pipefail
+          git config user.name  "plaintext-progress[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -rf .plaintext-bin
+          git add README.md .plaintext/progress.svg
+          if git diff --cached --quiet; then
+            echo "No progress change."
+          else
+            git commit -m "chore: update Plaintext progress badge"
+            git push
+          fi

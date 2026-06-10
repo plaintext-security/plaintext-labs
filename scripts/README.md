@@ -72,6 +72,28 @@ SubtleCrypto — its JS canonicaliser is kept byte-identical to Python's
 learner can verify a certificate without installing anything, and honestly explains the open-repo
 trust model.
 
+## `progress_badge.py` — portfolio progress badge (recognition, no manual posting)
+
+Where a *certificate* attests to one finished track, this aggregates a learner's **whole portfolio**
+of receipts into a live progress summary — an overall SVG badge plus a per-track table — injected
+into their README between `<!-- plaintext:progress:start -->` / `:end -->` markers. It is built **on**
+`verify_receipt.py`: a receipt only counts if its digest verifies (and HMAC when keyed) and all its
+checks passed; edited or failed receipts are reported and skipped.
+
+```bash
+# Regenerate the badge + README table from every receipt under the repo
+python3 scripts/progress_badge.py --receipts . --readme README.md --out-svg .plaintext/progress.svg
+
+# CI-strict: exit non-zero if any receipt is tampered/incomplete
+python3 scripts/progress_badge.py --receipts . --strict
+```
+
+This is the engine behind the **paste-once GitHub Action** in
+[`templates/portfolio-progress/`](../templates/portfolio-progress/) — a learner copies that workflow
+into their own portfolio repo and their profile shows Plaintext progress automatically, with no PR
+to us and nothing to post in Discord. (Recognition option **A**; the Discord verify-bot is **B**;
+server-side OAuth verification + central dashboard is the deferred spine **C**.)
+
 ### Design / paper labs (ai_rubric)
 Labs that can't be auto-graded (threat modeling, reporting) use the `ai_rubric` check type: always
 advisory, it surfaces the rubric for self/peer review and, if `AI_GRADER_CMD` is set, runs an
