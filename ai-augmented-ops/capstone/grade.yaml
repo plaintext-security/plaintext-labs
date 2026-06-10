@@ -1,0 +1,13 @@
+lab: ai-augmented-ops/capstone
+# The capstone is a portfolio artifact graded by a human against rubric.md (advisory).
+# Build your deliverable under submission/, then `make grade` for a self-check.
+checks:
+  - name: submission-present
+    type: structural
+    file: submission/README.md
+    must_match: ["."]
+    required: false
+  - name: rubric-self-review
+    type: ai_rubric
+    rubric: rubric.md
+    file: submission/README.md
