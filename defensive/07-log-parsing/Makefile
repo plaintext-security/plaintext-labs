@@ -15,3 +15,7 @@ shell:     ## Open a shell in the lab container
 
 demo:      ## Normalise the sample log and report the parse rate (incl. unparsed lines)
 	docker compose run --rm lab python normalize.py data/auth_sample.txt
+
+.PHONY: grade
+grade:     ## Grade your work against grade.yaml (writes receipt.json on pass)
+	python3 ../../scripts/grade.py grade.yaml
