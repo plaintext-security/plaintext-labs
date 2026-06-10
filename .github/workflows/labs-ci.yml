@@ -70,7 +70,9 @@ jobs:
             labs=$(all_labs)
           fi
           # Emit a JSON array for the matrix (empty array if nothing changed).
-          json=$(printf '%s\n' "$labs" | grep -v '^$' | jq -R . | jq -cs .)
+          # NB: grep exits 1 when $labs is empty (no opted-in lab changed on this PR);
+          # `|| true` keeps that expected, non-error case from aborting under `set -eo pipefail`.
+          json=$(printf '%s\n' "$labs" | grep -v '^$' | jq -R . | jq -cs . || true)
           echo "labs=${json:-[]}" >> "$GITHUB_OUTPUT"
           echo "Will run: ${json:-[]}"
 
