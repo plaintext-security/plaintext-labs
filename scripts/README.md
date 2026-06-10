@@ -92,6 +92,33 @@ kind of numbering drift the PowerShell module insertion caused.
 python3 scripts/check_consistency.py --tracks ../plaintext/tracks --labs .
 ```
 
+## `validate_grade_yaml.py` — grade.yaml schema lint
+
+The grader trusts its manifests (`manifest["lab"]`, `c["expects_sha256"]`, …), so a
+malformed `grade.yaml` fails late and cryptically. This linter validates every
+`*/grade.yaml` up front — valid YAML, a `lab` + non-empty `checks`, and each check's
+required fields for its `type` (e.g. `flag` needs `expects_sha256`, `structural` needs
+`file`, `artifact_functional`/`target_state` need `run`). Exit non-zero on any violation.
+
+```bash
+python3 scripts/validate_grade_yaml.py          # scan the repo (default)
+python3 scripts/validate_grade_yaml.py path/to/grade.yaml   # specific file(s)
+```
+
+## Tests (`scripts/tests/`)
+
+The load-bearing tooling above is covered by an offline pytest suite (no Docker, no
+network — tmpdir fixtures only). Install the dev deps and run it from the repo root:
+
+```bash
+python3 -m pip install -r scripts/requirements-dev.txt
+make test            # == python3 -m pytest scripts/tests/ -q
+make validate        # == python3 scripts/validate_grade_yaml.py
+```
+
+CI (`.github/workflows/scripts-ci.yml`) runs both on PRs and pushes to `main` that touch
+`scripts/**` or any `grade.yaml`.
+
 ## Opting a lab into CI (`.ci-demo`)
 
 Labs CI (`.github/workflows/labs-ci.yml`) is **opt-in**: a lab's demo is run/enforced only if the

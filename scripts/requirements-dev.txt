@@ -1,0 +1,4 @@
+# Dev/test toolchain for the shared lab scripts (scripts/tests/).
+# Runtime deps are stdlib + PyYAML; these add the test runner.
+pytest>=7.0
+PyYAML>=6.0
