@@ -1,0 +1,94 @@
+name: Labs CI
+
+# Keeps the 158 labs provably runnable and in lockstep with the curriculum.
+#   - On PRs: validate consistency, then run `make up && make demo && make down` for the
+#     CHANGED labs only (fast feedback).
+#   - Nightly: run the full matrix so rot (a moved base image, a changed flag) surfaces within a day.
+#   - Manual: workflow_dispatch with an optional single-lab filter.
+#
+# This sandbox can't run docker, so the matrix steps are authored here and must be proven by a
+# real run on GitHub Actions (ubuntu-latest ships docker + compose).
+
+on:
+  pull_request:
+    paths: ["**"]
+  schedule:
+    - cron: "0 6 * * *"        # 06:00 UTC nightly — full sweep
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Optional: a single lab path to run, e.g. offensive/06-web-injection"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labs-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  consistency:
+    # Prose <-> labs lockstep. Would have caught the PowerShell renumbering drift.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: plaintext-labs }
+      - uses: actions/checkout@v4
+        with: { repository: plaintext-security/plaintext, path: plaintext }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Check tracks <-> labs consistency
+        working-directory: plaintext-labs
+        run: python scripts/check_consistency.py --tracks ../plaintext/tracks --labs .
+
+  discover:
+    # Build the matrix of lab dirs to run: changed-on-PR, full otherwise.
+    needs: consistency
+    runs-on: ubuntu-latest
+    outputs:
+      labs: ${{ steps.set.outputs.labs }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: set
+        shell: bash
+        run: |
+          set -euo pipefail
+          all_labs() { for mk in $(git ls-files '**/Makefile'); do dirname "$mk"; done | sort -u; }
+          if [ -n "${{ inputs.only }}" ]; then
+            labs="${{ inputs.only }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            changed=$(git diff --name-only "$base"...HEAD | awk -F/ 'NF>=2{print $1"/"$2}' | sort -u)
+            labs=$(comm -12 <(all_labs) <(echo "$changed") || true)
+          else
+            labs=$(all_labs)
+          fi
+          # Emit a JSON array for the matrix (empty array if nothing changed).
+          json=$(printf '%s\n' "$labs" | grep -v '^$' | jq -R . | jq -cs .)
+          echo "labs=${json:-[]}" >> "$GITHUB_OUTPUT"
+          echo "Will run: ${json:-[]}"
+
+  run-labs:
+    needs: discover
+    if: needs.discover.outputs.labs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        lab: ${{ fromJSON(needs.discover.outputs.labs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: up / demo / down
+        working-directory: ${{ matrix.lab }}
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          echo "::group::make up";   make up;   echo "::endgroup::"
+          echo "::group::make demo"; make demo; echo "::endgroup::"
+      - name: teardown (always)
+        if: always()
+        working-directory: ${{ matrix.lab }}
+        run: make down || true

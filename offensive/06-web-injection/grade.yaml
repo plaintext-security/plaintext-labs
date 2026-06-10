@@ -1,0 +1,20 @@
+lab: offensive/06-web-injection
+# Run `make up` first (the flag + functional checks need the app on :8080), then `make grade`.
+checks:
+  - name: extracted-admin-credential
+    type: flag
+    env: FLAG
+    prompt: "Submit the admin password you extracted from the users table (FLAG=...)"
+    expects_sha256: "b47690eea3f2b37e51828ec60cd2991bd22da3344c313950add7a3f94ccf0c12"
+  - name: writeup-complete
+    type: structural
+    file: sqli.md
+    must_match: ["UNION", "parameteri"]            # the finding + the structural fix
+    must_not_match: ["S3cr3t-Meridian-Admin!"]     # redact the secret in your deliverable
+  - name: exploit-script-works
+    type: artifact_functional
+    artifact: exploit.py
+    run: "python3 {artifact}"
+    expect_exit: 0
+    expect_stdout_contains: "admin"
+    timeout: 60

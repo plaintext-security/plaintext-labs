@@ -1,0 +1,21 @@
+lab: defensive/08-detection-as-code
+# Write your rule as detection.yml in this dir, then `make grade`.
+checks:
+  - name: rule-well-formed
+    type: structural
+    file: detection.yml
+    must_match: ["logsource", "detection", "selection"]
+  - name: fires-on-malicious
+    type: artifact_functional
+    run: "docker compose run --rm lab python detect.py detection.yml data/events.jsonl"
+    expect_exit: 0
+    expect_stdout_contains: "[HIT]"
+    timeout: 180
+  - name: converts-to-splunk
+    type: artifact_functional
+    run: "docker compose run --rm lab sigma convert -t splunk -p sysmon detection.yml"
+    expect_exit: 0
+    timeout: 180
+  - name: low-false-positives
+    type: advisory
+    note: "Verify your rule stays QUIET on benign telemetry. A held-out benign set is the next grader step (see plaintext TODO T6 — held-out data)."

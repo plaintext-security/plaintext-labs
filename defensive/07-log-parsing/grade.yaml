@@ -1,0 +1,16 @@
+lab: defensive/07-log-parsing
+# Replace normalize.py with your parser (or extend it), then `make grade`.
+checks:
+  - name: parser-present
+    type: structural
+    file: normalize.py
+    must_match: ["json", "parse"]
+  - name: parses-the-sample
+    type: artifact_functional
+    run: "docker compose run --rm lab python normalize.py data/auth_sample.txt"
+    expect_exit: 0
+    expect_stdout_contains: "Parse rate:"
+    timeout: 120
+  - name: parse-rate-threshold
+    type: advisory
+    note: "Aim for >=95% parse rate AND account for every unparsed line. Held-out grading set is the next step (TODO T6)."

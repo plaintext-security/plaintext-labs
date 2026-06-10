@@ -17,3 +17,7 @@ shell:     ## Open a shell in the app container
 demo:      ## Show a benign search, then a UNION injection that steals credentials
 	docker compose up -d --build
 	docker compose exec -T webapp python /app/demo_attack.py
+
+.PHONY: grade
+grade:     ## Grade your work against grade.yaml (writes receipt.json on pass)
+	python3 ../../scripts/grade.py grade.yaml

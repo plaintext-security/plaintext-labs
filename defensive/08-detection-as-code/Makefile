@@ -29,3 +29,7 @@ convert:   ## make convert RULE=detection.yml — convert your rule to SPL
 
 detect:    ## make detect RULE=detection.yml — run your rule against the sample data
 	docker compose run --rm lab python detect.py $(RULE) data/events.jsonl
+
+.PHONY: grade
+grade:     ## Grade your work against grade.yaml (writes receipt.json on pass)
+	python3 ../../scripts/grade.py grade.yaml
