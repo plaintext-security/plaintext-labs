@@ -1,0 +1,12 @@
+# One-command lab environment for Module 17 — KEV-Driven Defense.
+# This is the *analysis* container (KEV refresh + detection). The exploit TARGET
+# is a separate, learner-pulled Vulhub environment — see lab.md and `make target-*`.
+services:
+  lab:
+    build: .
+    image: plaintext/kev-driven-defense
+    working_dir: /lab
+    # Mount the module dir so edits to your detection/script are live in the container.
+    volumes:
+      - ./:/lab
+    command: sleep infinity

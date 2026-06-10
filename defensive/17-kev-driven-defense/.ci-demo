@@ -1,0 +1,4 @@
+# Opt-in to Labs CI: this lab ships a reference demo that passes `make up && make demo && make down`
+# on a Linux runner. The demo is offline & deterministic (bundled KEV snapshot + bundled access log),
+# so it does not depend on the live CISA feed being reachable from the runner. Remove this marker if
+# the demo ever becomes learner-completable or needs a VM/cloud.

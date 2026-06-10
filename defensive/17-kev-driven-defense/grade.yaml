@@ -1,0 +1,37 @@
+lab: defensive/17-kev-driven-defense
+# Pick a current KEV target with kev_refresh.py, exploit it, then prove your
+# detection fires on the attack and stays quiet on benign traffic. Write your
+# findings in kev-target.md and your portable rule in detection.yml, then `make grade`.
+checks:
+  - name: writeup-exists
+    type: structural
+    file: kev-target.md
+    must_match: ["CVE-", "KEV", "detect"]
+    must_not_match: ["TODO", "FIXME", "<your"]
+
+  - name: detection-well-formed
+    type: structural
+    file: detection.yml
+    must_match: ["logsource", "detection"]
+
+  - name: detector-fires-on-attack
+    type: artifact_functional
+    run: "docker compose run --rm lab python detect.py data/solr_access.log"
+    expect_exit: 0
+    expect_stdout_contains: "[HIT]"
+    timeout: 180
+
+  - name: kev-tool-runs
+    type: artifact_functional
+    run: "docker compose run --rm lab python kev_refresh.py --recommend"
+    expect_exit: 0
+    expect_stdout_contains: "RECOMMENDED TARGET"
+    timeout: 180
+
+  - name: quiet-on-benign
+    type: advisory
+    note: "Prove your detection produces NO hits on a benign-only access log (no false positives). A bundled held-out benign set is the next grader step (plaintext TODO T6)."
+
+  - name: live-feed-verified
+    type: advisory
+    note: "Re-run with `make refresh` against the LIVE CISA catalog and confirm your chosen CVE is still listed. KEV is a moving target; a stale pick is a finding."

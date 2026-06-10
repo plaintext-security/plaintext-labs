@@ -1,0 +1,62 @@
+{
+  "_note": "Curated map of CISA KEV CVEs to a runnable Vulhub environment. Vulhub (https://github.com/vulhub/vulhub) ships a per-CVE docker-compose for each. Paths verified to resolve under github.com/vulhub/vulhub/tree/master/<path>. This is a teaching slice, not exhaustive — extend it as you map more KEV entries to reproducible targets. The 'reference' flag marks the one target this lab ships a worked exploit+detection for (the demo); the others are leads for you to build out.",
+  "targets": {
+    "CVE-2021-44228": {
+      "vulhub_path": "log4j/CVE-2021-44228",
+      "product": "Apache Solr 8.11.0 (Log4j 2.14.1)",
+      "service_port": 8983,
+      "exploit_class": "JNDI injection / RCE",
+      "reference": true,
+      "detect_note": "JNDI lookup string (${jndi:ldap://...}) in a request URI/header or User-Agent; outbound LDAP/RMI/DNS callback from the server."
+    },
+    "CVE-2022-22965": {
+      "vulhub_path": "spring/CVE-2022-22965",
+      "product": "Spring Framework (Spring4Shell)",
+      "service_port": 8080,
+      "exploit_class": "ClassLoader manipulation / RCE",
+      "detect_note": "class.module.classLoader.* parameters in a POST body; an unexpected .jsp written under webapps."
+    },
+    "CVE-2024-23897": {
+      "vulhub_path": "jenkins/CVE-2024-23897",
+      "product": "Jenkins CLI",
+      "service_port": 8080,
+      "exploit_class": "Arbitrary file read (args4j expandAtFiles)",
+      "detect_note": "CLI requests using @-prefixed file arguments; reads of /etc/passwd or Jenkins secrets."
+    },
+    "CVE-2022-26134": {
+      "vulhub_path": "confluence/CVE-2022-26134",
+      "product": "Atlassian Confluence Server",
+      "service_port": 8090,
+      "exploit_class": "OGNL injection / RCE",
+      "detect_note": "OGNL payload (${...}) in the request URI path; unexpected child process of the Confluence JVM."
+    },
+    "CVE-2023-22515": {
+      "vulhub_path": "confluence/CVE-2023-22515",
+      "product": "Atlassian Confluence Data Center/Server",
+      "service_port": 8090,
+      "exploit_class": "Broken access control / privileged account creation",
+      "detect_note": "requests to /setup/* after first-run; creation of a new admin user."
+    },
+    "CVE-2021-26084": {
+      "vulhub_path": "confluence/CVE-2021-26084",
+      "product": "Atlassian Confluence Server",
+      "service_port": 8090,
+      "exploit_class": "OGNL injection / RCE",
+      "detect_note": "OGNL in the queryString parameter of /pages/createpage-entervariables.action."
+    },
+    "CVE-2021-22205": {
+      "vulhub_path": "gitlab/CVE-2021-22205",
+      "product": "GitLab CE/EE (ExifTool)",
+      "service_port": 80,
+      "exploit_class": "Unauthenticated RCE via image upload",
+      "detect_note": "crafted DjVu image upload to /uploads; unexpected child process of the GitLab Rails/ExifTool worker."
+    },
+    "CVE-2020-14882": {
+      "vulhub_path": "weblogic/CVE-2020-14882",
+      "product": "Oracle WebLogic Server",
+      "service_port": 7001,
+      "exploit_class": "Auth bypass + RCE",
+      "detect_note": "console requests with ../ traversal in the path; com.tangosol.coherence gadget in the body."
+    }
+  }
+}
