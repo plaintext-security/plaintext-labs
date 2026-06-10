@@ -36,23 +36,7 @@ demo:
 		vault kv metadata get secret/meridian/payroll/db | grep current_version'
 	@echo ""
 	@echo "--- Part 2: SOPS — encrypt a YAML config file ---"
-	docker compose exec lab bash -c '\
-		age-keygen -o /tmp/age-key.txt 2>/dev/null; \
-		pub=$$(age-keygen -y /tmp/age-key.txt 2>/dev/null); \
-		cat > /tmp/config.yml <<EOF
-database:
-  host: db.meridian.internal
-  username: payroll_svc
-  password: super-secret-password
-api_key: sk-meridian-prod-12345
-EOF
-		export SOPS_AGE_KEY_FILE=/tmp/age-key.txt; \
-		sops --encrypt --age "$$pub" /tmp/config.yml > /tmp/config.enc.yml; \
-		echo "Encrypted config (values encrypted, keys visible):"; \
-		cat /tmp/config.enc.yml | head -15; \
-		echo ""; \
-		echo "Decrypted (original values):"; \
-		sops --decrypt /tmp/config.enc.yml'
+	docker compose exec lab bash /lab/demo/part2_sops.sh
 	@echo ""
 	@echo "=== Run 'make shell' for the full Vault policy and rotation exercises ==="
 

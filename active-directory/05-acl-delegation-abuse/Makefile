@@ -28,23 +28,9 @@ demo:       ## Identify ACL misconfigurations and show the attack path
 	    2>/dev/null | grep "^sAMAccountName:"
 	@echo ""
 	@echo "=== 2. Meridian ACL Findings Summary ==="
-	python3 -c "
-import json, sys
-data = json.load(open('/dev/stdin'))
-for f in data['acl_misconfigurations']:
-    print(f'[{f[\"severity\"]}] {f[\"principal\"]} --[{f[\"ace_type\"]}]--> {f[\"target\"]}')
-    print(f'         {f[\"attack_description\"][:100]}...')
-    print()
-" < data/acl-findings.json
+	python3 demo/acl_findings.py data/acl-findings.json
 	@echo ""
 	@echo "=== 3. Attack path summary ==="
-	python3 -c "
-import json
-data = json.load(open('data/acl-findings.json'))
-for path in data['attack_paths']:
-    print(f'Path: {path[\"name\"]} ({path[\"total_hops\"]} hops)')
-    for hop in path['hops']:
-        print(f'  {hop[\"step\"]}. {hop[\"from\"]} --[{hop[\"edge\"]}]--> {hop[\"to\"]} ({hop[\"technique\"]})')
-"
+	python3 demo/attack_paths.py data/acl-findings.json
 	@echo ""
 	@echo "=== Demo complete. Run 'make shell' to explore interactively. ==="

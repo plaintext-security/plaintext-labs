@@ -16,20 +16,7 @@ demo:
 	@echo "=== Module 10 — Detecting Host Compromise ==="
 	@echo ""
 	@echo "--- Alert data: Meridian payroll server (last 24h) ---"
-	docker compose exec lab bash -c '\
-		python3 -c "
-import json
-with open('"'"'data/alerts.json'"'"') as f:
-    alerts = json.load(f)
-print(f'"'"'Total alerts: {len(alerts)}'"'"')
-print()
-for a in alerts:
-    level = a['"'"'rule'"'"']['"'"'level'"'"']
-    desc = a['"'"'rule'"'"']['"'"'description'"'"']
-    ts = a['"'"'timestamp'"'"']
-    mitre = a.get('"'"'mitre'"'"', {}).get('"'"'id'"'"', '"'"'N/A'"'"')
-    print(f'"'"'  [{level:2}] {ts} | ATT&CK: {mitre:15} | {desc}'"'"')
-"'
+	docker compose exec lab python3 demo/show_alerts.py data/alerts.json
 	@echo ""
 	@echo "--- Running example detection rule (cron persistence) ---"
 	docker compose exec lab bash -c '\

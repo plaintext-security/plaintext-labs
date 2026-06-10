@@ -19,15 +19,8 @@ demo:       ## Enumerate hosts and demonstrate lateral movement
 	    'until nc -z dc01.meridian.local 389 2>/dev/null; do sleep 2; done; echo "DC ready."'
 	@echo ""
 	@echo "=== 1. Enumerate live SMB hosts and check signing status ==="
-	docker compose exec attacker sh -c \
-	    'nxc smb 10.10.0.0/24 2>/dev/null || \
-	     python3 -c "
-import subprocess, sys
-hosts = [\"10.10.0.10\", \"10.10.0.101\", \"10.10.0.102\"]
-for h in hosts:
-    r = subprocess.run([\"smbclient\", \"-L\", h, \"-N\", \"-g\"], capture_output=True, text=True)
-    print(f\"{h}: alive={r.returncode==0}\")
-"'
+	docker compose exec attacker nxc smb 10.10.0.0/24 2>/dev/null \
+	    || docker compose exec -T attacker python3 - < demo/smb_alive.py
 	@echo ""
 	@echo "=== 2. SMB host status summary ==="
 	@echo "  10.10.0.10  (dc01)      — signing REQUIRED (domain controller default)"
