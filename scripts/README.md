@@ -32,6 +32,20 @@ therefore **self-verification + portfolio evidence**, not proctoring. Set `GRADE
 an HMAC a future server-side grader could verify; a real, anti-cheat credential would need
 server-side grading with a private key (out of scope for the open model — see plaintext TODO T7).
 
+Verify a receipt (what a public verification page / a reviewer runs):
+
+```bash
+python3 scripts/verify_receipt.py path/to/receipt.json      # digest only
+GRADER_HMAC_KEY=... python3 scripts/verify_receipt.py receipt.json   # + HMAC
+```
+
+It recomputes the digest (and HMAC if keyed) and reports VALID/INVALID — tamper-evident.
+
+### Design / paper labs (ai_rubric)
+Labs that can't be auto-graded (threat modeling, reporting) use the `ai_rubric` check type: always
+advisory, it surfaces the rubric for self/peer review and, if `AI_GRADER_CMD` is set, runs an
+external LLM judge for draft feedback. It never gates completion.
+
 ### Held-out data
 Where a check should prove a *general* solution (a detection that's quiet on benign data, a parser
 that hits a rate on unseen logs), grade against a **held-out** set distinct from the `demo` set.

@@ -109,12 +109,40 @@ def check_advisory(c: dict) -> tuple[bool, str]:
     return True, c.get("note", "advisory check (no automated gate)")
 
 
+def check_ai_rubric(c: dict) -> tuple[bool, str]:
+    """Advisory AI/rubric feedback for design/paper labs that can't be auto-graded.
+
+    Always passes (never a hard gate). Surfaces the rubric so a human can self/peer-review,
+    and — if an external judge is configured via AI_GRADER_CMD — runs it for draft feedback.
+    AI_GRADER_CMD receives the rubric and artifact paths, e.g.:
+        export AI_GRADER_CMD='my-llm-judge --rubric {rubric} --file {file}'
+    """
+    rubric = Path(c.get("rubric", ""))
+    artifact = Path(c.get("file", ""))
+    if not artifact.is_file():
+        return True, f"(advisory) submit {artifact} for rubric feedback when ready"
+    cmd_tmpl = os.environ.get("AI_GRADER_CMD")
+    if cmd_tmpl:
+        cmd = cmd_tmpl.format(rubric=rubric, file=artifact)
+        try:
+            proc = run(cmd, timeout=c.get("timeout", 120))
+            print("    --- AI rubric feedback (advisory) ---")
+            for line in (proc.stdout or "(no output)").splitlines():
+                print(f"    {line}")
+        except subprocess.TimeoutExpired:
+            return True, "(advisory) AI judge timed out"
+        return True, "AI rubric feedback above (advisory — not a gate)"
+    where = f"see {rubric}" if rubric.name else "review against the lab rubric"
+    return True, f"(advisory) self/peer-review {artifact} against the rubric ({where})"
+
+
 CHECKS = {
     "flag": check_flag,
     "structural": check_structural,
     "artifact_functional": check_artifact_functional,
     "target_state": check_target_state,
     "advisory": check_advisory,
+    "ai_rubric": check_ai_rubric,
 }
 
 
@@ -159,7 +187,7 @@ def main() -> int:
             hard_fail = True
             continue
         passed, detail = fn(c)
-        required = c.get("required", ctype != "advisory")
+        required = c.get("required", ctype not in ("advisory", "ai_rubric"))
         results.append({"name": c["name"], "type": ctype, "passed": passed})
         if passed:
             mark = "PASS"
