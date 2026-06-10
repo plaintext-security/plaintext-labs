@@ -2,9 +2,10 @@ FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# Note: `samba-tool` is shipped *inside* the `samba` package — it is not a separate
+# apt package, so listing it made the build fail with apt exit 100.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     samba \
-    samba-tool \
     krb5-user \
     winbind \
     libpam-winbind \
