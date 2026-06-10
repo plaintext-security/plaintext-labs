@@ -1,0 +1,40 @@
+name: Scripts CI
+
+# Tests + schema-lint for the shared lab tooling under scripts/.
+#   - pytest suite (scripts/tests/) — offline, no Docker/network.
+#   - validate_grade_yaml.py — every */grade.yaml is well-formed.
+# Runs on PRs and pushes to main that touch the scripts or any grade.yaml.
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "**/grade.yaml"
+      - ".github/workflows/scripts-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "**/grade.yaml"
+      - ".github/workflows/scripts-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scripts-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install dev deps
+        run: python3 -m pip install -r scripts/requirements-dev.txt
+      - name: Validate grade.yaml schema
+        run: python3 scripts/validate_grade_yaml.py
+      - name: Run pytest suite
+        run: python3 -m pytest scripts/tests/ -q
