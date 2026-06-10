@@ -1,0 +1,14 @@
+{
+  "_comment": "Sample MCP client config. Merge the 'plaintext-curriculum' entry into your client's MCP servers config: Claude Desktop -> claude_desktop_config.json (mcpServers), Cursor -> .cursor/mcp.json (mcpServers), Claude Code -> `claude mcp add`. Edit the two ABSOLUTE paths below to match your checkout.",
+  "mcpServers": {
+    "plaintext-curriculum": {
+      "command": "/ABSOLUTE/PATH/TO/plaintext-labs/tools/curriculum-mcp/.venv/bin/python",
+      "args": [
+        "/ABSOLUTE/PATH/TO/plaintext-labs/tools/curriculum-mcp/server/server.py"
+      ],
+      "env": {
+        "CURRICULUM_DIR": "/ABSOLUTE/PATH/TO/plaintext-labs/tools/curriculum-mcp/data/tracks"
+      }
+    }
+  }
+}

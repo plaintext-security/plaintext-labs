@@ -1,0 +1,3 @@
+# The official Model Context Protocol Python SDK (ships FastMCP + a stdio client).
+# Pinned to a known-good minor; the curriculum parser itself needs no dependencies.
+mcp>=1.10,<2

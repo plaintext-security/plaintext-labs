@@ -1,0 +1,20 @@
+# Plaintext Curriculum MCP server — a context-aware tutor over the curriculum.
+#
+# Note: MCP's default transport is stdio — a client (Claude Desktop/Code, Cursor) launches
+# the server as a subprocess and talks over stdin/stdout. So the *normal* way to use this is
+# NOT `docker compose up` but the client config in README.md (point it at the container or the
+# local venv). This compose file is for the lab harness: `make demo` / `make test` run the
+# server's self-check and the MCP stdio round-trip inside the container, proving it serves.
+services:
+  mcp:
+    build: .
+    image: plaintext/curriculum-mcp
+    container_name: curriculum-mcp
+    # Keep the snapshot read-only; the tutor never writes.
+    environment:
+      - CURRICULUM_DIR=/app/data/tracks
+    # Idle by default — tools exec into it. (An MCP client would instead launch the
+    # `python3 server/server.py` stdio command directly; see README.)
+    command: sleep infinity
+    stdin_open: true
+    tty: true
