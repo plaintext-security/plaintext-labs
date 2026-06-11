@@ -8,6 +8,7 @@ It's built for learning-focused discovery:
 - **Educational category filters** — Education, Science & Technology, How-to & DIY.
 - **Courses, not just clips** — playlists and channels are first-class, so Claude can find a complete lecture series and read its "syllabus", not just a single video.
 - **Vetting data included** — duration, view counts, captions availability, and full descriptions so Claude can recommend quality material.
+- **Transcripts** — Claude can pull a video's captions as plain text and actually *read* the content: summarize a lecture, verify it covers a topic, or turn it into study notes.
 
 ## Tools
 
@@ -15,6 +16,7 @@ It's built for learning-focused discovery:
 |------|--------------|
 | `search_videos` | Search videos with filters: category, length, captions, language, recency, sort order |
 | `get_video_details` | Full description, stats, duration, and tags for specific videos |
+| `get_transcript` | A video's captions as plain text with `[mm:ss]` markers, paged for long lectures |
 | `search_playlists` | Find full courses and lecture series |
 | `get_playlist_videos` | List a playlist's videos in order (the course syllabus) |
 | `search_channels` | Find educational creators and institutions |
@@ -106,6 +108,7 @@ Ask Claude things like:
 - *"Search YouTube for short explainers on photosynthesis with captions, suitable for a middle schooler."*
 - *"Find the best channels for learning Rust, and show me the latest uploads from the top one."*
 - *"What educational videos are trending in the US right now?"*
+- *"Get the transcript of this lecture and turn it into bullet-point study notes."*
 - *"Compare these two videos and tell me which is the better intro"* (Claude will pull full details for both).
 
 ## Troubleshooting
@@ -117,6 +120,7 @@ Ask Claude things like:
 | `spawn node ENOENT` in Desktop logs | Claude Desktop can't find `node` on its PATH. Use the full path to node as the `command` — find it with `which node` (e.g. `/opt/homebrew/bin/node`). |
 | `quota` errors | You've used the free 10,000 daily units (≈90 searches). It resets at midnight Pacific Time. |
 | `API key not valid` | The YouTube Data API v3 isn't enabled on the key's project, or the key is restricted to other APIs. |
+| `get_transcript` fails or says "no captions" | The video genuinely has no captions, or YouTube is throttling automated transcript fetches (more likely from datacenter/VPN IPs; usually fine from a home connection). Searching with `captions_required=true` avoids the first case. |
 
 Desktop logs live at `~/Library/Logs/Claude/mcp-server-youtube.log` if you need to dig deeper.
 
@@ -124,6 +128,7 @@ Desktop logs live at `~/Library/Logs/Claude/mcp-server-youtube.log` if you need 
 
 - This server is **read-only** — it only calls YouTube's public search/list endpoints. It never posts, rates, or modifies anything, and it doesn't use OAuth or touch your YouTube account.
 - Your API key stays local: it's read from the environment and sent only to `googleapis.com`.
+- **Transcripts are best-effort.** The official Data API only allows downloading captions for videos *you own*, so `get_transcript` uses YouTube's public caption endpoint (the same one the player uses) instead. It costs no API quota and works for any captioned video, but it's not an official API — YouTube can change or rate-limit it, in which case the tool returns a clear error and everything else keeps working.
 
 ## License
 

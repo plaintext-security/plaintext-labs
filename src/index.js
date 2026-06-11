@@ -64,6 +64,128 @@ async function yt(endpoint, params) {
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Transcript helpers (YouTube's public caption endpoint — not the Data API)
+// ---------------------------------------------------------------------------
+
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept-Language": "en-US,en;q=0.9",
+  Cookie: "CONSENT=YES+cb",
+};
+
+/** Extract a balanced JSON array assigned to `"key":[...]` inside a blob of HTML/JS. */
+function extractJsonArray(html, key) {
+  const idx = html.indexOf(`"${key}":[`);
+  if (idx === -1) return null;
+  const start = html.indexOf("[", idx);
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < html.length; i++) {
+    const c = html[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') {
+      inStr = true;
+    } else if (c === "[") {
+      depth++;
+    } else if (c === "]") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(html.slice(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+async function fetchCaptionTracks(videoId) {
+  const res = await fetch(
+    `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en`,
+    { headers: BROWSER_HEADERS }
+  );
+  if (!res.ok) {
+    throw new Error(`Could not load the video page for ${videoId} (HTTP ${res.status}).`);
+  }
+  const html = await res.text();
+  const tracks = extractJsonArray(html, "captionTracks");
+  if (!tracks || tracks.length === 0) {
+    const status = html.match(/"playabilityStatus":\s*\{\s*"status":"([A-Z_]+)"/)?.[1];
+    if (status && status !== "OK") {
+      throw new Error(
+        `No transcript available: video ${videoId} is not playable (status: ${status}) — ` +
+          "it may be private, deleted, age-restricted, or region-locked."
+      );
+    }
+    throw new Error(
+      `Video ${videoId} has no captions (neither manual nor auto-generated). ` +
+        "Tip: search_videos with captions_required=true finds videos that have transcripts."
+    );
+  }
+  return tracks;
+}
+
+/** Pick the best caption track: requested language if given, manual over auto-generated. */
+function pickTrack(tracks, language) {
+  let pool = tracks;
+  if (language) {
+    const want = language.toLowerCase().split("-")[0];
+    pool = tracks.filter(
+      (t) => (t.languageCode ?? "").toLowerCase().split("-")[0] === want
+    );
+    if (pool.length === 0) {
+      const available = tracks
+        .map((t) => `${t.languageCode}${t.kind === "asr" ? " (auto)" : ""}`)
+        .join(", ");
+      throw new Error(
+        `No '${language}' transcript for this video. Available: ${available}`
+      );
+    }
+  }
+  return pool.find((t) => t.kind !== "asr") ?? pool[0];
+}
+
+/** Download a caption track and return [{t: seconds, text}] segments. */
+async function fetchTranscriptSegments(track) {
+  const url = `${track.baseUrl}${track.baseUrl.includes("?") ? "&" : "?"}fmt=json3`;
+  const res = await fetch(url, { headers: BROWSER_HEADERS });
+  if (!res.ok) {
+    throw new Error(
+      `Could not download the transcript (HTTP ${res.status}). YouTube sometimes ` +
+        "blocks automated transcript fetches — wait a bit and try again."
+    );
+  }
+  const data = await res.json();
+  const segments = [];
+  for (const ev of data.events ?? []) {
+    if (!ev.segs) continue;
+    const t = (ev.tStartMs ?? 0) / 1000;
+    const content = ev.segs
+      .map((s) => s.utf8 ?? "")
+      .join("")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (content) segments.push({ t, text: content });
+  }
+  return segments;
+}
+
+function fmtTimestamp(sec) {
+  const s = Math.floor(sec % 60);
+  const m = Math.floor(sec / 60) % 60;
+  const h = Math.floor(sec / 3600);
+  const ss = String(s).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+
 /** Fetch full details (duration, stats) for up to 50 video IDs. */
 async function fetchVideoDetails(ids) {
   if (ids.length === 0) return new Map();
@@ -254,6 +376,75 @@ server.registerTool(
     const missing = video_ids.filter((id) => !items.some((v) => v.id === id));
     const note = missing.length ? `\n\nNot found (deleted/private?): ${missing.join(", ")}` : "";
     return text(body + note);
+  })
+);
+
+server.registerTool(
+  "get_transcript",
+  {
+    title: "Get a video's transcript",
+    description:
+      "Fetch the transcript (captions) of a YouTube video as plain text with periodic " +
+      "[mm:ss] timestamps, so you can actually read, summarize, and verify the video's " +
+      "content rather than judging it by metadata. Prefers human-made captions and falls " +
+      "back to auto-generated ones. Long transcripts are paged — the result tells you the " +
+      "offset_seconds to pass to get the next part. Uses YouTube's public caption " +
+      "endpoint (not the Data API): costs no API quota, but is best-effort and only works " +
+      "for videos that have captions.",
+    inputSchema: {
+      video_id: z.string()
+        .describe("YouTube video ID (the 11-character ID from search results or a watch URL)"),
+      language: z.string().optional()
+        .describe("Preferred transcript language (ISO 639-1, e.g. 'en', 'es'). Defaults to the video's primary track."),
+      offset_seconds: z.number().int().min(0).default(0)
+        .describe("Start reading from this point in the video — use the value suggested by a previous truncated call to page through long transcripts"),
+      max_chars: z.number().int().min(1000).max(50000).default(12000)
+        .describe("Maximum characters of transcript text to return per call (default 12000)"),
+    },
+  },
+  safe(async ({ video_id, language, offset_seconds, max_chars }) => {
+    const tracks = await fetchCaptionTracks(video_id);
+    const track = pickTrack(tracks, language);
+    const segments = await fetchTranscriptSegments(track);
+    if (segments.length === 0) {
+      return text(`The caption track for ${video_id} exists but is empty.`);
+    }
+
+    let startIdx = segments.findIndex((s) => s.t >= offset_seconds);
+    if (offset_seconds === 0) startIdx = 0;
+    if (startIdx === -1) {
+      return text(
+        `offset_seconds=${offset_seconds} is past the end of the transcript ` +
+          `(it ends around ${fmtTimestamp(segments[segments.length - 1].t)}).`
+      );
+    }
+
+    let out = "";
+    let lastMarker = -Infinity;
+    let continueAt = null;
+    for (let i = startIdx; i < segments.length; i++) {
+      const seg = segments[i];
+      let piece = "";
+      if (seg.t - lastMarker >= 60) {
+        piece += `\n\n[${fmtTimestamp(seg.t)}] `;
+      }
+      piece += `${seg.text} `;
+      if (out.length + piece.length > max_chars) {
+        continueAt = Math.floor(seg.t);
+        break;
+      }
+      if (seg.t - lastMarker >= 60) lastMarker = seg.t;
+      out += piece;
+    }
+
+    const trackLabel = `${track.languageCode}${track.kind === "asr" ? ", auto-generated" : ""}`;
+    let header = `Transcript of ${video_id} (${trackLabel})`;
+    if (offset_seconds > 0) header += `, from ${fmtTimestamp(offset_seconds)}`;
+    const footer =
+      continueAt !== null
+        ? `\n\n[Transcript continues — call get_transcript again with offset_seconds=${continueAt} for the next part.]`
+        : "\n\n[End of transcript.]";
+    return text(`${header}:${out}${footer}`);
   })
 );
 
