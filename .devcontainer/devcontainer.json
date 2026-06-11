@@ -5,7 +5,7 @@
     "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": false },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
   },
-  "onCreateCommand": "sudo apt-get update && sudo apt-get install -y make && mkdir -p /home/vscode/.docker-clean && echo '{\"auths\":{}}' > /home/vscode/.docker-clean/config.json",
+  "onCreateCommand": "sudo apt-get update && sudo apt-get install -y make && mkdir -p /home/vscode/.docker-clean && echo '{\"auths\":{}}' > /home/vscode/.docker-clean/config.json && echo 'export DOCKER_CONFIG=/home/vscode/.docker-clean' >> /home/vscode/.bashrc",
   "postAttachCommand": "echo 'plaintext-labs ready. Pick a lab:  cd <track>/<module> && make up'",
   "remoteEnv": {
     "DOCKER_CONFIG": "/home/vscode/.docker-clean"
