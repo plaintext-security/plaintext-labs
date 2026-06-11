@@ -1,0 +1,9 @@
+# Lab-generated identity artifacts — never commit SVIDs, keys, or the join token.
+*.pem
+*.key
+svid.*
+bundle.*
+agent-join-token
+data/server/
+data/agent/
+findings.md
