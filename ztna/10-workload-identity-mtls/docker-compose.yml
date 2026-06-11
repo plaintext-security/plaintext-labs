@@ -1,0 +1,100 @@
+# Module 10 — Workload Identity & mTLS (SPIFFE/SPIRE)
+# A single-node SPIRE deployment: server issues identities, agent attests workloads,
+# two workloads (backend, client) fetch SVIDs and do mutual TLS. A "rogue" with no
+# registration entry is run ad-hoc (see `make deny`) to prove it gets no identity.
+#
+# All services run from one locally-built image (Dockerfile) that carries both SPIRE
+# binaries plus bash/openssl, so the daemons, bootstrap, and workloads stay legible.
+services:
+  spire-server:
+    build: .
+    image: plaintext/ztna-spiffe
+    hostname: spire-server
+    command: ["spire-server", "run", "-config", "/opt/spire/conf/server/server.conf"]
+    volumes:
+      - ./conf:/opt/spire/conf:ro
+      - spire-server-data:/opt/spire/data/server
+      - spire-server-socket:/tmp/spire-server/private
+    healthcheck:
+      test: ["CMD", "spire-server", "healthcheck", "-socketPath", "/tmp/spire-server/private/api.sock"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # One-shot: generate the agent join token + create the workload registration entries.
+  spire-bootstrap:
+    image: plaintext/ztna-spiffe
+    depends_on:
+      spire-server:
+        condition: service_healthy
+    command: ["bash", "/opt/spire/data/setup.sh"]
+    volumes:
+      - ./conf:/opt/spire/conf:ro
+      - ./data:/opt/spire/data:ro
+      - spire-server-socket:/tmp/spire-server/private
+      - spire-shared:/opt/spire/shared
+    working_dir: /opt/spire
+    restart: "no"
+
+  spire-agent:
+    image: plaintext/ztna-spiffe
+    hostname: spire-agent
+    # Host PID + the Docker socket let the docker workload-attestor map a calling
+    # PID back to its container and read its labels.
+    pid: "host"
+    depends_on:
+      spire-bootstrap:
+        condition: service_completed_successfully
+    entrypoint: ["bash", "/opt/spire/workload/agent-entrypoint.sh"]
+    volumes:
+      - ./conf:/opt/spire/conf:ro
+      - ./workload:/opt/spire/workload:ro
+      - spire-agent-data:/opt/spire/data/agent
+      - spire-agent-socket:/run/spire/sockets
+      - spire-shared:/opt/spire/shared
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  backend:
+    image: plaintext/ztna-spiffe
+    hostname: backend
+    depends_on:
+      - spire-agent
+    labels:
+      com.meridian.svc: "backend"   # the selector the registration entry keys on
+    entrypoint: ["bash", "/opt/spire/workload/backend.sh"]
+    volumes:
+      - ./workload:/opt/spire/workload:ro
+      - spire-agent-socket:/run/spire/sockets
+
+  client:
+    image: plaintext/ztna-spiffe
+    hostname: client
+    depends_on:
+      - spire-agent
+    labels:
+      com.meridian.svc: "client"
+    entrypoint: ["bash", "/opt/spire/workload/client.sh"]
+    volumes:
+      - ./workload:/opt/spire/workload:ro
+      - spire-agent-socket:/run/spire/sockets
+
+  # The deny proof: a workload with a label that matches NO registration entry.
+  # Not started by `make up` (profile "deny"); `make deny` brings it up and shows
+  # the Workload API refuses it an SVID, so it cannot do mTLS.
+  rogue:
+    image: plaintext/ztna-spiffe
+    hostname: rogue
+    profiles: ["deny"]
+    labels:
+      com.meridian.svc: "rogue"
+    entrypoint: ["sleep", "infinity"]
+    volumes:
+      - ./workload:/opt/spire/workload:ro
+      - spire-agent-socket:/run/spire/sockets
+
+volumes:
+  spire-server-data:
+  spire-server-socket:
+  spire-agent-data:
+  spire-agent-socket:
+  spire-shared:
