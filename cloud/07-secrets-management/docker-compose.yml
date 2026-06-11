@@ -1,5 +1,9 @@
 # Module 07 — Secrets Management & Detection
-# lab container (trufflehog + vault CLI) + vault server in dev mode.
+# Detection (trufflehog) + the *operate* side of secret management:
+#   - vault       : HashiCorp Vault (dev mode) — KV, policies, AND the database secrets engine
+#   - db          : Postgres — the backing store Vault mints dynamic, short-TTL credentials against
+#   - localstack  : simulated AWS — the cloud-native variant (Secrets Manager + IAM)
+#   - lab         : tooling container (trufflehog, vault, psql, awslocal, hvac, boto3)
 services:
   vault:
     image: hashicorp/vault:1.17.2
@@ -16,16 +20,57 @@ services:
       timeout: 5s
       retries: 10
 
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: vaultadmin
+      POSTGRES_PASSWORD: vaultadminpass
+      POSTGRES_DB: meridian
+    volumes:
+      - ./data/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaultadmin -d meridian"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  localstack:
+    image: localstack/localstack:3.7.0
+    environment:
+      - SERVICES=secretsmanager,iam,sts
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   lab:
     build: .
-    image: plaintext/secrets-management:1.0
+    image: plaintext/secrets-management:1.1
     environment:
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=root-dev-token
+      # Postgres (for verifying dynamic creds with psql)
+      - PGHOST=db
+      - PGDATABASE=meridian
+      # AWS / LocalStack (for the Secrets Manager variant; awslocal reads LOCALSTACK_HOST)
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
     working_dir: /lab
     volumes:
       - ./:/lab
     depends_on:
       vault:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     command: sleep infinity
