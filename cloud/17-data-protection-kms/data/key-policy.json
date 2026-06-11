@@ -1,0 +1,13 @@
+{
+  "_comment": "The loose key policy. MeridianAppRole holds kms:* — it can both decrypt every object AND schedule the key for deletion. One compromised app credential = read-all + destroy-key. Run: python check_keypolicy.py data/key-policy.json",
+  "Version": "2012-10-17",
+  "Id": "meridian-data-key",
+  "Statement": [
+    {"Sid": "EnableRoot", "Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::000000000000:root"},
+     "Action": "kms:*", "Resource": "*"},
+    {"Sid": "AppFullAccess", "Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::000000000000:role/MeridianAppRole"},
+     "Action": "kms:*", "Resource": "*"}
+  ]
+}
