@@ -1,0 +1,18 @@
+{
+  "_comment": "REFERENCE remediation: separation of duties. KeyAdmin can manage the key but NOT decrypt; AppRole can encrypt/decrypt but NOT administer. Verify: python check_keypolicy.py data/key-policy-fixed.json",
+  "Version": "2012-10-17",
+  "Id": "meridian-data-key",
+  "Statement": [
+    {"Sid": "EnableRoot", "Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::000000000000:root"},
+     "Action": "kms:*", "Resource": "*"},
+    {"Sid": "KeyAdministration", "Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::000000000000:role/MeridianKeyAdmin"},
+     "Action": ["kms:Create*","kms:Describe*","kms:Enable*","kms:List*","kms:Put*","kms:Update*","kms:Revoke*","kms:Disable*","kms:Get*","kms:Delete*","kms:ScheduleKeyDeletion","kms:CancelKeyDeletion"],
+     "Resource": "*"},
+    {"Sid": "KeyUsage", "Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::000000000000:role/MeridianAppRole"},
+     "Action": ["kms:Encrypt","kms:Decrypt","kms:ReEncrypt*","kms:GenerateDataKey*","kms:DescribeKey"],
+     "Resource": "*"}
+  ]
+}

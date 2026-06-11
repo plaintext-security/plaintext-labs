@@ -33,6 +33,8 @@ with `cloudfox`, identify misconfigured policies and trust relationships, and do
 privilege-escalation paths that an attacker with `dev-alice`'s credentials could follow.
 
 ## Do
+
+### Part 1: Enumerate — find the escalation
 1. [ ] **Enumerate permissions for all principals.** Run `cloudfox` to list the effective permissions
    for every user and role in the account. Hint:
    `cloudfox aws --profile localstack permissions --output table 2>/dev/null`.
@@ -60,16 +62,49 @@ privilege-escalation paths that an attacker with `dev-alice`'s credentials could
 
 6. [ ] **Run `make demo`** and compare the worked output to your manual findings.
 
+### Part 2: Close it — author the least-privilege policy and prove it
+Tracing the escalation is the finding; cutting it without breaking dev-alice's real job is the fix.
+`check_escalation.py` evaluates the IAM policy semantics and reports PASS/FAIL — so you can *prove*
+the escalation is closed, not just claim it.
+
+7. [ ] **See the escalation as policy logic.** Run `make check-escalation` (the checker against
+   dev-alice's original policy). Two assertions FAIL: she can `iam:PassRole` the EC2 **admin** role
+   and `*` — the escalation, expressed as a permission the checker can evaluate. The two legitimate
+   assertions PASS.
+
+8. [ ] **Author the minimum-cut fix.** Recall from the IAM-attack-paths idea that you want the
+   *smallest* change that breaks the path. Edit
+   `data/dev-alice-fixed-policy.json` (a reference solution is bundled — try it yourself first):
+   scope the `iam:PassRole` statement's `Resource` from `*` to a single **non-admin** role ARN
+   (`arn:aws:iam::000000000001:role/MeridianAppRole`) so dev-alice can no longer pass
+   `MeridianEC2AdminRole`. Keep her legitimate S3 (scope it to the dev bucket), EC2, and IAM-read
+   access. One edge cut closes the path.
+
+9. [ ] **Prove the path is closed.** Run `make check-fixed`. All four assertions must PASS: the two
+   PassRole-escalation paths now DENY, while `ec2:DescribeInstances` and the dev-bucket S3 read still
+   ALLOW. If a legitimate assertion flipped to FAIL, you cut too much. Optionally, `make apply-fixed`
+   pushes your policy to LocalStack as a new default version and re-enumerates, so you see the change
+   land the way it would in a real account.
+
+10. [ ] **(Stretch in-lab) Fix the trust policies too.** The `MeridianAdminRole` trusts the account
+    root and `MeridianCICDRole`'s OIDC trust has no `sub` condition. Rewrite each trust policy to the
+    least-privilege principal (a specific role/user; a specific `repo:org/name:ref` sub) and note in
+    `findings.md` why the original was exploitable.
+
 ## Success criteria — you're done when
 - [ ] You can name every principal that has `iam:PassRole` and the resource scope it covers.
 - [ ] You've documented the trust policy issue on at least one role.
 - [ ] You've traced a step-by-step privilege-escalation path from `dev-alice` to admin.
-- [ ] `cloudfox iam-simulator` confirms at least one dangerous permission grant.
+- [ ] Your `dev-alice-fixed-policy.json` makes `check_escalation.py` exit 0 — both PassRole-escalation
+  assertions now DENY while the two legitimate-access assertions still ALLOW.
+- [ ] You can state, in one sentence, why scoping the `iam:PassRole` *resource* is the minimum cut
+  that breaks the path.
 
 ## Deliverables
 `findings.md` — a structured IAM audit report with: principal, finding type (over-broad policy /
-loose trust / escalation path), severity (High/Medium), and the specific API call chain that
-demonstrates the risk. Commit this file. Do not commit real credentials or real AWS data.
+loose trust / escalation path), severity (High/Medium), the specific API call chain that demonstrates
+the risk, and the remediation. `dev-alice-fixed-policy.json` — your least-privilege policy that passes
+the checker. Commit both. Do not commit real credentials or real AWS data.
 
 ## Automate & own it
 **Required.** Write a Python script (`audit_iam.py`) that calls `awslocal` (via `subprocess` or the
@@ -91,9 +126,9 @@ The misconfigured roles you enumerated here become the nodes in the privilege-es
 module 03 (IAM Attack Paths), where `pmapper` turns what you traced manually into a graph search.
 
 ## Marketable proof
-> "I can enumerate cloud IAM with cloudfox, identify over-broad policies and loose trust
-> relationships, and trace concrete privilege-escalation paths — the core skill of a cloud
-> security assessment."
+> "I enumerate cloud IAM with cloudfox, trace concrete privilege-escalation paths like PassRole, and
+> then *remediate* — authoring the minimum-cut least-privilege policy and proving with a policy
+> evaluation that the escalation is closed and the principal's real access still works."
 
 ## Stretch
 - Add an `iam:CreateAccessKey` call in your enumeration: which principals could create a new access

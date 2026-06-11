@@ -1,0 +1,14 @@
+{
+  "_comment": "REFERENCE remediation. The minimum cut (cf. Module 03): scope iam:PassRole from * to a single non-admin role, so dev-alice can no longer pass MeridianEC2AdminRole. S3 is scoped to the dev bucket; legitimate ec2:Describe/Run and iam read stay. Verify: python check_escalation.py data/dev-alice-fixed-policy.json",
+  "Version": "2012-10-17",
+  "Statement": [
+    {"Sid": "S3DevBucket", "Effect": "Allow",
+     "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+     "Resource": ["arn:aws:s3:::meridian-dev-data", "arn:aws:s3:::meridian-dev-data/*"]},
+    {"Sid": "EC2Operate", "Effect": "Allow",
+     "Action": ["ec2:RunInstances", "ec2:DescribeInstances", "ec2:TerminateInstances"], "Resource": "*"},
+    {"Sid": "PassAppRoleOnly", "Effect": "Allow", "Action": "iam:PassRole",
+     "Resource": "arn:aws:iam::000000000001:role/MeridianAppRole"},
+    {"Sid": "ListIAM", "Effect": "Allow", "Action": ["iam:List*", "iam:Get*"], "Resource": "*"}
+  ]
+}

@@ -1,6 +1,6 @@
 # Module 10 — Container & Image Security
 # Standard targets: up / down / reset / demo / shell
-.PHONY: up down reset demo shell scan-trivy scan-grype sbom
+.PHONY: up down reset demo shell scan-trivy scan-grype sbom harden-verify
 
 IMAGE_VULN  = python:3.8-slim
 IMAGE_NODE  = node:14
@@ -30,10 +30,21 @@ demo:      ## Run full scan pipeline: trivy + grype on vuln image, trivy config 
 		echo "=== 3. Trivy: CVE scan of node:14 ==="; \
 		trivy image --severity HIGH,CRITICAL --exit-code 0 $(IMAGE_NODE); \
 		echo; \
-		echo "=== 4. Trivy config: Dockerfile hygiene audit ==="; \
-		trivy config /lab/$(DOCKERFILE); \
+		echo "=== 4. Trivy config: the BAD Dockerfile (root, latest, secrets in ENV) ==="; \
+		trivy config /lab/data/Dockerfile.bad; \
 		echo; \
+		echo "=== 5. Trivy config: the HARDENED Dockerfile — re-scan to prove the fixes ==="; \
+		trivy config /lab/data/Dockerfile.fixed; \
+		echo; \
+		echo "Hardened rebuild: the MEDIUM/HIGH findings (latest tag, no USER, recommends) are gone."; \
 		echo "=== Demo complete. See scan-report.md for your findings. ==="'
+
+harden-verify: ## Gate: the hardened Dockerfile must have no MEDIUM+ misconfig (bad fails, fixed passes)
+	@echo "== BAD Dockerfile (expect MEDIUM/HIGH failures, non-zero) =="
+	-docker compose exec lab trivy config --severity MEDIUM,HIGH,CRITICAL --exit-code 1 /lab/data/Dockerfile.bad
+	@echo
+	@echo "== HARDENED Dockerfile (expect no MEDIUM+ findings, exit 0) =="
+	docker compose exec lab trivy config --severity MEDIUM,HIGH,CRITICAL --exit-code 1 /lab/data/Dockerfile.fixed
 
 # ── Individual scan helpers ─────────────────────────────────────────────────
 scan-trivy: ## make scan-trivy IMAGE=<image> — trivy CVE scan
