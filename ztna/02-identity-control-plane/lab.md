@@ -63,7 +63,19 @@ production.
    Write a short paragraph in your deliverable explaining one control that would limit blast radius
    on a stolen token.
 
-6. [ ] **Federation exercise (prose).** Open `data/meridian-realm.json` and find the
+6. [ ] **Harden the realm and prove the audience boundary (the build half).** Inspecting the default
+   is only half the job — now *author* the ZT-discipline config and verify it holds. The realm ships
+   a second client, `meridian-api`, for exactly this. In the admin console: confirm the access-token
+   lifespan is short (300s is the ZT-aligned value the realm ships; flip it to `3600` and back to
+   feel what a permissive default buys an attacker). Then make `meridian-api` **audience-scoped** —
+   add an *Audience* protocol mapper (or a client scope) so its tokens carry `aud: meridian-api`, and
+   turn on audience validation. Now **prove the boundary**: take an access token minted for
+   `meridian-app` (step 2) and present it to a `meridian-api`-protected check — it must be **rejected
+   on audience mismatch**, while a token minted for `meridian-api` is accepted. Capture both results
+   (rejected vs. accepted). This is the `aud` claim doing its job: a token stolen from one application
+   cannot be replayed against another. Finding the permissive default and closing it are equal halves.
+
+7. [ ] **Federation exercise (prose).** Open `data/meridian-realm.json` and find the
    `identityProviders` array. It's currently empty. Write a paragraph in your deliverable
    describing what you would add to federate Okta as an upstream IdP via OIDC: what fields you'd
    configure (`authorizationUrl`, `tokenUrl`, `clientId`, `clientSecret`), what attribute mapper
@@ -77,6 +89,8 @@ production.
 - [ ] You have manually obtained and decoded tokens for both `analyst` and `admin` users via `curl`.
 - [ ] You can list the specific claims that differ between the two users and explain what access
   decision each would produce.
+- [ ] You have audience-scoped `meridian-api` and **proven** a `meridian-app` token is rejected by it
+  on audience mismatch, while a `meridian-api` token is accepted (the build half).
 - [ ] Your deliverable addresses token lifetime, audience restriction, and the federation mapping risk.
 
 ## Deliverables
@@ -85,7 +99,9 @@ production.
 - The decoded claims for both `analyst` and `admin` users (redact the signature, keep the payload)
 - Your assessment of the realm's token lifetime setting against ZT discipline
 - The token abuse scenario and your proposed mitigation
-- The federation configuration paragraph (step 6)
+- The audience-boundary proof from step 6 (the rejected `meridian-app` token vs. the accepted
+  `meridian-api` token, with the request/response that shows each)
+- The federation configuration paragraph (step 7)
 
 ## Automate & own it
 
@@ -122,8 +138,8 @@ tokens with alg:none." Then test it with a base64-modified token to confirm reje
 
 ## Stretch
 
-- Configure a second Keycloak client (`meridian-api`) with a different scope and audience, and
-  demonstrate that the `analyst` access token is rejected by the API client (audience mismatch).
-  This is the `aud` claim enforcement that prevents token replay across applications.
+- Extend `validate-token.py` (from *Automate & own it*) to also enforce the `aud` claim: pass an
+  expected audience and have it FAIL a token whose `aud` doesn't match — turning the step-6 audience
+  proof into a reusable, scriptable check rather than a one-off manual test.
 - Enable Keycloak's Brute Force Protection on the `meridian` realm and write a test that triggers
   the lockout, then document what an attacker learns (or doesn't) from the error response.

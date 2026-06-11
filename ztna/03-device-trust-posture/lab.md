@@ -61,11 +61,21 @@ the protected service, and map the fictional Meridian device posture policy (in
 
 5. [ ] **Reason about the headscale ACL.** Open `data/headscale-acl.yaml` and read the ACL policy.
    Identify: (a) which tag is required to access `tag:target`, (b) what would happen if a device
-   was registered but *not* tagged `corp-managed`, and (c) how you would add a second tier for
-   contractor devices that can only reach a `tag:contractor-allowed` subset of services. Write the
-   additional ACL stanza in your deliverable.
+   was registered but *not* tagged `corp-managed`.
 
-6. [ ] **FIDO2 / passkeys (prose exercise).** Go to [WebAuthn.io](https://webauthn.io/) in your
+6. [ ] **Author, apply, and prove the contractor tier (the build half).** Reading the ACL is only
+   half the job — now build the second tier and prove it on the live mesh. Add an ACL stanza that
+   lets `tag:contractor-allowed` devices reach a *different*, contractor-only service (and only that
+   service) while leaving `tag:target` — the corp-only resource — unreachable to them. **Apply** the
+   edited `headscale-acl.yaml` to the running coordination server (reload the policy), register a
+   **second node tagged `contractor`**, and **prove both directions** with `curl` from inside each
+   node container: the contractor node reaches `tag:contractor-allowed` but is **denied** `tag:target`,
+   while the corp-managed node still reaches `tag:target`. Capture the four results (corp→target allow,
+   corp→contractor-allowed as policy dictates, contractor→contractor-allowed allow, contractor→target
+   **deny**). Authoring the tier and proving the deny on the live mesh are equal halves — a stanza
+   that only lives in your notes has never been tested.
+
+7. [ ] **FIDO2 / passkeys (prose exercise).** Go to [WebAuthn.io](https://webauthn.io/) in your
    browser. Register a passkey (using your browser's built-in authenticator — Touch ID, Windows
    Hello, or a software authenticator). Then authenticate with it. In your deliverable, write a
    paragraph explaining: what cryptographic operation happens during registration, what happens
@@ -78,7 +88,8 @@ the protected service, and map the fictional Meridian device posture policy (in
 - [ ] You have verified that a registered node can reach `target-service` and an unregistered
   container cannot.
 - [ ] The posture-to-gap mapping table is written.
-- [ ] The ACL extension stanza is written and syntactically correct.
+- [ ] The contractor-tier ACL is **applied to the running mesh** and you have proven, with `curl`,
+  that a `contractor`-tagged node is denied `tag:target` while the corp-managed node still reaches it.
 - [ ] The FIDO2 paragraph is in the deliverable.
 
 ## Deliverables
@@ -86,8 +97,10 @@ the protected service, and map the fictional Meridian device posture policy (in
 `device-trust-analysis.md` containing:
 - The registered vs. unregistered access test results (with exact commands and output)
 - The posture check → Lab 01 gap mapping table
-- The extended ACL stanza for contractor devices
+- The contractor-tier ACL stanza **and** the four applied-and-proven access results from step 6
+  (including the contractor→`tag:target` denial)
 - The FIDO2 paragraph
+- `headscale-acl.yaml` — your edited policy with the contractor tier
 
 ## Automate & own it
 
@@ -120,9 +133,9 @@ curl command from an untagged container that succeeds? If yes, the ACL has a hol
 
 ## Stretch
 
-- Register a second node with a different tag (`contractor`) and write an ACL that allows it to
-  reach a different service (`tag:contractor-allowed`) but blocks it from `tag:corp-only`. Verify
-  both access paths with curl from inside the respective containers.
+- Add a *third* tier (e.g. an `auditor` tag with read-only reach to one service) and prove its
+  boundaries too — then write the ACL as a small templated generator so adding a tier is a one-line
+  change rather than hand-edited HuJSON, and re-prove all tiers after regenerating.
 - Extend `posture-check.sh` to query the headscale API (`GET /api/v1/node`) for the registered
   nodes, check whether each node's last-seen timestamp is within the last 24 hours (a stale node
   is a red flag), and flag any that are overdue.
