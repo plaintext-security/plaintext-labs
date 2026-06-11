@@ -1,0 +1,2 @@
+# Opt-in to Labs CI: this lab ships a reference demo that passes `make up && make demo && make down`
+# on a Linux runner. Remove this marker if the demo becomes learner-completable or needs a VM/cloud.
