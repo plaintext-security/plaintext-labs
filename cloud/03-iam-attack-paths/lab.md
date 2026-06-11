@@ -61,19 +61,28 @@ remediation that breaks all paths, and a one-page summary for the CISO.
    scope `iam:PassRole` on `MeridianLambdaRole` to `Resource: arn:aws:iam::*:role/MeridianLambdaRole`
    only).
 
-7. [ ] **Run `make demo`** and compare the worked output to your manual analysis.
+7. [ ] **Implement the cut and re-verify.** Don't just propose it — *apply* it and prove it. Copy
+   `data/graph.json` to `data/graph-fixed.json` and remove the one edge your cut-set targets (the
+   `MeridianLambdaRole → MeridianAdminRole` PassRole edge — that's the graph effect of scoping the
+   `iam:PassRole` resource). Then run `make verify-cut` (`analyze.py data/graph-fixed.json`). It must
+   print **"No paths to admin found. Graph is clean."** and exit 0. A reference `graph-fixed.json` is
+   bundled — try it yourself first, then compare. If a path still shows, you cut the wrong edge.
+
+8. [ ] **Run `make demo`** and compare: it now shows the path BEFORE the cut and the clean graph
+   AFTER, end to end.
 
 ## Success criteria — you're done when
 - [ ] You can enumerate all paths from `dev-alice` to admin and describe each hop.
 - [ ] You've identified the specific permission at each edge.
 - [ ] You've proposed a minimum cut-set and written the corrected policy statement.
-- [ ] `analyze.py` output confirms there are no remaining paths after your proposed fix
-  (you can edit the graph JSON to apply your fix and re-run to verify).
+- [ ] Your `data/graph-fixed.json` makes `analyze.py` report no paths and exit 0 — you *implemented*
+  the cut and verified the path is gone, not just proposed it.
 
 ## Deliverables
 `remediation.md` — structured finding: each escalation path (numbered), the edges that compose it,
-the severity, and the corrected policy statement that breaks it. Commit this alongside the annotated
-`data/graph.json`. Do not commit real credentials or real AWS data.
+the severity, and the corrected policy statement that breaks it. `graph-fixed.json` — the graph with
+your cut applied, which `analyze.py` confirms is clean. Commit both. Do not commit real credentials
+or real AWS data.
 
 ## Automate & own it
 **Required.** Extend `analyze.py` to output a JSON report suitable for a CI gate — a list of
