@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DANGER_AnyForkOrBranchCanFederate",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::000000000000:oidc-provider/oidc-provider:8080"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringLike": {
+          "oidc-provider:8080:sub": "repo:meridian/*:*"
+        }
+      }
+    }
+  ]
+}

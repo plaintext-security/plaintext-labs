@@ -1,0 +1,36 @@
+# deploy-oidc.yml — the AFTER (a real GitHub Actions workflow, for reference).
+#
+# No stored AWS key. The job requests a per-run OIDC token from GitHub
+# (permissions: id-token: write), and configure-aws-credentials exchanges it at AWS STS
+# via AssumeRoleWithWebIdentity for SHORT-LIVED credentials. The AWS-side role's trust
+# policy is scoped to this exact repo + branch (see data/trust-policy.json for the local
+# equivalent). There is no secret to leak; the off-switch is the trust policy.
+name: deploy (OIDC — short-lived credentials)
+
+on:
+  push:
+    branches: [main]
+
+# Granting id-token: write is what lets the runner mint the OIDC JWT for this job.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC (no stored key)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # role-to-assume + an OIDC provider trusting token.actions.githubusercontent.com.
+          # The role's trust policy must pin aud=sts.amazonaws.com and sub to THIS repo/ref
+          # (e.g. repo:meridian/api:ref:refs/heads/main) — a loose sub lets any fork assume it.
+          role-to-assume: arn:aws:iam::000000000000:role/MeridianDeployRole
+          aws-region: us-east-1
+          # No aws-access-key-id / aws-secret-access-key — that is the entire point.
+
+      - name: Deploy
+        run: aws s3 sync ./dist s3://meridian-api-artifacts/

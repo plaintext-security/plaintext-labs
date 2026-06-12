@@ -1,0 +1,6 @@
+# Lab-generated integrity artifacts — never commit the baseline DB, reports, or notes.
+*.db
+*.db.new
+aide.db*
+aide-report.txt
+findings.md
