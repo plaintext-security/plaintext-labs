@@ -60,18 +60,38 @@ question and get an answer grounded in Meridian's actual documents — not the m
 - [ ] `results/rag-evaluation.md` has observations for all three additional queries in step 3.
 - [ ] The "nothing in corpus" behaviour is documented.
 - [ ] Your new document is in `data/knowledge-base/`, ingested, and retrievable by query.
+- [ ] `data/eval-set.json` holds a labeled `query → expected-doc` set including a not-in-corpus / should-abstain case (`expected: null`).
+- [ ] `make eval` runs `scripts/eval_rag.py` and reports **retrieval@k** plus a **grounding flag** per query, and exits non-zero when retrieval@k falls below your threshold (or the should-abstain case answers anyway).
 
 ## Deliverables
-`data/knowledge-base/<your-runbook>.md` + `results/rag-evaluation.md`. Commit both.
-The knowledge base additions are the corpus Meridian's copilot will use in Module 06.
+`data/knowledge-base/<your-runbook>.md` + `results/rag-evaluation.md` + `data/eval-set.json` +
+`scripts/eval_rag.py` (and the `make eval` output). Commit all of them. The knowledge base additions
+are the corpus Meridian's copilot will use in Module 06; the eval set + harness are how you prove
+retrieval works rather than eyeballing it.
 
 ## Automate & own it
-**Required.** Extend `scripts/ingest.py` to support incremental ingestion: check whether
-a document's filename already exists in the ChromaDB collection before re-embedding it,
-and skip it if so. Have a model draft the ID-based deduplication logic; you verify it
-handles the case where the document content changed but the filename didn't (it should
-re-embed in that case). Run `make ingest` twice and confirm the second run skips documents
-already in the store. Commit the updated script.
+**Required — build an eval harness, don't eyeball retrieval.** Step 3 judged relevance by eye;
+that doesn't scale and isn't reproducible. Turn it into a measured gate:
+
+1. Write a small labeled set `data/eval-set.json` — a handful of `query → expected source-doc`
+   pairs covering the knowledge base, **including at least one not-in-corpus / should-abstain case**
+   (a query whose `expected` is `null`, where the right behaviour is "no relevant doc / I don't know").
+2. Write `scripts/eval_rag.py` that runs each query through the pipeline and reports, per query and
+   in aggregate:
+   - **retrieval@k** — did the expected source doc appear in the top-k retrieved chunks? (and for the
+     not-in-corpus case, that nothing was wrongly retrieved / the model abstained)
+   - a **grounding flag** — does the generated answer assert a fact that is *not* present in the
+     retrieved chunks? (a simple heuristic is fine: flag answer sentences with no supporting chunk)
+3. Wire it to a `make eval` target that prints the scores and **exits non-zero when retrieval@k
+   falls below your threshold** (or the should-abstain case answers anyway).
+
+Have a model draft the scoring loop; **you** own the labeled set and the threshold, and you verify the
+grounding heuristic against the raw chunks before trusting it. Commit `data/eval-set.json`,
+`scripts/eval_rag.py`, and the `make eval` output.
+
+> Note: `make eval` needs a Docker + model re-validation pass (Ollama `tinyllama` + `nomic-embed`
+> pulls) before it counts as run — it rests on the already-validated three-container env but the new
+> target has not yet been executed here.
 
 ## AI acceleration
 Paste the ChromaDB query results (the raw retrieved chunk text) into a frontier model and
