@@ -47,7 +47,19 @@ automated downstream processing.
    - `500`/`503`: mark as "error" and continue.
 4. [ ] Write the accumulated results to `output/enriched.json` using `json.dump`.
 5. [ ] Print a terminal summary: counts of malicious / clean / unknown / error.
-6. [ ] Run `make demo` to compare your output against the reference `enrich.py`. Do the same IOCs
+6. [ ] **Prove it with a test you wrote (the ownership half).** Don't stop at "my output looks like
+   the reference." Write `test_enrich.py` that imports your enrichment function and asserts its
+   behaviour against the deterministic mock API:
+   - The two IOCs that return `429` once **succeed on retry** — their result is the underlying
+     verdict, not `rate-limited`.
+   - A known-malicious IOC returns `verdict == "malicious"` and a known-clean IOC returns
+     `verdict == "clean"` (read `mock-api/app.py` to pick concrete IOCs).
+   - A 404 IOC returns `verdict == "unknown"` and does not raise.
+
+   Have a model draft the tests; read every assert; run them with `python -m pytest test_enrich.py`
+   and confirm green. This mirrors module 02's pos/neg `test_parser.py` — a committed test beats a
+   reference diff because it survives leaving the lab.
+7. [ ] Run `make demo` to compare your output against the reference `enrich.py`. Do the same IOCs
    come back malicious? Did you handle the retry (`429`) the same way? Where you differ, find out why.
 
 ## Success criteria — you're done when
@@ -55,10 +67,12 @@ automated downstream processing.
 - [ ] The two IOCs that trigger `429` are retried correctly and succeed on the second attempt.
 - [ ] `output/enriched.json` exists with 20 entries, each having an `ioc`, `type`, and `verdict` field.
 - [ ] The terminal summary prints accurate counts.
+- [ ] `test_enrich.py` asserts the `429`-retry success and the malicious/clean/404 verdicts, and
+  passes under `python -m pytest test_enrich.py`.
 
 ## Deliverables
-`enrich.py` + `output/enriched.json` (the sample run). Commit `enrich.py`; add `output/` to
-`.gitignore`.
+`enrich.py` + `test_enrich.py`. Commit both; add `output/` to `.gitignore` (commit `enriched.json`
+only if you want the sample run in the portfolio).
 
 ## Automate & own it
 **Required.** Wrap the enrichment loop in a `enrich_batch(iocs: list[str], max_workers: int = 5)

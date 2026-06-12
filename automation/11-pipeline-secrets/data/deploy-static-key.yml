@@ -1,0 +1,29 @@
+# deploy-static-key.yml — the BEFORE (a real GitHub Actions workflow, for reference).
+#
+# This authenticates to AWS with a STORED long-lived access key kept as a repo secret.
+# It is the pattern gitleaks/trufflehog exist to catch leaking. There is a standing IAM
+# user credential in `secrets.*` that never expires and is copied into every job run.
+# You are refactoring this into deploy-oidc.yml — DO NOT ship this version.
+name: deploy (static key — INSECURE)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (long-lived key — the leak surface)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # These are STORED long-lived credentials. No expiry. Whoever reads them IS
+          # this IAM principal until a human rotates the key everywhere.
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy
+        run: aws s3 sync ./dist s3://meridian-api-artifacts/

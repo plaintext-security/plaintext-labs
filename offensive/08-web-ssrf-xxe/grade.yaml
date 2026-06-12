@@ -1,0 +1,38 @@
+lab: offensive/08-web-ssrf-xxe
+# Grades the attacker->fixer state: after you patch app/app.py, the SSRF must return 403 and
+# the XXE entity must no longer resolve to file contents. Apply your fixes, then `make grade`.
+checks:
+  - name: writeup-complete
+    type: structural
+    file: ssrf-xxe.md
+    must_match: ["SSRF", "403"]                    # the finding + the proven post-fix status
+
+  - name: ssrf-now-blocked
+    # target_state: aiming the fetcher at the internal metadata endpoint must now be denied (403),
+    # proving Bug 1's URL allow-list was added.
+    type: target_state
+    run: >-
+      docker compose run --rm lab python3 -c "import sys; sys.path.insert(0,'/lab/app');
+      from app import app; app.config['TESTING']=True; c=app.test_client();
+      r=c.get('/api/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/');
+      print('SSRF /api/fetch internal ->', r.status_code);
+      sys.exit(0 if r.status_code==403 else 1)"
+    expect_exit: 0
+    timeout: 120
+
+  - name: xxe-no-longer-resolves
+    # target_state: the external entity must no longer be resolved, so the parsed <id> must NOT
+    # contain a real /etc/hostname read. Either a parse error/400 (defusedxml or DTD disabled) or
+    # an unresolved/empty id passes; a populated invoice_id (the hostname) fails.
+    type: target_state
+    run: >-
+      docker compose run --rm lab python3 -c "import sys; sys.path.insert(0,'/lab/app');
+      from app import app; app.config['TESTING']=True; c=app.test_client();
+      payload=b'<?xml version=\"1.0\"?>\n<!DOCTYPE invoice [ <!ENTITY xxe SYSTEM \"file:///etc/hostname\"> ]>\n<invoice><id>&xxe;</id><amount>1</amount></invoice>';
+      r=c.post('/api/import-invoice', data=payload, content_type='application/xml');
+      body=r.get_json() or {}; got=(body.get('invoice_id') or '').strip();
+      resolved = r.status_code==200 and got not in ('', '(none)');
+      print('XXE /api/import-invoice ->', r.status_code, 'id=', repr(got));
+      sys.exit(1 if resolved else 0)"
+    expect_exit: 0
+    timeout: 120

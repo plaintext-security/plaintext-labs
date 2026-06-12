@@ -42,27 +42,35 @@ their report package.
    ```
    Count the failing rules: `grep -c 'result>fail' /tmp/results-before.xml`
 
-3. [ ] Identify the five highest-severity failing rules from the OpenSCAP results.
+3. [ ] Identify the highest-severity failing rules from the OpenSCAP results.
    (Grep for `severity="high"` in the XML, or check the HTML report's severity column.)
-   Choose one to remediate.
+   Choose a **set of 3–5** to remediate — this is a *scoring* exercise, so one rule won't show
+   a meaningful delta.
 
-4. [ ] Apply the remediation for your chosen finding. A good example:
+4. [ ] Apply the remediation for **each** finding in your set, re-scanning after each one so you
+   watch the score climb step by step. A good starting finding:
    ```bash
    # Disable USB storage (CIS rule: xccdf_..._rule_kernel_module_usb-storage_disabled)
    echo "install usb-storage /bin/true" >> /etc/modprobe.d/usb-storage.conf
    ```
-   Document the finding ID, the remediation command, and the CIS control reference.
+   Pick 2–4 more (e.g. disabling unused filesystems/protocols, an `auditd` setting, a `sysctl`
+   network-hardening control, a sticky-bit/permission fix). For each: document the finding ID, the
+   remediation command, and the CIS control reference. Keep a running note of the failing-rule count
+   (or pass percentage) after each fix so the *climb* is visible, not just the endpoints.
 
-5. [ ] Re-run OpenSCAP and Lynis after the fix. Save as `results-after.xml`.
-   Compare: `grep -c 'result>fail' /tmp/results-after.xml` — did the count drop?
+5. [ ] Re-run OpenSCAP and Lynis after the full set is applied. Save as `results-after.xml`.
+   Compare: `grep -c 'result>fail' /tmp/results-after.xml` — confirm the count dropped by your
+   3–5 remediated rules and the OpenSCAP pass percentage / Lynis hardening index rose accordingly.
 
-6. [ ] Produce the delta report. From the container:
+6. [ ] Produce the delta report showing the climb across the set. From the container:
    ```bash
    # Count before and after failing rules
    before=$(grep -c 'result>fail' /tmp/results-before.xml)
    after=$(grep -c 'result>fail' /tmp/results-after.xml)
    echo "Before: $before failing | After: $after failing | Delta: $((before - after)) rules fixed"
    ```
+   The delta should equal the number of findings you remediated (3–5), and your running note from
+   step 4 should show the score rising fix-by-fix — that progression *is* the scoring evidence.
 
 7. [ ] Write a one-page exception report for one finding you cannot remediate in the container
    environment. Format: Finding ID, CIS control, why it cannot be remediated, risk acceptance,
@@ -71,15 +79,15 @@ their report package.
 ## Success criteria — you're done when
 
 - [ ] You have before/after OpenSCAP XML and Lynis output.
-- [ ] At least one finding moved from fail to pass with a documented remediation.
-- [ ] You have a delta count (how many rules moved).
+- [ ] A **set of 3–5 high-severity findings** moved from fail to pass, each with a documented remediation.
+- [ ] You have a delta count (matching your remediated set) and a record of the score climbing fix-by-fix.
 - [ ] You have a written exception report for one un-remediable finding.
 
 ## Deliverables
 
 `compliance-evidence/` directory containing: `results-before.xml`, `results-after.xml`,
-`delta-summary.md` (your delta count + remediation documentation), and `exception-report.md`.
-Commit the directory.
+`delta-summary.md` (your delta count + the per-fix score climb across the 3–5 remediated findings +
+remediation documentation), and `exception-report.md`. Commit the directory.
 
 ## Automate & own it
 

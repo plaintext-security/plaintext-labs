@@ -1,0 +1,16 @@
+# Module 11 — Host & Boot Integrity
+# A single Debian "host" with AIDE installed. `make up` builds the known-good
+# baseline DB; `make tamper` plants a change; `make check` proves AIDE detects it.
+#
+# The watched tree (/srv/app), the AIDE config, and the baseline/tamper scripts
+# live under ./data and are mounted in so the learner can edit and re-baseline.
+services:
+  host:
+    build: .
+    image: plaintext/host-boot-integrity
+    container_name: host-boot-integrity
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    # No ports, no privileges — this is a local integrity exercise, not a target.
+    command: sleep infinity

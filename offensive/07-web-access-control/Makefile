@@ -1,4 +1,4 @@
-.PHONY: up down reset shell demo
+.PHONY: up down reset shell demo grade
 
 up:
 	docker compose up -d --build
@@ -14,3 +14,6 @@ shell:
 
 demo:
 	docker compose run --rm lab python3 audit.py
+
+grade:     ## Grade your fix against grade.yaml (writes receipt.json on pass)
+	python3 ../../scripts/grade.py grade.yaml
