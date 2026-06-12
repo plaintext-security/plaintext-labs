@@ -44,7 +44,20 @@ You are the AD hardening lead at Meridian Financial, following the red team enga
 
    Have a model draft the task YAML; you verify the module name and parameter names against the Galaxy docs.
 
-7. [ ] **Write the posture delta.** Before and after applying the playbook (conceptually), what would the posture score change be? How many attack paths from module 08 would be broken?
+7. [ ] **Apply two fixes to the live DC and prove the attack is dead (the build half).** Authoring
+   the playbook isn't the same as proving it works. The Ansible-over-WinRM path isn't wired against
+   a Samba4 container — but the DC *is* fully mutable with `samba-tool`, so prove your remediations
+   actually close the holes. From the tools container, apply the two highest-value fixes directly:
+   clear `DONT_REQUIRE_PREAUTH` on `svc-legacy` and rotate `svc-mssql`'s password (the same changes
+   your playbook tasks describe). Then **re-run the attacks they were meant to break**: the AS-REP
+   roast against `svc-legacy` must now fail, and re-run `posture-audit.py` to show the score climb
+   and those HIGH findings cleared. Capture the before/after. A hardening playbook you never prove
+   against the live domain is documentation, not a control.
+
+8. [ ] **Write the measured posture delta.** Using the real before/after from step 7 (not a
+   conceptual estimate): how much did the score move, and how many module-08 attack paths are now
+   broken? Note which findings your two applied fixes resolved versus which remain in the playbook
+   for a WinRM-capable environment.
 
 ## Success criteria — you're done when
 
@@ -52,11 +65,13 @@ You are the AD hardening lead at Meridian Financial, following the red team enga
 - [ ] You have a completed posture checklist with Meridian compliance scores.
 - [ ] The Ansible playbook has at least 7 tasks (5 from the starter + 2 you added).
 - [ ] Each task has a descriptive `name:` and the correct module + parameters.
-- [ ] You have a written posture delta: how many risks are resolved by the playbook?
+- [ ] You **applied** two fixes to the live DC with `samba-tool` and **proved** them: the AS-REP
+  roast against `svc-legacy` now fails and `posture-audit.py` shows those HIGH findings cleared.
+- [ ] You have a *measured* posture delta (from the real before/after), not a conceptual estimate.
 
 ## Deliverables
 
-`data/hardening-checklist.md` (with your Meridian compliance annotations) + `data/ad-hardening.yml` (extended with your tasks) + `posture-report.md` (the scored gap analysis and posture delta). Commit all three.
+`data/hardening-checklist.md` (with your Meridian compliance annotations) + `data/ad-hardening.yml` (extended with your tasks) + `posture-report.md` (the scored gap analysis and the *measured* before/after posture delta, including the proof that the AS-REP roast against `svc-legacy` now fails). Commit all three.
 
 ## Automate & own it
 

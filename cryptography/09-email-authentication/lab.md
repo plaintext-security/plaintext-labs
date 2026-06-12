@@ -53,16 +53,28 @@ remediation recommendation with corrected records.
      relaxed DKIM alignment?
    - Write the corrected DMARC record with `p=reject`, `adkim=s`, and an `rua=` address.
 
-6. [ ] Write `email-auth-audit.md`: a finding-per-row table for the three records, with
+6. [ ] **Apply the fix to the live zone and prove it (the build half).** A recommendation in a
+   report changes nothing until it's deployed — so deploy it. Edit `data/meridian-fictional.zone`:
+   replace the weak SPF (`~all` → `-all`) and DMARC (`p=none` → `p=reject` with `adkim=s` and an
+   `rua=`) TXT records with your corrected values, and bump the SOA serial. Reload the resolver
+   (`docker compose restart dns`, or `rndc reload` inside the container), then **prove the change
+   landed**: re-`dig` the SPF and `_dmarc` records and confirm the resolver now serves the hardened
+   values, and re-run your `validate-email-auth.py` against the live container — the SPF and DMARC
+   assessments must flip from WARN/FAIL to **PASS**. Capture the before/after (record + validator
+   output) for your deliverable. Finding the weakness and closing it on the live zone are equal halves.
+
+7. [ ] Write `email-auth-audit.md`: a finding-per-row table for the three records, with
    columns: record type, current value, finding (misconfiguration or missing field), severity
-   (HIGH/MEDIUM/LOW), and recommended corrected value.
+   (HIGH/MEDIUM/LOW), recommended corrected value, and the verified post-fix `dig`/validator result.
 
 ## Success criteria — you're done when
 
 - [ ] You queried all three records and identified the policy weakness in each.
 - [ ] You decoded the DKIM public key and noted the key type and size.
 - [ ] You produced corrected records for SPF (`-all`) and DMARC (`p=reject`, `adkim=s`, `rua=`).
-- [ ] You produced a structured audit finding table.
+- [ ] You **applied** the hardened records to the live zone, reloaded, and proved with `dig` + a
+  re-run of `validate-email-auth.py` that the SPF and DMARC checks now PASS.
+- [ ] You produced a structured audit finding table including the verified post-fix result.
 
 ## Deliverables
 

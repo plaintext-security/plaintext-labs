@@ -44,13 +44,24 @@ containment actions automatically.
    - Unknown IP: `{"source_ip": "1.2.3.4", "alert": "port scan", "severity": "MEDIUM"}`
 5. [ ] Confirm a ticket is created for all four scenarios (even if the ticket says "enrichment
    unavailable" for the API-down case).
-6. [ ] Export the completed workflow as `data/meridian-workflow-v2.json`.
+6. [ ] **Add the human-in-the-loop containment gate and prove it holds (the build half).** A
+   ticket is a recommendation; a *containment action* (block the IP) must never fire automatically.
+   Extend the workflow: for a HIGH-severity malicious verdict, instead of acting, write the proposed
+   action to `data/pending_approval/<alert-id>.json` and stop. Add a second entry path — an
+   `approve` webhook (or a node that reads an `approved/` directory) — that performs the containment
+   by writing `data/containment/block-<ip>.json`. Now **prove the gate**: send a HIGH malicious
+   alert and confirm a `pending_approval/` record appears and **no** `containment/` artifact exists;
+   then approve and confirm the `containment/` artifact is created. The auto path stops at the gate;
+   only an approved action contains.
+7. [ ] Export the completed workflow as `data/meridian-workflow-v2.json`.
 
 ## Success criteria — you're done when
 - [ ] All four test scenarios produce a ticket in `data/tickets/`.
 - [ ] The ticket JSON contains `source_ip`, `verdict`, `recommended_action`, and `timestamp`.
 - [ ] The "unknown" IP scenario routes to `recommended_action: "investigate"`.
 - [ ] The API-down scenario creates a ticket with `verdict: "enrichment_unavailable"`.
+- [ ] A HIGH malicious alert produces a `pending_approval/` record and **no** `containment/` artifact
+  until you approve; after approval, the `containment/block-<ip>.json` artifact is created.
 
 ## Deliverables
 `data/meridian-workflow-v2.json` (exported from n8n). Commit it — the workflow JSON is the
@@ -79,8 +90,10 @@ components of every preceding module.
 > using n8n in Docker."
 
 ## Stretch
-- Add a "human approval" node: instead of creating the ticket automatically, send a Slack
-  message (or write to a `pending_approval/` file) and wait for a human to click "Approve"
-  before the ticket is created.
+- Make the approval real-time: replace the `approved/`-directory poll with a Slack interactive
+  message (or an n8n Wait-for-webhook node) so the analyst approves with one click, and record the
+  approver identity + timestamp in the containment artifact (the audit trail of who authorised it).
+- Add an auto-expiry: if a `pending_approval/` record isn't approved within N minutes, the playbook
+  writes a `expired/` record and notifies — so a gate that's never answered fails closed, not open.
 - Version the workflow by committing `meridian-workflow-v2.json` and diffing it against v1
   — this is detection-as-code for SOAR playbooks.
