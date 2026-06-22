@@ -1,0 +1,15 @@
+{
+  "_comment": "RECORDED top-k retrieval output of a REGRESSED RAG system (the planted retrieval regression), k=3. Models a degraded retriever — e.g. after a chunking change or an embedding-model swap — that now pulls generically-similar but wrong chunks for many questions. Faithful generation on top of this would answer confidently from the wrong context. retrieval@3 collapses to ~0.5. The gate must catch this and fail.",
+  "Q1":  ["POL-PASSWORD-01", "FAQ-MFA-RESET-01", "POL-DATA-CLASS-01"],
+  "Q2":  ["RB-IR-RANSOM-01", "RB-NET-SEGMENT-01", "RB-DLP-EXFIL-01"],
+  "Q3":  ["RB-PATCH-EMERGENCY-01", "POL-DATA-CLASS-01", "FAQ-BADGE-01"],
+  "Q4":  ["RB-IR-DCSYNC-01", "RB-NET-SEGMENT-01", "POL-PASSWORD-01"],
+  "Q5":  ["POL-DATA-CLASS-01", "RB-NET-SEGMENT-01", "POL-PASSWORD-01"],
+  "Q6":  ["RB-ONCALL-ESC-01", "FAQ-BADGE-01", "POL-PASSWORD-01"],
+  "Q7":  ["POL-PASSWORD-01", "FAQ-BADGE-01", "POL-DATA-CLASS-01"],
+  "Q8":  ["RB-IR-PHISH-01", "POL-DATA-CLASS-01", "FAQ-BADGE-01"],
+  "Q9":  ["RB-VPN-ACCESS-01", "POL-DATA-CLASS-01", "FAQ-BADGE-01"],
+  "Q10": ["POL-PASSWORD-01", "FAQ-MFA-RESET-01", "FAQ-BADGE-01"],
+  "Q11": ["POL-DATA-CLASS-01", "FAQ-BADGE-01", "POL-PASSWORD-01"],
+  "Q12": ["POL-DATA-CLASS-01", "FAQ-BADGE-01", "POL-PASSWORD-01"]
+}

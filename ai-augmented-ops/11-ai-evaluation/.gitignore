@@ -1,0 +1,6 @@
+# Generated eval artifacts — the committed deliverable is eval.py + the corpus + the gate,
+# not the run outputs. Regenerate with `make classify` / `make eval`.
+results/predictions-stub.json
+results/*-metrics.json
+__pycache__/
+*.pyc

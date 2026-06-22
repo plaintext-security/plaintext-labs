@@ -1,0 +1,11 @@
+# Module 11 — AI Evaluation & Observability
+# Pure Python stdlib, no live model: the eval grades RECORDED system outputs, so the whole lab
+# runs offline and deterministically (in CI too). No Ollama/GPU needed.
+services:
+  lab:
+    image: python:3.12-slim
+    container_name: ai11-lab
+    volumes:
+      - ./:/lab
+    working_dir: /lab
+    command: sleep infinity

@@ -1,0 +1,23 @@
+{
+  "_comment": "A small HELD-OUT RAG evaluation set. Each item is a realistic SOC question with the set of document chunk IDs that are genuinely relevant (the ground truth for retrieval@k). corpus_docs lists the doc-chunk IDs that exist in the knowledge base. A retrieval is correct for a question if at least one relevant_docs id appears in the system's top-k retrieved ids. Use this with the recorded retrieval fixtures (retrieval-good.json / retrieval-regressed.json), or point eval.py at your real Module-04 RAG's retrieved ids.",
+  "corpus_docs": [
+    "RB-IR-CRED-01", "RB-IR-CRED-02", "RB-IR-RANSOM-01", "RB-IR-RANSOM-02",
+    "RB-IR-PHISH-01", "RB-NET-SEGMENT-01", "RB-EDR-ISOLATE-01", "RB-DLP-EXFIL-01",
+    "RB-ONCALL-ESC-01", "RB-PATCH-EMERGENCY-01", "RB-IR-DCSYNC-01", "RB-VPN-ACCESS-01",
+    "POL-PASSWORD-01", "POL-DATA-CLASS-01", "FAQ-MFA-RESET-01", "FAQ-BADGE-01"
+  ],
+  "questions": [
+    {"id": "Q1", "question": "What is the containment procedure when a user credential is suspected stolen?", "relevant_docs": ["RB-IR-CRED-01", "RB-IR-CRED-02"]},
+    {"id": "Q2", "question": "How do we isolate a host that triggered a ransomware encryption alert?", "relevant_docs": ["RB-IR-RANSOM-01", "RB-EDR-ISOLATE-01"]},
+    {"id": "Q3", "question": "Who do I escalate to after hours for a CRITICAL incident, and how fast?", "relevant_docs": ["RB-ONCALL-ESC-01"]},
+    {"id": "Q4", "question": "What's the response when DCSync is detected from a non-replication account?", "relevant_docs": ["RB-IR-DCSYNC-01", "RB-IR-CRED-01"]},
+    {"id": "Q5", "question": "How do we handle suspected data exfiltration to a personal cloud drive?", "relevant_docs": ["RB-DLP-EXFIL-01"]},
+    {"id": "Q6", "question": "What is the emergency patch process for an actively-exploited CVE?", "relevant_docs": ["RB-PATCH-EMERGENCY-01"]},
+    {"id": "Q7", "question": "How does a user reset MFA if they lost their phone?", "relevant_docs": ["FAQ-MFA-RESET-01"]},
+    {"id": "Q8", "question": "What are the steps after a reported phishing email with a malicious attachment?", "relevant_docs": ["RB-IR-PHISH-01"]},
+    {"id": "Q9", "question": "How is the network segmented to contain lateral movement?", "relevant_docs": ["RB-NET-SEGMENT-01"]},
+    {"id": "Q10", "question": "What is our minimum password length and rotation policy?", "relevant_docs": ["POL-PASSWORD-01"]},
+    {"id": "Q11", "question": "How do remote staff get VPN access approved?", "relevant_docs": ["RB-VPN-ACCESS-01"]},
+    {"id": "Q12", "question": "What are the data classification tiers and handling rules?", "relevant_docs": ["POL-DATA-CLASS-01"]}
+  ]
+}

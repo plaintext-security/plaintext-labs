@@ -1,0 +1,15 @@
+{
+  "_comment": "RECORDED top-k retrieval output of the RAG system under test (the 'good' run), k=3. For each question id, the ordered list of doc-chunk ids the retriever returned. In real use these come from running your Module-04 RAG retriever over data/rag-heldout.json; committed here as a deterministic fixture so eval runs offline. This run retrieves a relevant doc in the top-3 for 11 of 12 questions; it misses Q11 (returns plausible-but-wrong chunks) -> retrieval@3 = 0.917.",
+  "Q1":  ["RB-IR-CRED-01", "RB-IR-CRED-02", "POL-PASSWORD-01"],
+  "Q2":  ["RB-IR-RANSOM-01", "RB-EDR-ISOLATE-01", "RB-IR-RANSOM-02"],
+  "Q3":  ["RB-ONCALL-ESC-01", "RB-PATCH-EMERGENCY-01", "RB-IR-CRED-01"],
+  "Q4":  ["RB-IR-DCSYNC-01", "RB-IR-CRED-01", "RB-IR-CRED-02"],
+  "Q5":  ["RB-DLP-EXFIL-01", "POL-DATA-CLASS-01", "RB-NET-SEGMENT-01"],
+  "Q6":  ["RB-PATCH-EMERGENCY-01", "RB-ONCALL-ESC-01", "FAQ-BADGE-01"],
+  "Q7":  ["FAQ-MFA-RESET-01", "POL-PASSWORD-01", "FAQ-BADGE-01"],
+  "Q8":  ["RB-IR-PHISH-01", "RB-EDR-ISOLATE-01", "RB-DLP-EXFIL-01"],
+  "Q9":  ["RB-NET-SEGMENT-01", "RB-EDR-ISOLATE-01", "RB-VPN-ACCESS-01"],
+  "Q10": ["POL-PASSWORD-01", "FAQ-MFA-RESET-01", "POL-DATA-CLASS-01"],
+  "Q11": ["FAQ-BADGE-01", "POL-DATA-CLASS-01", "RB-ONCALL-ESC-01"],
+  "Q12": ["POL-DATA-CLASS-01", "RB-DLP-EXFIL-01", "POL-PASSWORD-01"]
+}
