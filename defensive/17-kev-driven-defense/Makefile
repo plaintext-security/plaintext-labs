@@ -2,7 +2,7 @@
 # Standard targets every reference lab provides: up / down / reset / demo.
 # The `demo` is offline & deterministic (bundled KEV snapshot + bundled access log)
 # so it passes in CI; `refresh` and the `target-*` helpers reach the live internet.
-.PHONY: up down reset shell demo refresh recommend detect target-up target-down grade
+.PHONY: up down reset shell demo refresh recommend detect target-up target-down
 
 up:        ## Build and start the analysis container
 	docker compose up -d --build
@@ -49,6 +49,3 @@ target-up: ## Clone + start the recommended Vulhub target (Log4Shell / Solr on :
 target-down: ## Stop the Vulhub target
 	@cd target/vulhub/log4j/CVE-2021-44228 && docker compose down || true
 
-.PHONY: grade
-grade:     ## Grade your work against grade.yaml (writes receipt.json on pass)
-	python3 ../../scripts/grade.py grade.yaml

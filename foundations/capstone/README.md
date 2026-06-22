@@ -23,9 +23,7 @@ Drop your work under `submission/` (gitignored heavy artifacts stay out — see 
 ```
 foundations/capstone/
 ├── README.md          # this file — brief + acceptance criteria
-├── rubric.md          # the grading rubric (also the ai_rubric source)
-├── grade.yaml         # `make grade` — advisory rubric check
-├── Makefile           # `make grade`
+├── rubric.md          # the self-assessment rubric you grade yourself against
 └── submission/        # YOUR work goes here
     submission/capture-walkthrough.md   # DNS/TCP/TLS, by packet number
     submission/decode.py                 # peels the layered blob to plaintext
@@ -39,12 +37,11 @@ foundations/capstone/
 # from the repo root
 cd foundations/capstone
 # ... build your deliverable under submission/ ...
-make grade          # advisory self-check against the rubric
 ```
 
-`make grade` is **advisory** — this capstone is a portfolio artifact judged by a human (you,
-a peer, or a reviewer) against [`rubric.md`](rubric.md), not auto-graded. Set `AI_GRADER_CMD`
-to get draft LLM feedback (see `../../scripts/README.md`).
+This is an honor-system curriculum — no tool grades you. Grade yourself honestly against
+[`rubric.md`](rubric.md): the capstone is a portfolio artifact judged by a human (you, a peer,
+or a reviewer), and the build itself is the proof.
 
 ## Acceptance criteria
 

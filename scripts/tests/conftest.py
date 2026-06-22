@@ -1,9 +1,7 @@
 """Shared pytest fixtures for the scripts test suite.
 
-The scripts live in `scripts/` (one level up) and import each other by bare module
-name (`track_certificate.py` does `from verify_receipt import ...`), so we put that
-directory on sys.path. Tests run fully offline — no Docker, no network: the only
-`run(...)` shelled out is a trivial local command the test itself supplies.
+The scripts live in `scripts/` (one level up); put that directory on sys.path so tests can import
+them by bare module name. Tests run fully offline — no Docker, no network.
 """
 from __future__ import annotations
 
@@ -18,28 +16,13 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 
 @pytest.fixture(autouse=True)
-def _clean_grader_env(monkeypatch):
-    """Ensure grader env knobs are unset unless a test opts in.
-
-    GRADER_HMAC_KEY / AI_GRADER_CMD / FLAG leak across tests otherwise (and from the
-    developer's own shell). Clear them by default; tests set what they need explicitly.
-    """
-    for var in ("GRADER_HMAC_KEY", "AI_GRADER_CMD", "FLAG"):
-        monkeypatch.delenv(var, raising=False)
-
-
-@pytest.fixture(autouse=True)
 def _clean_argv(monkeypatch):
-    """Reset sys.argv so scripts' argparse-based main() don't see pytest's args.
-
-    grade.py / validate_grade_yaml.py call main() that parse sys.argv directly; under
-    pytest, argv carries the test-runner flags. Tests that need args set argv themselves.
-    """
+    """Reset sys.argv so a script's argparse-based main() doesn't see pytest's args."""
     monkeypatch.setattr("sys.argv", ["prog"])
 
 
 @pytest.fixture
 def in_tmp(tmp_path, monkeypatch):
-    """chdir into a fresh tmp dir (the grader writes receipt.json to cwd)."""
+    """chdir into a fresh tmp dir."""
     monkeypatch.chdir(tmp_path)
     return tmp_path

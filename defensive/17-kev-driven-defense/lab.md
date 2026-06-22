@@ -58,7 +58,8 @@ precisely so you can prove your detection fires on the real attack traffic and s
    from the sample, or capture clean Solr traffic) and confirm zero hits. A detection that flags benign
    admin calls is worse than none.
 
-7. [ ] `make grade` to check your work (writes `receipt.json` on an all-pass).
+7. [ ] Self-check against the **Success criteria** below — this is an honor-system curriculum, so no
+   tool grades you; your committed detection and write-up are the proof.
 
 ## Success criteria — you're done when
 - [ ] You can name the current `catalogVersion` and explain why a recent KEV entry (e.g. a Chrome CVE)
@@ -70,8 +71,8 @@ precisely so you can prove your detection fires on the real attack traffic and s
 
 ## Deliverables
 `kev-target.md` (the CVE you chose and why, the exploit, and your detection writeup) and `detection.yml`
-(the portable rule). Reference the captured traffic — **never commit the capture, the cloned Vulhub
-target, or `receipt.json`** (they're gitignored).
+(the portable rule). Reference the captured traffic — **never commit the capture or the cloned Vulhub
+target** (they're gitignored).
 
 ## AI acceleration
 Paste the chosen CVE's advisory into a model and ask for the exploit signature and a draft Sigma rule —

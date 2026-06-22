@@ -1,7 +1,6 @@
 # The exploit target is pulled on demand by `make target-up`, never committed.
 target/
-# Learner artifacts / grader output stay out of the repo.
-receipt.json
+# Learner-generated lab artifacts stay out of the repo.
 *.pcap
 *.log.gz
 # The bundled sample access log IS committed seed data — re-include it despite the

@@ -1,156 +1,28 @@
-# Lab tooling
+# Lab tooling (`scripts/`)
 
-Shared scripts used across the labs and in CI.
+Plaintext is an **honor-system** curriculum. There is **no grading, no receipts, and no credentials** —
+learning is the point, and that's on all of us. A lab's "Success criteria" are things you verify *for
+yourself*; the artifact you commit to your own portfolio repo is the proof, to you and to anyone who reads
+it. (See the curriculum's `start-here` and `showcase` pages for the portfolio-as-proof model.)
 
-## `grade.py` — automated lab grading
+These scripts are **maintainer/author tooling**, not learner grading:
 
-Turns a lab's "Success criteria" into executable checks. Each lab declares a `grade.yaml`
-and exposes a `make grade` target:
+- **`check_consistency.py`** — asserts the curriculum prose (`plaintext/tracks/`) and the labs here stay
+  in lockstep (a module that exists in one repo exists in the other, nav is complete, etc.). Run in CI.
+- **`local-lab-check.sh`** — runs lab `make demo`s on your machine to see how they fare before you push
+  (a developer convenience, not a check a learner needs).
+- **`tests/`** — unit tests for the tooling above.
 
-```bash
-cd offensive/06-web-injection
-make up                       # start the lab
-FLAG=... make grade           # grade your work
-```
+## The lab contract (what every lab still provides)
 
-### Check types
-| type | what it proves |
-|------|----------------|
-| `flag` | you reached something only completion exposes (compared by sha256) |
-| `structural` | your artifact exists and matches/avoids patterns (lint-ish) |
-| `artifact_functional` | your script runs and produces the expected exit/output |
-| `target_state` | the live lab is in the proven state (a fix now holds, a marker is written) |
-| `advisory` | informational only (e.g. an AI rubric) — never fails the grade |
+Each lab ships a `Makefile` with the standard targets — **`up` · `down` · `reset` · `demo`** (and
+`shell`/`check` where useful). A lab is *done* when `make up && make demo && make down` is green on a
+Linux runner; add a `.ci-demo` marker only then, and only for labs whose demo is expected to pass in CI
+(not learner-exercise labs whose demo fails until the learner finishes, and not VM/cloud labs). This is
+**lab quality assurance**, not learner grading.
 
-A check is required unless `required: false` (advisory checks default to optional). On an
-all-pass, the grader writes **`receipt.json`** — lab id, timestamp, checks passed, artifact
-hashes, and a digest — which you commit to *your own* portfolio repo.
+## How a learner knows they're done
 
-### Trust model (be honest about it)
-This is an **open** repo, so answer keys (flag hashes, held-out data) are visible. The receipt is
-therefore **self-verification + portfolio evidence**, not proctoring. Set `GRADER_HMAC_KEY` to add
-an HMAC a future server-side grader could verify; a real, anti-cheat credential would need
-server-side grading with a private key (out of scope for the open model — see plaintext TODO T7).
-
-Verify a receipt (what a public verification page / a reviewer runs):
-
-```bash
-python3 scripts/verify_receipt.py path/to/receipt.json      # digest only
-GRADER_HMAC_KEY=... python3 scripts/verify_receipt.py receipt.json   # + HMAC
-```
-
-It recomputes the digest (and HMAC if keyed) and reports VALID/INVALID — tamper-evident.
-
-## `track_certificate.py` — the track-completion credential
-
-A **track certificate** is the layer above the per-lab receipts: it attests to a whole track —
-every module lab *plus* the capstone — by aggregating their receipts into one `certificate.json`
-and re-digesting the bundle. It is built **on** `verify_receipt.py` (it imports and reuses the same
-digest/HMAC scheme and receipt-validation logic), so a certificate is exactly "a bundle of receipts
-the verifier already trusts, plus a roll-up digest."
-
-```bash
-# Mint — gather a track's receipts from your portfolio and emit certificate.json.
-# Refuses to mint if any receipt is edited, unsigned-when-keyed, or has a failing check.
-python3 scripts/track_certificate.py mint \
-    --track 00-foundations --name "Ada Lovelace" \
-    --receipts ~/portfolio/00-foundations --out certificate.json
-
-# Verify — recompute the cert digest + confirm each embedded receipt (reviewer / CI).
-python3 scripts/track_certificate.py verify certificate.json
-GRADER_HMAC_KEY=... python3 scripts/track_certificate.py verify certificate.json   # + HMAC
-
-# Badge — a self-contained SVG + a README snippet (green only when the cert verifies).
-python3 scripts/track_certificate.py badge certificate.json --out-svg badge.svg
-```
-
-The certificate's trust model is **identical** to the receipt's (see above): VALID means
-tamper-evident and internally consistent, not proctored. The **public verification page** on the
-MkDocs site (`tracks/verify.md` in the `plaintext` repo) runs the same digest check in-browser via
-SubtleCrypto — its JS canonicaliser is kept byte-identical to Python's
-`json.dumps(sort_keys=True)` (sorted keys, `", "`/`": "` separators, `\uXXXX` escaping) so a
-learner can verify a certificate without installing anything, and honestly explains the open-repo
-trust model.
-
-## `progress_badge.py` — portfolio progress badge (recognition, no manual posting)
-
-Where a *certificate* attests to one finished track, this aggregates a learner's **whole portfolio**
-of receipts into a live progress summary — an overall SVG badge plus a per-track table — injected
-into their README between `<!-- plaintext:progress:start -->` / `:end -->` markers. It is built **on**
-`verify_receipt.py`: a receipt only counts if its digest verifies (and HMAC when keyed) and all its
-checks passed; edited or failed receipts are reported and skipped.
-
-```bash
-# Regenerate the badge + README table from every receipt under the repo
-python3 scripts/progress_badge.py --receipts . --readme README.md --out-svg .plaintext/progress.svg
-
-# CI-strict: exit non-zero if any receipt is tampered/incomplete
-python3 scripts/progress_badge.py --receipts . --strict
-```
-
-This is the engine behind the **paste-once GitHub Action** in
-[`templates/portfolio-progress/`](../templates/portfolio-progress/) — a learner copies that workflow
-into their own portfolio repo and their profile shows Plaintext progress automatically, with no PR
-to us and nothing to post in Discord. (Recognition option **A**; the Discord verify-bot is **B**;
-server-side OAuth verification + central dashboard is the deferred spine **C**.)
-
-### Design / paper labs (ai_rubric)
-Labs that can't be auto-graded (threat modeling, reporting) use the `ai_rubric` check type: always
-advisory, it surfaces the rubric for self/peer review and, if `AI_GRADER_CMD` is set, runs an
-external LLM judge for draft feedback. It never gates completion.
-
-### Held-out data
-Where a check should prove a *general* solution (a detection that's quiet on benign data, a parser
-that hits a rate on unseen logs), grade against a **held-out** set distinct from the `demo` set.
-Bundling those sets is the next step (plaintext TODO T6); today those appear as `advisory` notes.
-
-## `check_consistency.py` — prose ↔ labs lockstep
-
-Asserts every `plaintext/tracks/<NN-track>/modules/<MM-module>/` has a matching
-`plaintext-labs/<track>/<MM-module>/` (and vice-versa). Run in CI (`labs-ci.yml`); catches the
-kind of numbering drift the PowerShell module insertion caused.
-
-```bash
-python3 scripts/check_consistency.py --tracks ../plaintext/tracks --labs .
-```
-
-## `validate_grade_yaml.py` — grade.yaml schema lint
-
-The grader trusts its manifests (`manifest["lab"]`, `c["expects_sha256"]`, …), so a
-malformed `grade.yaml` fails late and cryptically. This linter validates every
-`*/grade.yaml` up front — valid YAML, a `lab` + non-empty `checks`, and each check's
-required fields for its `type` (e.g. `flag` needs `expects_sha256`, `structural` needs
-`file`, `artifact_functional`/`target_state` need `run`). Exit non-zero on any violation.
-
-```bash
-python3 scripts/validate_grade_yaml.py          # scan the repo (default)
-python3 scripts/validate_grade_yaml.py path/to/grade.yaml   # specific file(s)
-```
-
-## Tests (`scripts/tests/`)
-
-The load-bearing tooling above is covered by an offline pytest suite (no Docker, no
-network — tmpdir fixtures only). Install the dev deps and run it from the repo root:
-
-```bash
-python3 -m pip install -r scripts/requirements-dev.txt
-make test            # == python3 -m pytest scripts/tests/ -q
-make validate        # == python3 scripts/validate_grade_yaml.py
-```
-
-CI (`.github/workflows/scripts-ci.yml`) runs both on PRs and pushes to `main` that touch
-`scripts/**` or any `grade.yaml`.
-
-## Opting a lab into CI (`.ci-demo`)
-
-Labs CI (`.github/workflows/labs-ci.yml`) is **opt-in**: a lab's demo is run/enforced only if the
-lab directory contains a `.ci-demo` marker file. This is deliberate — the curriculum intentionally
-ships labs whose `make demo` is *not* expected to pass in CI:
-
-- **learner-exercise labs** — the demo fails until the learner completes it (e.g. a Dockerfile the
-  learner must write, or `# YOU:` scaffolds);
-- **VM / cloud labs** — they need Windows, a hypervisor, or real cloud credentials.
-
-Add a `.ci-demo` to a lab **only once its `make up && make demo && make down` is green on a Linux
-runner**. Seeded with the validated reference exemplars (`offensive/06-web-injection`,
-`defensive/08-detection-as-code`, `defensive/07-log-parsing`); grow the set as more labs are confirmed.
+The lab's `lab.md` lists measurable **Success criteria** ("you're done when…") and a **Deliverable** (the
+portfolio artifact). You check the criteria yourself and commit the deliverable. No tool gates it; no
+credential is issued. That's the honor system — and the only credential is the work in your repo.
