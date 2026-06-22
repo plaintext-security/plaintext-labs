@@ -1,0 +1,19 @@
+version: 2
+
+# Keep the GitHub Actions pins (full commit SHAs in .github/workflows/) current.
+# Workflows pin every `uses:` to a SHA with the version in a trailing comment; Dependabot
+# opens a PR to bump the SHA + comment when a new release ships, so the pins don't go stale.
+# The second directory covers the learner badge template (it ships its own pinned workflow that
+# runs in the learner's repo with `contents: write`, so its pins matter most).
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/templates/portfolio-progress"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"

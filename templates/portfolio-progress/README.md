@@ -53,8 +53,11 @@ python3 progress_badge.py --receipts . --readme README.md --out-svg .plaintext/p
 
 ## Notes
 
-- **Supply chain:** the workflow pulls the scripts from `plaintext-labs@main`. Pin
-  `PLAINTEXT_REF` to a tag or commit SHA in the workflow if you want a frozen version.
+- **Supply chain:** the workflow pulls the scripts from `plaintext-labs` at a pinned commit
+  SHA (`PLAINTEXT_REF`), not a moving branch — this Action runs in *your* repo with
+  `contents: write`, so a moving `main` would run whatever it points to at trigger time. Bump
+  `PLAINTEXT_REF` to a newer SHA or release tag to pick up the latest verifier. The GitHub
+  Actions (`checkout`, `setup-python`) are likewise pinned to SHAs with the version in a comment.
 - **Honesty:** the digest proves a receipt is unedited; it does not prove grading was proctored
   (answer keys live in the open repo). The optional `GRADER_HMAC_KEY` is the only tamper-evidence
   a future server-side grader can trust. This badge is portfolio evidence, not a proctored exam.
