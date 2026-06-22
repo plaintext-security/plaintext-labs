@@ -1,0 +1,56 @@
+{
+  "_comment": "REFERENCE remediation of graph.json: the minimum-cut edge (MeridianLambdaRole -PassRole+UpdateFunction-> MeridianAdminRole) is removed, modelling 'scope iam:PassRole on MeridianLambdaRole to only itself'. analyze.py should now find NO path to admin (exit 0).",
+  "_format": "Simplified pmapper graph JSON. Nodes = principals, edges = permission-composition relationships.",
+  "account_id": "000000000001",
+  "nodes": [
+    {
+      "arn": "arn:aws:iam::000000000001:user/dev-alice",
+      "id_type": "user",
+      "name": "dev-alice",
+      "is_admin": false,
+      "tags": {},
+      "attached_policies": [
+        "MeridianAlicePolicy"
+      ]
+    },
+    {
+      "arn": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "id_type": "role",
+      "name": "MeridianLambdaRole",
+      "is_admin": false,
+      "tags": {},
+      "attached_policies": [
+        "MeridianLambdaPolicy"
+      ],
+      "trust_principals": [
+        "arn:aws:iam::000000000001:user/dev-alice",
+        "lambda.amazonaws.com"
+      ]
+    },
+    {
+      "arn": "arn:aws:iam::000000000001:role/MeridianAdminRole",
+      "id_type": "role",
+      "name": "MeridianAdminRole",
+      "is_admin": true,
+      "tags": {},
+      "attached_policies": [
+        "AdministratorAccess"
+      ],
+      "trust_principals": [
+        "arn:aws:iam::000000000001:root"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "arn:aws:iam::000000000001:user/dev-alice",
+      "destination": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "edge_type": "AssumeRole",
+      "reason": "dev-alice has sts:AssumeRole on MeridianLambdaRole and is listed in its trust policy",
+      "required_actions": [
+        "sts:AssumeRole"
+      ]
+    }
+  ],
+  "paths_to_admin": []
+}

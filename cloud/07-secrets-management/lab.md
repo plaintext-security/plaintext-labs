@@ -14,11 +14,19 @@ make shell
 make down
 ```
 
-The environment has two services: a **lab** container with `trufflehog` 3.x, and a **vault**
-container running HashiCorp Vault 1.17 in dev mode (root token: `root-dev-token`, address:
-`http://vault:8200`). `data/repo/` is a small git repository with a fake AWS access key that was
-committed and then "removed" in a subsequent commit — exactly the pattern that leaves a credential
-in history. The key (`AKIAIOSFODNN7EXAMPLE` + fake secret) is intentionally non-functional.
+The environment has four services: a **lab** container (`trufflehog`, `vault`, `psql`, `awslocal`,
+plus the `hvac`/`psycopg2` Python clients), a **vault** container (HashiCorp Vault 1.17 dev mode —
+root token `root-dev-token`, address `http://vault:8200`), a **db** container (Postgres 16, the
+store Vault mints dynamic credentials against), and a **localstack** container (simulated AWS for the
+Secrets Manager variant). `make up` seeds the repo *and* configures Vault's database secrets engine.
+
+`data/repo/` is a small git repository with a fake AWS access key that was committed and then
+"removed" in a subsequent commit — exactly the pattern that leaves a credential in history. The key
+(`AKIAIOSFODNN7EXAMPLE` + fake secret) is intentionally non-functional.
+
+This lab has two equal halves: **detecting** a leaked secret (Part 1) and **safely operating**
+secrets so the leak never happens — static storage with least privilege (Part 2), *dynamic*
+credentials an app fetches at runtime (Part 3), and the cloud-native Secrets Manager pattern (Part 4).
 
 > Never run trufflehog against repositories you do not own or have explicit written permission to
 > scan. The fake credentials in this lab are non-functional placeholders.
@@ -84,18 +92,63 @@ architecture — Vault-managed secrets — to the engineering team.
    Then try to read `secret/meridian/infra/network` — it should fail with a 403. This is the
    blast-radius containment that static credentials cannot provide.
 
-10. [ ] **Rotate the secret.**
+10. [ ] **Rotate the static secret.**
     Update the password under `secret/meridian/app/database` to a new value. Read it back and
     confirm the `version` field incremented. Note that Vault's KV v2 keeps the previous version —
-    you can roll back if needed, or force-destroy old versions.
+    you can roll back if needed, or force-destroy old versions. This is manual rotation; Part 3
+    removes the need for it.
+
+### Part 3: Dynamic credentials & runtime fetch (the real operate upgrade)
+
+Static secrets — even well-stored, least-privilege ones — share one flaw: they're long-lived, so a
+leak is valid until someone notices and rotates. Dynamic secrets remove that flaw: the app is handed
+a credential minted *on request* that *expires on its own*.
+
+11. [ ] **Mint a dynamic database credential.**
+    `make up` already enabled Vault's database secrets engine against the `db` Postgres container.
+    Mint a credential: `make dynamic-creds` (or in the shell: `vault read database/creds/app-role`).
+    Note the **unique username**, the `lease_id`, and the `lease_duration` (300s). Run it twice — you
+    get a *different* user each time. Nobody typed or stored a password.
+
+12. [ ] **Use the dynamic credential, then watch it die.**
+    From the lab shell, connect with the minted user:
+    `PGPASSWORD=<pw> psql -h db -U <minted-user> -d meridian -c 'SELECT count(*) FROM payments;'`.
+    It works. Wait past the 5-minute TTL (or `vault lease revoke <lease_id>`) and try again — the
+    login now fails. The credential self-destructed; there is nothing to rotate and nothing to leak
+    long-term.
+
+13. [ ] **Have the app fetch its secret at runtime.**
+    Run `make app-run` (`python3 data/app_runtime.py`). Read the code: the app holds **no** password
+    — it authenticates to Vault, asks for a dynamic credential, connects, and the credential expires
+    behind it. Contrast with `data/repo/config.py` from Part 1, where the secret lived in code. This
+    is the architecture that makes the trufflehog finding impossible.
+
+14. [ ] **Automate rotation of the root credential.**
+    Even the admin password Vault uses to mint users should rotate. Run `make rotate-root`
+    (`vault write -f database/rotate-root/meridian-postgres`). Vault changes the Postgres admin
+    password and *keeps it to itself* — after this, no human knows it. Explain in one line why
+    "no human knows the credential" is a stronger property than "the credential is encrypted."
+
+### Part 4: The cloud-native variant — AWS Secrets Manager
+
+15. [ ] **Store and read a secret via Secrets Manager, gated by IAM.**
+    Run `make aws-secrets` (`data/setup-aws-secrets.sh`). It stores the app secret in Secrets Manager
+    (LocalStack), authors a least-privilege IAM policy that allows `secretsmanager:GetSecretValue` on
+    *only that secret's ARN*, and reads it back. Read the policy JSON: note the `Resource` is the one
+    secret, not `*`. Explain when you'd reach for Secrets Manager (managed, IAM-native, AWS-only) vs.
+    Vault (multi-cloud, dynamic creds for many backends).
 
 ## Success criteria — you're done when
 
 - [ ] trufflehog finds the planted credential in git history and reports the commit SHA and file
 - [ ] You can explain in one sentence why the "remove credentials" commit doesn't protect Meridian
-- [ ] A Vault-stored secret is readable with the `meridian-app-ro` policy token
-- [ ] The same token receives a 403 when attempting to read a path outside its policy
-- [ ] Secret rotation (version bump) is demonstrated and versioning confirmed
+- [ ] A Vault-stored secret is readable with the `meridian-app-ro` policy token, and the same token
+      gets a 403 outside its policy path
+- [ ] `vault read database/creds/app-role` mints a unique, expiring Postgres login that works, then
+      stops working after its TTL
+- [ ] `app_runtime.py` connects to Postgres holding no static secret, and you can explain why this
+      makes the Part 1 leak architecturally impossible
+- [ ] A secret is stored in Secrets Manager behind a `Resource`-scoped (not `*`) IAM read policy
 
 ## Deliverables
 
@@ -103,10 +156,13 @@ Commit to your portfolio repo:
 - `incident-notes.md` — triage notes: commit SHA, detector, why rotation is required, what you'd
   tell the developer
 - `meridian-app-ro.hcl` — the Vault policy you wrote
+- `secret-handling.md` — a short comparison of the four patterns you ran (static-in-code → Vault KV
+  + policy → Vault dynamic creds + runtime fetch → Secrets Manager + IAM), with the threat each one
+  closes and when you'd choose it
 - `secrets-scanner.sh` — the automation script from **Automate & own it** below
 
-Do **not** commit: the `data/repo/` directory (it's in the lab repo), any real credentials, or
-Vault tokens (even dev-mode ones).
+Do **not** commit: the `data/repo/` directory (it's in the lab repo), any real credentials, dynamic
+DB credentials, or Vault tokens (even dev-mode ones).
 
 ## Automate & own it
 
@@ -149,13 +205,15 @@ to eliminate the hardcoded credentials that trufflehog is catching.
 
 ## Marketable proof
 
-> "I found a leaked AWS credential in a git repository's history after the developer believed it
-> was removed, triaged the incident, and demonstrated the Vault secrets management architecture
-> that eliminates the pattern."
+> "I found a leaked AWS credential in a git repository's history after the developer believed it was
+> removed, then rebuilt the architecture that makes the leak impossible — Vault dynamic credentials an
+> app fetches at runtime, automated root rotation, and an IAM-gated Secrets Manager store."
 
 ## Stretch
 
-- Enable Vault's database secrets engine against the LocalStack-backed database in Module 05 and
-  demonstrate dynamic credential generation: a Postgres user that expires in 5 minutes.
-- Add a `git-secrets` pre-commit hook to the `data/repo/` and show it blocking a commit that
-  contains the AKIA pattern.
+- Wire `app_runtime.py` to renew its lease (`sys/leases/renew`) on a timer instead of re-fetching,
+  and show what happens when it lets the lease lapse mid-request.
+- Add a `git-secrets` (or `pre-commit` + `gitleaks`) hook to `data/repo/` and show it blocking a
+  commit that contains the AKIA pattern — prevention at the keyboard, ahead of detection in CI.
+- Swap the dynamic-creds backend: configure Vault to mint short-TTL AWS IAM credentials (the `aws`
+  secrets engine) instead of Postgres logins, and compare the model.

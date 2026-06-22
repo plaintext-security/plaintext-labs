@@ -1,9 +1,10 @@
-# Lab container: trivy + grype installed so `make shell` gives you both tools.
-# Pinned to a small base; both tools are pulled as static binaries.
-FROM debian:bookworm-slim
+# Lab container: trivy + grype so `make shell` gives you both tools.
+# We copy the binaries straight from the official tool images (multi-arch, pinned) —
+# the vendor install.sh scripts and loose release-asset names break across versions/arches.
+FROM aquasec/trivy:0.51.2 AS trivybin
+FROM anchore/grype:v0.76.0 AS grypebin
 
-ARG TRIVY_VERSION=0.51.2
-ARG GRYPE_VERSION=0.76.0
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -12,12 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Install trivy
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-    | sh -s -- -b /usr/local/bin v${TRIVY_VERSION}
-
-# Install grype
-RUN curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
-    | sh -s -- -b /usr/local/bin v${GRYPE_VERSION}
+COPY --from=trivybin /usr/local/bin/trivy /usr/local/bin/trivy
+COPY --from=grypebin /grype /usr/local/bin/grype
 
 WORKDIR /lab

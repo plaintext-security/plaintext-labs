@@ -43,8 +43,14 @@ Meridian Financial's platform engineering team pushed three images to production
    List every finding and map each one to the risk it represents.
    *Hint: look for `USER`, `FROM`, `ENV`, `ARG`, and `--privileged` issues.*
 
-5. [ ] Open `data/Dockerfile.bad` and `data/Dockerfile.fixed` side by side.
-   Confirm that each fix in `Dockerfile.fixed` closes a finding from step 4.
+5. [ ] **Harden the Dockerfile and re-scan to prove it.** Open `data/Dockerfile.bad` and author a
+   hardened version (a reference `data/Dockerfile.fixed` is bundled — try it yourself first). Close
+   each step-4 finding: pin the base by digest (not `latest`), drop secrets out of `ENV`, add
+   `--no-install-recommends`, copy only what's needed, and add a non-root `USER`. Then re-scan and
+   compare: `make harden-verify` runs `trivy config` on both and **gates** on MEDIUM+ findings — the
+   bad file fails (a MEDIUM tag finding + two HIGH: no `USER`, missing `--no-install-recommends`), the
+   hardened file passes (its only remaining finding is LOW). The drop from "2 HIGH" to "0 HIGH" is the
+   measurable result of the rebuild.
 
 6. [ ] Generate an SBOM for `python:3.8-slim` in CycloneDX format:
    `trivy image --format cyclonedx --output sbom.json python:3.8-slim`
@@ -56,6 +62,7 @@ Meridian Financial's platform engineering team pushed three images to production
 ## Success criteria — you're done when
 - [ ] You have trivy and grype CVE counts for both `python:3.8-slim` and `node:14`, with fixable vs. unfixable breakdown.
 - [ ] You have a list of every `trivy config` finding in `Dockerfile.bad` with a one-line risk explanation for each.
+- [ ] Your hardened Dockerfile passes `make harden-verify` — no MEDIUM+ `trivy config` findings remain, where the bad one had two HIGH.
 - [ ] You have an SBOM JSON on disk.
 - [ ] You have a prioritization list with the top-three CVEs and a recommended base image upgrade.
 

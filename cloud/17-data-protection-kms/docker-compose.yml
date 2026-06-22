@@ -1,0 +1,49 @@
+# Module 17 — Data Protection & KMS
+# Services: LocalStack (simulated AWS KMS/IAM/S3) + lab container (awscli + openssl).
+# `make up` creates a KMS key; `make demo` walks envelope encryption + key-policy verify.
+services:
+  localstack:
+    image: localstack/localstack:3.7.0
+    environment:
+      - SERVICES=kms,iam,sts,s3
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  seed:
+    build: .
+    image: plaintext/data-protection-kms
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - ./:/lab
+    command: bash /lab/data/setup.sh
+    restart: "no"
+
+  lab:
+    build: .
+    image: plaintext/data-protection-kms
+    depends_on:
+      - seed
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

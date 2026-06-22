@@ -32,6 +32,8 @@ about Security Groups with `0.0.0.0/0` ingress. Your job: map the topology, conf
 Security Groups, and find the flow log evidence of the suspicious connection.
 
 ## Do
+
+### Part 1: Audit — find what's reachable
 1. [ ] **Run the cloudmapper audit.** Execute `cloudmapper audit --account meridian` against the
    bundled account data. Hint: `cloudmapper --config data/config.json audit --account meridian`.
    How many Security Groups have ingress from `0.0.0.0/0`? Which ports are exposed?
@@ -59,18 +61,47 @@ Security Groups, and find the flow log evidence of the suspicious connection.
 
 6. [ ] **Run `make demo`** and compare the worked output to your manual analysis.
 
+### Part 2: Build the fix — author least-privilege groups and prove it
+Finding the bad rule is half the job; closing it without breaking the app is the other half. The
+reachability checker (`check_reachability.py`) encodes Meridian's requirements as a matrix of
+"who must / must not reach whom" and reports PASS/FAIL — so you can *prove* your fix.
+
+7. [ ] **See the gap as reachability.** Run `make reachability` (the checker against the original
+   groups). Two assertions FAIL: `internet -> app:22` and `internet -> db:5432` show `ALLOW` where
+   the policy wants `DENY`. This is the audit finding, expressed as reachability the checker can verify.
+
+8. [ ] **Author the corrected Security Groups.** Edit a copy of
+   `data/account/meridian/describe-security-groups.json` saved as
+   `data/account/meridian/security-groups-fixed.json` (a reference solution is bundled — try it
+   yourself first, then compare). Close the two findings while keeping the app working:
+   - app-sg :22 — replace `0.0.0.0/0` with the **bastion subnet** CIDR (`10.0.100.0/24`), not the world.
+   - db-sg :5432 — **remove** the `0.0.0.0/0` rule entirely; keep only the `app-sg`-referenced rule.
+   - Leave the intentional public ALB (443/80) and the group-referenced flows (ALB→app, app→db) intact.
+   Think of it as default-deny: a security group denies all ingress unless a rule explicitly allows it,
+   so least privilege means *only the rules the architecture needs* — nothing reachable "just in case."
+
+9. [ ] **Re-verify reachability.** Run `make reachability-fixed`. All six assertions must PASS: the two
+   internet→app:22 / internet→db:5432 paths now `DENY`, while the legitimate ALB→app and app→db paths
+   still `ALLOW`. If a legitimate path broke, you over-tightened — that's the feedback loop a real
+   change review gives you. Capture the before/after in `findings.md`.
+
 ## Success criteria — you're done when
 - [ ] You've listed every Security Group that `cloudmapper audit` flags, with the attached resource
   and the specific misconfiguration.
 - [ ] You've identified the port-scan source and target from the flow logs.
 - [ ] You've identified the suspicious large-transfer event and its external destination.
 - [ ] You've linked at least one flow log event to a specific Security Group misconfiguration.
-- [ ] Your `findings.md` has a network findings table with severity ratings.
+- [ ] Your `security-groups-fixed.json` makes `check_reachability.py` exit 0 — both internet-facing
+  findings now DENY while the legitimate ALB→app and app→db paths still ALLOW.
+- [ ] Your `findings.md` has a network findings table with severity ratings and the before/after
+  reachability result.
 
 ## Deliverables
 `findings.md` — a network security findings report: topology findings (misconfigured Security Groups),
-flow log findings (scan, large transfer), and a recommended control for each. Commit this file.
-Do not commit real credentials, real account IDs, or real IP addresses from live infrastructure.
+flow log findings (scan, large transfer), a recommended control for each, and the before/after
+reachability output. `security-groups-fixed.json` — your remediated ruleset that passes the checker.
+Commit both. Do not commit real credentials, real account IDs, or real IP addresses from live
+infrastructure.
 
 ## Automate & own it
 **Required.** Write a Python script (`analyze_flows.py`) that reads `data/vpc-flow-logs.log` and
@@ -96,11 +127,14 @@ The flow log analysis skills reappear in module 16 (Cloud Incident Response) whe
 flow log evidence with CloudTrail API calls to reconstruct an attack timeline.
 
 ## Marketable proof
-> "I can map a cloud network topology with cloudmapper, audit Security Groups for misconfiguration,
-> and analyse VPC flow logs to identify scanning and exfiltration candidates — core skills for cloud
-> security assessment and incident response."
+> "I map a cloud network with cloudmapper, audit Security Groups and VPC flow logs for exposure and
+> exfiltration, and then *remediate* — authoring least-privilege groups and proving with a reachability
+> check that the bad paths are closed and the app still works."
 
 ## Stretch
+- Wire `check_reachability.py` into a CI gate: have it run on every change to the groups file and
+  fail the build (exit 1) if any required-DENY path is reachable — the same shift-left idea as
+  Module 06's IaC scanning, applied to network config.
 - Run `cloudmapper webserver` inside the container and open the interactive graph in a browser
   (forward port 8000). Explore the visual topology and find which subnet is directly internet-routable.
 - Extend `analyze_flows.py` to enrich the external IPs it flags by checking them against the AWS
