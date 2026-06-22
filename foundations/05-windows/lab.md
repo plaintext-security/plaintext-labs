@@ -73,17 +73,17 @@ explanation, and a three-sentence attacker timeline. Plus your extended `triage.
 Do **not** commit any real malware sample, captured `.evtx` from another host, or credentials.
 
 ## Automate & own it
-**Required — extend the triage tool.** Right now `triage.py` flags logons, scheduled tasks, Run
-keys, and service installs, but it does **not** catch encoded PowerShell — the move you just
-decoded by hand. Fix that:
+**Required — extend the triage tool.** The sample already contains the encoded-PowerShell **4688**
+event you decoded by hand, and `triage.py` *prints* it — but it does **not** flag it or read the
+blob. It flags logons, scheduled tasks, Run keys, and service installs, yet walks straight past the
+obfuscated command. Close that gap:
 
-1. Add an encoded-PowerShell event to `data/evtx_sample.json`: a **4688** event whose command line
-   contains `powershell.exe -EncodedCommand <base64>` (base64-encode a harmless command yourself so
-   you know the answer).
-2. In `triage.py`, add a check in the analysis pass that flags any 4688 whose command line contains
-   `-enc` / `-EncodedCommand`, prints the technique (**T1059.001**), and — bonus — base64-decodes
-   the blob inline so the analyst sees the cleartext.
-3. Re-run `make demo` and confirm your new check fires.
+1. In `triage.py`'s process-creation pass, add a check that flags any 4688 whose command line
+   contains `-enc` / `-EncodedCommand`, prints the technique (**T1059.001**), and — bonus —
+   base64-decodes the blob inline so the analyst sees the cleartext.
+2. Re-run `make demo` and confirm your new check fires on the bundled event.
+3. *Stretch the sample:* add a **second** 4688 with a different harmless encoded command (base64
+   one yourself so you know the answer) and confirm your check catches that one too.
 
 **AI drafts → you review every line → you own it.** Have a model write the decode-and-flag function,
 then read it: does it handle the UTF-16LE encoding Windows uses? Does it fail safely on a blob that

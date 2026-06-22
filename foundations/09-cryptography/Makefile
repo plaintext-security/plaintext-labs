@@ -12,6 +12,6 @@ reset:
 shell:
 	docker compose run --rm lab bash
 
-# Run SHA-256, AES, RSA, certificate read, and bit-flip exercises
+# Run SHA-256, AES, RSA, certificate read, ECB-vs-salt, and bit-flip exercises
 demo:
 	docker compose run --rm lab python3 demo.py

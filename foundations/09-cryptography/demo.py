@@ -7,13 +7,17 @@ Demonstrates:
   2. AES-256-CBC encrypt + decrypt round-trip
   3. RSA keypair generation + encrypt + decrypt
   4. Read a real certificate (example.com) — issuer, subject, validity
-  5. Bit-flip AES ciphertext — observe what happens on decryption
+  5. ECB pattern leak (the Adobe failure) vs salted hash (the fix)
+  6. Bit-flip AES ciphertext — observe what happens on decryption
 
 Usage: python3 demo.py   (inside container with openssl installed)
 """
 from __future__ import annotations
 
 import base64
+import binascii
+import hashlib
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -161,8 +165,88 @@ def demo_certificate() -> None:
     print("  CLI: echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -noout -dates")
 
 
+def demo_ecb_vs_salt() -> None:
+    section("5 — The Adobe failure: ECB pattern leak vs salted hash")
+    print()
+
+    # A tiny "password database." Note that alice, dave, and frank all chose the
+    # SAME password — exactly the situation that exposed Adobe's 153M rows.
+    users = [
+        ("alice", "sunshine"),
+        ("bob",   "correcthorse"),
+        ("carol", "password1"),
+        ("dave",  "sunshine"),    # same as alice
+        ("erin",  "correcthorse"),  # same as bob
+        ("frank", "sunshine"),    # same as alice + dave
+    ]
+
+    # --- THE WRONG WAY: AES-ECB, one shared key, no salt (what Adobe did) ---
+    # ECB encrypts each block independently, so identical plaintext blocks always
+    # produce identical ciphertext blocks. With one reused key, two users who share
+    # a password get byte-for-byte identical stored values — a visible pattern leak.
+    # stdlib python has no AES, so we drive openssl (same tool the lab uses by hand).
+    shared_key = "00112233445566778899aabbccddeeff"  # 128-bit key, hex
+
+    def aes_ecb(plaintext: str) -> str:
+        # Pad to the 16-byte AES block so a short password fills exactly one block.
+        padded = plaintext.ljust(16, " ")
+        cmd = (
+            f"openssl enc -aes-128-ecb -K {shared_key} -nosalt -nopad "
+            f"-A -base64"
+        )
+        rc, out = run(cmd, stdin=padded.encode())
+        return out.decode(errors="replace").strip()
+
+    print("  WRONG WAY — AES-128-ECB, one shared key, no salt (the Adobe scheme):")
+    print(f"  {'user':<8} {'password':<14} {'stored ciphertext (base64)'}")
+    print(f"  {'-'*8} {'-'*14} {'-'*30}")
+    ecb_seen: dict[str, list[str]] = {}
+    for user, pw in users:
+        ct = aes_ecb(pw)
+        ecb_seen.setdefault(ct, []).append(user)
+        print(f"  {user:<8} {pw:<14} {ct}")
+    print()
+    leaked = {ct: us for ct, us in ecb_seen.items() if len(us) > 1}
+    print("  --> Identical passwords produced IDENTICAL ciphertext. The leak:")
+    for ct, us in leaked.items():
+        print(f"      {', '.join(us)} share a password (same ciphertext, no cracking needed)")
+    print("  This is the 'ECB penguin' in table form — and exactly how researchers")
+    print("  clustered Adobe's 153M rows by password without decrypting a single one.")
+    print()
+
+    # --- THE RIGHT WAY: salted one-way hash, unique salt per user ---
+    # Same passwords, but each row gets a fresh random salt before hashing, so the
+    # stored value differs even when the password is identical. And it's one-way:
+    # there is no key that turns the hash back into the password.
+    print("  RIGHT WAY — PBKDF2-HMAC-SHA256, a fresh random salt per user (the fix):")
+    print(f"  {'user':<8} {'password':<14} {'salt:hash (truncated)'}")
+    print(f"  {'-'*8} {'-'*14} {'-'*30}")
+    hash_seen: dict[str, list[str]] = {}
+    for user, pw in users:
+        salt = secrets.token_bytes(16)
+        dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 100_000)
+        stored = f"{binascii.hexlify(salt).decode()}:{binascii.hexlify(dk).decode()}"
+        # Track only the hash half to show same-password rows now differ.
+        hash_seen.setdefault(stored.split(":")[1], []).append(user)
+        print(f"  {user:<8} {pw:<14} {stored[:46]}…")
+    print()
+    collisions = [us for h, us in hash_seen.items() if len(us) > 1]
+    print("  --> Same passwords now produce DIFFERENT stored values "
+          f"({'no collisions' if not collisions else 'collision!'}).")
+    print("  The per-user salt breaks the pattern, and the hash is one-way:")
+    print("  there is no key and no command that reverses it back to the password.")
+    print()
+    print("  THE LESSON: 'encrypted' (ECB, reused key, reversible, pattern-leaking)")
+    print("  is NOT 'hashed + salted' (one-way, unique per user, no pattern). A")
+    print("  password store must hash-and-salt — never encrypt.")
+    print()
+    print("  CLI (reproduce the leak by hand):")
+    print("    printf 'sunshine        ' | openssl enc -aes-128-ecb -K %s -nosalt -nopad -A -base64" % shared_key)
+    print("    # run it twice — identical output. That sameness is the whole bug.")
+
+
 def demo_bit_flip() -> None:
-    section("5 — Bit-flip attack: modify AES-CBC ciphertext, observe damage")
+    section("6 — Bit-flip attack: modify AES-CBC ciphertext, observe damage")
     print()
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -209,11 +293,13 @@ def main() -> None:
     demo_aes()
     demo_rsa()
     demo_certificate()
+    demo_ecb_vs_salt()
     demo_bit_flip()
 
     print(f"\n{'=' * 64}")
     print("Deliverable: crypto-notes.md — one line per primitive (what it")
-    print("guaranteed), plus what happened when you flipped the AES byte.")
+    print("guaranteed), the ECB-vs-salted-hash side-by-side, and one verdict:")
+    print("why a password must be hashed-and-salted, never encrypted.")
     print(f"{'=' * 64}\n")
 
 

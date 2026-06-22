@@ -87,6 +87,35 @@ def demo_annotated_capture() -> None:
         print(f"  (Annotated capture not found at {cap})")
 
 
+def demo_beacon_capture() -> None:
+    section("Beacon hunt — second capture (find the DNS C2)")
+    print()
+    cap = DATA_DIR / "beacon_capture.txt"
+    if not cap.exists():
+        print(f"  (Beacon capture not found at {cap})")
+        return
+
+    lines = cap.read_text().splitlines()
+
+    # Confirm the file loaded, and count the DNS *queries* (the 'A?' lines)
+    # so the learner knows roughly how much traffic to walk.
+    queries = [ln for ln in lines if "A?" in ln and not ln.lstrip().startswith("#")]
+    print(f"  ✓ Loaded {cap.name} — {len(queries)} DNS queries to walk.")
+    print("  This is SYNTHETIC traffic: mostly-benign DNS with ONE DNS-based")
+    print("  C2 beacon mixed in (modeled on SUNBURST). Nothing here is real.")
+    print()
+    print("  The queries (answers omitted — walk them like your own capture):")
+    print()
+    for ln in queries:
+        print(f"    {ln}")
+
+    print()
+    print("  Your call (lab Step 6): which ONE query is the beacon, and WHY?")
+    print("  Think about the tells you predicted: a subdomain no human would")
+    print("  type, an unusually long/random name, or a repeating interval.")
+    print("  (The KEY ANSWERS are at the bottom of the file — don't peek yet.)")
+
+
 def demo_commands() -> None:
     section("Commands to run yourself inside the container")
     print()
@@ -127,6 +156,7 @@ def main() -> None:
     demo_dns()
     demo_http()
     demo_annotated_capture()
+    demo_beacon_capture()
     demo_commands()
 
     print(f"{'=' * 64}")

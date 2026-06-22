@@ -1,0 +1,94 @@
+# Beacon capture: mostly-benign DNS, with ONE DNS-based C2 beacon mixed in.
+# Same format as 'tcpdump -r cap.pcap' — the real .pcap is NOT committed.
+#
+# SYNTHETIC DATA — this is a safe, hand-authored stand-in. The "C2" domain
+# (cloudtelemetry-svc.net) is invented and resolves nowhere; the long
+# subdomain labels are modeled on SUNBURST's avsvmcloud.com DGA pattern but
+# contact nothing. Timestamps and IPs are fabricated for the exercise.
+#
+# Your job (lab Step 6): walk these the way you walked your own capture and
+# find the one query that's WRONG. Don't read the KEY ANSWERS block at the
+# bottom until you've made your call.
+
+# ── DNS queries (client lab.* > resolver 172.20.0.11.53) ─────────────────
+# Each line: time  src > dst: A? <name>   then the reply on the next line.
+
+09:00:01.114  lab.51001 > 172.20.0.11.53: A? www.google.com.
+09:00:01.121  172.20.0.11.53 > lab.51001: A www.google.com 142.250.72.196
+
+09:00:04.882  lab.51002 > 172.20.0.11.53: A? api.github.com.
+09:00:04.890  172.20.0.11.53 > lab.51002: A api.github.com 140.82.113.6
+
+09:00:11.305  lab.51003 > 172.20.0.11.53: A? settings-win.data.microsoft.com.
+09:00:11.318  172.20.0.11.53 > lab.51003: A settings-win.data.microsoft.com 20.42.65.92
+
+09:00:18.770  lab.51004 > 172.20.0.11.53: A? cdn.jsdelivr.net.
+09:00:18.781  172.20.0.11.53 > lab.51004: A cdn.jsdelivr.net 151.101.1.229
+
+09:00:23.640  lab.51005 > 172.20.0.11.53: A? outlook.office365.com.
+09:00:23.655  172.20.0.11.53 > lab.51005: A outlook.office365.com 52.96.40.242
+
+# ↓ first odd one
+09:00:30.002  lab.51006 > 172.20.0.11.53: A? r1qm7k3xz9p0v8h4tn2cugw5bld6yfej.cloudtelemetry-svc.net.
+09:00:30.041  172.20.0.11.53 > lab.51006: A cloudtelemetry-svc.net 198.51.100.23
+
+09:00:35.118  lab.51007 > 172.20.0.11.53: A? slack.com.
+09:00:35.127  172.20.0.11.53 > lab.51007: A slack.com 3.89.118.137
+
+09:00:41.559  lab.51008 > 172.20.0.11.53: A? fonts.gstatic.com.
+09:00:41.566  172.20.0.11.53 > lab.51008: A fonts.gstatic.com 142.250.72.163
+
+09:00:48.913  lab.51009 > 172.20.0.11.53: A? clients4.google.com.
+09:00:48.922  172.20.0.11.53 > lab.51009: A clients4.google.com 142.250.80.110
+
+09:00:52.404  lab.51010 > 172.20.0.11.53: A? registry.npmjs.org.
+09:00:52.417  172.20.0.11.53 > lab.51010: A registry.npmjs.org 104.16.20.35
+
+09:00:56.330  lab.51011 > 172.20.0.11.53: A? telemetry.example-saas.com.
+09:00:56.344  172.20.0.11.53 > lab.51011: A telemetry.example-saas.com 93.184.216.34
+
+# ↓ same parent, ~30s after the first — note the interval
+09:01:00.007  lab.51012 > 172.20.0.11.53: A? k9d2hf6m1qa7zx4w0ts8ucy3rg5pnjvb.cloudtelemetry-svc.net.
+09:01:00.052  172.20.0.11.53 > lab.51012: A cloudtelemetry-svc.net 198.51.100.23
+
+09:01:04.221  lab.51013 > 172.20.0.11.53: A? pbs.twimg.com.
+09:01:04.230  172.20.0.11.53 > lab.51013: A pbs.twimg.com 192.133.77.40
+
+09:01:09.880  lab.51014 > 172.20.0.11.53: A? edge.microsoft.com.
+09:01:09.891  172.20.0.11.53 > lab.51014: A edge.microsoft.com 13.107.4.50
+
+09:01:14.502  lab.51015 > 172.20.0.11.53: A? lh3.googleusercontent.com.
+09:01:14.513  172.20.0.11.53 > lab.51015: A lh3.googleusercontent.com 142.250.72.161
+
+09:01:19.337  lab.51016 > 172.20.0.11.53: A? api.stripe.com.
+09:01:19.346  172.20.0.11.53 > lab.51016: A api.stripe.com 18.211.135.69
+
+09:01:24.918  lab.51017 > 172.20.0.11.53: A? raw.githubusercontent.com.
+09:01:24.929  172.20.0.11.53 > lab.51017: A raw.githubusercontent.com 185.199.108.133
+
+# ↓ third lookup of the same parent — ~30s cadence holds
+09:01:30.011  lab.51018 > 172.20.0.11.53: A? w8tn0jc4be2y6h1xkq9pmu7da5gzrf3l.cloudtelemetry-svc.net.
+09:01:30.049  172.20.0.11.53 > lab.51018: A cloudtelemetry-svc.net 198.51.100.23
+
+09:01:36.244  lab.51019 > 172.20.0.11.53: A? www.cloudflare.com.
+09:01:36.255  172.20.0.11.53 > lab.51019: A www.cloudflare.com 104.16.124.96
+
+09:01:42.700  lab.51020 > 172.20.0.11.53: A? dns.google.
+09:01:42.711  172.20.0.11.53 > lab.51020: A dns.google 8.8.8.8
+
+# ── KEY ANSWERS (don't peek until you've made your call) ─────────────────
+# Beacon packets: 51006 (09:00:30), 51012 (09:01:00), 51018 (09:01:30).
+# Parent domain:  cloudtelemetry-svc.net  (single C2 parent; SYNTHETIC).
+# The tell — three independent signals, any one is defensible:
+#   1. Subdomain shape: 32-char labels of random-looking [a-z0-9], no vowels/
+#      words a human would type — high entropy, algorithmically generated (DGA).
+#      Compare: every benign name above is a short, pronounceable, known brand.
+#   2. Regular interval: queried at 09:00:30, 09:01:00, 09:01:30 — exactly
+#      ~30s apart. Human/browser DNS is bursty and irregular; clockwork cadence
+#      is automation phoning home.
+#   3. Changing label, same parent: each beacon uses a DIFFERENT subdomain but
+#      the SAME parent (cloudtelemetry-svc.net) — the SUNBURST avsvmcloud.com
+#      pattern, where the encoded label carried data and the parent was the C2.
+# Real-world anchor: SUNBURST (SolarWinds, 2020) tunneled C2 over DNS lookups
+# to *.avsvmcloud.com with DGA-style encoded subdomains. This is a safe model
+# of that behavior — nothing here resolves to or contacts a real host.

@@ -40,6 +40,7 @@ EXTERNAL_PREFIX_EXCLUSIONS = {"127.", "10.", "192.168.", "172.16.", "172.17.",
 EVENT_LABELS = {
     4624: "Logon success",
     4625: "Logon failure",
+    4688: "Process created",
     4698: "Scheduled task created",
     4657: "Registry value modified",
     7045: "New service installed",
@@ -89,6 +90,30 @@ def analyze(events: list[dict]) -> None:
             print(f"    Computer={e.get('Computer','?')}  IP={ip}{ext_flag}{susp_flag}")
             if e.get("note"):
                 print(f"    Note: {e['note']}")
+            print()
+
+    # ── Process-creation events (4688) ──────────────────────────────────
+    procs = [e for e in events if e["EventID"] == 4688]
+    if procs:
+        print(f"\n{DIVIDER}")
+        print("[Process creation — 4688]")
+        print(DIVIDER)
+        print()
+        for e in procs:
+            ts = e["TimeCreated"][:19]
+            new_proc = e.get("NewProcessName", "?")
+            parent = e.get("ParentProcessName", "?")
+            print(f"  {ts}  {new_proc}")
+            print(f"    Parent: {parent}")
+            cmd = e.get("CommandLine", "")
+            if cmd:
+                print(f"    CommandLine: {cmd}")
+            if e.get("note"):
+                print(f"    Note: {e['note']}")
+            # NOTE (lab exercise — 'Automate & own it'): this prints the
+            # command line but does NOT yet flag/decode the -EncodedCommand
+            # blob. Extending triage.py to catch and base64-decode encoded
+            # PowerShell (T1059.001) is the learner's job.
             print()
 
     # ── Persistence events ──────────────────────────────────────────────
@@ -174,10 +199,15 @@ def demo() -> None:
     events = json.loads(sample.read_text())
     analyze(events)
     print(f"{'=' * 64}")
-    print("Deliverable: windows-recon.md with:")
-    print("  - Admin accounts and auto-start items from your VM")
-    print("  - Logon event IDs you found in the sample (esp. Type 10)")
+    print("Deliverable: windows-triage.md with:")
+    print("  - The two attacker moves by Event ID:")
+    print("      service install (7045 -> T1543.003) and")
+    print("      encoded PowerShell (4688 -> T1059.001)")
+    print("  - The decoded -EncodedCommand blob, in plain English")
     print("  - Why a Run key write (EventID 4657) indicates persistence")
+    print("  - A 3-sentence attacker timeline")
+    print("Next: extend triage.py to flag the 4688 -EncodedCommand")
+    print("      automatically (see 'Automate & own it' in lab.md).")
     print(f"{'=' * 64}\n")
 
 
