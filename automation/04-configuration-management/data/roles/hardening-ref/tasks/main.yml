@@ -1,0 +1,50 @@
+---
+# Reference hardening role — the completed answer the demo/CI runs.
+# Learners complete data/roles/hardening/ themselves; this proves the drift loop end-to-end.
+
+- name: Disable root SSH login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    backup: true
+  notify: Restart sshd
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    backup: true
+  notify: Restart sshd
+
+- name: Pin the SSH listen port (parameterised)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Port'
+    line: "Port {{ sshd_port }}"
+  notify: Restart sshd
+
+# Note: sysctl_set/reload are false so the lab is deterministic inside an
+# unprivileged container (no writable host /proc/sys). The role still manages
+# the persistent /etc/sysctl.conf entry idempotently — the declared state.
+- name: Disable IPv4 forwarding (persistent)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "{{ ip_forward }}"
+    sysctl_set: false
+    reload: false
+    state: present
+
+- name: Enable TCP SYN cookies (persistent)
+  ansible.posix.sysctl:
+    name: net.ipv4.tcp_syncookies
+    value: "{{ tcp_syncookies }}"
+    sysctl_set: false
+    reload: false
+    state: present
+
+- name: Remove the telnet package
+  ansible.builtin.package:
+    name: telnet
+    state: absent

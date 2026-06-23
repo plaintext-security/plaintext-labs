@@ -1,0 +1,9 @@
+---
+# NOTE (lab container): the target runs `sshd -D` as its main process, so a real
+# `service ssh restart` would kill the container. On a real host this handler would
+# restart sshd; here it records the notify so you can SEE the notify->handler flow
+# without taking the box down. Drift is detected from the config FILE state, which
+# is what matters for the loop. On a production host, swap this for a real restart.
+- name: Restart sshd
+  ansible.builtin.debug:
+    msg: "sshd config changed — on a real host this handler restarts sshd"

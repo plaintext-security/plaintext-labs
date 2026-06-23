@@ -1,0 +1,5 @@
+---
+# Tunable defaults for the reference hardening role.
+sshd_port: 22
+tcp_syncookies: 1
+ip_forward: 0

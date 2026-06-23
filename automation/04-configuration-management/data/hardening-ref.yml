@@ -1,0 +1,8 @@
+---
+# Reference playbook the demo/CI runs (uses the completed hardening-ref role).
+# Learners run data/hardening.yml against the role they complete themselves.
+- name: Linux Hardening Baseline (reference)
+  hosts: targets
+  become: true
+  roles:
+    - role: hardening-ref
