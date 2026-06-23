@@ -52,7 +52,7 @@ class IOCSet:
 
 INTERNAL_CIDR_PREFIXES = ("10.", "172.16.", "172.17.", "172.18.", "172.19.",
                            "172.20.", "172.30.", "172.31.", "192.168.", "127.")
-MERIDIAN_ACCOUNT = "123456789012"
+APP_ACCOUNT = "123456789012"
 
 # IPs considered attacker-controlled based on incident analysis
 ATTACKER_IPS = {"203.0.113.42"}
@@ -135,7 +135,7 @@ def parse_cloudtrail(path: str, iocs: IOCSet) -> list[dict]:
         replication = params.get("ReplicationConfiguration", {})
         for rule in replication.get("Rules", []):
             dest_account = rule.get("Destination", {}).get("Account", "")
-            if dest_account and dest_account != MERIDIAN_ACCOUNT:
+            if dest_account and dest_account != APP_ACCOUNT:
                 iocs.external_accounts.add(dest_account)
 
         timeline_entries.append({
@@ -229,7 +229,7 @@ def print_timeline(ct_entries: list[dict], flow_entries: list[dict]) -> None:
     all_entries.sort(key=lambda x: x[1]["ts"])
 
     print("=" * 72)
-    print("  MERIDIAN FINANCIAL — INCIDENT TIMELINE")
+    print("  APP FINANCIAL — INCIDENT TIMELINE")
     print("  Source: CloudTrail + VPC Flow Logs")
     print("=" * 72)
 

@@ -6,14 +6,14 @@ set -euo pipefail
 
 echo "== Storing the app's DB secret in Secrets Manager =="
 awslocal secretsmanager create-secret \
-    --name meridian/app/db \
+    --name /app/db \
     --secret-string '{"username":"appuser","password":"rotate-me-via-secrets-manager"}' \
     >/dev/null 2>&1 || \
 awslocal secretsmanager put-secret-value \
-    --secret-id meridian/app/db \
+    --secret-id /app/db \
     --secret-string '{"username":"appuser","password":"rotate-me-via-secrets-manager"}' >/dev/null
 
-SECRET_ARN=$(awslocal secretsmanager describe-secret --secret-id meridian/app/db \
+SECRET_ARN=$(awslocal secretsmanager describe-secret --secret-id /app/db \
     --query ARN --output text)
 echo "  secret ARN: ${SECRET_ARN}"
 
@@ -34,7 +34,7 @@ awslocal iam create-policy \
     || echo "  (policy already exists)"
 
 echo "== The app reads its secret at runtime (no hardcoded value) =="
-awslocal secretsmanager get-secret-value --secret-id meridian/app/db \
+awslocal secretsmanager get-secret-value --secret-id /app/db \
     --query SecretString --output text
 
 echo

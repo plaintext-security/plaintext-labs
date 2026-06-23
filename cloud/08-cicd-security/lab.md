@@ -1,156 +1,147 @@
-# Lab 08 — CI/CD Pipeline Security
+# Lab 08 — Predict the Injection Point, Then Harden the Pipeline
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, build-first. [← Back to the module concept](README.md)*
 
 ## Setup
+This is a **reference lab** — it ships a one-command environment in the companion
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. A single container
+pins `gitleaks` 8.x and `trivy` 0.52.x; no cloud account is required for the find-half.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/08-cicd-security
-make up
-make demo
-make shell
-make down
+make up          # build the lab container + seed the sample repo
+make demo        # run both scanners + list the workflow's planted issues
+make shell       # drop into the container to work
+make down        # stop when done
 ```
 
-The environment provides a single lab container with `gitleaks` 8.x and `trivy` 0.52.x pinned.
-`data/repo/` is a small git repository with planted secrets (a fake AWS key and a private key
-placeholder) for `gitleaks` to find. `data/workflow.yml` is a GitHub Actions workflow file with
-deliberate misconfigurations for manual review. `data/images.txt` lists container image references
-for `trivy` scanning. No cloud credentials or Docker registry access needed for the gitleaks work;
-the trivy scan pulls public image metadata.
+`data/repo/` is a small git repo with planted secrets for gitleaks; `data/workflow.yml` is a GitHub
+Actions workflow with deliberate misconfigurations (each tagged `# ISSUE`); `data/images.txt` lists image
+references for trivy. The trivy image scan pulls public image metadata, so it needs network; the gitleaks
+and workflow work are fully offline.
 
-> This lab scans intentionally misconfigured repositories and images. Never run gitleaks or trivy
-> against repositories or images you do not own or have explicit written permission to scan.
+**What this lab is — and isn't (read this).** You can run the *find-half* for real (gitleaks and trivy
+genuinely scan). The *build-half* — provenance/attestation, OIDC — you **author and reason about**: a SLSA
+provenance attestation is produced by a real CI platform (GitHub-hosted Actions, a hardened builder), which
+this local container is not. So you'll *write* the attesting workflow and verify its **logic** (does it gate
+on provenance? does it mint OIDC instead of a standing secret?), marked *assessed from config*, not
+*executed in prod*. Honest tool, honest answer.
+
+> Only scan repositories and images you own or have explicit written permission to scan. Everything here
+> runs locally against seed data you own.
 
 ## Scenario
+The target account is wiring its deployment pipeline to the production AWS account and asked for a review
+after reading the SolarWinds post-mortem. The existing `data/workflow.yml` builds an image and ships it.
+Your deliverable is the **hardened workflow** — pinned actions, OIDC, provenance-gated — plus the audit
+that justifies it. You'll predict the injection point first, then harden where the prediction lands.
 
-Meridian Financial is hardening its deployment pipeline before connecting to the production AWS
-account. A security review of the existing CI configuration has been requested. You are auditing
-three surfaces: (1) the application repository for committed secrets, (2) the base container image
-for known vulnerabilities, and (3) the GitHub Actions workflow for misconfiguration. Your
-deliverable is a hardened `workflow-hardened.yml` and a pipeline policy document.
+Each step runs the rhythm: **Predict** → **Do** (run the tool / write the YAML) → **Reveal** → **Record**.
 
 ## Do
 
-### Part 1: Secrets scanning with gitleaks
+### Part 1 — Walk the path, predict the injection point
 
-1. [ ] **Run gitleaks against the repository.**
-   *Hint:* `gitleaks detect --source /lab/data/repo --report-format json --report-path /tmp/gl-report.json`
-   How many findings are there? What patterns were matched? (gitleaks names the rule that fired.)
+1. [ ] **Map the pipeline as a trust path.** Read `data/workflow.yml` end to end and draw the arrows:
+   commit → checkout → build image → push → deploy. **Predict:** mark where a SolarWinds-style attacker
+   injects, and which existing step (if any) would catch them. **Record** your call before touching a tool.
 
-2. [ ] **Identify the planted secrets.**
-   Read `/tmp/gl-report.json`. For each finding, note: Rule ID, file, line number, commit SHA,
-   and the secret type. Can you find the commit where each was introduced?
-   *Hint:* `jq '.[].RuleID' /tmp/gl-report.json`
+2. [ ] **Run the find-half — secrets.** `gitleaks detect --source /lab/data/repo --report-format json
+   --report-path /tmp/gl.json --no-banner`. For each finding record Rule ID, file, line, commit SHA. Add a
+   custom rule for the target account's token format (`_tok_[a-z0-9]{32}`) in a `.gitleaks.toml` and re-scan.
+   **Reveal:** gitleaks guards the *source* arrow — necessary, but it would **not** have caught SUNBURST,
+   which never touched the repo. **Record** that gap.
 
-3. [ ] **Run gitleaks in protect mode** (simulating a pre-commit hook).
-   `gitleaks protect --staged --source /lab/data/repo`
-   Understand the difference between `detect` (scans history) and `protect` (checks staged changes
-   before commit). This is the pre-commit hook integration pattern.
+3. [ ] **Run the find-half — image + SBOM.** Scan the first image in `data/images.txt`
+   (`trivy image --severity CRITICAL,HIGH <ref>`); note CRITICAL/HIGH counts and the oldest CVE. Generate
+   an SBOM (`trivy image --format cyclonedx --output /tmp/sbom.json <ref>`); record base OS and package
+   count. Compare an EOL tag (`python:3.8-slim`) against a current one (`python:3.12-slim`). **Reveal:** the
+   SBOM tells you *what's in* the artifact; it does **not** attest *how it was built* — the SolarWinds gap.
 
-4. [ ] **Add a custom gitleaks rule.**
-   Meridian has an internal API token format: `meridian_tok_[a-z0-9]{32}`. Create a `.gitleaks.toml`
-   in `/tmp/` that extends the default rules and adds this custom pattern.
-   *Hint:* The `[[rules]]` section takes `id`, `description`, and `regex` fields.
-   Test it: `gitleaks detect --source /lab/data/repo --config /tmp/.gitleaks.toml`
+4. [ ] **Reveal the injection point.** Confirm against the README: the attacker injects at the **build**
+   step, *after* checkout and *before* signing — past everything gitleaks and review guard, before the
+   signature legitimises it. **Record:** owner = the pipeline's build stage; the find-half scans inputs, not
+   the build process; the missing control is **provenance.**
 
-### Part 2: Container image scanning with trivy
+### Part 2 — Harden where the prediction landed
 
-5. [ ] **Scan the first image reference in `data/images.txt`.**
-   `trivy image <image-ref>` — this pulls the image metadata and scans for known CVEs.
-   How many CRITICAL and HIGH CVEs does it find? What is the oldest CVE present?
+5. [ ] **Audit the workflow's misconfigurations.** Identify each `# ISSUE` in `data/workflow.yml` (expect:
+   expression injection via `${{ github.event.head_commit.message }}`, `permissions: write-all`, unpinned
+   `actions/checkout@v4`, `pull_request_target` + checkout, workflow-scoped secrets, no image scan, no
+   secrets gate). For each: the risk, an ATT&CK technique where it fits, and the fix.
 
-6. [ ] **Generate an SBOM for the image.**
-   *Hint:* `trivy image --format cyclonedx --output /tmp/sbom.json <image-ref>`
-   Inspect the SBOM: how many OS packages are listed? What is the base OS and version?
+6. [ ] **Write `workflow-hardened.yml`.** This is the deliverable. It must:
+   - **Pin every `uses:` to a full commit SHA** with a trailing `# vX.Y.Z` comment (the T23 pattern — a
+     mutable tag can be re-pointed at malicious code).
+   - Declare **minimal per-job `permissions:`** (e.g. `id-token: write`, `contents: read`) — never
+     `write-all`.
+   - **Mint OIDC** to assume the deploy role (`aws-actions/configure-aws-credentials` with `role-to-assume`
+     + `id-token: write`) instead of long-lived `AWS_ACCESS_KEY_ID`/`SECRET` secrets.
+   - **Sanitise** every `${{ }}` flowing into a `run:` step (pass via `env:`, quote, never interpolate
+     untrusted input directly into shell).
+   - **Gate on the find-half:** gitleaks must block on a secret; trivy must `--exit-code 1
+     --severity CRITICAL,HIGH` before push.
 
-7. [ ] **Apply a severity threshold.**
-   Run trivy with `--severity CRITICAL,HIGH` and `--exit-code 1`. Confirm it exits non-zero.
-   Now create a `trivy.yaml` that marks one specific CVE as an accepted exception (with a note)
-   using the `ignorelist` feature.
-   *Hint:* `trivy.yaml` uses the `ignore` key with a list of CVE IDs and optional `reason` fields.
+7. [ ] **Add the provenance gate (the SolarWinds control).** Extend `workflow-hardened.yml` to **emit a
+   build provenance attestation** for the image (`actions/attest-build-provenance`, or document the
+   `cosign attest` + SLSA-generator equivalent), and add a deploy-side step that **verifies provenance ties
+   the artifact to this source commit + the trusted builder** before deploy. State in a comment why a valid
+   *signature* alone would still pass the SolarWinds build but the *attestation* fails it. (Mark this step
+   *assessed from config* — the attestation is produced by the real CI platform, not this container.)
 
-8. [ ] **Compare two image tags.**
-   Scan two different tags of the same image (e.g., `python:3.8-slim` vs `python:3.12-slim`).
-   Build a two-column comparison: CVE count, most severe CVE, base OS version. This is the
-   argument you'd make to an engineering team for "we need to update the base image."
-
-### Part 3: Workflow review
-
-9. [ ] **Review `data/workflow.yml` for misconfigurations.**
-   Open the file and identify at least three security issues. For each, note:
-   - What the issue is (injection, excessive permission, unpinned action, etc.)
-   - What an attacker could do with it
-   - The fix
-   *Hint:* Look for `${{ github.event.* }}` in `run:` steps, `permissions: write-all`,
-   `pull_request_target` with `actions/checkout`, and action references without SHA pins.
-
-10. [ ] **Write `workflow-hardened.yml`.**
-    Apply all the fixes from your review. The hardened workflow must:
-    - Pin all `uses:` references to a specific commit SHA
-    - Declare minimal `permissions:` at the job level (not `write-all`)
-    - Sanitise all `${{ }}` expressions before passing to shell steps
-    - Use a step to scan the built image with trivy before pushing
-    - Use gitleaks in the workflow to block secrets from being committed
+8. [ ] **(In-lab stretch) Prove the find-half locally with `pipeline-gate.sh`.** Run a script that chains
+   gitleaks + trivy with independent exit codes; confirm it fails on the seeded secret and the EOL image
+   and passes on clean inputs. This is the executable slice of the gate; the provenance gate is its CI peer.
 
 ## Success criteria — you're done when
-
-- [ ] gitleaks finds the planted secrets and outputs the finding JSON with rule ID, file, and SHA
-- [ ] trivy scan completes against at least one real image reference and outputs CVE counts
-- [ ] `trivy.yaml` with at least one accepted-risk exception is written with a rationale comment
-- [ ] At least three workflow misconfigurations identified and documented
-- [ ] `workflow-hardened.yml` passes a manual review against the hardening checklist
+- [ ] You recorded a *pre-reveal* prediction of the injection point and scored it against the build-step reveal.
+- [ ] gitleaks finds the planted secrets (with your custom rule) and trivy outputs CVE counts + an SBOM for at least one image.
+- [ ] You can state in one sentence **what a signature proves and what it doesn't**, and why the SBOM/scan find-half wouldn't have caught SUNBURST.
+- [ ] `workflow-hardened.yml` pins all `uses:` to SHAs, uses OIDC (no standing secrets), sets minimal per-job permissions, sanitises expressions, gates on gitleaks + trivy, **and emits + verifies a build-provenance attestation.**
 
 ## Deliverables
+- `workflow-hardened.yml` — the hardened, provenance-gated Actions workflow (the portfolio artifact).
+- `pipeline-audit.md` — the injection-point prediction + reveal, the three-tool findings, and the per-issue workflow audit with ATT&CK mappings.
+- `trivy.yaml` — image-scan policy with at least one accepted-risk exception and a rationale comment.
+- `pipeline-gate.sh` — the find-half automation from below.
 
-Commit to your portfolio repo:
-- `pipeline-audit.md` — findings from all three tools, with severity and fix
-- `workflow-hardened.yml` — the hardened Actions workflow
-- `trivy.yaml` — the image scan policy with accepted exceptions
-- `pipeline-gate.sh` — the automation script from **Automate & own it** below
+Commit these. Do **not** commit the gitleaks/trivy JSON reports, the SBOM, secrets, or any real credentials.
 
 ## Automate & own it
-
-**Required.** Write `pipeline-gate.sh` — a script that simulates a CI pipeline gate:
-1. Runs `gitleaks detect` against `$1` (the repo path); fails if any finding
-2. Runs `trivy image` against `$2` (an image ref) with `--exit-code 1 --severity CRITICAL,HIGH`
-3. Outputs a pass/fail summary with finding counts for each tool
-4. Exits 0 only if both tools pass
-
-AI drafts the logic; you verify:
-- that a gitleaks finding is not swallowed if trivy passes (independent exit codes)
-- that the script handles "image not found" gracefully (trivy returns a non-zero that is not a policy failure)
-- that the summary output is human-readable for a CI log
+**Required — judgment-as-code, not keystroke scripting.** Your verdict is "signing proves who, not what —
+provenance is the gate." Encode it as the **hardened, provenance-signed `workflow-hardened.yml`** that
+*fails the SolarWinds-shaped build and passes the clean one*: it must gate deploy on a verified build
+provenance attestation tied to the source commit + trusted builder, pin every action to a SHA, mint OIDC
+instead of standing secrets, and block on gitleaks/trivy. This is the exact hardening this curriculum's own
+repos shipped as **T23** — your workflow is that pattern, made yours. Have a model draft the YAML; review
+every line and confirm the provenance step *actually gates* (a valid signature alone must not be enough) and
+that no `${{ }}` reaches a shell unsanitised. Back it with `pipeline-gate.sh` for the find-half so the gate
+has an executable slice today and a provenance peer in CI.
 
 ## AI acceleration
-
-Paste the `data/workflow.yml` file to a model and ask: "Identify all GitHub Actions security
-misconfigurations and for each provide the CWE or ATT&CK technique, the risk, and the fix."
-The model is fast and usually correct on the well-known patterns (injection, permissions). Your
-review must catch: any fix the model suggested that breaks the workflow's intended function, and
-any pattern the model missed (multi-step data-flow injection is commonly missed). Always apply
-fixes in a branch and test that the workflow still does what it's supposed to do.
+Paste `data/workflow.yml` and ask the model to identify every misconfiguration with its ATT&CK/CWE, risk,
+and fix, then to draft `workflow-hardened.yml`. It's fast and usually right on injection and permissions —
+but it will (a) call a green signature/scan "secure" and omit **provenance** unless you direct it, and (b)
+miss **multi-job data-flow injection**. Direct it to add the attestation gate, then adversarially ask it to
+write a commit/build that sneaks past your hardened workflow — if it can, your gate is too narrow.
 
 ## Connects forward
-
-The image scanning policy you set here (which CVE severities block deploy) feeds directly into
-Module 10 (Container & Image Security), where you will build a full supply-chain pipeline with
-SBOM attestation and image signing. The secrets-in-pipeline finding connects back to Module 07
-(Secrets Management) — specifically, the OIDC token pattern that eliminates static credentials
-from CI entirely.
+The image-scan policy and SBOM here feed Module 10 (Container & Image Security), where signing and
+attestation get the full treatment. The OIDC-over-secrets move closes the loop with Module 07 (Secrets
+Management) — the pipeline is where "no long-lived creds" becomes concrete. The hardened, provenance-gated
+workflow is the **delivery gate of the Phase-1 capstone**: the same workflow that fails the original
+breach-shaped config and passes the fixed-as-code system.
 
 ## Marketable proof
-
-> "I audited a CI/CD pipeline: found secrets in git history, scanned the container image for known
-> CVEs, identified GitHub Actions misconfigurations including expression injection, and delivered a
-> hardened workflow and an automated pipeline-gate script."
+> "Given a real supply-chain breach (SolarWinds/SUNBURST), I can locate the build-step injection point,
+> explain why a valid signature didn't stop it, and deliver a hardened CI/CD workflow that pins actions to
+> SHAs, uses OIDC instead of standing secrets, gates on gitleaks + trivy, and **verifies build provenance**
+> — the missing control that breaks the chain."
 
 ## Stretch
-
-- Enable `trivy` SBOM attestation: generate a CycloneDX SBOM and sign it with `cosign` (see
-  Module 10 for the full treatment). The goal here is to see the output format and understand
-  the chain of custody model.
-- Set up the `gitleaks` pre-commit hook in a test repository and verify it blocks a commit that
-  contains a pattern matching your custom Meridian token rule.
+- Wire `actions/attest-build-provenance` in a throwaway public GitHub repo and **verify the attestation**
+  with the GitHub CLI on a real build — see the provenance gate fire end to end where the platform actually
+  produces it.
+- Add a Dependabot config (`package-ecosystem: "github-actions"`) so your SHA pins are bumped via PR and
+  don't go stale — the second half of the repo's T23 pattern.

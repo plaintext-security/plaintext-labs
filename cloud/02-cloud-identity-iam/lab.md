@@ -1,139 +1,147 @@
-# Lab 02 — IAM Enumeration with cloudfox
+# Lab 02 — Blast Radius & the Minimum Cut: Prove a Key's Reach, Then Close It
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, audit→build. [← Back to the module concept](README.md)*
 
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo.
-The environment uses LocalStack (simulated AWS) seeded with a deliberately misconfigured Meridian
-Financial IAM configuration, and runs `cloudfox` inside the container against it.
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
+[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account or real credentials.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/02-cloud-identity-iam
-make up        # build + seed LocalStack with misconfigured IAM
-make demo      # run the cloudfox enumeration walkthrough
-make shell     # drop into the container to work interactively
-make down      # stop when done
+make up         # build + seed LocalStack with the misconfigured IAM
+make demo       # worked enumeration walkthrough
+make shell      # drop into the container (cloudfox + awslocal) to work
+make down       # stop when done
 ```
 
-The container includes `cloudfox` (pre-built binary) and `awslocal`. The LocalStack environment is
-seeded with three IAM principals — a developer user, a CI/CD role, and an admin role — with the
-kind of over-broad permissions and loose trust policies that appear in real first-audit engagements
-at organisations that have grown their cloud usage organically.
+**What this lab is — and isn't (read this).** **LocalStack CE does not *enforce* IAM** — a denied call
+won't actually bounce, so you can't prove "the wall holds" by brute-forcing the API. That's fine,
+because the skill here isn't exploitation; it's **judgment, proven.** You prove reach with
+`awslocal iam simulate-principal-policy`, which runs AWS's real policy-evaluation logic and returns
+`allowed` / `explicitDeny` / `implicitDeny` *and why*. So "she can reach it" and later "the path is now
+closed" are both **logical evaluations**, not lucky API calls. Honest tool, honest answer.
 
-> Everything runs locally against a simulated environment you own. No real AWS account needed.
+> Only test systems you own or have explicit written permission to test. Everything here runs locally
+> against a simulated account you own.
 
 ## Scenario
-Meridian Financial's security team has engaged you to do an IAM audit of their AWS account. The
-account predates their security programme: policies were created on demand, roles were cloned from
-each other, and nobody has done a full trust-policy review. Your job is to enumerate the account
-with `cloudfox`, identify misconfigured policies and trust relationships, and document two concrete
-privilege-escalation paths that an attacker with `dev-alice`'s credentials could follow.
+The target account has handed you their AWS account after a near-miss: a developer laptop was lost with
+an access key on it. The account grew organically — policies created on demand, roles cloned from each
+other, no trust-policy review. You hold `dev-alice`'s credentials, the same shape of key Code Spaces lost.
+Your deliverable is a **blast-radius finding plus the fix**: prove how far the key reaches, then author
+the least-privilege policy that cuts the dangerous reach without breaking her real job, and prove the cut
+holds.
+
+Each step runs the same rhythm: **Predict** (commit before you touch anything) → **Do** (gather/prove
+the evidence) → **Reveal** (check your call) → **Record** (one line in the report).
 
 ## Do
 
-### Part 1: Enumerate — find the escalation
-1. [ ] **Enumerate permissions for all principals.** Run `cloudfox` to list the effective permissions
-   for every user and role in the account. Hint:
-   `cloudfox aws --profile localstack permissions --output table 2>/dev/null`.
-   Which principals have `iam:*` or `iam:PassRole` in their grants?
+### Part 1 — Predict the reach, then prove it
 
-2. [ ] **Inspect role trust policies.** Use `cloudfox` or `awslocal` to retrieve the trust policy
-   for each role. Hint: `cloudfox aws --profile localstack role-trusts --output table`.
-   Which role can be assumed by any principal in the account (trust principal is the account root)?
-   Why is that dangerous even though it looks like a restriction?
+1. [ ] **Map the principals.** Enumerate users and roles
+   (`awslocal iam list-users`, `awslocal iam list-roles`) and `dev-alice`'s attached policy
+   (`DevPolicy`). **Predict** before reading it: how far past "dev" does her key reach?
+   **Reveal:** `s3:*` on `*`, `ec2:RunInstances`, and `iam:PassRole` on `*`. **Record:** the label said
+   "dev"; the grant says "account."
 
-3. [ ] **Trace the escalation path from dev-alice.** `dev-alice` has `iam:PassRole` and
-   `ec2:RunInstances`. Walk through the steps an attacker would take to reach admin privileges.
-   No need to execute the attack — describe the chain: which API calls, in what order, using which
-   role. Write this in `findings.md`.
+2. [ ] **Prove the S3 blast radius — not just her bucket.** Create a second, unrelated bucket
+   (`awslocal s3api create-bucket --bucket payroll-prod`), then run
+   `awslocal iam simulate-principal-policy` for `dev-alice` on `s3:DeleteObject` against **both**
+   `uploads-dev` and `payroll-prod`. Both return `allowed`. This is the Code Spaces
+   reach: one key, every bucket, **delete** included. **Record:** owner of finding = customer (the policy
+   scope); the key reaches and can destroy data it has no business touching.
 
-4. [ ] **Check the CI/CD role's trust policy.** The CI/CD role is trusted by the developer account
-   (simulated). Is the trust scoped to a specific OIDC subject (`sub` claim) or to any identity
-   from the provider? Why does an unscoped OIDC trust allow any pipeline in the org to assume
-   the role?
+3. [ ] **Prove the escalation — the reach that grants more reach.** `dev-alice` has `iam:PassRole` on `*`
+   and `ec2:RunInstances`. Confirm with the simulator that she is `allowed` to `iam:PassRole` on the
+   admin instance role (`EC2AdminRole`). **Reveal:** that's the canonical compose — launch an
+   instance attached to that role and the key *becomes* admin. No exploit; two legitimate grants. (Use
+   `cloudfox aws --profile localstack iam-simulator ...` to corroborate.) **Record:** this is the hop
+   that turns a lost laptop into a dead company.
 
-5. [ ] **Run `cloudfox iam-simulator`.** Use the simulator command to verify that `dev-alice` can
-   perform `iam:PassRole` on `*`. Hint:
-   `cloudfox aws --profile localstack iam-simulator --principal arn:aws:iam::000000000001:user/dev-alice --action iam:PassRole --resource '*'`.
-   Does it confirm the grant?
+4. [ ] **Check the trust walls (federation footnote).** Read the trust policies:
+   `AdminRole` trusts `...:root` (the **whole** account, every principal), and `CICDRole`'s
+   OIDC trust has **no `sub` condition** (every GitHub Actions workflow from the provider). **Predict
+   then Reveal:** "root" and "no sub" look like scoping but trust *everyone* in their class — the same
+   over-trust that, with a forged signing key, is Golden SAML. **Record** one line per role.
 
-6. [ ] **Run `make demo`** and compare the worked output to your manual findings.
+### Part 2 — Cut it to the minimum, and prove the cut holds
 
-### Part 2: Close it — author the least-privilege policy and prove it
-Tracing the escalation is the finding; cutting it without breaking dev-alice's real job is the fix.
-`check_escalation.py` evaluates the IAM policy semantics and reports PASS/FAIL — so you can *prove*
-the escalation is closed, not just claim it.
+Tracing the reach is the finding; **cutting it without breaking dev-alice's real job is the fix** — and
+in IAM a fix is only real when you can *prove* it by evaluation.
 
-7. [ ] **See the escalation as policy logic.** Run `make check-escalation` (the checker against
-   dev-alice's original policy). Two assertions FAIL: she can `iam:PassRole` the EC2 **admin** role
-   and `*` — the escalation, expressed as a permission the checker can evaluate. The two legitimate
-   assertions PASS.
+5. [ ] **See the reach as policy logic.** Run `make check-escalation` — a `simulate-principal-policy`
+   harness over the original `DevPolicy`. The two dangerous assertions report `allowed`
+   (`iam:PassRole` on the admin role, and on `*`); the two legitimate ones (`ec2:DescribeInstances`, an
+   S3 read on the dev bucket) also `allowed`. The escalation, expressed as evaluable permissions.
 
-8. [ ] **Author the minimum-cut fix.** Recall from the IAM-attack-paths idea that you want the
-   *smallest* change that breaks the path. Edit
-   `data/dev-alice-fixed-policy.json` (a reference solution is bundled — try it yourself first):
-   scope the `iam:PassRole` statement's `Resource` from `*` to a single **non-admin** role ARN
-   (`arn:aws:iam::000000000001:role/MeridianAppRole`) so dev-alice can no longer pass
-   `MeridianEC2AdminRole`. Keep her legitimate S3 (scope it to the dev bucket), EC2, and IAM-read
-   access. One edge cut closes the path.
+6. [ ] **Author the minimum cut.** Edit `data/dev-alice-fixed-policy.json` (a reference solution is
+   bundled — try it yourself first). Apply the rulebook from the README: scope `iam:PassRole`'s
+   `Resource` from `*` to a single **non-admin** role (`arn:aws:iam::000000000001:role/AppRole`)
+   so she can no longer pass `EC2AdminRole`; scope `s3` to the dev bucket and drop delete where
+   she doesn't need it. **The smallest change that breaks the path** — keep her real EC2/IAM-read access.
 
-9. [ ] **Prove the path is closed.** Run `make check-fixed`. All four assertions must PASS: the two
-   PassRole-escalation paths now DENY, while `ec2:DescribeInstances` and the dev-bucket S3 read still
-   ALLOW. If a legitimate assertion flipped to FAIL, you cut too much. Optionally, `make apply-fixed`
-   pushes your policy to LocalStack as a new default version and re-enumerates, so you see the change
-   land the way it would in a real account.
+7. [ ] **Prove the path is closed.** Run `make check-fixed`. All four assertions must pass the *verdict*:
+   the two PassRole-escalation paths now return `implicitDeny`/`explicitDeny`, while
+   `ec2:DescribeInstances` and the dev-bucket read still return `allowed`. If a legitimate assertion
+   flipped to denied, you cut too much — that's the whole craft of the minimum cut. Optionally
+   `make apply-fixed` pushes the policy to LocalStack as a new default version and re-enumerates so you
+   see the change land the way it would in a real account.
 
-10. [ ] **(Stretch in-lab) Fix the trust policies too.** The `MeridianAdminRole` trusts the account
-    root and `MeridianCICDRole`'s OIDC trust has no `sub` condition. Rewrite each trust policy to the
-    least-privilege principal (a specific role/user; a specific `repo:org/name:ref` sub) and note in
-    `findings.md` why the original was exploitable.
+8. [ ] **(In-lab stretch) Close the trust walls too.** Rewrite `AdminRole`'s trust to a specific
+   role/user instead of `root`, and add a `repo:org/name:ref` `sub` condition to the CICD OIDC trust.
+   Note in the report why each original trusted "everyone in its class."
 
 ## Success criteria — you're done when
-- [ ] You can name every principal that has `iam:PassRole` and the resource scope it covers.
-- [ ] You've documented the trust policy issue on at least one role.
-- [ ] You've traced a step-by-step privilege-escalation path from `dev-alice` to admin.
-- [ ] Your `dev-alice-fixed-policy.json` makes `check_escalation.py` exit 0 — both PassRole-escalation
-  assertions now DENY while the two legitimate-access assertions still ALLOW.
-- [ ] You can state, in one sentence, why scoping the `iam:PassRole` *resource* is the minimum cut
-  that breaks the path.
+- [ ] You proved with `simulate-principal-policy` that `dev-alice` is `allowed` to delete a bucket she has
+  no business touching **and** to `iam:PassRole` the admin role — the full blast radius.
+- [ ] You can state the escalation as a compose (`iam:PassRole` + `ec2:RunInstances` → admin) and name the
+  minimum cut that breaks it.
+- [ ] Your `dev-alice-fixed-policy.json` makes the checker pass: both escalation assertions now **deny**,
+  both legitimate-access assertions still **allow** — and you can say in one sentence why scoping the
+  `iam:PassRole` *resource* is the minimum cut.
+- [ ] You scored your three "Call it" predictions from the README against the reveals.
 
 ## Deliverables
-`findings.md` — a structured IAM audit report with: principal, finding type (over-broad policy /
-loose trust / escalation path), severity (High/Medium), the specific API call chain that demonstrates
-the risk, and the remediation. `dev-alice-fixed-policy.json` — your least-privilege policy that passes
-the checker. Commit both. Do not commit real credentials or real AWS data.
+`blast-radius-report.md` — per principal: the proven reach (with the simulator verdict that demonstrates
+it), the escalation chain, the trust-policy finding, and the remediation. `dev-alice-fixed-policy.json` —
+your least-privilege policy that passes the checker. Commit both. Do not commit credentials, bucket
+contents, or any real account data.
 
 ## Automate & own it
-**Required.** Write a Python script (`audit_iam.py`) that calls `awslocal` (via `subprocess` or the
-`boto3` library with a LocalStack endpoint) to list users, list attached policies, and flag any
-policy that contains `iam:PassRole` or `iam:*` with a wildcard resource. Have a model draft the
-boto3 calls from your cloudfox output; you review every line, run it against LocalStack, and confirm
-it finds the same issues as your manual enumeration. This script is the foundation of the IAM audit
-automation you'll extend with attack-path logic in module 03.
+**Required — judgment-as-code, not keystroke scripting.** Your finding is "this key can pass the admin
+role." Encode that verdict as a **guardrail that fails the bad state and passes the fix**: a small check
+(`assert_no_escalation.py`) that, given an IAM policy, asserts via `simulate-principal-policy` (or static
+analysis equivalent to a Checkov rule) that the principal is **denied** `iam:PassRole` on any admin-class
+role and **denied** `s3:*`/`Resource:"*"`, while still **allowed** its legitimate actions — exit non-zero
+on the original `DevPolicy`, exit zero on your fix. Run it against both and show it flips. Have a
+model draft the assertions; review every line and confirm it fails the original for the *right* reason
+(the PassRole reach, not an unrelated nit). This is your verdict made un-recurrable — and the seed of the
+attack-path checker you'll extend in module 03.
 
 ## AI acceleration
-Paste any role's trust policy and attached permission policy into a model and ask: "What
-privilege-escalation paths does this configuration enable, and what ATT&CK technique IDs apply?"
-Models are reliable on the common paths (PassRole + RunInstances, CreateAccessKey on another user).
-Cross-check each path against [Rhino Security Labs' escalation list](https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/)
-to confirm the technique is real and the required permissions match.
+Paste `DevPolicy` and a role's trust policy into a model and ask: "What's the blast radius and
+which escalation paths and ATT&CK-for-Cloud techniques apply?" It's reliable on the common composes
+(PassRole+RunInstances, CreateAccessKey on another user) but sees one layer — it can't know what an SCP or
+boundary caps. Validate each claim with `simulate-principal-policy`. Then paste your guardrail and ask it
+to author a policy that sneaks past — if it can, your rule is too narrow.
 
 ## Connects forward
-The misconfigured roles you enumerated here become the nodes in the privilege-escalation graph in
-module 03 (IAM Attack Paths), where `pmapper` turns what you traced manually into a graph search.
+The principals and edges you proved here become the nodes of the privilege-escalation **graph** in module
+03 (IAM Attack Paths), where pmapper/cloudfox turn this manual trace into graph search and the "minimum
+cut" becomes a graph operation. The over-broad grants feed posture auditing in module 05, and the
+simulator-as-guardrail pattern returns as IaC scanning in module 06.
 
 ## Marketable proof
-> "I enumerate cloud IAM with cloudfox, trace concrete privilege-escalation paths like PassRole, and
-> then *remediate* — authoring the minimum-cut least-privilege policy and proving with a policy
-> evaluation that the escalation is closed and the principal's real access still works."
+> "Given a leaked cloud principal, I predict and *prove* its blast radius with `simulate-principal-policy`
+> — including `iam:PassRole` escalation to admin — then author the minimum-cut least-privilege policy and
+> prove by evaluation that the dangerous reach is denied while the principal's real job still works.
+> I can explain why explicit-deny beats allow and why a `root` trust trusts the whole account."
 
 ## Stretch
-- Add an `iam:CreateAccessKey` call in your enumeration: which principals could create a new access
-  key for another user and thereby pivot to that user's permissions? This is a different escalation
+- Add the `iam:CreateAccessKey`-on-another-user escalation to your enumeration and guardrail — a different
   vector from PassRole.
-- Review the CI/CD role trust policy and write a corrected version that scopes the OIDC trust to
-  a specific repository and branch `sub` claim. Commit the corrected policy document alongside
-  your findings.
+- Re-run the whole loop against a CloudGoat `iam_privesc_by_*` scenario in a real (free-tier) account and
+  compare how `simulate-principal-policy` behaves when IAM is actually enforced versus LocalStack's logical-only mode.

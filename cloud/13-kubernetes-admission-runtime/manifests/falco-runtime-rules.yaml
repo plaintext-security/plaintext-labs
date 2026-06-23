@@ -20,7 +20,7 @@
      image=%container.image.repository:%container.image.tag
      pid=%proc.pid cmdline=%proc.cmdline)
   priority: WARNING
-  tags: [container, k8s, T1552.001, meridian-lab]
+  tags: [container, k8s, T1552.001, lab]
 
 # ── Rule 2: Binary executed from /tmp in a container ─────────────────────
 - rule: Execution from /tmp in Container
@@ -39,7 +39,7 @@
      image=%container.image.repository:%container.image.tag
      pid=%proc.pid parent=%proc.pname cmdline=%proc.cmdline)
   priority: CRITICAL
-  tags: [container, k8s, T1059, meridian-lab]
+  tags: [container, k8s, T1059, lab]
 
 # ── Rule 3: Unexpected outbound connection from a pod ────────────────────
 - rule: Unexpected Outbound Connection from Pod
@@ -58,4 +58,4 @@
     (process=%proc.name pod=%k8s.pod.name ns=%k8s.ns.name
      dst=%fd.rip:%fd.rport proto=%fd.proto cmdline=%proc.cmdline)
   priority: WARNING
-  tags: [container, k8s, T1071, meridian-lab]
+  tags: [container, k8s, T1071, lab]

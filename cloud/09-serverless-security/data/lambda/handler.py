@@ -1,5 +1,5 @@
 """
-handler.py — Meridian Financial payment notification processor.
+handler.py — the target account payment notification processor.
 INTENTIONALLY VULNERABLE for security training.
 
 Vulnerabilities present:
@@ -38,7 +38,7 @@ def lambda_handler(event, context):
     # MISCONFIGURATION 2: environment variables returned in error path
     # If the function raises an exception, the error response includes os.environ.
     # Fix: never include environment variables in responses; retrieve secrets at runtime from Vault/SSM.
-    env_vars = dict(os.environ)  # includes MERIDIAN_API_KEY and any other injected secrets
+    env_vars = dict(os.environ)  # includes APP_API_KEY and any other injected secrets
 
     response_body = {
         "status": "processed",

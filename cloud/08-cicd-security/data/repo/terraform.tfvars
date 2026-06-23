@@ -1,4 +1,4 @@
-# terraform.tfvars — Meridian infrastructure variables
+# terraform.tfvars —  infrastructure variables
 # NOTE: Contains a deliberately planted FAKE private key for security training.
 # This is not a real key and has no access to any system.
 

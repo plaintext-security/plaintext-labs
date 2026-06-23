@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Seed the Meridian Financial multi-hop IAM privilege-escalation scenario.
-# Path: dev-alice -> MeridianLambdaRole (sts:AssumeRole) -> MeridianAdminRole (iam:PassRole + lambda:UpdateFunctionConfiguration)
+# Seed the the target account multi-hop IAM privilege-escalation scenario.
+# Path: dev-alice -> LambdaRole (sts:AssumeRole) -> AdminRole (iam:PassRole + lambda:UpdateFunctionConfiguration)
 set -euo pipefail
 
-echo "==> Seeding Meridian IAM escalation scenario (module 03 — IAM Attack Paths)..."
+echo "==> Seeding  IAM escalation scenario (module 03 — IAM Attack Paths)..."
 
 # ---- Users ----
 awslocal iam create-user --user-name dev-alice 2>/dev/null || true
 
 # ---- dev-alice policy: can assume the Lambda role ----
 awslocal iam create-policy \
-  --policy-name MeridianAlicePolicy \
+  --policy-name AlicePolicy \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -18,7 +18,7 @@ awslocal iam create-policy \
         "Sid": "AssumeOnlyLambdaRole",
         "Effect": "Allow",
         "Action": "sts:AssumeRole",
-        "Resource": "arn:aws:iam::000000000001:role/MeridianLambdaRole"
+        "Resource": "arn:aws:iam::000000000001:role/LambdaRole"
       },
       {
         "Sid": "ReadOnlyS3",
@@ -37,11 +37,11 @@ awslocal iam create-policy \
 
 awslocal iam attach-user-policy \
   --user-name dev-alice \
-  --policy-arn arn:aws:iam::000000000001:policy/MeridianAlicePolicy 2>/dev/null || true
+  --policy-arn arn:aws:iam::000000000001:policy/AlicePolicy 2>/dev/null || true
 
-# ---- MeridianAdminRole: the escalation target ----
+# ---- AdminRole: the escalation target ----
 awslocal iam create-role \
-  --role-name MeridianAdminRole \
+  --role-name AdminRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
     "Statement": [{
@@ -52,12 +52,12 @@ awslocal iam create-role \
   }' 2>/dev/null || true
 
 awslocal iam attach-role-policy \
-  --role-name MeridianAdminRole \
+  --role-name AdminRole \
   --policy-arn arn:aws:iam::aws:policy/AdministratorAccess 2>/dev/null || true
 
-# ---- MeridianLambdaRole: middle hop — has PassRole + UpdateFunctionConfiguration ----
+# ---- LambdaRole: middle hop — has PassRole + UpdateFunctionConfiguration ----
 awslocal iam create-role \
-  --role-name MeridianLambdaRole \
+  --role-name LambdaRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -75,7 +75,7 @@ awslocal iam create-role \
   }' 2>/dev/null || true
 
 awslocal iam create-policy \
-  --policy-name MeridianLambdaPolicy \
+  --policy-name LambdaPolicy \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -106,9 +106,9 @@ awslocal iam create-policy \
   }' 2>/dev/null || true
 
 awslocal iam attach-role-policy \
-  --role-name MeridianLambdaRole \
-  --policy-arn arn:aws:iam::000000000001:policy/MeridianLambdaPolicy 2>/dev/null || true
+  --role-name LambdaRole \
+  --policy-arn arn:aws:iam::000000000001:policy/LambdaPolicy 2>/dev/null || true
 
 echo "==> Seed complete. Escalation scenario ready."
-echo "    Path: dev-alice -> MeridianLambdaRole (sts:AssumeRole)"
-echo "          MeridianLambdaRole -> MeridianAdminRole (iam:PassRole + lambda:UpdateFunctionConfiguration)"
+echo "    Path: dev-alice -> LambdaRole (sts:AssumeRole)"
+echo "          LambdaRole -> AdminRole (iam:PassRole + lambda:UpdateFunctionConfiguration)"

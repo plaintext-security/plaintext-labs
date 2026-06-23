@@ -25,7 +25,7 @@ services:
     image: alpine:3.19
     volumes:
       - ./data/host-secret.txt:/host-secret.txt:ro
-    command: sh -c 'echo "Meridian internal credential: S3cr3tToken-PROD-4829" > /host-secret.txt && sleep infinity'
+    command: sh -c 'echo " internal credential: S3cr3tToken-PROD-4829" > /host-secret.txt && sleep infinity'
     networks:
       - lab-net
 

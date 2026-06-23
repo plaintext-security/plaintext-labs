@@ -15,9 +15,9 @@ set -euo pipefail
 ENDPOINT="${AWS_ENDPOINT_URL:-http://localstack:4566}"
 ACCOUNT_ID="123456789012"
 REGION="us-east-1"
-SOURCE_BUCKET="meridian-financial-reports-prod"
+SOURCE_BUCKET="financial-reports-prod"
 EXFIL_BUCKET="attacker-staging-bucket"
-ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/MeridianDataPipelineRole"
+ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/DataPipelineRole"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # --------------------------------------------------------------------------
@@ -69,19 +69,19 @@ seed_localstack() {
 
   # IAM role (may already exist — ignore errors)
   awslocal iam create-role \
-    --role-name MeridianDataPipelineRole \
+    --role-name DataPipelineRole \
     --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::123456789012:root"},"Action":"sts:AssumeRole"}]}' \
     --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
   awslocal iam attach-role-policy \
-    --role-name MeridianDataPipelineRole \
+    --role-name DataPipelineRole \
     --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess \
     --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
   # Source bucket with seed objects
   awslocal s3 mb "s3://${SOURCE_BUCKET}" --endpoint-url "$ENDPOINT" 2>/dev/null || true
   for i in 1 2 3 4 5; do
-    echo "Meridian Financial Q${i} report — CONFIDENTIAL" | \
+    echo "the target account Q${i} report — CONFIDENTIAL" | \
       awslocal s3 cp - "s3://${SOURCE_BUCKET}/reports/Q${i}-earnings.txt" \
       --endpoint-url "$ENDPOINT" 2>/dev/null || true
   done
@@ -156,7 +156,7 @@ technique_s3_download() {
       "s3.amazonaws.com" \
       "AssumedRole" \
       "AROAIOSFODNN7EXAMPLE03:attacker-session" \
-      "arn:aws:sts::${ACCOUNT_ID}:assumed-role/MeridianDataPipelineRole/attacker-session" \
+      "arn:aws:sts::${ACCOUNT_ID}:assumed-role/DataPipelineRole/attacker-session" \
       "{\"bucketName\": \"${SOURCE_BUCKET}\", \"key\": \"${obj}\"}" \
       "null"
     echo ","
@@ -165,7 +165,7 @@ technique_s3_download() {
   echo ""
   echo "KEY FIELDS TO DETECT:"
   echo "  eventName          = GetObject (50+ in <60 seconds is anomalous)"
-  echo "  userIdentity.arn   = assumed-role/MeridianDataPipelineRole — not a normal app session"
+  echo "  userIdentity.arn   = assumed-role/DataPipelineRole — not a normal app session"
   echo "  userAgent          = python-boto3 (not the expected application user-agent)"
   echo "  requestParameters.key — breadth of unique prefixes accessed in a single session"
 }
@@ -191,7 +191,7 @@ technique_s3_exfil() {
     "s3.amazonaws.com" \
     "AssumedRole" \
     "AROAIOSFODNN7EXAMPLE03:attacker-session" \
-    "arn:aws:sts::${ACCOUNT_ID}:assumed-role/MeridianDataPipelineRole/attacker-session" \
+    "arn:aws:sts::${ACCOUNT_ID}:assumed-role/DataPipelineRole/attacker-session" \
     "{\"bucketName\": \"${SOURCE_BUCKET}\", \"ReplicationConfiguration\": {\"Rules\": [{\"Destination\": {\"Bucket\": \"arn:aws:s3:::${EXFIL_BUCKET}\", \"Account\": \"999999999999\"}, \"Status\": \"Enabled\"}]}}" \
     "null"
 
@@ -202,14 +202,14 @@ technique_s3_exfil() {
     "s3.amazonaws.com" \
     "AssumedRole" \
     "AROAIOSFODNN7EXAMPLE03:attacker-session" \
-    "arn:aws:sts::${ACCOUNT_ID}:assumed-role/MeridianDataPipelineRole/attacker-session" \
+    "arn:aws:sts::${ACCOUNT_ID}:assumed-role/DataPipelineRole/attacker-session" \
     "{\"bucketName\": \"${EXFIL_BUCKET}\", \"key\": \"reports/Q1-earnings.txt\"}" \
     "null"
 
   echo ""
   echo "KEY FIELDS TO DETECT:"
   echo "  eventName                              = PutBucketReplication or PutObject to external bucket"
-  echo "  requestParameters.Destination.Account  = 999999999999 (not Meridian's account ID)"
+  echo "  requestParameters.Destination.Account  = 999999999999 (not the target account's account ID)"
   echo "  requestParameters.bucketName           = exfil bucket (not a known internal bucket)"
 }
 

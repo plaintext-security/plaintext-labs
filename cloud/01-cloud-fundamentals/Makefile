@@ -26,22 +26,22 @@ demo:      ## Run the enumeration walkthrough deterministically
 		echo "=== 2. Policies attached to dev-alice ==="; \
 		awslocal iam list-attached-user-policies --user-name dev-alice --output table; \
 		echo; \
-		echo "=== 3. MeridianDevPolicy document (spot the wildcards) ==="; \
+		echo "=== 3. DevPolicy document (spot the wildcards) ==="; \
 		POLICY_ARN=$$(awslocal iam list-policies --scope Local \
-		  --query "Policies[?PolicyName==\`MeridianDevPolicy\`].Arn" --output text); \
+		  --query "Policies[?PolicyName==\`DevPolicy\`].Arn" --output text); \
 		VID=$$(awslocal iam get-policy --policy-arn $$POLICY_ARN \
 		  --query "Policy.DefaultVersionId" --output text); \
 		awslocal iam get-policy-version --policy-arn $$POLICY_ARN --version-id $$VID \
 		  --query "PolicyVersion.Document" --output json; \
 		echo; \
 		echo "=== 4. EC2 instance role trust policy ==="; \
-		awslocal iam get-role --role-name MeridianEC2InstanceRole \
+		awslocal iam get-role --role-name EC2InstanceRole \
 		  --query "Role.AssumeRolePolicyDocument" --output json; \
 		echo; \
 		echo "=== 5. S3 public-access-block settings ==="; \
-		awslocal s3api get-public-access-block --bucket meridian-uploads-dev --output json; \
+		awslocal s3api get-public-access-block --bucket uploads-dev --output json; \
 		echo; \
-		echo "FINDINGS: wildcards in MeridianDevPolicy (s3:* + iam:PassRole/*), public-access-block disabled."; \
+		echo "FINDINGS: wildcards in DevPolicy (s3:* + iam:PassRole/*), public-access-block disabled."; \
 	'
 
 # --- Prerequisite check (no container needed) --------------------------------

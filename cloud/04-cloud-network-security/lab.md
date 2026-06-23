@@ -1,142 +1,157 @@
-# Lab 04 — Network Topology Mapping & Flow Log Analysis
+# Lab 04 — Reachability, Then a Default-Deny Baseline: Audit the Network, Build the Fix, Prove It
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, audit→build→re-verify. [← Back to the module concept](README.md)*
 
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo.
-The environment runs `cloudmapper` against bundled AWS account JSON and provides a set of
-realistic VPC flow log entries for manual analysis.
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs `cloudmapper`
+against a bundled AWS account JSON snapshot and provides realistic VPC flow logs for analysis — no
+cloud account or real credentials required.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/04-cloud-network-security
-make up        # build the container with cloudmapper
-make demo      # run the cloudmapper audit + flow log analysis
-make shell     # drop into the container to work interactively
-make down      # stop when done
+make up         # build the container (cloudmapper + Python)
+make demo       # worked Security Group audit + flow log walkthrough
+make shell      # drop into the container to work interactively
+make down       # stop when done
 ```
 
-The container includes `cloudmapper` and its dependencies. Two data sets are bundled:
-- `data/account/` — a realistic AWS account JSON snapshot (the output of `cloudmapper collect`) representing Meridian Financial's VPC topology.
-- `data/vpc-flow-logs.log` — 50 representative flow log entries including normal traffic, a scanning pattern, and a suspicious large-transfer event.
+Two data sets are bundled: `data/account/target/` — an account JSON snapshot (the output of
+`cloudmapper collect`) of the target account's VPC topology — and `data/vpc-flow-logs.log`, 50 representative
+flow records including normal traffic, a port scan, and a suspicious large transfer.
 
-> Everything runs locally against bundled data you own. No real AWS account needed.
+**What this lab is — and isn't (read this).** You audit a *static account snapshot*, not a live VPC —
+there's no instance to SSH into and nothing to attack on the wire. That's deliberate: the skill is
+**reachability reasoning and the fix**, not packet-level exploitation. "What's reachable" is computed
+from the Security Group graph and the topology, the way `cloudmapper audit` and a reachability check do
+it — a logical evaluation, not a live scan. Honest tool, honest answer.
+
+> Only test systems you own or have explicit written permission to test. Everything here runs locally
+> against bundled data you own — no real AWS account, no real IPs.
 
 ## Scenario
-Meridian Financial's infrastructure team has handed you an account JSON export and a week's worth
-of VPC flow log samples from their production VPC. They've had two recent security incidents —
-an unexpected outbound connection flagged by a third-party threat feed, and a compliance finding
-about Security Groups with `0.0.0.0/0` ingress. Your job: map the topology, confirm the misconfigured
-Security Groups, and find the flow log evidence of the suspicious connection.
+The target account's infrastructure team hands you an account JSON export and a week of VPC flow logs.
+They've had two scares: a third-party threat feed flagged an unexpected outbound connection, and a
+compliance reviewer flagged Security Groups with `0.0.0.0/0` ingress. Your deliverable is a **reachability
+finding plus the fix**: prove what the internet can actually touch (including transitively), then author
+a default-deny Security Group baseline that closes it without breaking the app, and prove the cut holds.
+
+Each step runs the same rhythm: **Predict** (commit before you look) → **Do** (gather/prove the
+evidence) → **Reveal** (check your call) → **Record** (one line in the report).
 
 ## Do
 
-### Part 1: Audit — find what's reachable
-1. [ ] **Run the cloudmapper audit.** Execute `cloudmapper audit --account meridian` against the
-   bundled account data. Hint: `cloudmapper --config data/config.json audit --account meridian`.
-   How many Security Groups have ingress from `0.0.0.0/0`? Which ports are exposed?
+### Part 1 — Predict the reach, then prove it
 
-2. [ ] **Inspect the Security Group findings.** For each Security Group that the audit flags,
-   identify which resource it's attached to (web tier, app tier, or database tier) and whether
-   the exposure is intentional (a public ALB) or a misconfiguration (a database port open to the
-   internet).
+1. [ ] **Map the topology.** Run the audit (`make audit`, or
+   `cloudmapper audit --account  --config data/config.json`). **Predict** first: how many groups
+   expose a sensitive port to `0.0.0.0/0`, and which ports? **Reveal:** the audit flags `0.0.0.0/0`
+   ingress on `app-sg :22` and `db-sg :5432`, plus the intentional public ALB on 80/443. **Record:** the
+   raw ingress findings.
 
-3. [ ] **Analyse the flow logs for the port scan.** Open `data/vpc-flow-logs.log` and find the
-   entries that indicate a port scan — many `REJECT` flows from a single source IP to multiple
-   destination ports within a short time window. What source IP, and what destination IP was
-   being scanned?
+2. [ ] **Trace the transitive reach — the hop the audit doesn't draw.** Read the groups in
+   `data/account/target/describe-security-groups.json`. `db-sg` allows `:5432` only from `app-sg`, and
+   the DB has no public IP — *looks* private. **Predict:** is the database reachable from the internet?
+   **Reveal:** yes — internet → `app-sg :22` → the app instance → it's a member of `app-sg`, which
+   `db-sg` trusts. Reachability is a graph; follow the group-reference edge. **Record:** the transitive
+   path, not just the two ingress rules.
 
-4. [ ] **Find the suspicious large-transfer event.** One flow log entry shows a large byte count
-   (over 50 MB) to an external IP on port 443. Identify the source internal IP, the destination
-   external IP, and the byte count. Is the destination IP in a known AWS range, or is it an
-   external party? (The `data/vpc-flow-logs.log` file has a comment line marking the suspicious
-   entry — find it, then remove the comment and confirm you can identify it from the raw data
-   alone.)
+3. [ ] **Find the scan in the flow logs.** Open `data/vpc-flow-logs.log` (or run `make flows`). Find the
+   port-scan signature — many `REJECT` flows from one source IP to many destination ports. **Record:**
+   the source IP and the target it was sweeping.
 
-5. [ ] **Cross-reference the Security Group and flow log findings.** The source IP of the large
-   transfer — which Security Group is its instance attached to? Is egress to port 443 explicitly
-   allowed, or is it open by default? Write this in `findings.md`.
+4. [ ] **Find the exfil candidate, and tie it to a group.** Locate the large-transfer flow (>50 MB to an
+   external IP on 443). **Predict:** is egress to 443 *explicitly allowed*, or open by default? **Reveal:**
+   VPC egress is default-permit — nothing in the groups had to allow it. **Record:** source internal IP,
+   external destination, byte count, and the missing egress control. This is the Capital One containment
+   gap in miniature.
 
-6. [ ] **Run `make demo`** and compare the worked output to your manual analysis.
+### Part 2 — Author the default-deny baseline, and prove it holds
 
-### Part 2: Build the fix — author least-privilege groups and prove it
-Finding the bad rule is half the job; closing it without breaking the app is the other half. The
-reachability checker (`check_reachability.py`) encodes Meridian's requirements as a matrix of
-"who must / must not reach whom" and reports PASS/FAIL — so you can *prove* your fix.
+Finding the exposure is the audit; **closing it without breaking the app is the fix** — and reachability
+is only "fixed" when you can re-verify it.
 
-7. [ ] **See the gap as reachability.** Run `make reachability` (the checker against the original
-   groups). Two assertions FAIL: `internet -> app:22` and `internet -> db:5432` show `ALLOW` where
-   the policy wants `DENY`. This is the audit finding, expressed as reachability the checker can verify.
+5. [ ] **See the gap as reachability.** Run `make reachability` — the checker (`check_reachability.py`)
+   encodes the target account's requirements as a matrix of who-must / who-must-not reach whom and reports
+   PASS/FAIL. Two assertions FAIL: `internet → app:22` and `internet → db:5432` show `ALLOW` where the
+   policy wants `DENY`. This is your audit finding, expressed as something a machine can check. *(If your
+   lab build doesn't ship this target yet, the checker is the first thing you write in "Automate & own
+   it" — write it, then come back.)*
 
-8. [ ] **Author the corrected Security Groups.** Edit a copy of
-   `data/account/meridian/describe-security-groups.json` saved as
-   `data/account/meridian/security-groups-fixed.json` (a reference solution is bundled — try it
-   yourself first, then compare). Close the two findings while keeping the app working:
-   - app-sg :22 — replace `0.0.0.0/0` with the **bastion subnet** CIDR (`10.0.100.0/24`), not the world.
-   - db-sg :5432 — **remove** the `0.0.0.0/0` rule entirely; keep only the `app-sg`-referenced rule.
-   - Leave the intentional public ALB (443/80) and the group-referenced flows (ALB→app, app→db) intact.
-   Think of it as default-deny: a security group denies all ingress unless a rule explicitly allows it,
-   so least privilege means *only the rules the architecture needs* — nothing reachable "just in case."
+6. [ ] **Author the corrected, default-deny baseline.** Copy
+   `data/account/target/describe-security-groups.json` to `security-groups-fixed.json` and rewrite it
+   to the minimum the architecture needs:
+   - `app-sg :22` — replace `0.0.0.0/0` with the **bastion subnet** CIDR (`10.0.100.0/24`), not the world.
+   - `db-sg :5432` — **remove** the `0.0.0.0/0` rule entirely; keep only the `app-sg`-referenced rule.
+   - Add **scoped egress**: don't rely on default-permit-out; allow only what each tier needs (app → db:5432, app → 443 to a VPC-endpoint/known range), so the exfil path in step 4 has no rule to ride.
+   - Leave the intentional public ALB (80/443) and the group-referenced flows (ALB→app, app→db) intact.
+   Default-deny means *only the rules the architecture provably needs* — nothing "just in case."
 
-9. [ ] **Re-verify reachability.** Run `make reachability-fixed`. All six assertions must PASS: the two
-   internet→app:22 / internet→db:5432 paths now `DENY`, while the legitimate ALB→app and app→db paths
-   still `ALLOW`. If a legitimate path broke, you over-tightened — that's the feedback loop a real
-   change review gives you. Capture the before/after in `findings.md`.
+7. [ ] **Re-verify reachability.** Run `make reachability-fixed`. Every assertion must PASS: `internet →
+   app:22` and `internet → db:5432` now `DENY`, the transitive internet→db path is gone, and the
+   legitimate ALB→app and app→db paths still `ALLOW`. If a legitimate path broke, you over-tightened —
+   that feedback loop *is* the change review. Capture the before/after in `findings.md`.
 
 ## Success criteria — you're done when
-- [ ] You've listed every Security Group that `cloudmapper audit` flags, with the attached resource
-  and the specific misconfiguration.
-- [ ] You've identified the port-scan source and target from the flow logs.
-- [ ] You've identified the suspicious large-transfer event and its external destination.
-- [ ] You've linked at least one flow log event to a specific Security Group misconfiguration.
-- [ ] Your `security-groups-fixed.json` makes `check_reachability.py` exit 0 — both internet-facing
-  findings now DENY while the legitimate ALB→app and app→db paths still ALLOW.
-- [ ] Your `findings.md` has a network findings table with severity ratings and the before/after
-  reachability result.
+- [ ] You listed every Security Group `cloudmapper audit` flags, the attached tier, and whether the
+  exposure is intentional (public ALB) or a misconfiguration (DB to the world).
+- [ ] You can state the **transitive** internet→database path in one sentence — and why a per-rule audit
+  misses it.
+- [ ] You identified the port-scan source/target and the large-transfer exfil candidate from the flow
+  logs, and named the missing egress control.
+- [ ] Your `security-groups-fixed.json` makes the reachability check exit 0: the two internet-facing
+  findings and the transitive path now DENY, while ALB→app and app→db still ALLOW.
+- [ ] You scored your three "Call it" predictions from the README against the reveals.
 
 ## Deliverables
-`findings.md` — a network security findings report: topology findings (misconfigured Security Groups),
-flow log findings (scan, large transfer), a recommended control for each, and the before/after
-reachability output. `security-groups-fixed.json` — your remediated ruleset that passes the checker.
-Commit both. Do not commit real credentials, real account IDs, or real IP addresses from live
+`findings.md` — a network findings report: the topology/Security-Group findings (with the transitive
+path called out), the flow-log findings (scan, exfil candidate), a recommended control per finding, and
+the before/after reachability output. `security-groups-fixed.json` — your default-deny baseline that
+passes the checker. Commit both. Do not commit real credentials, real account IDs, or real IPs from live
 infrastructure.
 
 ## Automate & own it
-**Required.** Write a Python script (`analyze_flows.py`) that reads `data/vpc-flow-logs.log` and
-outputs:
-  - A list of `REJECT`-storm source IPs (more than 10 REJECT flows from one source in the log).
-  - A list of flows with byte counts over 10 MB to external (non-RFC-1918) destinations.
+**Required — judgment-as-code, not keystroke scripting.** Your verdict is "a Security Group must never
+expose a sensitive port to `0.0.0.0/0`, and the reachable set must match the baseline." Encode it two ways:
 
-Have a model draft the parsing logic from the [flow log field spec](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html#flow-logs-fields);
-you review every line, run it against the bundled log, and confirm it surfaces the scan and
-large-transfer findings. This is the skeleton of a flow-log anomaly detector.
+1. **A scanner rule.** Write (or enable and configure) a **Checkov/tfsec-style policy** that **fails** any
+   Security Group allowing `0.0.0.0/0` ingress on a sensitive port (22, 3389, 5432, 3306, 9200, 27017)
+   and **passes** the scoped baseline. Run it against the original ruleset (must exit non-zero) and your
+   fix (must exit zero) and show it flips.
+2. **The reachability assertion** (`check_reachability.py`) from Part 2: given a Security Group set, it
+   computes the reachable graph and asserts the required-DENY paths are unreachable and the required-ALLOW
+   paths reachable — exit non-zero on the broken groups, exit zero on the baseline.
+
+Have a model draft both; review every line and confirm each **fails the original for the right reason**
+(the actual `0.0.0.0/0`-on-22 rule and the transitive path, not an unrelated nit). This is your verdict
+made un-recurrable — and the same pattern returns as the NetworkPolicy you author in Module 12.
 
 ## AI acceleration
-Paste the full `data/vpc-flow-logs.log` content into a model and ask: "Which entries indicate
-a port scan and which indicate potential data exfiltration? Explain the indicators." Compare its
-answer to what your `analyze_flows.py` finds. Note any entries the model flags that your script
-misses (false negatives) and any entries the model overlooks (false negatives). Calibrating your
-automated detector against model judgment is a useful debugging technique.
+Paste the full `data/vpc-flow-logs.log` and ask a model which entries indicate a port scan and which a
+potential exfiltration, with the indicators. Compare against your own analysis and your checker. Then
+paste the Security Group set and ask "what's reachable from the internet?" — note whether it catches the
+**transitive** internet→db hop (it usually doesn't). Finally, paste your scanner rule and ask it to write
+a Security Group that *sneaks past* — an IPv6 `::/0`, a `0.0.0.0/1`+`128.0.0.0/1` split, a port range that
+straddles 22. If it finds one, your rule is too narrow.
 
 ## Connects forward
-The Security Group misconfigurations found here are exactly what module 05 (Posture & Misconfiguration
-Auditing) would catch with `prowler check aws_ec2_securitygroup_allow_ingress_from_internet_to_any_port`.
-The flow log analysis skills reappear in module 16 (Cloud Incident Response) where you'll correlate
-flow log evidence with CloudTrail API calls to reconstruct an attack timeline.
+The reachability-as-graph and default-deny-baseline motion here is exactly Module 12 (Kubernetes — RBAC
+& Network Policy), where the same fix is a `NetworkPolicy` instead of a Security Group. The `0.0.0.0/0`
+findings are what Module 05 (Posture & Misconfiguration Auditing) catches at scale with `prowler check
+aws_ec2_securitygroup_allow_ingress_from_internet_to_any_port`, and the scanner rule you wrote is the
+Module 06 (IaC Security) CI gate applied to network config. The flow-log analysis reappears in Module 16
+(Cloud Incident Response), correlated with CloudTrail to reconstruct a timeline.
 
 ## Marketable proof
-> "I map a cloud network with cloudmapper, audit Security Groups and VPC flow logs for exposure and
-> exfiltration, and then *remediate* — authoring least-privilege groups and proving with a reachability
-> check that the bad paths are closed and the app still works."
+> "Given a cloud network, I audit reachability with cloudmapper — including the *transitive* internet→DB
+> paths a per-rule review misses — then author a default-deny Security Group baseline and prove with a
+> reachability check and a Checkov rule that the bad paths are closed and the app still works."
 
 ## Stretch
-- Wire `check_reachability.py` into a CI gate: have it run on every change to the groups file and
-  fail the build (exit 1) if any required-DENY path is reachable — the same shift-left idea as
-  Module 06's IaC scanning, applied to network config.
-- Run `cloudmapper webserver` inside the container and open the interactive graph in a browser
-  (forward port 8000). Explore the visual topology and find which subnet is directly internet-routable.
-- Extend `analyze_flows.py` to enrich the external IPs it flags by checking them against the AWS
-  IP range JSON (`https://ip-ranges.amazonaws.com/ip-ranges.json` — download it once to
-  `data/aws-ip-ranges.json`) and noting which ones are AWS-owned vs. truly external.
+- Wire the scanner rule and the reachability check into a CI gate that runs on every change to the groups
+  file and fails the build if any required-DENY path is reachable — the shift-left idea from Module 06.
+- Run `cloudmapper webserver` in the container and open the interactive graph (forward port 8000); find
+  which subnet is directly internet-routable and confirm it visually.
+- Extend the flow-log analyzer to enrich flagged external IPs against the AWS IP-range JSON
+  (`https://ip-ranges.amazonaws.com/ip-ranges.json`) and mark which are AWS-owned vs. truly external.

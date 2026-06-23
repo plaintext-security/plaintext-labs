@@ -1,5 +1,5 @@
 # MISCONFIGURED — for lab purposes only.
-# This ServiceAccount has cluster-admin — simulating what Meridian Financial's
+# This ServiceAccount has cluster-admin — simulating what the target account's
 # CI/CD pipeline was given "to get things working."
 ---
 apiVersion: v1

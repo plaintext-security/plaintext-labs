@@ -3,7 +3,7 @@
 check_escalation.py — prove an IAM policy closes the PassRole escalation.
 
 Enumeration (cloudfox) finds that dev-alice can escalate: `iam:PassRole` on `*`
-plus `ec2:RunInstances` lets her launch an instance carrying MeridianEC2AdminRole
+plus `ec2:RunInstances` lets her launch an instance carrying EC2AdminRole
 (AdministratorAccess) and read its credentials. This closes the loop — it evaluates
 a fixed set of "can dev-alice do X on Y?" assertions against a policy document and
 reports PASS/FAIL, so you can *prove* your remediation.
@@ -24,9 +24,9 @@ import json
 import re
 import sys
 
-ADMIN_ROLE = "arn:aws:iam::000000000001:role/MeridianEC2AdminRole"
+ADMIN_ROLE = "arn:aws:iam::000000000001:role/EC2AdminRole"
 ANY_ROLE = "arn:aws:iam::000000000001:role/SomeOtherRole"
-DEV_BUCKET_OBJ = "arn:aws:s3:::meridian-dev-data/reports.csv"
+DEV_BUCKET_OBJ = "arn:aws:s3:::dev-data/reports.csv"
 
 # (description, action, resource, expected-allowed)
 MATRIX = [

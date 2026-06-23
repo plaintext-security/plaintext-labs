@@ -39,7 +39,7 @@
       "sourceIPAddress": "10.0.1.45",
       "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
       "requestParameters": {
-        "bucketName": "meridian-ci-artifacts",
+        "bucketName": "ci-artifacts",
         "key": "builds/api-service/v1.2.3/api-service.zip"
       },
       "responseElements": null,
@@ -102,15 +102,15 @@
       "userIdentity": {
         "type": "AssumedRole",
         "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
-        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/DataPipelineRole/attacker-session-1731574800",
         "accountId": "123456789012",
         "sessionContext": {
           "sessionIssuer": {
             "type": "Role",
             "principalId": "AROAIOSFODNN7EXAMPLE03",
-            "arn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+            "arn": "arn:aws:iam::123456789012:role/DataPipelineRole",
             "accountId": "123456789012",
-            "userName": "MeridianDataPipelineRole"
+            "userName": "DataPipelineRole"
           },
           "webIdFederationData": {},
           "attributes": {
@@ -126,7 +126,7 @@
       "sourceIPAddress": "203.0.113.42",
       "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
       "requestParameters": {
-        "roleArn": "arn:aws:iam::123456789012:role/MeridianDataPipelineRole",
+        "roleArn": "arn:aws:iam::123456789012:role/DataPipelineRole",
         "roleSessionName": "attacker-session-1731574800",
         "durationSeconds": 3600
       },
@@ -142,14 +142,14 @@
       "eventType": "AwsApiCall",
       "managementEvent": true,
       "recipientAccountId": "123456789012",
-      "ANALYST_NOTE": "SUSPICIOUS: AssumeRole from eu-west-2 (unexpected region for Meridian). Source IP is not in corporate IP range. MFA was not authenticated."
+      "ANALYST_NOTE": "SUSPICIOUS: AssumeRole from eu-west-2 (unexpected region for ). Source IP is not in corporate IP range. MFA was not authenticated."
     },
     {
       "eventVersion": "1.09",
       "userIdentity": {
         "type": "AssumedRole",
         "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
-        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/DataPipelineRole/attacker-session-1731574800",
         "accountId": "123456789012"
       },
       "eventTime": "2024-11-14T09:21:03Z",
@@ -159,7 +159,7 @@
       "sourceIPAddress": "203.0.113.42",
       "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
       "requestParameters": {
-        "bucketName": "meridian-financial-reports-prod",
+        "bucketName": "financial-reports-prod",
         "key": "reports/Q3-2024-earnings.pdf"
       },
       "responseElements": null,
@@ -175,7 +175,7 @@
       "userIdentity": {
         "type": "AssumedRole",
         "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
-        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/DataPipelineRole/attacker-session-1731574800",
         "accountId": "123456789012"
       },
       "eventTime": "2024-11-14T09:21:07Z",
@@ -185,7 +185,7 @@
       "sourceIPAddress": "203.0.113.42",
       "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
       "requestParameters": {
-        "bucketName": "meridian-financial-reports-prod",
+        "bucketName": "financial-reports-prod",
         "key": "reports/Q2-2024-earnings.pdf"
       },
       "responseElements": null,
@@ -200,7 +200,7 @@
       "userIdentity": {
         "type": "AssumedRole",
         "principalId": "AROAIOSFODNN7EXAMPLE03:attacker-session-1731574800",
-        "arn": "arn:aws:sts::123456789012:assumed-role/MeridianDataPipelineRole/attacker-session-1731574800",
+        "arn": "arn:aws:sts::123456789012:assumed-role/DataPipelineRole/attacker-session-1731574800",
         "accountId": "123456789012"
       },
       "eventTime": "2024-11-14T09:21:11Z",
@@ -210,7 +210,7 @@
       "sourceIPAddress": "203.0.113.42",
       "userAgent": "python-boto3/1.28.0 Python/3.11.0 Linux/5.15.0",
       "requestParameters": {
-        "bucketName": "meridian-financial-reports-prod",
+        "bucketName": "financial-reports-prod",
         "key": "reports/Q1-2024-earnings.pdf"
       },
       "responseElements": null,
@@ -236,8 +236,8 @@
       "sourceIPAddress": "10.0.2.12",
       "userAgent": "Backup-Service/4.2.1 aws-sdk-java/1.12.0",
       "requestParameters": {
-        "bucketName": "meridian-audit-logs-archive",
-        "key": "cloudtrail/2024/11/13/meridian_CloudTrail_us-east-1_20241113.json.gz"
+        "bucketName": "audit-logs-archive",
+        "key": "cloudtrail/2024/11/13/_CloudTrail_us-east-1_20241113.json.gz"
       },
       "responseElements": null,
       "requestID": "c9d0e1f2-a3b4-5678-cdef-890123456789",
@@ -370,7 +370,7 @@
       "sourceIPAddress": "10.0.1.67",
       "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
       "requestParameters": {
-        "bucketName": "meridian-ci-artifacts",
+        "bucketName": "ci-artifacts",
         "key": "builds/payment-service/v2.0.1/payment-service.zip"
       },
       "responseElements": {
@@ -428,7 +428,7 @@
       "sourceIPAddress": "10.0.3.8",
       "userAgent": "Datadog-Agent/7.48.0",
       "requestParameters": {
-        "namespace": "MeridianApp/API"
+        "namespace": "App/API"
       },
       "responseElements": null,
       "requestID": "d6e7f8a9-b0c1-2345-defa-567890123456",
@@ -453,7 +453,7 @@
       "sourceIPAddress": "185.220.101.55",
       "userAgent": "Boto3/1.9.0 Python/2.7.18 Linux/4.15.0-generic",
       "requestParameters": {
-        "bucketName": "meridian-financial-reports-prod",
+        "bucketName": "financial-reports-prod",
         "key": "internal/salaries/2024-compensation.xlsx"
       },
       "responseElements": null,
@@ -521,7 +521,7 @@
       "sourceIPAddress": "10.0.1.45",
       "userAgent": "aws-cli/2.13.0 Python/3.11.0 Darwin/23.0.0 botocore/2.13.0",
       "requestParameters": {
-        "bucketName": "meridian-ci-artifacts",
+        "bucketName": "ci-artifacts",
         "key": "builds/auth-service/v3.1.0/auth-service.zip"
       },
       "responseElements": null,

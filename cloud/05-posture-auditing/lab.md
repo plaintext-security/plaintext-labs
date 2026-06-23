@@ -1,138 +1,137 @@
-# Lab 05 — Posture & Misconfiguration Auditing
+# Lab 05 — Audit, Triage, Remediate, Verify: Find the 2017 Bucket Before a Researcher Does
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, audit → remediate → verify. [← Back to the module concept](README.md)*
 
 ## Setup
+This is a **reference lab** — it ships a one-command environment in the companion
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs
+[LocalStack](https://localstack.cloud/) (a local AWS API emulator) and a lab container with `prowler`
+pinned — no cloud account or real credentials required.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/05-posture-auditing
-make up
-make demo
-make shell
-make down
+make up         # start LocalStack + seed a deliberately misconfigured account
+make demo       # run prowler and show the HIGH/CRITICAL findings
+make shell      # drop into the lab container (prowler + awslocal + jq)
+make down       # stop when done
 ```
 
-The environment spins up a **LocalStack** container (a local AWS API emulator) and a **lab**
-container with `prowler` 4.x pinned. `make up` builds both, then runs `data/setup.sh` via
-`awslocal` to create a deliberately misconfigured account: a public S3 bucket, an overly-permissive
-security group, a CloudTrail trail that is disabled, and a fake IAM access key that has never been
-rotated. No real AWS credentials are needed — LocalStack handles the fake API surface.
+`make up` seeds the inherited "" account with the exact shapes from the case: a **public S3
+bucket with a file in it** (the 2017 wave), a security group open to `0.0.0.0/0` on 22/3389, an IAM
+access key that was never rotated, and a CloudTrail trail that exists but isn't logging.
 
-> This lab uses LocalStack, not a real AWS account. Never run posture tools against accounts or
-> tenants you do not own or have explicit written permission to audit.
+**What this lab is — and isn't (read this).** LocalStack emulates the AWS *API surface* prowler reads,
+so the findings are real findings against real config. It does **not** reproduce the 2017 exfiltration
+(there's no public internet pointing at the bucket) — you're not stealing data, you're doing the audit
+that would have caught it. Where a check depends on AWS state LocalStack doesn't model (e.g. root-MFA),
+treat it as *assessed from config*, not exploited.
+
+> Only audit accounts you own or have explicit written permission to test. Posture tools touch every
+> resource; never point them at a tenant that isn't yours. Everything here is a local account you own.
 
 ## Scenario
-
-Meridian Financial has just acquired a startup and inherited its AWS account. The security team
-has been asked to produce a first-pass posture report before the account is connected to the
-corporate network. You are running the initial audit. The account has never been formally reviewed.
-Your deliverable: a triage-ready finding list, mapped to CIS controls, with a remediation plan for
-the top five issues.
+Your org just acquired a startup and inherited its AWS account — never formally reviewed. You
+must produce a first-pass posture report **before it's connected to the corporate network.** The
+account is shaped like 2017: a public bucket sits in it right now. Your deliverable is a triaged
+finding list mapped to CIS, a remediation that you **apply and verify**, and a guardrail that keeps the
+worst finding from ever passing review again.
 
 ## Do
 
-1. [ ] **Enumerate the environment first.**
-   Before scanning, inventory what's actually in the account with the AWS CLI. List all S3 buckets,
-   running EC2 instances, IAM users, and security groups using `awslocal` from the lab shell.
-   *Hint:* `awslocal s3 ls`, `awslocal ec2 describe-security-groups`, `awslocal iam list-users`.
-   Note anything that looks unusual — public ACLs, wide-open ingress rules.
+### Part 1 — Audit and triage (signal vs. noise)
 
-2. [ ] **Run a prowler scan.**
-   From the lab shell, run prowler against the LocalStack endpoint, scoping to checks with MEDIUM
-   severity or above. Output findings in JSON to `/tmp/findings.json`.
-   *Hint:* `prowler aws --endpoint-url http://localstack:4566 -S -o /tmp/findings.json`.
-   Count how many findings you have. How many are HIGH or CRITICAL?
+1. [ ] **Inventory before you scan.** From the lab shell, list what's actually in the account —
+   buckets, security groups, IAM users, trails — with `awslocal` (`awslocal s3 ls`,
+   `awslocal ec2 describe-security-groups`, `awslocal iam list-users`). Note anything that looks wrong
+   *by eye* (a public ACL, `0.0.0.0/0` ingress). You're building the asset context the scanner won't have.
 
-3. [ ] **Identify the top five findings.**
-   Open the JSON output and extract the five highest-severity findings. For each one, record:
-   the check ID, the affected resource ARN, the severity, and the CIS benchmark control it maps to.
-   *Hint:* `jq '[.[] | select(.status=="FAIL")] | sort_by(.severity) | reverse | .[0:5]' /tmp/findings.json`
+2. [ ] **Run the linter.** Run `prowler aws --endpoint-url http://localstack:4566` and write JSON to
+   `/tmp/findings.json`. **Predict first, then count:** how many FAIL findings do you expect, and which
+   *one* is the 2017 bucket? Now count (`jq '[.[]|select(.status=="FAIL")]|length'`) and see how the raw
+   number compares to "the one that matters." This gap — many findings, one verdict — *is* the module.
 
-4. [ ] **Cross-reference findings against MITRE ATT&CK for Cloud.**
-   Look up which ATT&CK techniques are enabled by the top findings. A public S3 bucket enables
-   T1530 (Data from Cloud Storage); a missing MFA on a privileged account enables T1078 (Valid
-   Accounts). Annotate your top-five list with technique IDs.
+3. [ ] **Triage to the top five.** Don't read 400 lines; rank them. For each of your top five, record the
+   check ID, the resource ARN, the prowler severity, and the **CIS control** it maps to. Then override the
+   tool's order with *your* judgment: re-rank by **severity × exploitability × blast radius** using your
+   step-1 context (the public bucket has a file with PII in it → top, regardless of the tool's label).
+   *Hint:* `jq '[.[]|select(.status=="FAIL")]|sort_by(.severity)|reverse|.[0:5]' /tmp/findings.json`.
 
-5. [ ] **Reproduce a finding manually.**
-   Pick the public S3 bucket finding. Verify it manually: check the bucket's ACL and block-public-
-   access settings using `awslocal s3api get-bucket-acl` and `get-public-access-block`. Confirm the
-   bucket is readable without credentials. Understand *why* prowler flagged it, not just that it did.
+4. [ ] **Map blast radius to ATT&CK.** Annotate the top findings with the technique each *enables*, not
+   just its severity: public bucket → **T1530** (Data from Cloud Storage); stale/over-privileged key →
+   **T1078** (Valid Accounts). This is the column that turns "MEDIUM" into "this is the 2017 leak."
 
-6. [ ] **Draft a remediation.**
-   For your top five findings, write a short remediation note for each: what the fix is, which team
-   owns it (IAM = security team, S3 ACL = application team), and whether it can be scripted.
-   At least two of the five should have a one-line `awslocal` remediation command you can actually run.
+5. [ ] **Confirm the headline finding by hand.** Pick the public bucket. Verify prowler wasn't lying:
+   `awslocal s3api get-bucket-acl` and `get-public-access-block`, and confirm an object reads without
+   credentials. Understand *why* it's flagged — this is the literal Accenture/Verizon/INSCOM condition.
 
-7. [ ] **Verify a remediation.**
-   Apply one of your `awslocal` remediations (e.g., block public access on the S3 bucket), then
-   re-run the relevant prowler check and confirm the finding no longer appears.
-   *Hint:* `prowler aws --checks s3_bucket_public_access --endpoint-url http://localstack:4566`
+### Part 2 — Remediate and verify (the half a checkbox skips)
+
+6. [ ] **Draft the remediation.** For each top-five finding write a one-line note: the fix, the owning
+   team (S3 ACL → app team; IAM → security), and whether it's scriptable. At least two must have a real
+   `awslocal` remediation you can run (block public access on the bucket; revoke the `0.0.0.0/0` ingress).
+
+7. [ ] **Apply and re-scan — prove FAIL→PASS.** Remediate the public bucket (re-enable block-public-access
+   and drop the public ACL), then **re-run that one check** and confirm the finding is gone.
+   *Hint:* `prowler aws --check s3_bucket_public_access --endpoint-url http://localstack:4566`. A
+   remediation you didn't re-scan is a wish, not a fix — this flip is the deliverable.
+
+8. [ ] **(Stretch) Second opinion.** Run ScoutSuite against the same account and diff its findings against
+   prowler's — where they agree, and what each catches that the other misses.
 
 ## Success criteria — you're done when
-
-- [ ] prowler scan completes and outputs at least five FAIL findings against the LocalStack environment
-- [ ] Top-five finding list is documented with check ID, ARN, severity, CIS control, and ATT&CK technique ID
-- [ ] At least one finding has been manually verified (not just taken from prowler output)
-- [ ] At least one remediation has been applied and the scan re-run confirms the finding is resolved
-- [ ] Remediation plan covers all five findings with owner and approach
+- [ ] prowler completes and returns at least five FAIL findings against the seeded account.
+- [ ] Your top-five list is triaged — check ID, ARN, severity, CIS control, ATT&CK technique — and
+  **re-ordered by your own blast-radius judgment** with a one-line rationale per finding (you can say why
+  the public bucket outranks the stale key regardless of the tool's severity).
+- [ ] You verified the public-bucket finding **by hand** (read an object with no credential), not just from prowler's output.
+- [ ] You **applied one remediation and re-scanned**, showing that check flip FAIL→PASS.
+- [ ] Your guardrail (below) **fails** the broken account and **passes** the fixed one, mapped to its CIS control.
 
 ## Deliverables
+Commit to your **portfolio** repo (not `plaintext-labs`):
+- `findings-summary.md` — the triaged top-five table (check ID · resource · severity · CIS control · ATT&CK · your re-ranked priority + rationale · owner).
+- `remediation-notes.md` — the plan, plus the before/after evidence of the one finding you flipped FAIL→PASS.
+- `check_public_bucket.py` (or `.sh`) — the guardrail from **Automate & own it**.
 
-Commit to your portfolio repo (not to `plaintext-labs`):
-- `findings-summary.md` — top-five finding table: check ID, resource, severity, CIS control, ATT&CK technique, remediation note, owner
-- `remediation-notes.md` — prose remediation plan with priorities and rationale
-- `audit.sh` — the automation script from **Automate & own it** below
-
-Do **not** commit: full prowler JSON output (too large), any LocalStack state, or any file ending in
-`.key`, `.pem`, or containing strings matching real AWS key patterns.
+Do **not** commit: the full prowler JSON (too large), any LocalStack state, `/tmp/legacy-key.json`, or
+any `*.key`/`*.pem`/real-key-pattern file.
 
 ## Automate & own it
-
-**Required.** Write `audit.sh` — a script that:
-1. Runs prowler against a target endpoint (accept `--endpoint-url` as an argument, defaulting to LocalStack)
-2. Filters findings to FAIL + severity HIGH or CRITICAL
-3. Outputs a Markdown table: check ID | resource | severity | CIS control
-
-AI drafts the `jq` pipeline and the argument parsing; you validate that the jq filter produces the
-right rows, that the severity filter handles all variants in the schema, and that the script exits
-non-zero if any CRITICAL finding is found (so it can gate a CI pipeline).
-
-```bash
-# Starter scaffold — AI fills in the jq and logic
-#!/usr/bin/env bash
-ENDPOINT="${ENDPOINT_URL:-http://localhost:4566}"
-OUTPUT=$(mktemp /tmp/prowler-XXXXXX.json)
-prowler aws --endpoint-url "$ENDPOINT" -S -o "$OUTPUT"
-# YOU: jq filter → Markdown table
-# YOU: exit 1 if any .severity == "critical"
-```
+**Required — judgment-as-code, not keystroke scripting.** Your verdict is "no bucket in this account may
+be publicly readable" — the exact control whose absence *was* the 2017 wave. Encode it as a **benchmark
+check that fails the bad state and passes the fix**, mapped to its CIS control. Write `check_public_bucket.py`
+(or a small shell check) that, given the account, **fails (exit non-zero)** if any bucket has public
+ACLs or block-public-access disabled — printing the bucket and the control it violates, e.g.
+**CIS AWS 2.1.x — "Ensure S3 buckets are not publicly accessible"** <!-- VALIDATE exact CIS control number against the current AWS Foundations Benchmark --> — and **passes (exit zero)** once you've remediated. Run it against the seeded account (red), apply your fix, and run it again (green). Have a model draft the
+boto3/`awslocal` calls and the assertion; review every line and confirm it fails for the *right* reason
+(the public ACL, not an unrelated bucket). This is your triage verdict made un-recurrable — and in
+module 06 you'll lift this exact check into a CI gate that blocks the merge before the bucket ever ships.
 
 ## AI acceleration
-
-Prowler outputs hundreds of findings in a real account. Paste the JSON array into a model with the
-prompt: "Group these findings by affected service, then within each group rank by blast-radius
-severity. For each group, draft a one-paragraph remediation note in plain language." The model is
-good at this synthesis. Your review must check: (1) that the blast-radius ranking matches your
-knowledge of which resources hold sensitive data, and (2) that no finding is quietly re-labelled
-"informational" without a documented rationale.
+Paste the prowler JSON array into a model: *"Group these findings by affected service, then within each
+group rank by blast-radius severity, and draft a one-paragraph remediation per group."* It's genuinely
+good at that synthesis. Your review owns the two things it can't: (1) the **priority order** against your
+real asset criticality — does its ranking know the public bucket holds PII and the "stale key" is on a
+dead user? — and (2) that **no finding gets quietly re-labelled "informational"** without a written
+rationale. Then paste your guardrail and ask it to craft a bucket config that sneaks past — if it can,
+your check is too narrow.
 
 ## Connects forward
-
-The misconfigurations you found here are the same ones you'll gate in CI in Module 06 (IaC
-Security) — you will write Terraform that would have prevented each of these from deploying. In
-Module 15 (Cloud Logging & Detection) you will write detections for when an attacker *exploits* a
-misconfiguration like the ones you just catalogued.
+Every finding here is a later module. The over-broad grants tie back to **02 (IAM)** and the
+public-bucket verdict is the same one you rendered in **01**. The guardrail you wrote is lifted, almost
+verbatim, into the CI gate of **06 (IaC Security)** — where it blocks the misconfiguration *before*
+deploy, not after. And when an attacker actually exploits a posture gap like this, **15 (Logging &
+Detection)** is where you write the detection for it.
 
 ## Marketable proof
-
-> "I ran an automated CIS benchmark audit against an AWS environment, triaged findings by blast
-> radius, and produced a prioritised remediation plan mapping each gap to MITRE ATT&CK for Cloud."
+> "I ran an automated CIS-benchmark audit against a cloud account, triaged a noisy finding set down to
+> the few that mattered by blast radius (not raw count), remediated the worst and **re-scanned to prove
+> the fix held**, and encoded that verdict as a benchmark guardrail — mapped to its CIS control — that
+> fails the misconfiguration and passes the fix. I can explain why the 2017 S3 wave was one ACL at scale."
 
 ## Stretch
-
-- Run ScoutSuite against the same LocalStack environment and compare its findings against prowler's.
-  Where do they overlap? What does each tool surface that the other misses?
-- Add a `--baseline` flag to `audit.sh` that loads a previous scan's output and only reports *new*
-  findings — the delta scan pattern used in continuous posture monitoring.
+- Add a `--baseline` mode to your guardrail that loads a prior scan and reports only **new** findings —
+  the delta-scan pattern of continuous posture monitoring.
+- Extend the guardrail to a second 2017-class control (e.g. no `0.0.0.0/0` on sensitive ports), so it
+  covers the security-group finding too — a direct preview of module 04's network guardrail.

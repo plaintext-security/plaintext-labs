@@ -1,5 +1,5 @@
 {
-  "_comment": "REFERENCE remediation of graph.json: the minimum-cut edge (MeridianLambdaRole -PassRole+UpdateFunction-> MeridianAdminRole) is removed, modelling 'scope iam:PassRole on MeridianLambdaRole to only itself'. analyze.py should now find NO path to admin (exit 0).",
+  "_comment": "REFERENCE remediation of graph.json: the minimum-cut edge (LambdaRole -PassRole+UpdateFunction-> AdminRole) is removed, modelling 'scope iam:PassRole on LambdaRole to only itself'. analyze.py should now find NO path to admin (exit 0).",
   "_format": "Simplified pmapper graph JSON. Nodes = principals, edges = permission-composition relationships.",
   "account_id": "000000000001",
   "nodes": [
@@ -10,17 +10,17 @@
       "is_admin": false,
       "tags": {},
       "attached_policies": [
-        "MeridianAlicePolicy"
+        "AlicePolicy"
       ]
     },
     {
-      "arn": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "arn": "arn:aws:iam::000000000001:role/LambdaRole",
       "id_type": "role",
-      "name": "MeridianLambdaRole",
+      "name": "LambdaRole",
       "is_admin": false,
       "tags": {},
       "attached_policies": [
-        "MeridianLambdaPolicy"
+        "LambdaPolicy"
       ],
       "trust_principals": [
         "arn:aws:iam::000000000001:user/dev-alice",
@@ -28,9 +28,9 @@
       ]
     },
     {
-      "arn": "arn:aws:iam::000000000001:role/MeridianAdminRole",
+      "arn": "arn:aws:iam::000000000001:role/AdminRole",
       "id_type": "role",
-      "name": "MeridianAdminRole",
+      "name": "AdminRole",
       "is_admin": true,
       "tags": {},
       "attached_policies": [
@@ -44,9 +44,9 @@
   "edges": [
     {
       "source": "arn:aws:iam::000000000001:user/dev-alice",
-      "destination": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "destination": "arn:aws:iam::000000000001:role/LambdaRole",
       "edge_type": "AssumeRole",
-      "reason": "dev-alice has sts:AssumeRole on MeridianLambdaRole and is listed in its trust policy",
+      "reason": "dev-alice has sts:AssumeRole on LambdaRole and is listed in its trust policy",
       "required_actions": [
         "sts:AssumeRole"
       ]

@@ -128,7 +128,7 @@ SUSPICIOUS_UA_FRAGMENTS = [
     "Boto3/1.9",    # Very old boto3
     "curl/",        # curl accessing S3 directly is unusual
 ]
-SENSITIVE_BUCKETS = {"meridian-financial-reports-prod", "meridian-audit-logs-archive"}
+SENSITIVE_BUCKETS = {"financial-reports-prod", "audit-logs-archive"}
 
 
 def rule_s3_suspicious_useragent(records: list) -> list:

@@ -3,8 +3,8 @@
 # CIS AWS 5.3: Ensure no security groups allow ingress from 0.0.0.0/0 to port 3389 (FAIL)
 # checkov: CKV_AWS_24, CKV_AWS_25
 
-resource "aws_security_group" "meridian_app" {
-  name        = "meridian-app-sg"
+resource "aws_security_group" "_app" {
+  name        = "app-sg"
   description = "Application security group"
   vpc_id      = "vpc-00000000"
 
@@ -44,8 +44,8 @@ resource "aws_security_group" "meridian_app" {
   }
 }
 
-resource "aws_security_group" "meridian_db" {
-  name        = "meridian-db-sg"
+resource "aws_security_group" "_db" {
+  name        = "db-sg"
   description = "Database security group"
   vpc_id      = "vpc-00000000"
 

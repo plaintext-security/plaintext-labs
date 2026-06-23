@@ -1,4 +1,4 @@
-# Meridian Payment Processor
+#  Payment Processor
 
 Internal payment processing service.
 

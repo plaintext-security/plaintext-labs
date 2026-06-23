@@ -14,7 +14,7 @@ references:
   - https://attack.mitre.org/techniques/T1098/
   - https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/
   - https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html
-author: Meridian Financial SOC
+author: the target account SOC
 date: 2024-11-14
 modified: 2024-11-14
 tags:

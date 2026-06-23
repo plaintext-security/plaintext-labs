@@ -1,5 +1,5 @@
 {
-  "_comment": "The original over-broad policy attached to dev-alice (MeridianDevPolicy). The PassAnyRole statement is the escalation: iam:PassRole on * lets dev-alice pass MeridianEC2AdminRole (AdministratorAccess) to a new EC2 instance. Run: python check_escalation.py data/dev-alice-policy.json",
+  "_comment": "The original over-broad policy attached to dev-alice (DevPolicy). The PassAnyRole statement is the escalation: iam:PassRole on * lets dev-alice pass EC2AdminRole (AdministratorAccess) to a new EC2 instance. Run: python check_escalation.py data/dev-alice-policy.json",
   "Version": "2012-10-17",
   "Statement": [
     {"Sid": "S3All", "Effect": "Allow", "Action": "s3:*", "Resource": "*"},

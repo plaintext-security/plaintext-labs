@@ -1,146 +1,166 @@
-# Lab 06 — Infrastructure-as-Code Security
+# Lab 06 — Encode the Verdict as a Gate: Scan, Fix, Suppress, Block the Merge
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · build-first, judgment-as-code. [← Back to the module concept](README.md)*
 
 ## Setup
+This is a **reference lab** — it ships a one-command environment in the companion
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. Everything is **static
+analysis**: no cloud account, no Terraform state, nothing is ever deployed.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/06-iac-security
-make up
-make demo
-make shell
-make down
+make up          # build the container (checkov, tfsec, trivy pinned)
+make demo        # run all three scanners over data/terraform/
+make shell       # drop in to work
+make down        # stop when done
 ```
 
-The environment is a single container with `checkov`, `tfsec`, and `trivy` pinned to specific
-versions. `data/terraform/` contains a directory of intentionally misconfigured Terraform templates
-covering real Meridian Financial resources: an S3 bucket without encryption, a security group with
-`0.0.0.0/0` ingress, an IAM policy with wildcard actions, an RDS instance without storage
-encryption, and an EBS volume without encryption. No cloud account or Terraform state is needed —
-all scanning is purely static. `make demo` runs all three tools against the directory.
+`data/terraform/` is a snapshot of the target account's module library — the same shapes behind the real
+breaches: an unencrypted S3 bucket (`s3.tf`), `0.0.0.0/0` ingress (`sg.tf`), wildcard `s3:*`/`ec2:*` and
+`iam:PassRole` IAM plus an `AdministratorAccess`-attached Lambda role and a `Principal: "*"` trust
+(`iam.tf`), a public, unencrypted RDS instance with a literal password (`rds.tf`), and an unencrypted EBS
+volume with IMDSv2 not enforced (`ebs.tf`). `data/workflow-template.yml` is your CI starting point.
+
+> Static-analysis lab — nothing here touches a real account. The authorization rule still stands as a
+> habit: only scan and deploy infrastructure you own or have written permission to change.
 
 ## Scenario
 
-Meridian Financial's platform team has been writing Terraform to automate infrastructure deployment.
-A security review was never built into the pipeline. You have been handed the `data/terraform/`
-directory — a snapshot of their module library — and asked to identify every misconfiguration that
-would fail a CIS AWS benchmark review. Your deliverable: a consolidated finding list across all
-three tools, a ranked remediation backlog, and a sample GitHub Actions workflow that gates
-pull requests on scanner output.
+The target account's platform team writes Terraform; nobody built security into the pipeline. You have the module
+library and one job that matters more than the scan: **leave behind a gate** that blocks any future PR
+re-introducing these misconfigurations, while letting the genuinely-intended ones through. The scan finds
+the bad patterns; *you* render the verdict on the decisions; the gate makes the verdict permanent.
+
+The rhythm each part: **scan → triage (pattern vs. decision) → fix or suppress → prove the gate flips.**
 
 ## Do
 
-1. [ ] **Run `checkov` first.**
-   Scan `data/terraform/` and output results in JSON. Count the number of FAILED checks.
-   *Hint:* `checkov -d data/terraform --output json > /tmp/checkov.json`
-   Note: checkov outputs a summary at the end — look for the `FAILED` count per check and the
-   overall `passed/failed` ratio.
+### Part 1 — Predict, then scan
 
-2. [ ] **Run `tfsec`.**
-   Scan the same directory and output in JSON.
-   *Hint:* `tfsec data/terraform --format json > /tmp/tfsec.json`
-   Compare the finding count to checkov. Are there findings in one but not the other?
+1. [ ] **Commit the prediction (from the README).** Before running anything, read `s3.tf`, `sg.tf`,
+   `iam.tf`, `rds.tf`, `ebs.tf` and write two lists: lines a scanner will **FAIL**, and dangerous lines
+   it will **MISS**. Keep this — you grade it against the scan output.
 
-3. [ ] **Run `trivy config`.**
-   *Hint:* `trivy config data/terraform --format json -o /tmp/trivy.json`
-   Note which resources each tool scans (Terraform resource types vs. files).
+2. [ ] **Run all three scanners.** `make demo`, or individually `make checkov` / `make tfsec` /
+   `make trivy-config`. Get JSON for the matrix: `checkov -d data/terraform --output json`,
+   `tfsec data/terraform --format json`, `trivy config data/terraform --format json`. Count FAILED
+   checks per tool. Note findings in one tool but not another — coverage is *not* identical.
 
-4. [ ] **Build a consolidated finding matrix.**
-   Create a Markdown table: Resource | Misconfiguration | Detected By | CIS Control | Severity.
-   Fill in one row per unique misconfiguration. Where a finding appears in multiple tools, mark all
-   of them. This cross-tool view is what you'd present to an engineering team.
+3. [ ] **Grade your prediction.** Confirm the scanners caught the patterns (encryption, `0.0.0.0/0`,
+   wildcard IAM). Then confirm the **misses**: did any tool flag `password = "changeme-before-deploy"` in
+   `rds.tf` as a *secret*? (Mostly no — that's `gitleaks`/module 07's job, not a config rule.) Did any
+   tool know the **port-443** `0.0.0.0/0` is intended while the **port-5432** one is a real exposure? (No
+   — same pattern, opposite verdict.) **Record** one line: *what the scanner saw vs. what it couldn't decide.*
 
-5. [ ] **Read and understand two findings in depth.**
-   Pick one HIGH finding from checkov and one from tfsec. For each:
-   - Read the check source code (checkov: look up the check ID at github.com/bridgecrewio/checkov;
-     tfsec: see aquasecurity.github.io/tfsec). What field does it actually test?
-   - Verify the misconfiguration in the Terraform file — confirm the flag makes sense.
-   - Write the correct Terraform attribute to fix it.
+### Part 2 — Triage: pattern vs. decision
 
-6. [ ] **Apply a fix and re-scan.**
-   Fix one misconfiguration in the Terraform (e.g., enable S3 bucket encryption). Re-run the
-   relevant scanner and confirm the check now passes. This is the red→green cycle you would gate
-   in CI.
-   *Hint:* Make the fix in `data/terraform/`, re-run `checkov --check <CHECK_ID> -d data/terraform`.
+4. [ ] **Build the consolidated finding matrix.** One row per unique misconfiguration:
+   `Resource | Misconfiguration | Detected By (checkov/tfsec/trivy) | CIS Control | Severity | Verdict`.
+   The **Verdict** column is the point — for each finding, mark `fix` (known-bad pattern) or `decide`
+   (needs human context). This is what you'd hand an engineering team.
 
-7. [ ] **Add a justified suppression.**
-   The security group in `data/terraform/sg.tf` has `0.0.0.0/0` on port 443. This is intentional
-   for a public-facing load balancer. Add the appropriate checkov `#checkov:skip` comment with a
-   rationale, and confirm the check is suppressed on re-scan.
-   *Hint:* `# checkov:skip=CKV_AWS_24: Public HTTPS ingress is required for internet-facing ALB`
+5. [ ] **Read two checks to the source.** Pick one HIGH from checkov and one from tfsec. Look the check up
+   (`github.com/bridgecrewio/checkov`; `aquasecurity.github.io/tfsec`), find the *exact field* it tests,
+   confirm it against the `.tf`, and write the corrective attribute. A finding you can't trace to a field
+   is a finding you can't defend in review.
 
-8. [ ] **Write a CI workflow.**
-   Write `ci-iac-scan.yml` — a GitHub Actions workflow that runs `checkov -d terraform/ --soft-fail-on MEDIUM`
-   and fails the PR on any HIGH or CRITICAL finding. Use the template in `data/workflow-template.yml`
-   as a starting point.
+6. [ ] **Fix a known-bad pattern, prove green.** Enable S3 encryption on `_data` (add
+   `aws_s3_bucket_server_side_encryption_configuration`), then re-scan just that rule:
+   `checkov --check CKV_AWS_18 -d data/terraform` (or the relevant ID). Watch it flip FAILED → PASSED.
+   This is the red→green you'll gate. Do the same for one more (EBS `encrypted = true`, or RDS
+   `storage_encrypted`).
+
+7. [ ] **The judgment move — suppress one *true* false-positive correctly.** The port-443 `0.0.0.0/0`
+   ingress in `sg.tf` is the public ALB; it *should* accept internet HTTPS. Add the inline suppression
+   with a real rationale and confirm the finding is silenced on re-scan:
+   `# checkov:skip=CKV_AWS_260: Public HTTPS ingress required for internet-facing ALB — approved <name/date>`.
+   Then **prove you didn't over-mute:** confirm the **port-22, port-3389, and port-5432** `0.0.0.0/0`
+   findings are *still firing*. Suppressing the intended rule must not silence the catastrophic ones — a
+   blanket `--skip-check CKV_AWS_260` would, which is exactly the anti-pattern. **Record** the difference.
+
+### Part 3 — Encode the verdict as the gate (the deliverable)
+
+8. [ ] **Write the CI gate.** Starting from `data/workflow-template.yml`, write `iac-scan.yml`: a GitHub
+   Actions workflow on `pull_request` that runs checkov over the Terraform and **fails the PR on HIGH/
+   CRITICAL** while soft-failing lower severities (`soft_fail_on: MEDIUM,LOW,INFO`), uploading SARIF.
+   The non-negotiable behaviour, stated as the gate's contract:
+   - it **fails** on the *original* `data/terraform/` (the wildcard IAM, the public RDS, the SSH/RDP/DB
+     `0.0.0.0/0`), and
+   - it **passes** on the *fixed* tree (your encryption fixes applied, the port-443 rule *suppressed with
+     rationale*, the dangerous open ports closed).
+
+9. [ ] **Prove the gate flips.** Run the gate's exact command locally against both trees and check the
+   **exit code** (`echo $?`) — non-zero on the original, zero on the fix. A gate that doesn't change its
+   exit code between bad and good isn't a gate; it's a report. This is the whole module in one assertion.
 
 ## Success criteria — you're done when
-
-- [ ] All three scanners run successfully against `data/terraform/`
-- [ ] Consolidated finding matrix covers every misconfigured resource with correct CIS mapping
-- [ ] At least one fix applied and verified green on re-scan
-- [ ] At least one suppression added with an inline rationale comment
-- [ ] `ci-iac-scan.yml` is written and syntactically valid (you can validate with `actionlint` or GitHub's validator)
+- [ ] All three scanners ran; your finding matrix covers every misconfigured resource with a CIS mapping
+  *and* a `fix`/`decide` verdict per row.
+- [ ] At least two known-bad patterns fixed and verified FAILED → PASSED on re-scan.
+- [ ] The port-443 rule is suppressed with an inline rationale **and** you proved the port-22/3389/5432
+  findings still fire — you over-ruled the junior on one decision without muting the others.
+- [ ] You graded your predict-the-miss list: you can name at least two dangerous things the scanner did
+  not (the literal RDS password; the intended-vs-catastrophic open-port distinction).
+- [ ] `iac-scan.yml` exits **non-zero on the original tree and zero on the fixed tree** — demonstrated
+  with `$?`.
 
 ## Deliverables
-
 Commit to your portfolio repo:
-- `finding-matrix.md` — consolidated table across all three tools
-- `ci-iac-scan.yml` — GitHub Actions workflow for PR gating
-- `scan-all.sh` — the automation script from **Automate & own it** below
+- `finding-matrix.md` — the consolidated cross-tool table with the `fix`/`decide` verdict column.
+- `iac-scan.yml` — the CI gate (validate with `actionlint` or GitHub's validator).
+- `gate-proof.md` — two terminal captures (exit code on original vs. fixed) proving the gate flips, plus
+  the one-line justification for the port-443 suppression.
 
-Do **not** commit: `/tmp/*.json` scanner output files, any Terraform state (`*.tfstate`), or the
-`data/terraform/` directory itself (it's seeded in the lab repo, not yours).
+Do **not** commit: `/tmp/*.json` scanner output, any `*.tfstate`, or `data/terraform/` itself (it's
+seeded in the lab repo, not yours).
 
 ## Automate & own it
+**Required — this is the judgment-as-code core of the whole track.** Your finding is "these patterns must
+never re-enter the pipeline, and these intended exceptions must stay allowed." Encode that verdict as a
+**guardrail that fails the bad state and passes the fix** — your `iac-scan.yml` *is* that guardrail, but
+harden it into something portable: `gate.sh`, a single script that
 
-**Required.** Write `scan-all.sh` — a script that:
-1. Runs all three scanners against a directory passed as `$1` (default: `terraform/`)
-2. Exits 0 only if all three pass with no HIGH or CRITICAL findings
-3. Outputs a unified summary: tool name, pass/fail counts, and any HIGH+ finding IDs
-4. Writes a machine-readable `scan-report.json` combining output from all three
+1. runs checkov (and optionally tfsec/trivy) over a directory passed as `$1`,
+2. **exits non-zero iff** there is any HIGH/CRITICAL finding that is *not* a documented inline
+   suppression — so an undocumented blanket-skip can't sneak a real exposure past the gate,
+3. prints which finding IDs blocked it.
 
-AI drafts the loops, the jq filters, and the exit-code logic. You verify:
-- that the exit-code logic correctly catches all critical paths (a scanner error ≠ a clean scan)
-- that the JSON merge is structurally correct and not silently swallowing parse errors
-- that the script handles a directory with no `.tf` files gracefully
-
-```bash
-#!/usr/bin/env bash
-# Starter scaffold
-TARGET="${1:-terraform/}"
-FAIL=0
-# YOU: run checkov, tfsec, trivy; capture exit codes
-# YOU: merge summaries into scan-report.json
-# YOU: exit $FAIL
-```
+Then write the proof harness: run `gate.sh data/terraform/` (original → exit 1) and `gate.sh` on your
+fixed tree (→ exit 0), and assert the flip. **Have a model draft the jq filters and the exit-code logic;
+review every line** — confirm a *scanner error* doesn't read as a *clean pass*, and that the gate fails
+the original for the *right* finding (the IAM/RDS exposure), not an unrelated nit. This gate is what every
+downstream build module (07, 08) and the capstone reuse; it is your verdict, made un-recurrable.
 
 ## AI acceleration
-
-Paste a misconfigured Terraform block into a model and ask for the minimum set of attributes to
-make it pass checkov's CKV_AWS_* checks. This is fast for known patterns (S3 encryption, EBS
-encryption, logging). Where the model earns scrutiny: IAM policy remediation — wildcard fixes
-often over-correct into policies that break the application, or under-correct by moving the
-wildcard from `Action` to `Resource`. You must trace the fix through the actual permission model,
-not just the scanner output.
+Paste a misconfigured block and ask the model for the minimum attributes to pass the relevant `CKV_AWS_*`
+check — fast and reliable for encryption/logging patterns. Where it earns scrutiny: **IAM remediation**
+(wildcard "fixes" that move the `*` from `Action` to `Resource`, still broken — trace it through the
+permission model from module 02, don't trust the green) and **suppressions** (the model will silence a
+*real* exposure as readily as a false-positive). Then adversarially test your own gate: ask the model to
+write a Terraform block that re-introduces a public-DB exposure *while passing your gate*. If it can, your
+gate (or your suppression policy) is too loose — tighten and re-prove the flip.
 
 ## Connects forward
-
-The CI workflow you write here gates Meridian's deployment pipeline. In Module 08 (CI/CD Security)
-you will extend that pipeline's *security posture* — looking at secrets in the workflow YAML, image
-scanning, and supply-chain integrity, rather than just IaC policy.
+This gate is the keystone of the track's build half. **Module 07** adds secret-scanning (gitleaks) for the
+RDS password this config scanner *missed*; **Module 08** wraps the gate into a fully hardened pipeline
+(pinned actions, least-priv tokens, SBOM); the **Phase 1 project** ships a real-breach account's fix *as
+Terraform gated by this scanner in CI*; and the **capstone** bar is literally this gate's contract — a
+green `terraform apply` rebuilds the fixed system, the gate fails the original config, the detection fires
+on the simulation but not benign traffic.
 
 ## Marketable proof
-
-> "I scanned a Terraform codebase with checkov, tfsec, and trivy; consolidated cross-tool findings
-> into a prioritised remediation backlog; and built the CI workflow that now gates every pull
-> request on IaC policy."
+> "I scanned a Terraform codebase with checkov, tfsec, and trivy; triaged findings into known-bad
+> patterns versus context-dependent decisions; correctly suppressed a true false-positive with a
+> documented rationale *without* muting the real exposures next to it; and shipped the CI gate that fails
+> the merge on the original config and passes only the fix — proven by exit code. I can explain what a
+> static scanner structurally cannot catch (the intended-vs-catastrophic open port, the secret in a
+> variable, IAM that composes into admin) and why the gate needs a human verdict wrapped around it."
 
 ## Stretch
-
-- Write a custom `checkov` check in Python that enforces Meridian's tagging policy: every resource
-  must have `Owner`, `Environment`, and `CostCenter` tags. Test it against `data/terraform/`.
-- Set up a pre-commit hook using `pre-commit` + the `checkov` hook so that developers catch IaC
-  misconfigs before they even push.
+- Write a **custom Checkov check** (Python or YAML) that encodes a specific verdict no built-in
+  rule covers — e.g. *every* resource must carry `Owner`/`Environment`/`CostCenter` tags — and add it to
+  the gate. This is judgment-as-code at its purest: your org's rule, mechanically enforced.
+- Add a `pre-commit` hook (the `checkov` pre-commit) so misconfigs fail *before* push, and a secret-scan
+  (`gitleaks`) hook that catches the `rds.tf` password the config scanner missed — closing the gap you
+  found in step 3.

@@ -1,171 +1,166 @@
-# Lab 09 — Serverless Security
+# Lab 09 — The Role Is the Blast Radius: Attack a Serverless Function, Then Scope It
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, attacker→fixer. [← Back to the module concept](README.md)*
 
 ## Setup
+This is a **reference lab** — it ships a one-command environment in the companion
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
+[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account or real credentials.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/09-serverless-security
-make up
-make demo
-make shell
-make down
+make up          # start LocalStack + deploy the vulnerable Lambda (over-broad role)
+make demo        # worked walkthrough: enumerate role → normal invoke → event injection
+make shell       # drop into the lab container (awslocal + cloudfox)
+make down        # stop when done
 ```
 
-The environment provides a LocalStack container (AWS emulator) and a lab container with the AWS
-SAM CLI and `cloudfox`. `make up` starts both containers and deploys a deliberately vulnerable
-Lambda function using SAM: `data/lambda/` contains the function code and `template.yaml`.
+**What's real and what isn't (read this).** **LocalStack genuinely runs Lambda** — your function code
+actually executes in a container, so the **event injection in Part 2 is a real exploitation**, not a
+simulation: you send a payload and the function runs your command. Where LocalStack is *honest about its
+limits* is **IAM enforcement** — LocalStack CE does **not** enforce IAM, so the role's reach can't be
+proven by brute-forcing denied calls. You prove reach the same way module 02 did: with
+`awslocal iam simulate-principal-policy`, which runs AWS's real evaluation logic and returns
+`allowed` / `implicitDeny` / `explicitDeny` *and why*. So the injection is *exploited*; the role's blast
+radius and your fix are *assessed from policy logic.* Honest tools, honest claims.
 
-The deployed Lambda has three deliberate misconfigurations:
-1. An over-privileged execution role (`sts:AssumeRole *`, `s3:*`, `iam:*`)
-2. An event handler that passes the input `command` field to a subprocess without sanitisation
-3. A sensitive value (a fake API key) loaded into an environment variable
-
-No real AWS account or SAM account is needed — LocalStack handles the Lambda runtime simulation.
-
-> Only test systems you own or have explicit written permission to test.
+> Only test systems you own or have explicit written permission to test. Everything here runs locally
+> against a simulated account you own. The injection step executes commands inside a function *you*
+> deployed — never run these payloads against a function you do not own.
 
 ## Scenario
+The target account acquired a startup whose payment-notification system is a single Lambda,
+`notifier`, triggered by API events. Before connecting the acquired account to the corporate
+org, you're auditing it — and you've read the Denonia report, so you know an attacker with a foothold in
+a Lambda inherits its role. Your deliverable is a **blast-radius verdict + the fix**: prove how far the
+execution role reaches, prove the function is injectable, then least-privilege the role, close the
+injection, redeploy, and prove both paths are gone.
 
-Meridian Financial acquired a startup that ran its payment notification system as a set of Lambda
-functions. Before connecting the acquired account to the corporate AWS org, you have been asked to
-audit the Lambda environment. You will enumerate the execution roles with `cloudfox`, identify the
-attack paths, demonstrate the injection vulnerability, and deliver a remediated version of the
-function and its IAM role.
+Each step runs the same rhythm: **Predict** (commit before you touch anything) → **Do** (gather/exploit
+the evidence) → **Reveal** (check your call) → **Record** (one line in the report).
 
 ## Do
 
-### Part 1: Enumeration with cloudfox
+### Part 1 — Predict the blast radius, then prove it's the role
 
-1. [ ] **List all Lambda functions in the LocalStack environment.**
-   From the lab shell, enumerate the deployed functions. How many are there? What are their
-   names and runtimes?
+1. [ ] **Look at the function, then the role.** List the function
+   (`awslocal lambda list-functions`) and read its handler (`data/lambda/handler.py`) — it's ~40 lines.
+   **Predict** from the code alone: how much damage could a foothold here do? Now read the execution
+   role's policy (`awslocal iam get-role-policy --role-name notifier-role --policy-name NotifierPolicy`).
+   **Reveal:** `s3:*`, `iam:*`, and `sts:AssumeRole` all on `*`. **Record:** the code is 40 lines; the
+   role is the account.
 
-2. [ ] **Enumerate permissions with cloudfox.**
-   Point `cloudfox`'s `permissions` command at the LocalStack endpoint and the `localstack`
-   profile. Note which functions have attached policies. What role does `meridian-notifier` use?
+2. [ ] **Prove the reach with policy logic — not guesses.** Use
+   `awslocal iam simulate-principal-policy` (or `cloudfox`'s permissions/iam-simulator) against the role
+   to confirm it is `allowed` to `iam:CreateUser`, `iam:AttachUserPolicy`, and `s3:GetObject` on the
+   seeded `sensitive-records` bucket. **Reveal:** this is Denonia's natural next move — code
+   execution → `iam:CreateUser` + attach `AdministratorAccess` → standing admin that outlives the
+   function. **Record:** owner = customer (role scope); the function's blast radius is account-wide.
 
-3. [ ] **Inspect the execution role in detail.**
-   Retrieve the role and its attached policies. What does `sts:AssumeRole *` on the role trust
-   policy enable? What can an attacker do with `iam:*` and `s3:*` if they achieve code execution
-   inside the function?
+3. [ ] **Find the standing secret.** Read the function configuration
+   (`awslocal lambda get-function-configuration --function-name notifier`). What's in the
+   environment variables? **Reveal:** a fake API key and a DB connection string — readable in one call by
+   anyone with code execution (the next step gives you exactly that). **Record:** owner = customer; secret
+   in env, not a runtime fetch — blast radius = "whenever the function runs," not "one call with a log."
 
-4. [ ] **Check environment variables.**
-   Read the function's configuration. What sensitive values are stored in environment variables?
-   In a real account, how would you retrieve these if you had code execution in the function —
-   what is the smallest snippet that dumps the runtime's environment?
+### Part 2 — Cross the trust boundary: exploit the event
 
-5. [ ] **Map the finding to MITRE ATT&CK.**
-   The over-privileged role + accessible environment variables maps to T1078 (Valid Accounts) and
-   T1552.005 (Cloud Instance Metadata API / Lambda environment). Write a two-sentence threat brief:
-   what an attacker who compromises this function can do, and in what order.
+4. [ ] **Invoke it normally.** Send a well-formed payload
+   (`{"account_id":"ACC-001","event_type":"payment"}`) and read the response. This is the function doing
+   its job.
 
-### Part 2: Injection demonstration
+5. [ ] **Inject through the event.** **Predict:** the function is fronted by an authenticated gateway —
+   is the JSON payload safe? **Do:** the handler passes a `command` field to a subprocess. Craft a payload
+   (`{"account_id":"ACC-001","command":"ls /var/task"}`, then `cat` the handler, then `env`) and read the
+   output back through the response. **Reveal:** the source was authenticated; the *data* never was — this
+   is OWASP Serverless #1, and combined with step 2's role it's a confused deputy. The injected command
+   runs **as the function**, with the function's role. **Record:** owner = customer (input handling);
+   plane = the event trust boundary; this is the foothold Denonia needed.
 
-6. [ ] **Invoke the Lambda with a normal input.**
-   Send a well-formed event payload (e.g. an `account_id` and an `event_type` for a payment
-   notification) and read the response. What did the function do?
+### Part 3 — Fixer: least-privilege the role, close the injection, redeploy
 
-7. [ ] **Invoke the Lambda with a malicious input.**
-   The function passes one field of the event straight to a subprocess. Craft a payload whose
-   injected field reads the function's own source from its task directory. What does the response
-   show? Can you read the handler's source code back through the event?
+Tracing the reach and landing the injection is the finding; **closing both without breaking the
+function's real job is the fix** — and a serverless fix has two halves, the role and the code.
 
-8. [ ] **Understand the root cause in the function code.**
-   Read `data/lambda/handler.py`. Find the line that causes the injection. What is the one-line
-   fix that closes it without breaking the function's legitimate behaviour?
+6. [ ] **Author the least-privilege role.** The function's only legitimate job is: write one record to a
+   specific DynamoDB table and publish to a specific SNS topic (plus its own CloudWatch Logs). Edit
+   `data/least-privilege-policy.json` to allow **exactly** that — explicit actions, explicit resource
+   ARNs, no `*` action, no `*` resource. This is the minimum cut from module 02, applied to an execution
+   role.
 
-### Part 3: Remediation
+7. [ ] **Prove the role cut holds.** Run `make check-role` (a `simulate-principal-policy` harness): the
+   dangerous assertions (`iam:CreateUser`, `s3:GetObject` on the sensitive bucket, `sts:AssumeRole` on
+   `*`) must now return `implicitDeny`/`explicitDeny`, while the two legitimate ones (the DynamoDB
+   `PutItem` and the SNS `Publish`) still return `allowed`. If a legitimate call flipped to denied, you
+   cut too much.
 
-9. [ ] **Write a least-privilege IAM policy for the function.**
-   The function's legitimate purpose is: write a notification record to one specific DynamoDB
-   table and send a message to one specific SNS topic. Write an IAM policy JSON that allows
-   exactly that and nothing more. No wildcard actions, no wildcard resources.
+8. [ ] **Close the injection in code.** Edit a copy of `handler.py`: validate `command` against an
+   explicit allowlist (reject anything else with an error), never shell-execute event input, and never
+   return or log environment variables. Move the API key to a runtime fetch from a secrets store (or at
+   minimum, stop emitting it).
 
-10. [ ] **Fix the injection in the handler.**
-    Edit a copy of `data/lambda/handler.py` and apply the fix: validate that the `command` field
-    is in an explicit allowlist before using it; if it's not, return an error response. Add an
-    explicit environment variable sanitisation: do not log or return environment variables in
-    error responses.
-
-11. [ ] **Redeploy and verify.**
-    Update `data/lambda/handler.py` with your fix and redeploy the SAM stack against the
-    LocalStack endpoint. Re-run the injection payload from step 7 and confirm the function now
-    returns an error instead of executing the injected command.
+9. [ ] **Redeploy and re-attack.** Repackage and redeploy the function to LocalStack, then re-run the
+   step-5 injection payload. **Confirm it now returns an error** instead of executing the command — the
+   real exploit, now closed against the real (LocalStack-run) function.
 
 ## Success criteria — you're done when
-
-- [ ] cloudfox enumeration identifies the over-privileged role and its permissions
-- [ ] Environment variable finding is documented with the threat brief
-- [ ] Injection payload (step 7) successfully retrieves data from the function's source code
-- [ ] Least-privilege IAM policy JSON is written with correct resource ARNs
-- [ ] Fixed handler.py rejects the injection payload and the re-run confirms it
+- [ ] `simulate-principal-policy` shows the original role `allowed` to `iam:CreateUser` and read the
+  sensitive bucket — you've proven the blast radius is the role, not the function.
+- [ ] Your event-injection payload (step 5) executed a command inside the function and returned its output
+  (e.g. the handler source or `env`).
+- [ ] `least-privilege-policy.json` passes `make check-role`: every dangerous assertion now **denies**,
+  both legitimate-access assertions still **allow**.
+- [ ] The redeployed `handler.py` rejects the injection payload, and the re-run confirms it.
+- [ ] You scored your three "Call it" predictions from the README against the reveals.
 
 ## Deliverables
-
-Commit to your portfolio repo:
-- `threat-brief.md` — MITRE-mapped threat brief from step 5
-- `least-privilege-policy.json` — the corrected IAM policy from step 9
-- `handler-fixed.py` — the remediated function handler
-- `lambda-auditor.sh` — the automation script from **Automate & own it** below
-
-Do **not** commit: LocalStack state, SAM `.aws-sam/` build directory, or any real AWS credentials.
+`blast-radius-verdict.md` — the per-finding verdict (the proven role reach with the simulator output, the
+injection demonstration, the env-var finding), each with owner · plane · the breaking change, mapped to
+OWASP Serverless and ATT&CK (T1078 Valid Accounts, T1648/T1496 for the miner outcome). `least-privilege-policy.json`
+— your scoped execution role that passes the checker. `handler-fixed.py` — the remediated function. Commit
+all three. Do **not** commit LocalStack state, the SAM `.aws-sam/` build dir, bucket contents, or any real
+credentials.
 
 ## Automate & own it
-
-**Required.** Write `lambda-auditor.sh` — a script that audits Lambda functions in an AWS account:
-1. Lists all functions and their execution role ARNs (`awslocal` / `aws` depending on `$ENDPOINT_URL`)
-2. For each function, checks: (a) whether the role has any wildcard action policies, (b) whether
-   environment variables exist (flag for manual review), (c) whether the function has a resource-
-   based policy that allows public invocation
-3. Outputs a Markdown report: Function | Role | Wildcard Actions | Env Vars | Public Invocation
-
-AI drafts the `aws cli` commands and the jq filters. You verify:
-- that the wildcard check correctly handles both inline and attached policies
-- that the script handles pagination for accounts with many functions
-- that "no environment variables" and "empty environment variables" are correctly distinguished
-
-```bash
-#!/usr/bin/env bash
-# Starter scaffold
-ENDPOINT="${ENDPOINT_URL:-}"
-REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-# YOU: list functions; for each, get role, check policies, check env vars, check resource policy
-# YOU: output Markdown table
-```
+**Required — judgment-as-code, not keystroke scripting.** Your verdict is "this function's role is its
+blast radius, and it's over-broad." Encode that as a **guardrail that fails the bad role and passes the
+scoped one**: a small check (`assert_lambda_role_scoped.py`) that, given a Lambda's execution-role policy,
+**fails** (exit non-zero) when any statement grants a wildcard action (`iam:*`, `s3:*`, `*`) or
+`Resource: "*"` on a sensitive action, or grants `iam:`/`sts:AssumeRole` an over-broad reach — and
+**passes** (exit zero) on your least-privilege policy. Run it against both the original
+`NotifierPolicy` and your fix and show it flips. Have a model draft the rule (a Checkov-style
+static check, or a `simulate-principal-policy` assertion that the role is denied `iam:CreateUser` /
+`s3:GetObject` on anything outside its named resources); review every line and confirm it fails the
+original for the *right* reason — the role's reach, not an unrelated nit. This is your verdict made
+un-recurrable, and the gate a real org would put in CI so no future function ships with `AdministratorAccess`
+"to tighten later."
 
 ## AI acceleration
-
-Run `cloudfox aws permissions` and paste the output JSON to a model. Prompt: "You are a red team
-operator. Given these Lambda execution role permissions, describe the highest-impact attack path
-from initial code execution in the function to account compromise. List each step, the IAM action
-used, and the ATT&CK technique ID." The model is excellent at this chain-of-custody reasoning
-across IAM permissions. What you verify: that the described path is actually executable given the
-effective permissions (permission boundaries and SCPs can truncate what the policy text suggests),
-and that the remediation you write closes every hop in the path, not just the loudest permission.
+Paste the original execution-role policy into a model: "You're a red-team operator with code execution in
+a Lambda using this role. List the highest-impact path to account compromise — each step, the IAM action,
+the ATT&CK technique." It's reliable on the obvious composes (`iam:CreateUser` → attach admin; `s3:*` →
+exfil). Validate each hop with `simulate-principal-policy` (it can't see SCPs/boundaries). Then paste your
+guardrail and your least-privilege policy and ask it to author a role that sneaks past the check — if it
+can, your rule is too narrow.
 
 ## Connects forward
-
-The IAM enumeration skills from Module 03 (IAM Attack Paths) are the foundation of this module's
-execution role analysis — you are applying the same graph-traversal mindset to a Lambda's role.
-In Module 14 (Cloud Attack Techniques), you will use `pacu` to automate the exploitation of an
-over-privileged Lambda role end-to-end. In Module 16 (Cloud Incident Response), you will learn to
-detect this pattern in CloudTrail logs.
+The execution role you enumerated is the same object as the IAM principals from modules 02–03 — a Lambda's
+role *is* an attack-path node, and the minimum cut is the same operation. The over-broad role and the
+confused-deputy pattern return in module 14, where you'll drive Pacu/stratus-red-team to detonate the
+privesc end-to-end and generate the telemetry; module 15 then asks which of those events shows up in
+CloudTrail and writes the detection. The "secret in env vs. runtime fetch" thread ties to the secrets
+module (07).
 
 ## Marketable proof
-
-> "I deployed a deliberately vulnerable serverless function, enumerated its over-privileged
-> execution role with cloudfox, demonstrated an event injection attack that exposed the function's
-> source and environment variables, and delivered a remediated handler and a least-privilege IAM
-> policy."
+> "I proved that a serverless function's blast radius is its execution role, not its code: I enumerated an
+> over-broad Lambda role, demonstrated an event-injection foothold that ran as the function, then
+> least-privileged the role (proven denied via `simulate-principal-policy`), closed the injection, and
+> redeployed. I shipped a CI guardrail that fails any Lambda role granting wildcard IAM/S3 and passes the
+> scoped one — and I can explain why ephemerality protects the host, not the identity."
 
 ## Stretch
-
-- Use `pacu`'s Lambda modules to automate the privilege escalation from the over-privileged role:
-  create a new IAM user with AdministratorAccess using the function's `iam:*` permission. Confirm
-  the new user can list all S3 buckets. Then write the detection: which CloudTrail event sequence
-  would a SIEM fire on to catch this?
-- Enable Lambda function URL authentication (none vs. IAM) and show how an unauthenticated function
-  URL is another confused-deputy exposure for over-privileged functions.
+- Drive a `pacu` Lambda module against the over-broad role to *actually* create an admin user, then write
+  the CloudTrail event sequence a SIEM would fire on — a direct preview of modules 14–15.
+- Replicate the Denonia "secret in env" failure end-to-end: move the API key into AWS Secrets Manager (in
+  LocalStack), fetch it at runtime, and show the env-var dump no longer leaks it.

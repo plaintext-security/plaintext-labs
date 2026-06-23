@@ -18,19 +18,24 @@ make shell     # drop into the lab container to work
 make down      # stop when done
 ```
 
-`make up` creates a KMS key (`alias/meridian-data`) and writes its id to `data/key-id.txt`. The lab
+`make up` creates a KMS key (`alias/data`) and writes its id to `data/key-id.txt`. The lab
 container ships `awslocal` (a drop-in for `aws` pointed at LocalStack) and `openssl`.
 
 > Everything runs locally against a simulated AWS environment you own. No real KMS key or data.
+> **Honesty note:** LocalStack simulates the KMS *API*, not AWS's full IAM/key-policy *enforcement*.
+> The lab proves separation of duties by evaluating the key policy logically (`check_keypolicy.py`) —
+> the same evaluation AWS applies — rather than relying on the simulator to deny a call.
 
 ## Scenario
 
-Meridian Financial stores customer financial records in S3 and database snapshots on EBS. The
-auditors asked a simple question the team couldn't answer: *if an attacker copies a snapshot, can
-they read it — and who, exactly, can decrypt our data?* Your job is to implement data-at-rest
-protection the right way: envelope-encrypt records with a KMS-managed key, then write a key policy
-that separates the people who *manage* the key from the services that *use* it — so a single
-compromised credential can't both read everything and destroy the key.
+An account stores customer financial records in S3 and database snapshots on EBS. Auditors asked a
+simple question the team couldn't answer: *if an attacker copies a snapshot, can they read it — and
+who, exactly, can decrypt our data?* The data is already "encrypted at rest," which is exactly the
+trap from [Module 01](README.md): encryption is silent against a principal you authorized to use the
+key. Your job is to implement data-at-rest protection the way that actually decides a breach:
+envelope-encrypt records with a KMS-managed key, then write a key policy that separates the people who
+*manage* the key from the services that *use* it — so a single compromised credential can't both read
+everything and destroy the key.
 
 ## Do
 
@@ -52,8 +57,10 @@ compromised credential can't both read everything and destroy the key.
 
 ### Part 2: Key policy — separate who manages from who uses
 A KMS key policy is a *resource* policy: it lists principals and the `kms:` actions they may take on
-the key. The control that matters is **separation of duties** — key administrators must not be able
-to decrypt data, and the app that decrypts data must not be able to delete the key.
+the key. For KMS this is the **second door** to the key (the first is the principal's IAM policy), and
+it's the door most teams never audit. The control that matters is **separation of duties** — key
+administrators must not be able to decrypt data, and the app that decrypts data must not be able to
+delete the key.
 
 4. [ ] **See the gap.** Run `make check-keypolicy` (the checker against the original loose policy in
    `data/key-policy.json`). Two assertions FAIL: there's no key-administrator role, and the app role
@@ -62,8 +69,8 @@ to decrypt data, and the app that decrypts data must not be able to delete the k
 
 5. [ ] **Author the separated key policy.** Edit `data/key-policy-fixed.json` (a reference solution is
    bundled — try it yourself first). Split access into two principals:
-   - **`MeridianKeyAdmin`** — may manage the key (`Describe`, `Enable/Disable`, `Put`, `ScheduleKeyDeletion`, …) but **not** `Encrypt`/`Decrypt`.
-   - **`MeridianAppRole`** — may `Encrypt`/`Decrypt`/`GenerateDataKey` but **not** any administrative action.
+   - **`KeyAdmin`** — may manage the key (`Describe`, `Enable/Disable`, `Put`, `ScheduleKeyDeletion`, …) but **not** `Encrypt`/`Decrypt`.
+   - **`AppRole`** — may `Encrypt`/`Decrypt`/`GenerateDataKey` but **not** any administrative action.
    Keep the standard `EnableRoot` statement. Grant decrypt to no wildcard principal.
 
 6. [ ] **Prove separation holds.** Run `make check-fixed`. All five assertions must PASS: the admin
@@ -82,6 +89,9 @@ to decrypt data, and the app that decrypts data must not be able to delete the k
   decrypt, the app can decrypt but not administer, and no wildcard principal can decrypt.
 - [ ] `findings.md` records the before/after separation result and the data-at-rest off-switch reasoning.
 
+These are observable and self-checked — this is an honor-system lab with no grader. The signal is
+concrete: `check_keypolicy.py` exits non-zero on the loose policy and zero on your fix.
+
 ## Deliverables
 `findings.md` — the data-protection write-up: the envelope-encryption flow, the key-access off-switch
 reasoning, and the before/after key-policy separation result. `key-policy-fixed.json` — your
@@ -89,29 +99,39 @@ separated key policy that passes the checker. Commit both. Do not commit `data/k
 keys, or plaintext/ciphertext artifacts.
 
 ## Automate & own it
-**Required.** Write `envelope.py` (or extend the bundled `envelope.sh`) that takes a file path,
-envelope-encrypts it (generate-data-key → encrypt locally → store ciphertext + wrapped key as one
-bundle), and decrypts it back — with the plaintext data key never written to disk. Have a model draft
-the boto3 KMS calls; you verify the plaintext key is zeroed/never persisted and that decrypt round-trips.
-This is the core of a client-side encryption helper you'd reuse across services.
+**Required — this is the guardrail you walk away with.** The separation check shouldn't live in your
+head; encode it. Use the bundled `check_keypolicy.py` as your key-policy guardrail: it evaluates a
+fixed matrix of `(principal, action)` assertions against any key policy and **fails (exit 1) on an
+over-broad policy and passes (exit 0) on the scoped one** — proven both ways against
+`data/key-policy.json` and your `data/key-policy-fixed.json`. Wire it into CI so a key policy that
+collapses admin and usage into one principal can never merge. (Optionally extend it: add an assertion
+for your own roles, or flag any statement that grants `kms:*` to a non-root principal.)
+
+For the envelope side, write `envelope.py` (or extend the bundled `envelope.sh`) that takes a file
+path, envelope-encrypts it (generate-data-key → encrypt locally → store ciphertext + wrapped key as
+one bundle), and decrypts it back — with the plaintext data key never written to disk. Have a model
+draft the boto3 KMS calls; you verify the plaintext key is zeroed/never persisted and that decrypt
+round-trips. **AI drafts → you review every line → you own it.**
 
 ## AI acceleration
 Paste a KMS key policy into a model and ask it to identify separation-of-duties violations — a
 principal that can both `Decrypt` and `ScheduleKeyDeletion`, or `kms:*` granted broadly. It's good at
-spotting the obvious collapse. What it can't see is your org's intended roles, so confirm each flagged
-principal against who *should* manage vs. use the key, and run `check_keypolicy.py` to prove the fix.
+spotting the obvious collapse. What it can't see is your org's intended roles, or whether a *second*
+door (an IAM policy or a grant) opens access the key policy alone doesn't show — so confirm each
+flagged principal against who *should* manage vs. use the key, and run `check_keypolicy.py` to prove
+the fix.
 
 ## Connects forward
 This is the data-protection counterpart to Module 07 (Secrets Management): there you kept *credentials*
 out of reach; here you keep *data* unreadable without a key you control. The key-policy separation skill
 is the same least-privilege reasoning as Module 02 (IAM) and Module 03 (attack paths), applied to a
-resource policy. In Module 16 (Incident Response), "who could decrypt this?" is answered by the key
-policy you wrote here.
+resource policy — the second door to the key. In Module 16 (Incident Response), "who could decrypt
+this?" is answered by the key policy you wrote here.
 
 ## Marketable proof
 > "I implement data-at-rest protection with KMS envelope encryption, and I write key policies that
 > separate key administration from key use — so a single compromised credential can neither read all
-> the data nor destroy the key."
+> the data nor destroy the key. I ship the separation check as a CI guardrail."
 
 ## Stretch
 - Configure S3 default encryption with your KMS key and confirm objects are encrypted at rest with

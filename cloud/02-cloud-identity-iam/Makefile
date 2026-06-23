@@ -35,17 +35,17 @@ demo:      ## Run the IAM enumeration walkthrough
 		  --output table 2>/dev/null || \
 		awslocal iam list-attached-user-policies --user-name dev-alice --output table; \
 		echo; \
-		echo "=== 4. MeridianAdminRole trust policy — spot the account-root trust ==="; \
-		awslocal iam get-role --role-name MeridianAdminRole \
+		echo "=== 4. AdminRole trust policy — spot the account-root trust ==="; \
+		awslocal iam get-role --role-name AdminRole \
 		  --query "Role.AssumeRolePolicyDocument" --output json; \
 		echo; \
 		echo "=== 5. CICD role trust — note missing sub condition ==="; \
-		awslocal iam get-role --role-name MeridianCICDRole \
+		awslocal iam get-role --role-name CICDRole \
 		  --query "Role.AssumeRolePolicyDocument" --output json; \
 		echo; \
-		echo "FINDING: dev-alice has iam:PassRole/* — can pass MeridianEC2AdminRole to a new EC2 instance."; \
-		echo "FINDING: MeridianAdminRole trusts account root — any principal in the account can assume it via sts:AssumeRole."; \
-		echo "FINDING: MeridianCICDRole OIDC trust has no sub condition — any GitHub Actions workflow can assume it."; \
+		echo "FINDING: dev-alice has iam:PassRole/* — can pass EC2AdminRole to a new EC2 instance."; \
+		echo "FINDING: AdminRole trusts account root — any principal in the account can assume it via sts:AssumeRole."; \
+		echo "FINDING: CICDRole OIDC trust has no sub condition — any GitHub Actions workflow can assume it."; \
 	'
 	@echo
 	@echo "=== 6. Escalation BEFORE the fix (PassRole assertions show ALLOW = FAIL) ==="
@@ -63,7 +63,7 @@ check-fixed:      ## Check YOUR dev-alice-fixed-policy.json — aim for all PASS
 
 apply-fixed:      ## Apply your fixed policy to LocalStack as a new default version, then re-enumerate
 	@docker compose run --rm lab sh -c '\
-		ARN=arn:aws:iam::000000000001:policy/MeridianDevPolicy; \
+		ARN=arn:aws:iam::000000000001:policy/DevPolicy; \
 		awslocal iam create-policy-version --policy-arn $$ARN \
 		  --policy-document file:///lab/data/dev-alice-fixed-policy.json --set-as-default >/dev/null && \
 		echo "Applied fixed policy as new default version."; \

@@ -1,4 +1,4 @@
-# app.py — Meridian Financial payment processor stub
+# app.py — the target account payment processor stub
 import config
 
 

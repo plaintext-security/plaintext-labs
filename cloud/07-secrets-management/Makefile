@@ -21,9 +21,9 @@ scan-history: ## Run trufflehog against the planted-secret git repo
 
 vault-demo:   ## Store and read a static secret in Vault KV (the baseline)
 	docker compose run --rm lab sh -c '\
-		vault kv put secret/meridian/app/database \
+		vault kv put secret//app/database \
 			username=appuser password=db-password-placeholder; \
-		vault kv get secret/meridian/app/database'
+		vault kv get secret//app/database'
 
 dynamic-creds: ## Mint a dynamic, 5-minute Postgres credential from Vault
 	docker compose run --rm lab sh -c '\
@@ -36,7 +36,7 @@ app-run:      ## Run the app that fetches a dynamic cred at runtime (holds no st
 rotate-root:  ## Rotate the Postgres admin password Vault holds (one-way; operator can't read it after)
 	docker compose run --rm lab sh -c '\
 		echo "== Rotating the root DB password Vault manages =="; \
-		vault write -f database/rotate-root/meridian-postgres; \
+		vault write -f database/rotate-root/postgres; \
 		echo "Rotated. The admin password is now known only to Vault."'
 
 aws-secrets:  ## The cloud-native variant: Secrets Manager + least-privilege IAM (LocalStack)
@@ -54,8 +54,8 @@ demo:         ## Full worked example: detect → static store → dynamic creds 
 	@echo ""
 	@echo "== Part 2: Vault KV — static secret with a least-privilege policy =="
 	docker compose run --rm lab sh -c '\
-		vault kv put secret/meridian/app/database username=appuser password=db-password-placeholder >/dev/null; \
-		vault kv get secret/meridian/app/database'
+		vault kv put secret//app/database username=appuser password=db-password-placeholder >/dev/null; \
+		vault kv get secret//app/database'
 	@echo ""
 	@echo "== Part 3: DYNAMIC credentials — Vault mints a unique, 5-minute DB login on demand =="
 	docker compose run --rm lab sh -c 'vault read database/creds/app-role'

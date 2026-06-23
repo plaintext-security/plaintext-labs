@@ -1,127 +1,139 @@
-# Lab 13 — Kyverno Admission Policies and Falco Runtime Detection
+# Lab 13 — Encode the Bouncer: Admission Policy as Code, Then a Camera for the Gap
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, build-first. [← Back to the module concept](README.md)*
 
 ## Setup
 
-**Prerequisites:** Docker (running), `kind` >= v0.23.0, `kubectl`, and `helm` installed.
-
-```bash
-# Install helm (if not present)
-# macOS:  brew install helm
-# Linux:  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-helm version   # should print v3.x.x
-```
-
 This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs on a local
+[`kind`](https://kind.sigs.k8s.io/) cluster — no cloud account required.
+
+**Prerequisites:** Docker (running), `kind` >= v0.23.0, `kubectl`, and `helm`.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/13-kubernetes-admission-runtime
-make up        # create kind cluster, install Kyverno + Falco via Helm, apply seed policies
-make demo      # try a non-compliant pod (denied) and a compliant pod (allowed); show Falco alert
-make shell     # kubectl shell in the cluster for exploration
-make down      # delete the kind cluster
+make up        # create kind cluster, install Kyverno + Falco (Helm), apply seed policies
+make demo      # non-compliant pod (denied) + compliant pod (admitted); fire a Falco alert
+make shell     # kubectl shell into the cluster to work
+make down      # delete the cluster when done
 ```
 
-The environment provides:
-- A `kind` cluster (`plaintext-lab-13`) with Kubernetes v1.30
-- Kyverno installed via Helm (v3.2.x) in `Enforce` mode
-- Two seed policies: `disallow-privileged.yaml` and `require-non-root.yaml`
-- A Falco DaemonSet monitoring the node
-- `manifests/pod-bad.yaml` — a non-compliant pod that violates both policies
-- `manifests/pod-good.yaml` — a compliant pod that should be admitted
+**What this lab is — and isn't (read this).** This one *does* enforce: Kyverno installs in `Enforce`
+mode, so a denied pod genuinely bounces at the API server — `kubectl apply` returns the error, the pod
+never starts. That's the point of admission control and you'll see it for real. The seed gives you two
+policies and leaves you to write the rest; the lab is the *building*, not a tour. Falco runs as a
+DaemonSet on the node and watches real syscalls.
 
-> This lab runs on a local kind cluster you own. Only test clusters you own or have explicit written permission to access.
+> This lab runs on a local kind cluster you own. Only test clusters you own or have explicit written
+> permission to access. The "attacks" here are `kubectl exec` into your own pods.
 
 ## Scenario
-Meridian Financial is rolling out Kyverno to their EKS cluster to enforce container security posture. You are the security engineer responsible for writing the initial policy set, testing it, and documenting the admit/deny decisions. You also need to show that Falco catches a runtime violation that occurs after a compliant pod is admitted — because policy and runtime are complementary, not redundant.
+The target account is rolling out Kyverno to its EKS clusters after reading the Graboid write-up in a
+threat brief: *a worm spread because exposed container endpoints would run anything handed to them.*
+You're the security engineer who owns the initial policy set. Your job: encode the verdict "these pod
+specs should never be admitted" as Kyverno policy that *holds for every future pod*, prove it blocks the
+bad and admits the good, then add one Falco rule for the behavior a manifest can't reveal — because
+prevention without detection is blind to its own gaps.
 
 ## Do
 
-**Phase 1 — Explore the seeded Kyverno policies**
+### Part 1 — Read the door that exists, then prove it works
 
-1. [ ] `kubectl get clusterpolicies` — list the installed policies.
-   For each policy, note the `validationFailureAction` (`Audit` or `Enforce`) and what it checks.
+1. [ ] **List what's already guarding the door.** `kubectl get clusterpolicies`. For each, note its
+   `validationFailureAction` (`Audit` or `Enforce`) and what it checks. Read
+   `manifests/policies/disallow-privileged.yaml` and `require-non-root.yaml`: find the `deny` condition
+   and the **exact spec path** it inspects (e.g. `containers[].securityContext.privileged`). The path is
+   the policy — get it wrong and the policy admits the bad pod while looking right.
 
-2. [ ] Read `manifests/policies/disallow-privileged.yaml`.
-   What is the `deny` condition? What exact field in the pod spec does it check, and at what
-   path within the container's `securityContext`?
+2. [ ] **Watch the bouncer reject.** `kubectl apply -f manifests/pod-bad.yaml` — it should be **denied**
+   at the API server. Copy the exact error. Which policy fired, and on which field? Then
+   `kubectl apply -f manifests/pod-good.yaml` and confirm it reaches `Running`
+   (`kubectl get pod lab-compliant`). You've now seen prevention happen *before* a container started —
+   the moment Graboid never met.
 
-3. [ ] Read `manifests/policies/require-non-root.yaml`.
-   This policy requires `runAsNonRoot: true` OR `runAsUser > 0`. Why is this check paired — what does `runAsNonRoot: true` alone miss?
+### Part 2 — Encode the verdicts you called
 
-**Phase 2 — Test the policies**
+Your README prediction said all four pod specs should never be admitted. The seed covers two
+(`privileged`, root). **Write the other two as policy** — this is the judgment-as-code build.
 
-4. [ ] Try to deploy the non-compliant pod:
-   `kubectl apply -f manifests/pod-bad.yaml`
-   The API server should return a denial. Copy the exact error message into your notes.
-   Which policy fired, and what field triggered it?
+3. [ ] **`disallow-host-path` — block the node-filesystem mount.** Write a `ClusterPolicy` that denies any
+   pod with a `hostPath` volume (`hostPath: /` is how you read `/etc/shadow` from a "contained" pod).
+   *Hint: a `deny` rule over `request.object.spec.volumes[]` checking for the `hostPath` key.* Apply it,
+   then prove it: a pod mounting `hostPath: { path: "/" }` is denied; a pod with only an `emptyDir` is
+   admitted.
 
-5. [ ] Deploy the compliant pod:
-   `kubectl apply -f manifests/pod-good.yaml`
-   Confirm it enters `Running` state: `kubectl get pod lab-compliant`
+4. [ ] **`disallow-host-namespaces` — block the namespace escape.** Write a `ClusterPolicy` that denies
+   `hostNetwork: true`, `hostPID: true`, or `hostIPC: true` at the pod level. Prove it: a pod setting any
+   of the three is denied; a pod setting none is admitted.
 
-6. [ ] `kubectl get policyreport -A` — Kyverno writes audit results as Kubernetes objects.
-   How many `fail` results are recorded? Open one: `kubectl describe policyreport -n default`
+5. [ ] **Run the rollout the right way (the operational lesson).** Set *one* of your new policies to
+   `Audit`, apply a violating pod, and read `kubectl get policyreport -A` — the violation is logged but
+   the pod runs. Now flip it to `Enforce` and re-apply: now it's blocked. Write down why a real cluster
+   starts every policy in `Audit`. This ordering is the difference between a clean rollout and a 2 AM
+   page.
 
-**Phase 3 — Write and apply a new policy**
+### Part 3 — A camera for the gap the door can't close
 
-7. [ ] Write a new Kyverno `ClusterPolicy` called `disallow-latest-tag` that denies any pod
-   using an image with `:latest` or no tag (e.g. `nginx` or `nginx:latest`).
-   *Hint: use a `deny` condition with `image.tag` check or a `pattern` match on the image field.
-   See the [Kyverno Policy Library](https://kyverno.io/policies/) for policy examples and best practices.*
+6. [ ] **Admit a compliant pod, then misbehave inside it.** Tail Falco in a second terminal
+   (`make logs-falco`). The pod passed every admission policy — now do the thing the manifest never
+   revealed: `kubectl exec lab-compliant -- sh -c 'cat /etc/shadow 2>/dev/null || cat /etc/passwd'`.
+   Note which rule fires and its priority. **Ask yourself: could *any* Kyverno policy have prevented
+   this?** (No — the spec was compliant; the *behavior* is the signal. That is the gap.)
 
-8. [ ] Apply your policy: `kubectl apply -f disallow-latest-tag.yaml`
-
-9. [ ] Test it: `kubectl run tag-test --image=nginx` (should be denied).
-   Then: `kubectl run tag-test --image=nginx:1.27` (should be allowed).
-
-**Phase 4 — Falco runtime detection**
-
-10. [ ] In a separate terminal: `make logs-falco` to tail Falco output.
-
-11. [ ] From inside `lab-compliant` pod, trigger a suspicious action:
-    `kubectl exec lab-compliant -- sh -c 'cat /etc/shadow 2>/dev/null || cat /etc/passwd'`
-    Check the Falco log — does a rule fire? Note the rule name and priority.
-
-12. [ ] Now write a `/tmp` execution attempt:
-    `kubectl exec lab-compliant -- sh -c 'cp /bin/sh /tmp/sh && /tmp/sh -c id'`
-    Does Falco detect the execution from `/tmp`? Why is execution from `/tmp` a suspicious signal?
-
-13. [ ] **Reflect on the layered model:** Could the Kyverno admission policy have prevented
-    steps 11 and 12? Why or why not? When does runtime detection provide value that admission policy cannot?
+7. [ ] **Write the runtime rule for the gap.** Graboid's heirs land via a foothold and then `exec` to
+   pivot. Author one Falco rule (in `manifests/falco-runtime-rules.yaml`) that fires on **a process
+   executing from `/tmp`** inside a container — `kubectl exec lab-compliant -- sh -c 'cp /bin/sh /tmp/sh
+   && /tmp/sh -c id'`. *Hint: condition on `evt.type=execve` and `proc.exepath` under `/tmp`; set a clear
+   `output` with `%k8s.pod.name` and a `priority`.* Reload Falco, re-run the exec, confirm **your** rule
+   fires — and that a benign in-container process does *not* (reduce the false positive). A rule that
+   fires on everything is noise nobody reads.
 
 ## Success criteria — you're done when
-- [ ] `kubectl apply -f pod-bad.yaml` is denied with a Kyverno error message quoting the policy name.
-- [ ] `kubectl apply -f pod-good.yaml` creates a Running pod.
-- [ ] Your `disallow-latest-tag` policy denies `nginx` and allows `nginx:1.27`.
-- [ ] You have a Falco alert from the runtime step, with the rule name and container context.
-- [ ] You have written down the answer to the layered model question (step 13).
+- [ ] `kubectl apply -f pod-bad.yaml` is denied with a Kyverno error quoting the policy and field; `pod-good.yaml` reaches `Running`.
+- [ ] Your `disallow-host-path` and `disallow-host-namespaces` policies each **deny** a violating pod and **admit** a compliant one — verified, not assumed.
+- [ ] You demonstrated the `Audit` → `Enforce` flip on one policy and can say in one sentence why production starts in `Audit`.
+- [ ] Your custom Falco rule fires on the `/tmp` execution with pod context and does **not** fire on a benign process.
+- [ ] You can answer in writing: *which of the Part-3 actions could admission policy have prevented, and why is the answer "none"?*
 
 ## Deliverables
-- `policy-report.md` — the admit/deny results, Kyverno error messages, Falco alert text, and your layered model answer.
-- `manifests/policies/disallow-latest-tag.yaml` — your new Kyverno ClusterPolicy.
-- `manifests/pod-good.yaml` — the compliant pod spec you verified.
+- `manifests/policies/disallow-host-path.yaml` and `disallow-host-namespaces.yaml` — your two new admission policies (the prevention-as-code).
+- `manifests/falco-runtime-rules.yaml` — with your `/tmp`-execution rule added (the detection for the gap).
+- `policy-report.md` — admit/deny results with the exact Kyverno errors, the `Audit`→`Enforce` note, your Falco alert text, and the layered-model answer.
 
-Commit these three files. Cluster state, kubeconfigs, and secret values stay out of the commit.
+Commit these four. Cluster state, kubeconfigs, and secret values stay out of the commit.
 
 ## Automate & own it
-**Required.** Write a GitHub Actions workflow `validate-policies.yaml` that uses `kyverno` CLI (`kyverno apply`) to dry-run your policies against the pod manifests in the repo, without a live cluster. Have a model draft the workflow; **you read every line** and verify: (1) it actually runs `kyverno apply` not just `kubectl apply`, (2) it fails on a denied manifest, and (3) it succeeds on the compliant one. Commit the workflow so policy violations block PRs before they ever reach a cluster.
+**Required — judgment-as-code, not keystroke scripting.** Your four "never admit" verdicts only hold if a
+policy *proves* them on every change, not just when you remember to apply it. Write a CI gate
+(`validate-policies.yaml`, a GitHub Actions workflow) that runs the **`kyverno` CLI** (`kyverno apply`)
+to dry-run *all* your policies against the manifests in the repo — **no live cluster** — and **fails the
+build** when `pod-bad.yaml` (or a host-path / host-namespace pod) is admitted, and **passes** when
+`pod-good.yaml` is. Have a model draft the workflow; **read every line** and confirm three things: it
+runs `kyverno apply`, not `kubectl apply`; it fails on a denied manifest for the *right* policy; and it
+succeeds on the compliant one. This is the bouncer encoded so a bad pod can't merge to the cluster
+config in the first place — your verdict, made un-recurrable, exactly the gate the capstone reuses.
 
 ## AI acceleration
-Paste a pod spec into a model and ask it to identify which Kyverno policies from the library would deny it and what the minimal `securityContext` changes are to make it compliant. It's reliable at reading `securityContext` fields. Verify each suggested change actually passes the policy with `make demo` — the model doesn't know your policy's exact condition syntax.
+Paste a pod spec and ask a model which of your policies deny it and what the minimal `securityContext`
+fix is — reliable on field-reading, and a good first-draft policy author. But it cannot tell you the
+policy's *mode* (`kubectl get clusterpolicy`), and it will happily write a `deny` whose path is wrong so
+the policy silently admits the bad pod. Prove every policy against the bad *and* the good manifest with
+`make demo` before you trust it — a policy that doesn't block is worse than none. Same discipline for the
+Falco rule: the model drafts the `condition`; you confirm it fires on the exec and stays quiet otherwise.
 
 ## Connects forward
-- Module 14 (Cloud Attack Techniques) uses these same cluster configurations as the target environment for simulated attacks with `stratus-red-team` — the policies you set here are what attackers try to bypass.
-- Module 15 (Cloud Logging & Detection) ingests Falco's structured JSON output into a SIEM and writes correlation rules — the Falco alerts from this module become the detection signal.
+- The policies here are what module 14's `stratus-red-team` / Kubernetes attacks try to bypass — your door is the thing the purple-team probes.
+- Falco's structured JSON output becomes the detection signal that module 15 ingests into a SIEM and correlates; module 16 reconstructs an incident from it.
+- The `kyverno apply` CI gate is a direct sibling of the IaC gate from module 06 and the RBAC/NetworkPolicy-as-code from module 12 — all converge in the **capstone**, where a green pipeline rebuilds the *hardened* cluster and the gate fails the *original* permissive config.
 
 ## Marketable proof
-> "I write Kyverno policy-as-code to enforce Kubernetes security posture at admission — blocking privileged containers, requiring non-root, and gating on image hygiene — and I layer Falco runtime detection to catch what policy alone can't prevent."
+> "I write Kubernetes admission policy as code — denying privileged, host-mount, host-namespace, and
+> root pods at the API server before they start — roll it out `Audit`→`Enforce` the safe way, gate it in
+> CI with the Kyverno CLI, and layer a tuned Falco rule for the runtime behavior admission can't see. I
+> can explain why prevention without detection is blind to its own gaps."
 
 ## Stretch
-- Enable Kyverno `Mutation`: write a policy that *automatically adds* `runAsNonRoot: true` and `allowPrivilegeEscalation: false` to any pod that doesn't already set them. Test it: apply a pod without `securityContext` and confirm `kubectl describe pod` shows the mutated values.
-- Write a Kyverno `generate` policy that automatically creates a default-deny NetworkPolicy for every new namespace.
-- Configure Falco to output alerts to a webhook (use a simple `ngrok` or local HTTP listener) and trigger an alert from `make demo`.
+- Add a Kyverno **mutate** policy that auto-injects `runAsNonRoot: true` and `allowPrivilegeEscalation: false` into any pod missing them, and confirm `kubectl describe pod` shows the mutated values — defense that doesn't depend on the developer.
+- Write a Kyverno **generate** policy that drops a default-deny NetworkPolicy into every new namespace (the module-12 control, applied automatically) — closing the lateral-movement path Graboid used to hop hosts.
+- Wire Falco output to a webhook (a local HTTP listener or `ngrok`) so the `/tmp`-exec alert lands somewhere a responder would actually see it.

@@ -21,9 +21,9 @@ def check_security_groups(sg_file: str) -> int:
 
     findings = 0
     severity_map = {
-        "meridian-alb-sg": "INFO",   # intentional: public ALB
-        "meridian-app-sg": "HIGH",   # SSH to 0.0.0.0/0 on app tier
-        "meridian-db-sg":  "CRITICAL",  # database port to 0.0.0.0/0
+        "alb-sg": "INFO",   # intentional: public ALB
+        "app-sg": "HIGH",   # SSH to 0.0.0.0/0 on app tier
+        "db-sg":  "CRITICAL",  # database port to 0.0.0.0/0
     }
 
     print("Security Groups with 0.0.0.0/0 ingress:")
@@ -53,7 +53,7 @@ def main():
     print()
 
     print("=== 1. Security Group Audit ===")
-    sg_file = base / "data/account/meridian/describe-security-groups.json"
+    sg_file = base / "data/account/target/describe-security-groups.json"
     sg_findings = check_security_groups(str(sg_file))
     print(f"\n  Total HIGH/CRITICAL findings: {sg_findings}")
     print()

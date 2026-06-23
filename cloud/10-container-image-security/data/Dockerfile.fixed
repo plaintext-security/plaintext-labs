@@ -1,4 +1,4 @@
-# Meridian Financial — internal API image
+# the target account — internal API image
 # Fixed version: addresses all seven findings from Dockerfile.bad
 
 # Fix 1: Pin to a specific digest for reproducible, auditable builds

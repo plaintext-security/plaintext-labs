@@ -36,7 +36,7 @@ def main() -> int:
     # Connect with the ephemeral credential the app never stored.
     conn = psycopg2.connect(
         host=os.environ.get("PGHOST", "db"),
-        dbname=os.environ.get("PGDATABASE", "meridian"),
+        dbname=os.environ.get("PGDATABASE", ""),
         user=username,
         password=password,
     )

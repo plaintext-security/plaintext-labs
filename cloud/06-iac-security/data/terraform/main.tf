@@ -1,4 +1,4 @@
-# Meridian Financial — legacy infrastructure module
+# the target account — legacy infrastructure module
 # INTENTIONALLY MISCONFIGURED for security training.
 # These misconfigurations represent real-world findings.
 

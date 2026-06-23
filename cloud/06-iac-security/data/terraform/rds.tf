@@ -2,13 +2,13 @@
 # CIS AWS 2.3.1: Ensure that encryption is enabled for RDS Instances (FAIL)
 # checkov: CKV_AWS_17, CKV_AWS_133, CKV_AWS_157, CKV2_AWS_60
 
-resource "aws_db_instance" "meridian_postgres" {
-  identifier        = "meridian-app-db"
+resource "aws_db_instance" "_postgres" {
+  identifier        = "app-db"
   engine            = "postgres"
   engine_version    = "15.3"
   instance_class    = "db.t3.medium"
   allocated_storage = 100
-  db_name           = "meridianapp"
+  db_name           = "app"
   username          = "dbadmin"
   password          = "changeme-before-deploy"  # placeholder, should come from Secrets Manager
 
@@ -30,7 +30,7 @@ resource "aws_db_instance" "meridian_postgres" {
   # MISCONFIGURED: no enhanced monitoring
   # monitoring_interval = 0 (default)
 
-  vpc_security_group_ids = [aws_security_group.meridian_db.id]
+  vpc_security_group_ids = [aws_security_group._db.id]
 
   skip_final_snapshot = true
 }

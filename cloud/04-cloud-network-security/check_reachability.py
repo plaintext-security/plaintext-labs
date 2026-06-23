@@ -14,8 +14,8 @@ intended loop:
 Exit 0 only when every assertion holds, so it doubles as a CI gate on network config.
 
 Usage:
-  python check_reachability.py data/account/meridian/describe-security-groups.json
-  python check_reachability.py data/account/meridian/security-groups-fixed.json
+  python check_reachability.py data/account/target/describe-security-groups.json
+  python check_reachability.py data/account/target/security-groups-fixed.json
 """
 import argparse
 import ipaddress
@@ -26,7 +26,7 @@ import sys
 # private/bastion range, so a rule scoped to a bastion CIDR correctly denies it.
 INTERNET = "203.0.113.50"  # TEST-NET-3
 
-# The reachability requirements for Meridian's three-tier app.
+# The reachability requirements for the target account's three-tier app.
 # source: an IP string ("the internet") OR a security-group id (group-referenced rule).
 # expected: True = must be reachable, False = must be denied.
 MATRIX = [

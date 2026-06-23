@@ -17,7 +17,7 @@
      image=%container.image.repository:%container.image.tag
      pid=%proc.pid cmdline=%proc.cmdline)
   priority: CRITICAL
-  tags: [container, T1098, T1611, meridian-lab]
+  tags: [container, T1098, T1611, lab]
 
 # ── Rule 2: Container launched with --privileged ─────────────────────────
 - rule: Privileged Container Started
@@ -33,7 +33,7 @@
     (container=%container.name image=%container.image.repository:%container.image.tag
      user=%user.name)
   priority: WARNING
-  tags: [container, T1610, meridian-lab]
+  tags: [container, T1610, lab]
 
 # ── Rule 3: Mount of host filesystem inside a container ──────────────────
 - rule: Container Mounts Host Filesystem
@@ -52,7 +52,7 @@
      image=%container.image.repository:%container.image.tag
      pid=%proc.pid cmdline=%proc.cmdline mounts=%evt.args)
   priority: CRITICAL
-  tags: [container, T1611, meridian-lab]
+  tags: [container, T1611, lab]
 
 # ── Rule 4: Read of sensitive credential-like files ──────────────────────
 - rule: Read Sensitive File in Container
@@ -70,4 +70,4 @@
      image=%container.image.repository:%container.image.tag
      pid=%proc.pid cmdline=%proc.cmdline)
   priority: WARNING
-  tags: [container, T1552.001, meridian-lab]
+  tags: [container, T1552.001, lab]

@@ -2,9 +2,9 @@
 # CIS AWS 1.16: Ensure IAM policies that allow full administrative privileges are not attached (FAIL)
 # checkov: CKV_AWS_40, CKV_AWS_274, CKV2_AWS_40
 
-resource "aws_iam_policy" "meridian_app_policy" {
-  name        = "meridian-app-policy"
-  description = "Policy for Meridian application services"
+resource "aws_iam_policy" "_app_policy" {
+  name        = "app-policy"
+  description = "Policy for  application services"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -31,8 +31,8 @@ resource "aws_iam_policy" "meridian_app_policy" {
   })
 }
 
-resource "aws_iam_role" "meridian_lambda_role" {
-  name = "meridian-lambda-execution"
+resource "aws_iam_role" "_lambda_role" {
+  name = "lambda-execution"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -47,8 +47,8 @@ resource "aws_iam_role" "meridian_lambda_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "meridian_lambda_admin" {
-  role       = aws_iam_role.meridian_lambda_role.name
+resource "aws_iam_role_policy_attachment" "_lambda_admin" {
+  role       = aws_iam_role._lambda_role.name
   # MISCONFIGURED: attaching AdministratorAccess to a Lambda execution role
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

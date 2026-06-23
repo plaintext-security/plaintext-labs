@@ -1,123 +1,149 @@
-# Lab 16 — Cloud Incident Response
+# Lab 16 — Reconstruct the Incident: Build the Timeline, Scope the Blast, Automate the Triage
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, predict-what-fires / reconstruct. [← Back to the module concept](README.md)*
 
 ## Setup
-This is a **reference lab** — the environment lives in the companion
+This is a **reference lab** — the environment ships one-command in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/16-cloud-incident-response
-make up       # build the lab container
-make demo     # run triage.py and print the incident timeline
-make shell    # drop into the container for interactive analysis
-make down     # stop when done
+make up         # build the Python 3.12 triage container
+make demo       # run triage.py — prints the reconstructed timeline, IOCs, containment checklist
+make shell      # drop into the container for interactive analysis
+make down       # stop when done
 ```
 
-The environment is a Python 3.12 container with `triage.py` and all data pre-loaded. No AWS
-account needed. `data/cloudtrail/incident.json` contains 17 CloudTrail events spanning the full
-attack chain. `data/vpc/flowlogs.csv` contains VPC flow log entries including large outbound
-transfers to external IPs.
+No AWS account needed. `data/cloudtrail/incident.json` holds 17 CloudTrail events spanning the full attack
+chain; `data/vpc/flowlogs.csv` holds VPC flow logs including a large outbound transfer to an external IP.
+`triage.py` is the reconstruction tool you'll read, run, and **extend**.
+
+> Only test systems you own or have explicit written permission to test. This lab uses bundled synthetic
+> data modelled on real cloud-IR cases; no real account or credentials are involved.
 
 ## Scenario
-It is 08:45 UTC on 2024-11-14. Meridian Financial's SOC received a GuardDuty alert at 08:40 —
-six hours after the fact — flagging an `UnauthorizedAccess:IAMUser/TorIPCaller` finding. Your job
-is to reconstruct the full incident, determine what data was exfiltrated, identify whether the
-attacker left any persistence mechanisms, and produce a timeline and IOC set for the executive
-briefing in 90 minutes.
+It is 08:45 UTC on 2024-11-14. The target account's SOC got a GuardDuty alert at 08:40 —
+**six hours after the fact** — for `UnauthorizedAccess:IAMUser/TorIPCaller`. You're handed a raw CloudTrail
+export and the flow logs and told: reconstruct the incident, determine what was exfiltrated, find any
+persistence the attacker left, and have a timeline + IOC set ready for the executive briefing in 90
+minutes. **The LastPass parallel is your watch-out:** the obvious containment (kill the known key) is the
+one that left a door open last time. Scope past it.
 
-The CloudTrail trail was stopped at 02:18 UTC and re-enabled at 08:35 UTC by the SOC. You have
-complete logs for 02:14–02:18 (the attack window) and from 08:30 onward (remediation).
+The trail was **stopped at 02:18 UTC and re-enabled at 08:35 UTC** by the SOC. You have complete logs for
+02:14–02:18 (the attack window) and from 08:30 onward (remediation). The hours between are the gap.
 
-> Only test systems you own or have explicit written permission to test. This lab uses
-> bundled synthetic data; no real AWS account or credentials are involved.
+Each step runs the same rhythm: **Predict** (commit before you look) → **Do** (reconstruct the evidence) →
+**Reveal** (check your call) → **Record** (one line in the timeline/report).
 
 ## Do
 
-1. [ ] **Triage the raw events yourself first.** Open `data/cloudtrail/incident.json` and work the
-   incident by hand before running the bundled tool. Establish the attacker's source IP, the
-   compromised principal, the event that stopped the trail, and the timestamp where the logging gap
-   begins. How long was the gap? Then run `make demo` and use `triage.py`'s timeline as a check
-   against what you found — what did you miss, and what did the tool miss?
+### Part 1 — Reconstruct the timeline (the super-timeline move)
 
-2. [ ] **Reconstruct the attack chain.** Label each CloudTrail event with its kill-chain phase. The
-   phases are: Initial Access → Enumeration → Privilege Escalation → Collection → Exfiltration →
-   Defense Evasion → Persistence → Remediation. Assign the phase yourself from the event names and
-   parameters, then cross-reference each against its ATT&CK technique ID to confirm your tagging.
+1. [ ] **Ask the first question before you read an event.** Open `data/cloudtrail/incident.json`.
+   **Predict:** is the trail intact? Find the event that answers it, the timestamp it fires, and where the
+   gap begins and ends. **Reveal:** `StopLogging` at 02:18; `StartLogging` at 08:35. **Record:** the gap
+   bounds and duration — the gap is evidence, not absence of it.
 
-3. [ ] **Identify the persistence mechanism.** The attacker created a second access key before
-   stopping the trail. Find the event, note the new key ID, and explain: if the SOC had only
-   disabled the original key (`AKIAIOSFODNN7EXAMPLE`), would the attacker still have access?
-   What does the containment checklist in `triage.py` output say about this?
+2. [ ] **Triage by hand, then check the tool.** Working the raw JSON, establish the attacker's source IP,
+   the initially-compromised principal, and the *order* of events. Then run `make demo` and read
+   `triage.py`'s sorted timeline as a **check on your reconstruction** — what did you miss, and what did the
+   tool miss? Note both; the tool is a junior analyst, not the verdict.
 
-4. [ ] **Correlate with flow logs.** Look at the VPC flow log output from `make demo`. Identify
-   the outbound flow(s) to the attacker IP `203.0.113.42`. What is the total bytes transferred
-   outbound? What does the corresponding CloudTrail event tell you about what was transferred?
-   What additional information does the flow log add that CloudTrail doesn't have?
+3. [ ] **Reconstruct the attack chain, phase by phase.** This is the super-timeline: every event already
+   carries its timestamp — your job is to sort by it and **tag each with its kill-chain phase** (Initial
+   Access → Enumeration → Privilege Escalation → Collection → Exfiltration → Defense Evasion → Persistence
+   → Remediation), then confirm each tag against its **ATT&CK-for-Cloud technique ID**. **Predict** the
+   escalation hop before you find it: how does a *dev* key reach the financial-reports bucket?
+   **Reveal:** the `IAMUser` dev-alice → `AssumeRole DataPipelineRole` → `AssumedRole` transition —
+   the `userIdentity` type change *is* the privilege escalation. **Record** the table row for each event.
 
-5. [ ] **Assess the exfiltration scope.** The attacker accessed four objects in
-   `meridian-financial-reports-prod`: three quarterly earnings reports and a compensation
-   spreadsheet. They also added a bucket replication rule. Write a one-paragraph impact assessment:
-   what data is confirmed exfiltrated (in CloudTrail), what data may have been exfiltrated via the
-   replication rule before it was removed, and what is the regulatory notification implication
-   (hint: financial data + compensation data + GDPR/state privacy law)?
+### Part 2 — Corroborate, scope, and contain
 
-6. [ ] **Extend `triage.py`.** Add a function `print_gap_analysis()` that detects when a
-   `StopLogging` event is present in the CloudTrail data and calculates the duration of the
-   logging gap (time between `StopLogging` and `StartLogging`). Print a warning with the gap
-   duration. Run `make demo` and confirm the output includes the gap.
+4. [ ] **Corroborate exfil across both planes.** In the flow-log output from `make demo`, find the outbound
+   flow(s) to the attacker IP `203.0.113.42`: total bytes out, and the CloudTrail event(s) they line up
+   with in time. **Record** the verdict: control-plane `GetObject`s + data-plane large outbound to an
+   external IP = a defensible exfiltration finding, not a guess. Note what the flow log adds that CloudTrail
+   alone can't (volume, direction).
+
+5. [ ] **Find the persistence — scope past the obvious key (the LastPass lesson).** **Predict:** if the SOC
+   disables only the original key `AKIAIOSFODNN7EXAMPLE`, is the attacker out? **Reveal:** a second key
+   (`CreateAccessKey` on dev-alice → `AKIAI7SFODNN7EXAMPLE`) and an `S3 PutBucketReplication` to external
+   account `999999999999` were planted *before* the trail stopped. Eviction of the known key is *not*
+   eradication. **Record** both persistence mechanisms and confirm the containment checklist addresses each.
+
+6. [ ] **Write the impact assessment.** Four objects were read from `financial-reports-prod` (three
+   quarterly earnings PDFs + a compensation spreadsheet) and a replication rule was added. In one paragraph:
+   what is **confirmed exfiltrated** (in CloudTrail), what **may have** gone via the replication rule before
+   it was removed, and the **regulatory notification** implication (financial + compensation data → state
+   privacy law / GDPR). State containment in order: revoke creds → close exfil channel → restore logging →
+   scope impact.
+
+### Part 3 — Automate the reconstruction
+
+7. [ ] **Extend `triage.py` to surface the gap automatically.** Add `print_gap_analysis()` that detects a
+   `StopLogging` event, computes the duration to the matching `StartLogging`, and prints a warning with the
+   gap bounds and length. Run `make demo` and confirm the gap (~6h 17m) appears. This turns "is the trail
+   intact?" from a manual check into a check the tool always makes.
 
 ## Success criteria — you're done when
-- [ ] You have a complete attack-chain table (phase, eventName, timestamp, technique ID) covering
-  all attacker events in the timeline.
-- [ ] You can name both access keys the attacker used or created, and confirm the containment
-  checklist addresses both.
-- [ ] Your gap analysis extension fires and prints the correct gap duration (approximately 6h 17m).
-- [ ] Your impact assessment is written and addresses data confirmed exfiltrated, potential
-  replication scope, and regulatory notification.
+- [ ] You have a complete attack-chain table (phase, eventName, timestamp, ATT&CK technique ID, what it
+  means) covering every attacker event — sorted on time, the join key.
+- [ ] You can name **both** keys the attacker used or created **and** the replication rule, and confirm the
+  containment checklist addresses all three — i.e. you scoped past the obvious key.
+- [ ] Your exfil finding cites *both* planes (CloudTrail `GetObject`s + the flow-log outbound volume).
+- [ ] `print_gap_analysis()` fires and prints the correct gap duration.
+- [ ] You scored your three "Call it" predictions from the README against the reveals — especially Q1
+  (what survives an eviction).
 
 ## Deliverables
-- `timeline.md` — the attack chain table (phase, eventName, timestamp, technique ID, what it means).
-- `impact.md` — the impact assessment from step 5.
-- `triage.py` — updated with the gap analysis function from step 6.
+- `timeline.md` — the attack-chain table (phase, eventName, timestamp, technique ID, meaning), with the
+  `StopLogging` gap called out.
+- `impact.md` — the impact assessment from step 6 (confirmed vs. potential exfil, regulatory implication,
+  containment order).
+- `triage.py` — updated with `print_gap_analysis()` and the JSON output below.
+- Do **not** commit credentials, bucket contents, or any real account data.
 
 ## Automate & own it
-**Required.** Extend `triage.py` with a `--json` flag that outputs the timeline and IOC set as
-structured JSON rather than human-readable text. The output should be a single JSON object with
-keys `timeline` (list of event objects), `iocs` (IPs, keys, principals, buckets, external
-accounts), and `containment_checklist` (list of action strings). Have a model draft the
-output-mode flag and the JSON serialisation. Before committing: run it, parse the output with
-`python -c "import json,sys; json.load(sys.stdin)"` to confirm it is valid JSON, and verify the
-`iocs` section contains all the attacker-associated keys and IPs from the incident. You own the
-logic.
+**Required — judgment-as-code, the reconstruction made repeatable.** Extend `triage.py` with a `--json`
+flag that emits the whole reconstruction as one structured JSON object: keys `timeline` (the ordered event
+list), `iocs` (IPs, access keys, principals, buckets, external accounts), and `containment_checklist` (the
+ordered action strings). This is the super-timeline move encoded — heterogeneous events merged and sorted on
+time, then serialized so the next responder (or a SOAR runbook) consumes it without re-deriving it. Have a
+model draft the `--json` flag and the serialization; **review every line.** Before committing: run it, pipe
+through `python -c "import json,sys; json.load(sys.stdin)"` to prove valid JSON, and verify the `iocs`
+section contains **all** attacker-associated keys and IPs *and* the external replication account — the
+persistence the obvious triage misses. You own the logic and the verdict it encodes.
 
 ## AI acceleration
-Paste the full timeline from `make demo` into a model and ask: "Based on this CloudTrail timeline,
-what did the attacker access, what persistence mechanisms did they leave, and what containment
-steps are missing?" Use the output as a second-opinion check against your own analysis in step 2–5.
-Note any discrepancies — cases where the model misattributes a phase or misses a persistence
-mechanism — and explain why your analysis is correct. This is the review discipline that keeps
-AI-assisted IR from missing the subtleties.
+Paste the `make demo` timeline into a model: "Map each event to ATT&CK-for-Cloud, flag anything out of
+expected order, and list the persistence mechanisms and any missing containment steps." Use it as a
+second opinion against your Part 1–2 analysis. It will reliably tag the common techniques — and reliably
+stumble on temporal reasoning: watch for it treating the persistence key's later use as the same session,
+or missing that the replication rule is a *second* exfil channel. Note every discrepancy and explain why
+your reconstruction is right. That review discipline is what keeps AI-assisted IR from declaring "contained"
+the way the first LastPass response did.
 
 ## Connects forward
-This module closes the cloud attack ↔ defence cycle that ran through modules 14–16. Module 14 gave
-you the attacker's perspective and the CloudTrail signatures; module 15 gave you the detection
-rules; this module gives you the IR workflow. The cloud capstone integrates all three: find the
-attack path, close it as code, and build the detection that would have fired sooner.
+This is the **respond** half the capstone integrates. Module 14 gave you the attacker's TTPs and the
+telemetry they generate; Module 15 gave you the detection that should have fired at 02:14 instead of an
+alert at 08:40; this module gives you the reconstruction that turns raw logs into a defensible timeline,
+IOC set, and containment plan. The cloud capstone runs all three end to end: reproduce the chain, render
+the verdict memo, close every hop as code, detect it, and **write the IR timeline** — this lab's output is
+that timeline.
 
 ## Marketable proof
-> "I reconstruct cloud incidents from raw CloudTrail and VPC flow logs — timeline, IOC extraction,
-> impact assessment, and containment checklist — and I can explain exactly where the detection gap
-> was and how to close it."
+> "I reconstruct cloud incidents from raw CloudTrail and VPC flow logs — a super-timeline sorted on the one
+> shared key, time — into a defensible narrative: per-phase chain with ATT&CK IDs, two-plane exfil
+> corroboration, full IOC set, and an ordered containment plan that scopes *past* the obvious compromised
+> key to the persistence the attacker planted. I automated the whole reconstruction into a triage tool that
+> emits structured JSON, and I can explain exactly where the detection gap was."
 
 ## Stretch
-- Feed the `data/cloudtrail/incident.json` to a real Hayabusa invocation (if you have it
-  installed) using `hayabusa json-timeline -f data/cloudtrail/incident.json`. Compare its output
-  to `triage.py`'s timeline. What does Hayabusa surface that `triage.py` misses, and vice versa?
-- Write a second version of `triage.py` that queries the events using Athena-style SQL logic
-  (using Python's `sqlite3` in-memory table). Load the CloudTrail records into a table and run
-  `SELECT eventTime, eventName, sourceIPAddress FROM events WHERE sourceIPAddress = '203.0.113.42'
-  ORDER BY eventTime` to reconstruct the attacker timeline. This mimics the CloudTrail → S3 →
-  Athena pattern used in production IR.
+- Feed `data/cloudtrail/incident.json` to a real `hayabusa json-timeline` invocation (if installed) and
+  diff its output against `triage.py` — what does each surface that the other misses?
+- Re-implement the reconstruction as Athena-style SQL using Python's in-memory `sqlite3`: load the records
+  into a table and run `SELECT eventTime, eventName, sourceIPAddress FROM events WHERE sourceIPAddress =
+  '203.0.113.42' ORDER BY eventTime`. This mirrors the production CloudTrail → S3 → Athena IR pattern.
+- Map the lab back to the anchor: write the one-paragraph parallel between the target account's persistence keys and
+  LastPass's incident-1-data-as-incident-2-recon. Where is the "containment ≠ eradication" gap in each?

@@ -23,8 +23,8 @@ import json
 import re
 import sys
 
-ADMIN = "arn:aws:iam::000000000000:role/MeridianKeyAdmin"
-APP = "arn:aws:iam::000000000000:role/MeridianAppRole"
+ADMIN = "arn:aws:iam::000000000000:role/KeyAdmin"
+APP = "arn:aws:iam::000000000000:role/AppRole"
 
 # (description, principal, action, expected-allowed)
 MATRIX = [

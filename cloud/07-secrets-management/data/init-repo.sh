@@ -15,35 +15,35 @@ if [ -d "$REPO/.git" ]; then
 fi
 
 git init "$REPO"
-git -C "$REPO" config user.email "meridian-dev@example.com"
-git -C "$REPO" config user.name "Meridian Dev"
+git -C "$REPO" config user.email "dev@example.com"
+git -C "$REPO" config user.name " Dev"
 
 # ---- Commit 1: introduce the credential ----
 cat > "$REPO/config.py" <<'PYEOF'
-# config.py — Meridian Financial app configuration
+# config.py — the target account app configuration
 # NOTE: This file contains a deliberately planted FAKE credential for security training.
 # The key below is the AWS documentation example key — it is non-functional.
 
 import os
 
-APP_NAME = "meridian-payment-processor"
+APP_NAME = "payment-processor"
 ENVIRONMENT = "production"
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
-DB_HOST = os.environ.get("DB_HOST", "db.internal.meridian.example")
+DB_HOST = os.environ.get("DB_HOST", "db.internal..example")
 DB_PORT = int(os.environ.get("DB_PORT", "5432"))
-DB_NAME = os.environ.get("DB_NAME", "meridian_payments")
+DB_NAME = os.environ.get("DB_NAME", "_payments")
 
 # AWS credentials — HARDCODED (this is the misconfiguration being demonstrated)
 AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 AWS_REGION = "us-east-1"
 
-PAYMENT_RECORDS_BUCKET = "meridian-payment-records-prod"
+PAYMENT_RECORDS_BUCKET = "payment-records-prod"
 PYEOF
 
 cat > "$REPO/app.py" <<'PYEOF'
-# app.py — Meridian Financial payment processor stub
+# app.py — the target account payment processor stub
 import config
 
 def process_payment(amount, account_id):
@@ -58,25 +58,25 @@ git -C "$REPO" commit -m "Add payment processor config and app stub"
 
 # ---- Commit 2: remove the credential (but it persists in history) ----
 cat > "$REPO/config.py" <<'PYEOF'
-# config.py — Meridian Financial app configuration
+# config.py — the target account app configuration
 # Credentials removed — use environment variables or a secrets manager.
 
 import os
 
-APP_NAME = "meridian-payment-processor"
+APP_NAME = "payment-processor"
 ENVIRONMENT = "production"
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
-DB_HOST = os.environ.get("DB_HOST", "db.internal.meridian.example")
+DB_HOST = os.environ.get("DB_HOST", "db.internal..example")
 DB_PORT = int(os.environ.get("DB_PORT", "5432"))
-DB_NAME = os.environ.get("DB_NAME", "meridian_payments")
+DB_NAME = os.environ.get("DB_NAME", "_payments")
 
 # AWS credentials — loaded from environment (IAM role or secrets manager)
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
-PAYMENT_RECORDS_BUCKET = "meridian-payment-records-prod"
+PAYMENT_RECORDS_BUCKET = "payment-records-prod"
 PYEOF
 
 git -C "$REPO" add config.py
@@ -84,7 +84,7 @@ git -C "$REPO" commit -m "Remove hardcoded credentials — use env vars instead"
 
 # ---- Commit 3: README ----
 cat > "$REPO/README.md" <<'MDEOF'
-# Meridian Payment Processor
+#  Payment Processor
 
 Internal payment processing service. All configuration via environment variables.
 Never hardcode credentials — use the IAM role or retrieve from Vault.

@@ -16,7 +16,7 @@
         }
       ],
       "IsDefault": false,
-      "Tags": [{"Key": "Name", "Value": "meridian-prod-vpc"}]
+      "Tags": [{"Key": "Name", "Value": "prod-vpc"}]
     }
   ]
 }

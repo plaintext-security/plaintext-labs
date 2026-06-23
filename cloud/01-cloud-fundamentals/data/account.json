@@ -1,8 +1,8 @@
 {
-  "_comment": "Seed data: simulated Meridian Financial IAM snapshot. This file is committed; it contains no real credentials.",
+  "_comment": "Seed data: simulated the target account IAM snapshot. This file is committed; it contains no real credentials.",
   "Account": {
     "Id": "000000000001",
-    "Alias": "meridian-financial-dev"
+    "Alias": "financial-dev"
   },
   "Users": [
     {
@@ -17,15 +17,15 @@
       "UserName": "dev-alice",
       "Arn": "arn:aws:iam::000000000001:user/dev-alice",
       "AttachedPolicies": [
-        { "PolicyName": "MeridianDevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy" }
+        { "PolicyName": "DevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/DevPolicy" }
       ],
       "Note": "Developer account. Custom policy was copy-pasted from a blog post and never reviewed."
     }
   ],
   "Policies": [
     {
-      "PolicyName": "MeridianDevPolicy",
-      "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy",
+      "PolicyName": "DevPolicy",
+      "PolicyArn": "arn:aws:iam::000000000001:policy/DevPolicy",
       "DefaultVersionId": "v1",
       "Document": {
         "Version": "2012-10-17",
@@ -35,7 +35,7 @@
             "Effect": "Allow",
             "Action": "s3:*",
             "Resource": "*",
-            "Note": "FINDING: wildcard resource grants access to all buckets, not just meridian-uploads."
+            "Note": "FINDING: wildcard resource grants access to all buckets, not just uploads."
           },
           {
             "Sid": "EC2Describe",
@@ -59,8 +59,8 @@
   ],
   "Roles": [
     {
-      "RoleName": "MeridianEC2InstanceRole",
-      "Arn": "arn:aws:iam::000000000001:role/MeridianEC2InstanceRole",
+      "RoleName": "EC2InstanceRole",
+      "Arn": "arn:aws:iam::000000000001:role/EC2InstanceRole",
       "TrustPolicy": {
         "Version": "2012-10-17",
         "Statement": [
@@ -72,14 +72,14 @@
         ]
       },
       "AttachedPolicies": [
-        { "PolicyName": "MeridianDevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/MeridianDevPolicy" },
+        { "PolicyName": "DevPolicy", "PolicyArn": "arn:aws:iam::000000000001:policy/DevPolicy" },
         { "PolicyName": "AmazonSSMManagedInstanceCore", "PolicyArn": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" }
       ]
     }
   ],
   "S3Buckets": [
     {
-      "Name": "meridian-uploads-dev",
+      "Name": "uploads-dev",
       "Region": "us-east-1",
       "PublicAccessBlock": {
         "BlockPublicAcls": false,

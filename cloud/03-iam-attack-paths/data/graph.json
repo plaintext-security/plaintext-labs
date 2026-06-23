@@ -1,5 +1,5 @@
 {
-  "_comment": "Pre-built pmapper-style IAM graph for the Meridian Financial escalation scenario. Committed as seed data — no real credentials.",
+  "_comment": "Pre-built pmapper-style IAM graph for the the target account escalation scenario. Committed as seed data — no real credentials.",
   "_format": "Simplified pmapper graph JSON. Nodes = principals, edges = permission-composition relationships.",
   "account_id": "000000000001",
   "nodes": [
@@ -9,24 +9,24 @@
       "name": "dev-alice",
       "is_admin": false,
       "tags": {},
-      "attached_policies": ["MeridianAlicePolicy"]
+      "attached_policies": ["AlicePolicy"]
     },
     {
-      "arn": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "arn": "arn:aws:iam::000000000001:role/LambdaRole",
       "id_type": "role",
-      "name": "MeridianLambdaRole",
+      "name": "LambdaRole",
       "is_admin": false,
       "tags": {},
-      "attached_policies": ["MeridianLambdaPolicy"],
+      "attached_policies": ["LambdaPolicy"],
       "trust_principals": [
         "arn:aws:iam::000000000001:user/dev-alice",
         "lambda.amazonaws.com"
       ]
     },
     {
-      "arn": "arn:aws:iam::000000000001:role/MeridianAdminRole",
+      "arn": "arn:aws:iam::000000000001:role/AdminRole",
       "id_type": "role",
-      "name": "MeridianAdminRole",
+      "name": "AdminRole",
       "is_admin": true,
       "tags": {},
       "attached_policies": ["AdministratorAccess"],
@@ -38,16 +38,16 @@
   "edges": [
     {
       "source": "arn:aws:iam::000000000001:user/dev-alice",
-      "destination": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
+      "destination": "arn:aws:iam::000000000001:role/LambdaRole",
       "edge_type": "AssumeRole",
-      "reason": "dev-alice has sts:AssumeRole on MeridianLambdaRole and is listed in its trust policy",
+      "reason": "dev-alice has sts:AssumeRole on LambdaRole and is listed in its trust policy",
       "required_actions": ["sts:AssumeRole"]
     },
     {
-      "source": "arn:aws:iam::000000000001:role/MeridianLambdaRole",
-      "destination": "arn:aws:iam::000000000001:role/MeridianAdminRole",
+      "source": "arn:aws:iam::000000000001:role/LambdaRole",
+      "destination": "arn:aws:iam::000000000001:role/AdminRole",
       "edge_type": "PassRole+UpdateFunction",
-      "reason": "MeridianLambdaRole has iam:PassRole/* and lambda:UpdateFunctionConfiguration/*. An attacker can update an existing Lambda's execution role to MeridianAdminRole, then invoke the Lambda to execute as admin.",
+      "reason": "LambdaRole has iam:PassRole/* and lambda:UpdateFunctionConfiguration/*. An attacker can update an existing Lambda's execution role to AdminRole, then invoke the Lambda to execute as admin.",
       "required_actions": ["iam:PassRole", "lambda:UpdateFunctionConfiguration", "lambda:InvokeFunction"]
     }
   ],
@@ -55,31 +55,31 @@
     {
       "path_id": 1,
       "source": "arn:aws:iam::000000000001:user/dev-alice",
-      "destination": "arn:aws:iam::000000000001:role/MeridianAdminRole",
+      "destination": "arn:aws:iam::000000000001:role/AdminRole",
       "hops": [
         {
           "hop": 1,
           "from": "dev-alice",
-          "to": "MeridianLambdaRole",
+          "to": "LambdaRole",
           "action": "sts:AssumeRole",
           "note": "Direct trust — dev-alice is an explicit principal in the trust policy"
         },
         {
           "hop": 2,
-          "from": "MeridianLambdaRole",
-          "to": "MeridianAdminRole",
+          "from": "LambdaRole",
+          "to": "AdminRole",
           "action": "iam:PassRole + lambda:UpdateFunctionConfiguration",
-          "note": "Update a Lambda's execution role to MeridianAdminRole; invocation then runs as admin"
+          "note": "Update a Lambda's execution role to AdminRole; invocation then runs as admin"
         }
       ]
     }
   ],
   "minimum_cut_set": {
-    "description": "Remove the dev-alice principal from MeridianLambdaRole's trust policy, OR scope iam:PassRole on MeridianLambdaRole to only pass MeridianLambdaRole itself (not MeridianAdminRole).",
+    "description": "Remove the dev-alice principal from LambdaRole's trust policy, OR scope iam:PassRole on LambdaRole to only pass LambdaRole itself (not AdminRole).",
     "cheapest_fix": {
-      "role": "MeridianLambdaRole",
-      "change": "Scope iam:PassRole Resource from '*' to 'arn:aws:iam::000000000001:role/MeridianLambdaRole'",
-      "result": "MeridianLambdaRole can no longer pass MeridianAdminRole to a Lambda function — edge 2 is broken."
+      "role": "LambdaRole",
+      "change": "Scope iam:PassRole Resource from '*' to 'arn:aws:iam::000000000001:role/LambdaRole'",
+      "result": "LambdaRole can no longer pass AdminRole to a Lambda function — edge 2 is broken."
     }
   }
 }

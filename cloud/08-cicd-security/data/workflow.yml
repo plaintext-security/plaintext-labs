@@ -11,7 +11,7 @@
 # 6. No image scanning before push
 # 7. No secrets scanning gate
 
-name: Meridian Deploy (MISCONFIGURED — training only)
+name:  Deploy (MISCONFIGURED — training only)
 
 on:
   push:
@@ -43,13 +43,13 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t meridian-app:${{ github.sha }} .
+          docker build -t app:${{ github.sha }} .
           # ISSUE 6: no trivy scan before push
 
       - name: Push to ECR
         run: |
           # Pushes without scanning the image for CVEs
-          echo "docker push meridian-ecr.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}"
+          echo "docker push ecr.dkr.ecr.us-east-1.amazonaws.com/app:${{ github.sha }}"
 
       - name: Deploy to Lambda
         run: |

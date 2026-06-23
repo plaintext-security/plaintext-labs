@@ -1,158 +1,137 @@
-# Lab 15 — Cloud Logging & Detection
+# Lab 15 — Predict What Fires: Detecting the Module-14 Detonation
 
-*Hands-on lab · [← Back to the module concept](README.md)*
-
+*Variant D · breach-driven, predict-what-fires. [← Back to the module concept](README.md)*
 
 ## Setup
-This is a **reference lab** — the environment lives in the companion
+This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/15-cloud-logging-detection
-make up       # build the lab container
-make demo     # run the detector, then prove the eval gate is GREEN on the good rule, RED on regressions
-make eval     # score the Sigma rule against the HELD-OUT corpus and run the regression gate
-make eval-bad # watch the gate go RED on the over-broad and too-narrow regressed rules
-make shell    # drop into the container for interactive work
-make down     # stop when done
+make up         # build the Python 3.12 detection container
+make demo       # run the bundled detector over the seed CloudTrail events
+make shell      # drop into the container to work
+make down       # stop when done
 ```
 
-The environment is a Python 3.12 container with the detection script (`detect.py`) and all seed
-data pre-loaded. No AWS account needed.
+The environment carries the detection script (`detect.py`), `sigma-cli`, and all seed data — including a
+CloudTrail export shaped like the **module-14 detonation** (an `AssumeRole`, a `CreateUser` →
+`AttachUserPolicy` admin escalation, a burst of `GetObject` reads, a no-MFA `ConsoleLogin`) plus a normal
+workday of benign traffic, and a sample GuardDuty finding. No AWS account needed.
+
+> Only test systems you own or have explicit written permission to test. This lab uses bundled synthetic
+> data shaped like real CloudTrail; no live account or credentials are involved.
 
 ## Scenario
-Meridian Financial's CloudTrail has been forwarded to your analysis workstation as a JSON export.
-The CISO wants to know: what did the attacker do, how would GuardDuty have detected it, and where
-would GuardDuty have been silent? Your job is to build detections for the gaps.
+You are the target account's detection engineer. The team detonated the attack chain from module 14 in a
+lab account and forwarded the CloudTrail export. The CISO's question is the one Capital One and LastPass
+both failed: *the log existed — would anything have fired?* Your deliverable is a **tuned Sigma rule with
+an explicit false-positive analysis** — detection-as-code that catches the attack and stays quiet on the
+99.99% that's benign.
 
-The seed data in `data/cloudtrail/events.json` contains 19 events spanning a normal workday plus
-several attacker actions — including an unusual `AssumeRole`, a mass S3 download, a suspicious
-user-agent on a sensitive bucket, a root login without MFA, and a `CreateUser` + `AttachUserPolicy`
-admin escalation sequence. A sample GuardDuty finding JSON is in `data/guardduty-finding.json`.
-
-> Only test systems you own or have explicit written permission to test. This lab uses
-> bundled synthetic data; no real AWS account or credentials are involved.
-
-> **Honest gotcha — the mass S3 download in this seed data wouldn't normally be there.** S3
-> object-level (data-plane) reads like `GetObject` are **not logged by CloudTrail by default**;
-> you only see them if data events were explicitly enabled for that bucket, which costs money and
-> most teams enable only for sensitive buckets. The held-out corpus reflects this honestly: it
-> contains only **management-plane** events (IAM/STS/EC2 control-plane), because that is what a
-> default trail actually captures. Where data-plane access matters, you detect it by its
-> management-plane footprint, not by assuming the `GetObject` itself was logged.
+Each step runs the same rhythm: **Predict** (commit before you look) → **Do** (gather evidence) →
+**Reveal** (check your call) → **Record** (one line toward the deliverable).
 
 ## Do
-1. [ ] **Map the events manually.** Open `data/cloudtrail/events.json` and skim all 19 records.
-   Identify the events you consider suspicious. For each, note: the `eventName`, the
-   `userIdentity.arn` or type, the `sourceIPAddress`, and why it looks anomalous. (Hint: look for
-   API calls from unexpected IP ranges, unexpected regions, and unexpected user-agents.)
 
-2. [ ] **Run the bundled detector.** `make demo` runs `detect.py` against the seed events. Note
-   every finding it prints: rule name, severity, technique ID, and the triggering event details.
-   Are there events you flagged in step 1 that the detector missed? Are there detector findings
-   you didn't flag?
+### Part 1 — Predict the gap, then prove it
 
-3. [ ] **Read the GuardDuty finding.** Open `data/guardduty-finding.json`. Which event from the
-   CloudTrail seed data does this correspond to? What additional context does GuardDuty provide
-   that isn't in the raw CloudTrail event (geolocation, ASN, threat intelligence enrichment)?
-   What did GuardDuty *not* detect that the Python detector caught?
+1. [ ] **Predict what the default log captured.** From module 14 you detonated three things: an
+   `AssumeRole` (T1078.004), a `CreateUser`+`AttachUserPolicy` escalation (T1098), and a bulk `GetObject`
+   exfil (T1530). **Predict** which of the three is *not* in a default CloudTrail at all. Write it down.
 
-4. [ ] **Write your own Sigma rule.** Open `data/sigma_rule.yml` and read the bundled
-   `CreateUser + AttachUserPolicy` rule. Now write a *new* Sigma rule for the suspicious
-   `AssumeRole` from an unexpected region (the event at 09:20:15 from `eu-west-2`). Your rule
-   should fire on `AssumeRole` where `awsRegion` is not in the expected set. Save it as
-   `my_assumedrole_rule.yml` in the lab directory. (Hint: Sigma supports the `not` keyword and
-   value lists in the detection condition.)
+2. [ ] **Map the events.** Open `data/cloudtrail/events.json` and classify every record as **management**
+   or **data** plane (hint: `eventSource` + the `eventName` — config-changing/reading calls vs. object
+   reads/writes). **Reveal:** the `GetObject` records are *data events* — present here only because the
+   export had them on; in a **default** account they wouldn't exist. **Record:** T1530, the LastPass exfil
+   move, is invisible by default — note "were S3 data events enabled?" as your first IR question.
 
-5. [ ] **Add your rule to `detect.py`.** Implement `rule_assumedrole_my_rule()` in `detect.py`
-   (alongside the existing rules) and confirm it fires against the seed events with `make demo`.
-   The existing `rule_assumedrole_unexpected_region()` function is the reference implementation —
-   compare your Sigma logic to the Python logic and explain any differences.
+3. [ ] **Find the loud one worth detecting.** Among the *management* events, locate the `CreateUser`
+   immediately followed by `AttachUserPolicy` attaching `AdministratorAccess`. This is the T1098
+   escalation — loud, control-plane, logged for free. **Record:** this is the sequence you'll write a rule for.
 
-6. [ ] **Compare detection approaches.** For each of the five rules in `detect.py`, write one
-   sentence on whether GuardDuty would catch the same thing natively, and if not, why not. (Use
-   the GuardDuty finding types list from the Learn path.)
+### Part 2 — Write the detection, then tune it
 
-7. [ ] **Score the rule against a held-out corpus.** "It fired in the demo" is not proof — the demo
-   events are the ones the rule was written against. Run `make eval`: it interprets the actual
-   `data/sigma_rule.yml` (selections, `followed by`, `timeframe`) over `eval_corpus/heldout.json` —
-   a labelled set the rule was *never tuned on* — and prints a scorecard: precision, recall, and
-   false-positive rate. The corpus is built around **near-misses** that separate a precise rule from
-   a sloppy one: legitimate provisioning that attaches a *scoped* (non-admin) policy, an admin grant
-   47 minutes later (outside the window) and to a different user, a `CreateUser` with no attach, an
-   `IAMFullAccess`/`PowerUserAccess` escalation a too-narrow rule misses. Read the confusion matrix:
-   recall is the floor (a miss is an undetected breach), the FP-rate is the economics (every benign
-   alert costs an analyst minutes — push it down without dropping recall).
+4. [ ] **Run the bundled detector.** `make demo` runs `detect.py` over the seed events. Note each finding:
+   rule, severity, technique, triggering event. Read the bundled `data/sigma_rule.yml`
+   (`CreateUser`→`AttachUserPolicy`) and confirm how it references the *nested* fields
+   (`requestParameters.policyArn`, `userIdentity`) and its temporal `condition`.
 
-8. [ ] **Watch the gate go red, then green.** Run `make eval-bad` to score the two regressed
-   fixtures in `eval_corpus/`: the **over-broad** rule (admin-policy filter dropped) keeps recall
-   high but its FP-rate explodes on the benign provisioning near-misses; the **too-narrow** rule
-   (`AdministratorAccess` only) looks precise but goes silent on `IAMFullAccess`/`PowerUserAccess` —
-   recall collapses. The gate (`recall>=1.0`, `fp_rate<=0.0`) fails the build on either. `make demo`
-   runs the contrast end to end: PASS on the good rule, FAIL on both regressions. A gate you have
-   only ever watched pass is not a gate — the proof it works is seeing it go red.
+5. [ ] **Write your Sigma rule — and make it too broad on purpose first.** Author
+   `my_escalation_rule.yml` for the escalation sequence, but start with the naive version: fire on **any**
+   `CreateUser`. **Predict:** how many seed events does that match? **Do:** convert/run it and count.
+   **Reveal:** it fires on legitimate user-creation in the benign traffic too — the week-two failure mode
+   from the README. **Record:** raw recall is not detection.
+
+6. [ ] **Tune against benign activity (the actual craft).** Add the qualifying context that makes it
+   precise: require the *sequence* (`CreateUser` **followed by** `AttachUserPolicy` with an admin-class
+   `policyArn`) **within a short window**, and exclude your known-CI `sourceIPAddress`/automation
+   principal. Re-run. **Success is binary:** it fires on the attacker's escalation and on **zero** benign
+   events. If a benign event still trips it, tighten — that loop *is* the job.
+
+7. [ ] **Write the FP analysis.** In `detection-analysis.md`, state explicitly **what benign activity this
+   rule must NOT fire on** and why your conditions exclude each (e.g. CI provisioning users, IaC pipelines
+   attaching scoped policies, an admin onboarding a teammate). This is the judgment the rule encodes.
+
+8. [ ] **Reproduce in a native detector, and rule on coverage.** Open `data/guardduty-finding.json`: which
+   seed event does it correspond to, and what enrichment (geo/ASN/threat-intel) does it add that raw
+   CloudTrail lacks? Then, for each technique in Part 1, decide: would GuardDuty/Defender/SCC catch it
+   natively, or is Sigma filling a gap? **Record** one line each — including that the T1530 data-plane
+   exfil is a gap *for both* if data events were off.
 
 ## Success criteria — you're done when
-- [ ] You can identify all five suspicious event categories in the seed data by hand.
-- [ ] `make demo` fires findings for all five rules against the bundled events.
-- [ ] You have written a Sigma rule (`my_assumedrole_rule.yml`) that is syntactically valid and
-  correctly describes the detection logic.
-- [ ] You can explain one case where GuardDuty provides coverage the Python detector doesn't, and
-  one case where the open tool is needed.
-- [ ] `make eval` scores the Sigma rule against the held-out corpus and the gate is GREEN (recall
-  100%, FP-rate 0%); you can read the scorecard and say what each number means.
-- [ ] You have *seen the gate go RED* — via `make eval-bad` or `make demo` — on the over-broad and
-  too-narrow regressions, and can explain which metric each one breaks and why. A gate you've only
-  watched pass isn't a gate.
+- [ ] You correctly predicted (and proved by classifying events) that the **T1530 bulk download is
+  invisible in a default CloudTrail** — data events, off by default.
+- [ ] Your `my_escalation_rule.yml` is valid Sigma and **fires on the attacker's escalation sequence and on
+  zero benign events** in the seed data.
+- [ ] `detection-analysis.md` contains the explicit FP analysis (what it must NOT fire on, and why) and the
+  native-vs-open coverage call per technique.
+- [ ] You scored your Part-1 prediction and can state in one sentence why "alert on any `CreateUser`" is a
+  bad detection.
 
 ## Deliverables
-- `my_assumedrole_rule.yml` — your Sigma rule for the unexpected-region AssumeRole.
-- `detection-analysis.md` — the comparison table from step 6: rule, GuardDuty coverage (Y/N),
-  why the open tool adds/doesn't add value.
-- The **held-out scorecard** (`make eval` output) and a one-line note on which regression breaks
-  recall and which breaks the FP-rate — the proof the rule is measured, not vibes.
+- `my_escalation_rule.yml` — your tuned Sigma rule for the T1098 escalation sequence.
+- `detection-analysis.md` — the false-positive analysis (the benign activity it must not fire on) + the
+  per-technique native-vs-open coverage table.
+
+Commit both alongside the seed data. Do not commit raw exported logs, credentials, or real account data.
 
 ## Automate & own it
-**Required — build the regression gate for *your* rule.** The lab ships a held-out corpus
-(`eval_corpus/heldout.json`), a scorer (`eval_corpus/eval.py`), and a gate wired into `make eval` for
-the bundled `CreateUser → AttachUserPolicy` rule. Your job is to extend that machinery to a detection
-you write — so it can never silently regress. Pick a new technique (e.g. `DeleteTrail`/`StopLogging`,
-T1562.008 — Impair Defenses; `CreateAccessKey` on a user you didn't create; an admin grant to an
-*existing* user). Then: (a) add a small Sigma rule for it; (b) add held-out cases to the corpus —
-**attack cases it must catch and benign near-misses it must NOT fire on** (the near-misses are the
-point); (c) score it with `eval.py` and wire it into a gate. Have a model draft the rule and the
-near-miss events — but *you* label every case (a model labelling its own test set is exactly the
-contamination the held-out wall exists to prevent), and you confirm the gate goes GREEN on the good
-rule and RED when you deliberately break it. You own the labels, the metric, and the threshold.
+**Required — judgment-as-code, not keystroke scripting.** Your detection is a *judgment* about attacker
+behaviour; ship it as a **tuned rule that fires on the bad state and stays silent on benign traffic**, and
+make that property *testable*. Add your rule to `detect.py` (or wire `sigma-cli` to evaluate it) and write
+a tiny harness that runs it against **two** fixtures: the attack export (must fire ≥1) and a benign-only
+export (must fire **0**) — exit non-zero if either fails. That FP gate is the deliverable: it encodes "this
+detection earned its place by being precise, not just by catching the attack." Have a model draft the
+Sigma and the harness; review every line, run it, and confirm the benign fixture stays at zero for the
+*right* reason (your qualifying conditions, not a lucky field absence). A rule without an FP gate is a
+week-two mute waiting to happen.
 
 ## AI acceleration
-Describe your intended detection in plain English to a model: "I want to detect when someone calls
-CreateAccessKey on a user other than themselves, from an external IP." Ask it to draft the Python
-function body and the corresponding Sigma rule. Your job is to check: are the field names correct
-against the actual CloudTrail JSON structure? Does the logic handle missing fields without
-crashing? Does the false-positive section reflect your environment? Then *measure it* — don't trust
-the draft on the demo. A model will cheerfully widen a rule "to catch more" and flood the queue, or
-tighten it "to be precise" and go silent on a variant; the held-out scorecard (`make eval`) is what
-surfaces both. Run it; read the numbers; fix it; own it.
+Describe the detection in plain English ("escalation: a user is created then granted admin within five
+minutes, not from our CI IP") and have a model draft the Sigma rule and the Python matcher. It will get the
+syntax and common field names right — and it will write a generic, too-broad rule, because it doesn't know
+your baseline. Run its draft against the benign fixture: watch it false-fire, then tighten it yourself and
+rewrite its `falsepositives` block from what you actually observed. The model can author; only you can tune
+against *your* noise. Then ask it to craft a benign event that sneaks past your rule — if it can, your FP
+analysis is incomplete.
 
 ## Connects forward
-Module 16 (Cloud Incident Response) gives you a richer CloudTrail corpus — a full incident from
-initial access to exfiltration — and asks you to build a timeline. The detection rules you wrote
-here define what should have fired during the incident; the IR module asks you to explain why they
-did or didn't.
+Module 16 (Cloud Incident Response) hands you the full incident corpus — initial access to exfiltration —
+and asks you to reconstruct the timeline; the rules you tuned here define what *should* have fired during
+it, and the data-plane blind spot you found is exactly why the LastPass second-incident exfil was so hard
+to scope. The capstone's detection half is this rule plus a native detector, proven to fire on the
+simulation and stay silent on benign traffic.
 
 ## Marketable proof
-> "I read raw CloudTrail JSON, write Sigma rules for sequence-based cloud attack techniques, score
-> them against a held-out corpus (precision/recall/FP-rate), gate them in CI so they can't silently
-> regress, and can articulate exactly where GuardDuty provides coverage and where open tooling fills
-> the gap."
+> "Given cloud attack telemetry, I predict which actions the default log even captured (the S3 data-plane
+> blind spot included), write a Sigma detection for the technique worth catching, and **tune it against
+> benign activity** — shipping detection-as-code with an explicit false-positive analysis and an FP gate
+> that proves it fires on the attack and not on the noise."
 
 ## Stretch
-- Use the `sigma-cli` tool (installed in the container) to compile `data/sigma_rule.yml` to
-  Splunk SPL: `sigma convert -t splunk -p sysmon data/sigma_rule.yml`. The output won't be
-  perfectly valid for CloudTrail (Sysmon pipeline mismatch), but observe the structure and note
-  what a proper CloudTrail Sigma pipeline would need to change.
-- Extend `detect.py` to output its findings as structured JSON (one object per finding) rather
-  than human-readable text. This makes it easy to feed findings into a downstream SIEM or alert
-  management system.
+- Use `sigma-cli` to compile your rule to a backend (`sigma convert -t splunk ...`) and note what a proper
+  CloudTrail pipeline must remap (nested `requestParameters` fields) versus the default mapping.
+- Write a *second* rule for the data-plane gap: detect bulk `GetObject` (T1530) — then state honestly the
+  precondition that makes it useless in most real accounts (S3 data events were never enabled).

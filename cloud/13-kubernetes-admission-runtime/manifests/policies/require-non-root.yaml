@@ -13,7 +13,7 @@ metadata:
       Containers must not run as the root user (UID 0). Either runAsNonRoot: true
       or a specific runAsUser > 0 must be set. Running as root means that if a
       container escape occurs the attacker lands as root on the node.
-      Meridian Financial: required by internal container security policy CS-04.
+      the target account: required by internal container security policy CS-04.
 spec:
   validationFailureAction: Enforce
   background: true

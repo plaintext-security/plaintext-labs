@@ -13,12 +13,12 @@ if [ -d "$REPO/.git" ]; then
 fi
 
 git init "$REPO"
-git -C "$REPO" config user.email "meridian-ci@example.com"
-git -C "$REPO" config user.name "Meridian CI"
+git -C "$REPO" config user.email "ci@example.com"
+git -C "$REPO" config user.name " CI"
 
 cat > "$REPO/deploy.sh" <<'SHEOF'
 #!/usr/bin/env bash
-# deploy.sh — Meridian Financial deployment script
+# deploy.sh — the target account deployment script
 # NOTE: Contains deliberately planted FAKE credentials for security training.
 # The keys below are AWS documentation example keys — non-functional.
 
@@ -29,12 +29,12 @@ export AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
 export AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 export AWS_DEFAULT_REGION="us-east-1"
 
-echo "Deploying Meridian payment processor..."
+echo "Deploying  payment processor..."
 echo "Deploy complete."
 SHEOF
 
 cat > "$REPO/terraform.tfvars" <<'TFEOF'
-# terraform.tfvars — Meridian infrastructure variables
+# terraform.tfvars —  infrastructure variables
 # NOTE: Contains a deliberately planted FAKE private key pattern for security training.
 
 environment = "production"
