@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Meridian Security MCP Server
+SOC Security MCP Server
 Exposes three security data tools via the Model Context Protocol using fastmcp.
 
 Tools:
   - get_threat_intel(ioc)     Query threat intelligence for an IOC
-  - search_alerts(query)      Search the Meridian alert database
+  - search_alerts(query)      Search the SOC alert database
   - summarize_incident(id)    Retrieve and summarise an incident record
 
 Run:
@@ -29,8 +29,8 @@ except ImportError:
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/lab/data"))
 
 mcp = FastMCP(
-    name="meridian-security",
-    instructions="Security operations tools for Meridian Financial. Use these tools to "
+    name="soc-security",
+    instructions="Security operations tools for a SOC. Use these tools to "
                  "look up threat intelligence, search security alerts, and retrieve incident details.",
 )
 
@@ -48,7 +48,7 @@ IOC_PATTERN = re.compile(r'^[a-zA-Z0-9./:\-_@]{1,255}$')
 
 @mcp.tool()
 def get_threat_intel(ioc: str) -> dict:
-    """Look up an indicator of compromise (IOC) in the Meridian threat intelligence database.
+    """Look up an indicator of compromise (IOC) in the SOC threat intelligence database.
 
     The IOC can be an IP address (e.g. '185.220.101.42'), a domain name (e.g.
     'update-checker.net'), or an MD5/SHA256 hash. Returns classification (malicious/
@@ -84,7 +84,7 @@ def get_threat_intel(ioc: str) -> dict:
 
 @mcp.tool()
 def search_alerts(query: str) -> dict:
-    """Search the Meridian alert database for security alerts matching a keyword or IOC.
+    """Search the SOC alert database for security alerts matching a keyword or IOC.
 
     Performs a case-insensitive substring search across alert titles, descriptions,
     hostnames, and IOC fields. Returns up to 10 matching alerts ordered by timestamp
@@ -135,7 +135,7 @@ def search_alerts(query: str) -> dict:
 
 @mcp.tool()
 def summarize_incident(id: str) -> dict:
-    """Retrieve and summarise a Meridian security incident by its incident ID.
+    """Retrieve and summarise a SOC security incident by its incident ID.
 
     Returns the incident title, severity, current status, creation timestamp, assigned
     team, description, related alert IDs, and MITRE ATT&CK technique IDs. Use this tool

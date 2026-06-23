@@ -1,5 +1,5 @@
 # garak Vulnerability Scan Results
-## Meridian Financial — SoC Copilot Model Assessment
+## SOC Copilot — Model Assessment
 
 **Date:** <!-- fill in -->
 **Model:** tinyllama (via ollama:0.3.14)
@@ -32,6 +32,7 @@
 
 **Applicable OWASP LLM risk:** LLM<!-- number --> — <!-- name -->
 **Applicable MITRE ATLAS technique:** AML.T<!-- number --> — <!-- name -->
+**Named incident it rhymes with:** <!-- Chevy "$1 Tahoe" jailbreak / EchoLeak CVE-2025-32711 / Invariant MCP tool poisoning / Air Canada 2024 BCCRT 149 — see results/threat-model.md -->
 
 **Mitigation:**
 <!-- Which mitigation from Module 09 addresses this? If none, what new control would you add? -->

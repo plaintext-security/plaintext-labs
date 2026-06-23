@@ -10,16 +10,19 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs.git
 cd plaintext-labs/foundations/10-scripting
-make up      # build a Python 3.12 container (mounts your working dir)
-make demo    # show the target output + the Python building blocks
-make shell   # interactive shell with data/ mounted
-make down    # stop when done
+make fetch-data  # download the REAL loghub OpenSSH log (data/OpenSSH_2k.log)
+make up          # build a Python 3.12 container (mounts your working dir; runs fetch-data)
+make demo        # show the target output + the Python building blocks
+make shell       # interactive shell with data/ mounted
+make down        # stop when done
 ```
 
 Your working directory is mounted into the container — write `topips.py` here and it persists on your
-host. The lab ships a **real-format SSH `auth.log`** under `data/`: genuine
-[T1110 Brute Force](https://attack.mitre.org/techniques/T1110/) noise, the same shape you triaged by
-hand in module 04 — now at a scale you wouldn't want to count by eye.
+host. The lab analyzes the **same real public SSH log as module 04**: the
+[loghub OpenSSH dataset](https://github.com/logpai/loghub) (`OpenSSH_2k.log`), a real capture of an
+internet-facing `sshd` under [T1110 Brute Force](https://attack.mitre.org/techniques/T1110/) — genuine
+attacker IPs, now at a scale you wouldn't want to count by eye. See `data/PROVENANCE.md`. (A tiny
+committed `ssh_auth.log` is the offline fallback / known-answer fixture for your test.)
 
 ## Scenario
 
@@ -36,7 +39,7 @@ able to defend every line of it* — especially if AI wrote the first draft.
 You may have a model draft each step — but **read every line before you keep it**, and run it against
 data you understand. Don't paste blind.
 
-1. [ ] **See the scale problem.** `wc -l data/ssh_auth.log`, then `grep "Failed password"` it. Confirm
+1. [ ] **See the scale problem.** `wc -l data/OpenSSH_2k.log`, then `grep "Failed password"` it. Confirm
    for yourself that ranking these by hand is not happening. Run `make demo` to see the target output
    your tool should reproduce.
 

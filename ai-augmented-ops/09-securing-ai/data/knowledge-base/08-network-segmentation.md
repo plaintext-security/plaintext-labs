@@ -1,29 +1,29 @@
-# Network Segmentation — Security Architecture Reference
-**Document type:** Architecture reference | **Owner:** Network Security | **Last reviewed:** 2025-01-20
+# LastPass Breach — Environment Separation and Its Limits
+**Document type:** Practitioner analysis (grounded in the LastPass disclosures)
 
-## Zone overview
+## The separation that worked — and the one that didn't
+LastPass repeatedly noted that the **development environment was physically separated from
+production** and contained no customer data. That separation is exactly why **stage 1 did not reach
+customer vaults**: the developer-account compromise was confined to dev.
 
-| Zone | VLAN | Purpose | Internet access |
-|------|------|---------|----------------|
-| Corporate | 10 | Staff workstations | Via proxy only |
-| Finance | 20 | Finance applications, trading systems | Blocked |
-| Production | 30 | Customer-facing services | Inbound only (load balancer) |
-| DMZ | 40 | Publicly accessible services | Full (managed) |
-| Management | 100 | Jump hosts, monitoring | None |
-| Guest | 200 | Visitor WiFi | Direct (isolated) |
+But separation alone did not stop the breach. The attacker **pivoted out of band** — not by breaking
+a network boundary from dev to prod, but by using *information* stolen in dev to socially/technically
+target a different employee, then reaching the **cloud backup** environment through that employee's
+legitimate access.
 
-## Inter-zone rules (summary)
-- Finance → Production: blocked. Finance systems do not communicate directly with production APIs.
-- Corporate → Production: blocked except via the API gateway (`prod-gw-01`).
-- Management → all zones: allowed for management protocols (SSH 22, RDP 3389, SNMP) from jump hosts only.
-- Any zone → Management: blocked.
-- Guest → all internal zones: blocked.
+## Why the pivot bypassed segmentation
+- The crossing was **identity- and information-based**, not a packet crossing a firewall. Source code
+  and technical docs from dev told the attacker *who* to target and *what* to look for.
+- The cloud **backup** storage was a third-party environment reached with **valid credentials and
+  keys**, so no segmentation rule was "violated" in the network sense.
 
-## Jump hosts
-- `MERIDIAN-JUMP-01` (10.0.0.241) — Windows, RDP for Windows server administration.
-- `MERIDIAN-JUMP-02` (10.0.0.242) — Linux, SSH for Linux and cloud administration.
-All jump host sessions are logged to PAM and recorded. Session duration limit: 8 hours.
+## Practitioner takeaways
+- **Segmentation limits blast radius but not knowledge transfer.** Treat stolen source/technical
+  information as a force-multiplier for the *next* stage, even if the first stage was contained.
+- **Backups need the same trust-boundary thinking as production.** A backup environment that
+  aggregates all customer vaults is a production-grade crown jewel regardless of where it sits.
+- **Map privileged-identity reach across boundaries.** The dangerous path here was an *identity* with
+  keys to the backup store — not an open network route.
 
-## Detection notes
-Unexpected inter-zone traffic (e.g., Finance → DMZ direct, Corporate → Finance on non-HTTP ports)
-should be treated as a lateral movement indicator and triaged under the lateral movement runbook.
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

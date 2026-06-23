@@ -18,9 +18,14 @@ Access the n8n UI at http://localhost:5678 (no login required in local dev mode)
 
 The lab ships two seed files you build on:
 - `data/ai-playbook.json` — the importable n8n workflow (webhook → AI classify → branch).
-- `data/alert-fixtures.json` — a **labelled** set of alerts (each tagged with its expected branch:
-  `auto-escalate` / `require-approval` / `enrich-only`), including a low-confidence case and a
-  model-down case. This is the answer key your branch-logic gate scores against.
+- `data/alert-fixtures.json` — a **labelled** set of alerts (each tagged with its `expected_branch`:
+  `auto-escalate` (CRITICAL) / `require-approval` (HIGH) / `enrich-only` (MEDIUM/LOW) / `escalate`
+  (AI-unavailable → `AI_UNAVAILABLE`)), plus an `expected_decision`, `expected_confidence_band`, and a
+  one-line `rationale` per case. It deliberately includes a **low-confidence** case (ambiguous alert →
+  must route to human review, never an unsupervised action) and a **model-down** case (the AI node fails
+  → must fail safe to escalate, never the silent default). This is the answer key your branch-logic gate
+  scores against. The fields match the alert shape `trigger.py` POSTs (`id`/`timestamp`/`host`/`title`/
+  `description`).
 
 ## Scenario
 
@@ -36,6 +41,17 @@ firm, gone in 45 minutes. Your job is the opposite discipline: build the workflo
 gate that proves it can't silently do the wrong thing — including when the model is down.
 
 > Everything runs locally. No external services, no authorization needed.
+
+**What this lab is — and isn't (read this).** The n8n workflow, the Ollama classification, and the
+branch-logic gate are **real and runnable** — the routing decisions and the audit log are genuine
+output of the workflow you build and the gate you run. What's *illustrative* is the framing:
+**Knight Capital** is a real, widely-documented incident (Aug 1, 2012; ~$440M lost in ~45 minutes when
+dormant "Power Peg" code activated across the SMARS routing servers after a partial 7-of-8 deploy, with
+no incident runbook to stop it — SEC enforcement followed), used here as the *lesson*, not a system
+we reproduce. This is a SOC alert pipeline, not an equities trading system; the transferable principle
+is identical — **no autonomous, irreversible action at machine speed without a gate, and fail safe to a
+human when the decision engine is unsure or down.** The fixture labels in `data/alert-fixtures.json` are
+**your analyst judgment**, not a detection engine's verdict — you own them.
 
 ## Do
 

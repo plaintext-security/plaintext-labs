@@ -23,6 +23,18 @@ Ollama model with a focused probe set (`injection` + `leakage` only — the full
 > written permission to assess. Every target in this lab is a local Docker container; never point these
 > tools at a hosted model or a third party's deployment without sanction.
 
+> **What this lab is — and isn't.** Every attack class you scan for is grounded in a *real, documented*
+> incident, mapped in `results/threat-model.md`: the role-override / jailbreak probes are the
+> **Chevrolet "$1 Tahoe" jailbreak** (2023); the injection-via-alert-data probes are the shape of
+> **EchoLeak / [CVE-2025-32711](https://nvd.nist.gov/vuln/detail/CVE-2025-32711)** (zero-click indirect
+> injection in M365 Copilot); the tool-surface probes are **[Invariant Labs' MCP tool
+> poisoning](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks)** (2025);
+> and the reason any of it matters operationally is **Moffatt v. Air Canada (2024 BCCRT 149)** — the org
+> owns what its bot says. It is **not** those production systems: tinyllama is a tiny local model with
+> little safety training, so it fails probes a frontier model would pass — the garak pass *rates* are
+> not a verdict on any real product. What transfers is the *method* (probe → interpret → threat-model →
+> gate) and the attack *classes*, not the numbers against this toy target.
+
 ## Scenario
 Before the SoC copilot you built across modules 04–06 goes to production, the security team runs a
 systematic AI red-team — the move the three named incidents make non-optional: Air Canada owns what

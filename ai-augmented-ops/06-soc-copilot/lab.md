@@ -19,7 +19,7 @@ make up && make demo
 **Requirements:** Docker, 8 GB RAM free. No GPU needed. Three containers start: Ollama (generation),
 ChromaDB (vector store), and the copilot app. First run downloads `tinyllama` (~637 MB) and
 `nomic-embed-text` (~274 MB) and ingests the knowledge base. `make demo` asks the copilot
-"Is 185.220.101.42 malicious?" and prints the full reasoning chain — retrieved chunks, tool calls,
+"Is 192.0.2.66 malicious?" and prints the full reasoning chain — retrieved chunks, tool calls,
 and the generated answer — **and then runs the end-to-end eval over the held-out question set and
 prints the scorecard**, so you see the build and its measurement in one pass.
 
@@ -28,14 +28,27 @@ the Module 05 tools; both are bundled here, so you need not complete those modul
 assumes you understand the recall@k metric from 04 and the confusion matrix from 07, because the
 end-to-end eval is built from both.
 
+**What this lab is — and isn't (read this).** The institutional-knowledge corpus is a *real* one: the
+`data/knowledge-base/` documents are a factual post-mortem of the **LastPass 2022 breach** (the same
+corpus Module 04 retrieves over), every claim traceable to LastPass's public disclosures. The live
+`alerts.json` / `incidents.json` / `threat-intel.json` the tools query are a small **Log4Shell
+(CVE-2021-44228)** incident — synthetic alerts seeded around the real CVE, using
+[RFC 5737](https://datatracker.ietf.org/doc/html/rfc5737) documentation IPs (`192.0.2.66`,
+`198.51.100.23`) and reserved domains so no live IOC is implied. So the copilot fuses *real
+institutional knowledge* (LastPass) with a *current synthetic incident* (Log4Shell) — exactly the
+split a production copilot faces. The eval ground-truth (`data/eval-questions.json`) traces to those
+two anchors: LastPass questions to the disclosures, IOC/host/incident questions to the seed data.
+
 > The tool-selection and retrieval halves of the eval score *recorded* copilot runs against a
 > committed labelled set, so once a run is captured that scoring is deterministic and CI-friendly —
 > the same offline discipline as Modules 04 and 11. Only the live answer-generation step needs Ollama.
 
 ## Scenario
 A security team is testing its new copilot before going live. The copilot answers questions by
-combining institutional knowledge (past incidents, runbooks) with live data (current alerts, threat
-intel, open incidents). Your job is twofold: finish the copilot so its reasoning is fully auditable,
+combining institutional knowledge (the **LastPass 2022 breach** post-mortem the team keeps as a
+reference corpus, plus runbooks) with live data (current alerts, threat intel, and open incidents
+from an ongoing **Log4Shell** event). Your job is twofold: finish the copilot so its reasoning is
+fully auditable,
 and then **prove it works the way a flagship system must be proven** — not with a demo it passes, but
 with a held-out scorecard that decomposes its failures by layer. A copilot that confidently tells an
 analyst "no open incident on that host" because it never called the right tool is worse than no
@@ -49,7 +62,7 @@ copilot; the end-to-end eval is how you catch that before 3 a.m.
 
 ### Part A — Operate the copilot and read its reasoning chain
 
-1. [ ] `make demo` and read the full output. The demo asks "Is 185.220.101.42 malicious?" — identify
+1. [ ] `make demo` and read the full output. The demo asks "Is 192.0.2.66 malicious?" — identify
    in the trace:
    - the **retrieved chunks** (which knowledge-base documents did RAG return?),
    - the **tool call(s)** the router fired (which tool, which argument?),
@@ -60,14 +73,16 @@ copilot; the end-to-end eval is how you catch that before 3 a.m.
 
 2. [ ] Run four more questions and watch the three layers each behave:
    ```bash
-   make ask Q="What containment steps should I follow for a ransomware event?"
-   make ask Q="Is there an open incident for host WKS-023?"
-   make ask Q="What is the SLA for patching a Critical CVSS vulnerability?"
-   make ask Q="Summarise the credential phishing incident from 2024."
+   make ask Q="How did the attacker reach the LastPass cloud backup storage?"
+   make ask Q="Is there an open incident for host SRV-WEB01?"
+   make ask Q="Summarise incident INC-2021-0211."
+   make ask Q="Summarise the LastPass stage-2 home-computer attack vector."
    ```
    For each, note: was retrieval relevant, did the router call the *right* tool (or miss one / fire a
-   spurious one), and did the answer stay grounded? The host question is the canonical tool-routing
-   test — does it call `search_alerts`/`summarize_incident`, or answer from RAG priors alone?
+   spurious one), and did the answer stay grounded? The host question (`SRV-WEB01`) is the canonical
+   tool-routing test — does it call `search_alerts`/`summarize_incident`, or answer from RAG priors
+   alone? The two LastPass questions are pure-retrieval (no tool should fire); the `INC-2021-0211`
+   question is explicit incident-ID routing.
 
 3. [ ] **Make the work auditable.** Open `copilot/copilot.py` (`make shell`). Confirm the output
    shows which facts came from RAG (`[RAG: filename]`), which from tool calls (`[TOOL: name]`), and
@@ -119,11 +134,14 @@ copilot; the end-to-end eval is how you catch that before 3 a.m.
    green-on-good / red-on-one-axis contrast is the whole point: a "harmless" routing edit silently
    blinds the copilot, and the gate is what stops it merging.
 
-9. [ ] **Extend the held-out set with a hard, cross-layer case.** Add one question whose correct
-   answer needs **both** a retrieval hit *and* a tool call (e.g. "What's our runbook for an alert on
-   WKS-023, and is there an open incident on it?"). Label all three axes, re-run `make eval`,
-   and see whether the copilot scores well on a question that exercises every layer at once — the case
-   that "more single-layer questions" would never catch (coverage ≠ effectiveness).
+9. [ ] **Extend the held-out set with a hard, cross-layer case.** The set already ships one
+   cross-layer item (`Q13`: a threat-intel lookup on `192.0.2.66` *and* a retrieval hit on the
+   cloud-backup runbook) — study how it labels all three axes, then **add your own**: a question whose
+   correct answer needs **both** a retrieval hit *and* a tool call (e.g. "Is there an open incident on
+   `SRV-WEB01`, and what does the LastPass post-mortem say about how attackers reach backup storage?").
+   Label all three axes, re-run `make eval`, and see whether the copilot scores well on a question that
+   exercises every layer at once — the case that "more single-layer questions" would never catch
+   (coverage ≠ effectiveness).
 
 ## Success criteria — you're done when
 - [ ] `make demo` runs to completion: the reasoning chain (chunks + tool calls + answer) *and* the
@@ -202,3 +220,18 @@ you reused to build it.
 - Add a **confidence-vs-correctness** plot: have the copilot self-rate confidence (1–5) per answer,
   then chart confidence against the eval's groundedness score — the calibration gap (confident *and*
   ungrounded) is the answer class that most deserves a human's eyes.
+
+## References
+The eval ground-truth traces to these primary sources — open them to confirm any rubric fact yourself
+rather than trusting the labels.
+- LastPass, "Notice of Recent Security Incident" (consolidated 2022 breach disclosure, with the
+  Aug 25 / Nov 30 / Dec 22 timeline and the encrypted-vs-cleartext detail):
+  <https://blog.lastpass.com/posts/notice-of-recent-security-incident>
+- CVE-2020-5741 — the Plex Media Server vulnerability exploited on the DevOps engineer's home computer
+  in stage 2: <https://nvd.nist.gov/vuln/detail/CVE-2020-5741>
+- CISA alert tracking the LastPass incident:
+  <https://www.cisa.gov/news-events/alerts/2022/12/28/lastpass-data-breach>
+- CVE-2021-44228 (Log4Shell) — the CVE the synthetic live alert/incident seed data is built around:
+  <https://nvd.nist.gov/vuln/detail/CVE-2021-44228>
+- RFC 5737 (IPv4 addresses reserved for documentation) — why the IOC IPs are `192.0.x` / `198.51.x`:
+  <https://datatracker.ietf.org/doc/html/rfc5737>

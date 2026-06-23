@@ -1,0 +1,16 @@
+# compromise_overlay.log — a SMALL, clearly-labeled teaching overlay appended to
+# the REAL loghub OpenSSH log (data/OpenSSH_2k.log) at demo time ONLY.
+#
+# WHY THIS EXISTS: the real loghub OpenSSH_2k.log is pure internet brute-force
+# noise — it contains ZERO successful logins. That is realistic, but it kills
+# the lab's core lesson ("a success from an IP that was ALSO brute-forcing is a
+# compromise, not a coincidence"). These two lines re-introduce that exactly one
+# signal WITHOUT altering the real dataset: an `Accepted password` from
+# 187.141.143.180 — the single most prolific brute-force source IP in the REAL
+# log above. Same hostname (LabSZ) and `Dec 10` timeframe as the real entries so
+# the overlay reads as one continuous log.
+#
+# This is the only synthetic content in the lab; everything else is the real
+# public capture. Do not treat these two lines as real-world data.
+Dec 10 09:45:11 LabSZ sshd[26041]: Accepted password for fztu from 187.141.143.180 port 51330 ssh2
+Dec 10 09:45:11 LabSZ sshd[26041]: pam_unix(sshd:session): session opened for user fztu by (uid=0)

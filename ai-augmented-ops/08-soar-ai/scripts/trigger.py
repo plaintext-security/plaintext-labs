@@ -30,18 +30,18 @@ TEST_ALERTS = {
     "CRITICAL": {
         "id": f"TEST-CRIT-{int(time.time())}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "host": "MERIDIAN-WKS-031",
+        "host": "WKS-031",
         "title": "Shadow copy deletion followed by mass file encryption",
         "description": (
-            "vssadmin.exe Delete Shadows /All /Quiet executed on MERIDIAN-WKS-031 by unknown process ransomware.exe. "
-            "Immediately followed by 847 files renamed with .meridianlock extension within 30 seconds. "
-            "Ransom note MERIDIAN_RESTORE.txt created in each directory. Real-time protection disabled."
+            "vssadmin.exe Delete Shadows /All /Quiet executed on WKS-031 by unknown process ransomware.exe. "
+            "Immediately followed by 847 files renamed with .locked extension within 30 seconds. "
+            "Ransom note RESTORE_FILES.txt created in each directory. Real-time protection disabled."
         ),
     },
     "HIGH": {
         "id": f"TEST-HIGH-{int(time.time())}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "host": "MERIDIAN-FIN-07",
+        "host": "FIN-07",
         "title": "Outbound connection to known Tor exit node",
         "description": (
             "svchost.exe established an outbound TCP connection to 185.220.101.42:443 (known Tor exit node). "
@@ -52,7 +52,7 @@ TEST_ALERTS = {
     "MEDIUM": {
         "id": f"TEST-MED-{int(time.time())}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "host": "MERIDIAN-FIN-09",
+        "host": "FIN-09",
         "title": "Unapproved browser extension with broad permissions",
         "description": (
             "Chrome extension 'PDF Converter Pro' installed by user. "
@@ -63,10 +63,10 @@ TEST_ALERTS = {
     "LOW": {
         "id": f"TEST-LOW-{int(time.time())}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "host": "MERIDIAN-WKS-042",
+        "host": "WKS-042",
         "title": "Scheduled antivirus scan completed",
         "description": (
-            "CrowdStrike scheduled scan completed on MERIDIAN-WKS-042. "
+            "CrowdStrike scheduled scan completed on WKS-042. "
             "148,223 files scanned. 0 threats detected. Duration: 47 minutes."
         ),
     },

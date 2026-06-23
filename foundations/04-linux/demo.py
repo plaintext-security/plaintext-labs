@@ -99,11 +99,31 @@ def demo_log_analysis() -> None:
         print(f"  Log file not found: {log_path}")
         return
 
+    # Primary data: the REAL public loghub OpenSSH log (run `make fetch-data`).
+    # Falls back to the bundled excerpt if the fetch hasn't been run yet.
+    real_log = DATA_DIR / "OpenSSH_2k.log"
+    if real_log.exists():
+        log_path = real_log
+        source_note = "REAL loghub OpenSSH dataset (data/OpenSSH_2k.log)"
+    else:
+        log_path = DATA_DIR / "auth_sample.log"
+        source_note = "bundled excerpt — run `make fetch-data` for the real log"
+    if not log_path.exists():
+        print("  No log found. Run `make fetch-data` first.")
+        return
+
     text = log_path.read_text()
+    # The real loghub log is pure brute-force noise (no successful login). To keep
+    # the "compromise = success from a brute-forcing IP" lesson alive, append a
+    # small, clearly-labeled overlay if present (data/compromise_overlay.log) — one
+    # Accepted line from an IP that ALSO appears as a brute-forcer in the real log.
+    overlay = DATA_DIR / "compromise_overlay.log"
+    if log_path is real_log and overlay.exists():
+        text = text + "\n" + overlay.read_text()
     lines = text.splitlines()
     total = len(lines)
 
-    failed_pattern = re.compile(r"Failed password for \S+ from (\S+) port")
+    failed_pattern = re.compile(r"Failed password for (?:invalid user )?\S+ from (\S+) port")
     success_pattern = re.compile(r"Accepted (\w+) for (\S+) from (\S+) port")
 
     failed_ips: collections.Counter = collections.Counter()
@@ -117,23 +137,31 @@ def demo_log_analysis() -> None:
         if m:
             successes.append((m.group(2), m.group(3), m.group(1)))
 
-    print(f"  Log: {log_path}  ({total} lines)")
+    print(f"  Source: {source_note}")
+    print(f"  Log: {log_path.name}  ({total} lines)")
     print()
-    print("  Top failed-login source IPs:")
-    for ip, count in failed_ips.most_common():
-        bar = "█" * count
-        print(f"    {ip:20s}  {count:3d}  {bar}")
+    print("  Top failed-login source IPs (top 10):")
+    top = failed_ips.most_common(10)
+    busiest = top[0][1] if top else 1
+    for ip, count in top:
+        bar = "█" * max(1, round(40 * count / busiest))  # scaled, capped at 40 cols
+        print(f"    {ip:20s}  {count:5d}  {bar}")
 
     print()
     print("  Successful logins:")
-    for user, src, method in successes:
-        internal = "✓" if src.startswith("10.") else "⚠ EXTERNAL"
-        print(f"    user={user:12s}  src={src:20s}  method={method}  {internal}")
+    if successes:
+        for user, src, method in successes:
+            internal = "✓ internal" if src.startswith("10.") else "⚠ EXTERNAL"
+            also_bruteforcing = "  ← ALSO a brute-force source" if src in failed_ips else ""
+            print(f"    user={user:12s}  src={src:20s}  method={method}  {internal}{also_bruteforcing}")
+    else:
+        print("    (none in this log — pure brute-force noise)")
 
     print()
     print("  Pipeline to replicate:")
-    print("  grep 'Failed password' data/auth_sample.log \\")
-    print("    | awk '{print $11}' | sort | uniq -c | sort -rn")
+    print(f"  grep 'Failed password' data/{log_path.name} \\")
+    print("    | grep -oE 'from [0-9.]+ port' | awk '{print $2}' \\")
+    print("    | sort | uniq -c | sort -rn | head")
 
     # Check for success from a failed-IP (credential stuffing indicator)
     stuffing = [(u, s) for u, s, _ in successes if s in failed_ips]
@@ -146,7 +174,7 @@ def demo_log_analysis() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Linux Triage Demo")
+    print("Linux Triage Demo — bastion host post-alert")
     print("=" * 64)
     print()
     print("This demo shows the expected output for each triage step.")

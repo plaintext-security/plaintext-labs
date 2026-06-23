@@ -1,26 +1,32 @@
-# Cloud Security Operations — AWS and GCP
-**Document type:** Runbook reference | **Owner:** Cloud Security | **Last reviewed:** 2025-03-15
+# LastPass Breach — Cloud Storage and Key Custody
+**Document type:** Practitioner analysis (grounded in the LastPass disclosures)
 
-## AWS environments
-- Production: account ID 123456789012 (`meridian-prod`)
-- Staging: account ID 234567890123 (`meridian-staging`)
-- Security tooling: account ID 345678901234 (`meridian-security`)
-- All accounts are members of the Meridian AWS Organisation; SCPs enforce baseline controls.
+## The cloud backup environment was the prize
+The data that ultimately leaked — customer account information and the encrypted vault backups —
+lived in a **cloud-based storage service** used for **backups**, separate from production. The
+attacker accessed it using **stolen credentials and the keys that decrypted the storage volumes**.
 
-## Key controls
-- **CloudTrail**: enabled in all regions, logs shipped to `meridian-security` account S3 bucket with CloudWatch alerts on high-risk API calls (e.g. `CreateUser`, `AttachUserPolicy`, `PutBucketPolicy`).
-- **GuardDuty**: enabled in all accounts; findings routed to SIEM via EventBridge.
-- **IAM Access Analyzer**: continuous; findings reviewed weekly.
-- **No long-lived access keys**: enforced by SCP. All programmatic access via IAM roles and instance profiles.
+## Two distinct layers of "decryption keys"
+A precise reading matters here:
 
-## Alert response — GuardDuty finding
-1. Retrieve finding detail from SIEM or GuardDuty console.
-2. Identify the IAM principal: is it a service role or a human identity?
-3. If `UnauthorizedAccess:IAMUser/ConsoleLogin` from unexpected geography: revoke sessions and rotate credentials.
-4. If `Backdoor:EC2/C&CActivity`: isolate the instance (modify security group to deny-all) and preserve the instance state (snapshot before termination).
-5. Escalate to cloud security team for root-cause analysis.
+1. **Storage-layer keys (compromised):** keys/credentials that unlock the cloud storage
+   **volumes/containers**. The attacker obtained these (via the engineer's corporate vault) and used
+   them to access and copy the backups.
+2. **Per-customer vault keys (NOT compromised):** the AES-256 keys derived from each customer's
+   **master password**, which protect the secrets inside each vault. LastPass does not hold these, so
+   the attacker copied encrypted vault blobs they could not directly open.
 
-## GCP environments
-- Meridian uses GCP for ML workloads only (project: `meridian-ml-prod`).
-- Cloud Audit Logs forwarded to Chronicle SIEM.
-- Org policy enforces no external IP on compute instances without explicit exception.
+Conflating these two is the most common error when summarizing this breach — the storage was
+decrypted; the individual vault secrets were not.
+
+## Cloud key-custody lessons
+- **Where do storage decryption keys live, and who can reach them?** Here they were reachable from a
+  small set of engineers' corporate vaults — and one of those was captured via a home-computer
+  keylogger.
+- **Backups in cloud storage are a top target.** They aggregate everything and may be monitored less
+  than production. Apply production-grade access control, key custody, and alerting to backups.
+- **Access via valid keys evades exploit-based detection.** Monitor for anomalous *use* of legitimate
+  storage credentials (unusual principals, geographies, bulk reads), not just exploits.
+
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

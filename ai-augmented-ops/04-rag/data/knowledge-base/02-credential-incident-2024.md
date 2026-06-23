@@ -1,47 +1,33 @@
-# Post-Incident Report — Meridian Credential Incident (2024-Q2)
-**Classification:** Internal — Restricted | **Date:** 2024-06-18 | **Author:** IR Team Lead
+# LastPass Breach — Stage 1: Development Environment Compromise (August 2022)
+**Document type:** Public post-mortem detail | **Source:** LastPass disclosure (Aug 25, 2022)
 
-## Executive summary
-On 2024-06-12, Meridian's SIEM detected anomalous authentication patterns from three finance
-department accounts. Investigation confirmed that credentials had been compromised via a
-targeted phishing campaign. No customer data was exfiltrated. Incident was contained within
-4 hours of detection.
+## Summary
+In August 2022, an unauthorized party gained access to portions of the LastPass **development
+environment** through a **single compromised developer account**. The attacker took portions of
+source code and some proprietary LastPass technical information.
 
-## Timeline
-| Time (UTC) | Event |
-|-----------|-------|
-| 09:14 | SIEM alert: impossible travel — user `jsmith@meridian.fin` authenticated from London and New York within 22 minutes |
-| 09:19 | SOC analyst confirms alert, opens P2 incident ticket INC-2024-0612-001 |
-| 09:31 | Two additional accounts (`aparker`, `rliu`) show same pattern |
-| 09:45 | Identity team revokes sessions and resets passwords for all three accounts |
-| 10:02 | Phishing email recovered from quarantine; link pointed to credential harvesting page at `meridian-secure-login.net` (not affiliated with Meridian) |
-| 11:20 | Forensic review of mailbox access logs confirms no forwarding rules, no data download |
-| 13:30 | Incident closed; all three accounts restored with MFA enforced |
+## Initial access vector
+The entry point was **one developer's account**. The attacker impersonated that developer once the
+account was authenticated to the development environment. LastPass's investigation found the activity
+was confined to the development environment.
 
-## Root cause
-Phishing email with a convincing internal-branding template delivered to finance team.
-Three users entered credentials on the harvesting page. MFA was not enforced at the time
-on the finance department SSO profile.
+## What was and was not accessed
+- **Accessed:** portions of source code and proprietary technical information.
+- **Not accessed (stage 1):** no customer data, and no encrypted password vaults. The development
+  environment was physically separated from the production environment and contained no customer
+  data.
 
-## Containment procedure applied
-1. Identify all accounts with suspicious authentication in the 24-hour window.
-2. Immediately revoke active sessions via Azure AD "Revoke all sessions."
-3. Force password reset for compromised accounts.
-4. Check for mailbox forwarding rules and OAuth application consent grants.
-5. Preserve mailbox audit logs to forensic storage (90-day retention).
-6. Notify affected users and their managers.
+## Why stage 1 mattered later
+LastPass later confirmed that the information stolen in this first incident was **reused by the same
+threat actor** to carry out the second, far more damaging incident. The source code and technical
+details gave the attacker the knowledge needed to target a specific employee and the cloud backup
+infrastructure. Stage 1 looked contained; it was actually reconnaissance for stage 2.
 
-## Lessons learned
-- MFA was not enforced on all SSO profiles. **Remediation:** MFA mandatory for all SSO
-  profiles by 2024-07-31.
-- Detection relied on the impossible-travel alert. No phishing-link click alert existed.
-  **Remediation:** Deploy URL filtering logs to SIEM; alert on clicks to newly registered domains.
+## Key facts
+- Single compromised **developer** account.
+- **Development** environment only — separated from production.
+- Source code + technical information taken; **no** customer/vault data in this stage.
+- Disclosed **August 25, 2022**.
 
-## ATT&CK mapping
-- T1566.002 — Phishing: Spearphishing Link
-- T1078 — Valid Accounts
-- T1539 — Steal Web Session Cookie (not confirmed but plausible given session reuse pattern)
-
-## Artifacts
-- Phishing URL: `hxxps://meridian-secure-login[.]net/auth` (defanged)
-- Sender domain: `meridian-fin-support[.]com` (look-alike, registered 2024-06-10)
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

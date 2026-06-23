@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test-client.py — MCP test client that calls the Meridian Security MCP server
+test-client.py — MCP test client that calls the SOC Security MCP server
 via HTTP (SSE transport) and prints the results of each tool.
 
 Usage:
@@ -50,7 +50,7 @@ def list_tools(base_url: str) -> list:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MCP test client for Meridian Security server")
+    parser = argparse.ArgumentParser(description="MCP test client for the SOC Security server")
     parser.add_argument("--host", default="http://mcp-server:8080", help="MCP server URL")
     args = parser.parse_args()
 

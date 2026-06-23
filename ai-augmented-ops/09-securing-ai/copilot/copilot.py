@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Meridian SoC Copilot — combines RAG (ChromaDB) and MCP tools (threat intel, alerts, incidents)
+SOC Copilot — combines RAG (ChromaDB) and MCP tools (threat intel, alerts, incidents)
 to answer analyst questions with full evidence traceability.
 
 Usage:
@@ -17,7 +17,7 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 CHROMA_HOST = os.environ.get("CHROMA_HOST", "http://chromadb:8000")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "tinyllama")
 EMBED_MODEL = "nomic-embed-text"
-COLLECTION_NAME = "meridian-kb"
+COLLECTION_NAME = "soc-kb"
 N_RETRIEVE = 3
 DATA_DIR = os.environ.get("DATA_DIR", "/lab/data")
 
@@ -132,7 +132,7 @@ def decide_tools(question: str) -> list[tuple[str, dict]]:
         if not ip.startswith("10.") and not ip.startswith("192.168."):
             calls.append(("get_threat_intel", {"ioc": ip}))
     for domain in DOMAIN_RE.findall(question):
-        if "." in domain and not domain.endswith(".fin"):
+        if "." in domain and not domain.endswith(".example"):
             calls.append(("get_threat_intel", {"ioc": domain}))
     for h in HASH_RE.findall(question):
         calls.append(("get_threat_intel", {"ioc": h}))
@@ -142,10 +142,10 @@ def decide_tools(question: str) -> list[tuple[str, dict]]:
         calls.append(("summarize_incident", {"id": inc_id}))
 
     # Alert search for hostnames or keywords
-    alert_keywords = ["alert", "host", "MERIDIAN-", "incident", "open"]
+    alert_keywords = ["alert", "host", "HOST-", "incident", "open"]
     if any(kw.lower() in question.lower() for kw in alert_keywords):
         # Extract a search term
-        match = re.search(r'MERIDIAN-\w+-\d+', question)
+        match = re.search(r'HOST-\w+-\d+', question)
         if match:
             calls.append(("search_alerts", {"query": match.group()}))
 
@@ -169,7 +169,7 @@ def run_tools(calls: list[tuple[str, dict]]) -> list[dict]:
 
 # ── Generation ──
 
-SYSTEM_PROMPT = """You are a security operations assistant for Meridian Financial.
+SYSTEM_PROMPT = """You are a security operations assistant for the corporate SOC.
 Answer questions using ONLY the evidence provided in the CONTEXT and TOOL RESULTS sections below.
 - For every factual claim, cite its source: [RAG: filename] or [TOOL: tool_name].
 - If the evidence does not support a claim, say "The available data does not cover this."
@@ -189,7 +189,7 @@ def generate(question: str, context: list[dict], tool_results: list[dict]) -> st
 
     prompt = f"""{SYSTEM_PROMPT}
 
-CONTEXT (from Meridian knowledge base):
+CONTEXT (from the SOC knowledge base):
 {context_text}
 
 TOOL RESULTS:

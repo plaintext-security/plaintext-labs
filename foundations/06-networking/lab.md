@@ -11,20 +11,33 @@ no cloud, nothing leaves your machine.
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs.git
 cd plaintext-labs/foundations/06-networking
-make up      # start the HTTP server + tool container
-make demo    # generate live DNS + HTTP traffic, then walk an annotated capture
-make shell   # drop into the tool container (tcpdump, dig, curl)
-make down    # stop when done
+make up         # start the HTTP server + tool container
+make demo       # generate live DNS + HTTP traffic, then walk an annotated capture
+make fetch-data # (optional, recommended) download a REAL malware C2 pcap to hunt in
+make shell      # drop into the tool container (tcpdump, dig, curl)
+make down       # stop when done
 ```
+
+`make fetch-data` downloads a **real RAT C2 capture** from
+[Malware-Traffic-Analysis.net](https://www.malware-traffic-analysis.net/2024/07/30/index.html)
+(the "You dirty rat!" exercise). It ships as a **password-protected zip on purpose** — the password is
+on the site's [about page](https://www.malware-traffic-analysis.net/about.html). You unzip it yourself
+inside the lab container; that friction is the correct way to handle real malicious traffic. See
+`data/PROVENANCE.md`. (The bundled beacon capture below is the safe, zero-download default if you'd
+rather not handle live malware traffic yet.)
 
 ## Scenario
 You capture one ordinary HTTP request end to end — the DNS lookup, then the TCP handshake — read by
-you, packet by packet. Then you're handed a second capture of otherwise-normal traffic with **one
-DNS-based C2 beacon** mixed in (modeled on SUNBURST's `avsvmcloud.com` lookups), and you have to find
-it. Same skill, two stakes: read the wire, then read it *adversarially*.
+you, packet by packet. Then you hunt a C2 beacon. You have two targets, your choice of stakes: a
+bundled capture with **one DNS-based C2 beacon** mixed in (safe, synthetic, modeled on SUNBURST's
+`avsvmcloud.com` lookups), and — once you've done that — the **real RAT C2 capture** from
+Malware-Traffic-Analysis.net (`make fetch-data`), where the callbacks are genuine. Same skill, real
+stakes: read the wire, then read it *adversarially*.
 
-> Capture only on systems/networks you own, or inside this throwaway container. The beacon capture is a
-> safe, synthetic stand-in — nothing here contacts a real C2.
+> Capture only on systems/networks you own, or inside this throwaway container. The bundled beacon
+> capture is a safe, synthetic stand-in. The fetched MTA.net pcap is **real malicious traffic** — open
+> it only inside the throwaway lab container, never execute anything it references, and defang any live
+> domain/IP before writing it down.
 
 ## Do
 Work the commands out from the Learn resources and `man tcpdump` — that derivation *is* the lab. Each
@@ -41,10 +54,16 @@ step feeds the next.
    `tcpdump` can filter on TCP flags.)
 5. [ ] **Read the whole stream.** Open the capture in Wireshark and "Follow TCP Stream" to see the
    request and response as one conversation — the layers, reassembled.
-6. [ ] **Now hunt the beacon.** Open the provided beacon capture. Walk its DNS lookups the way you just
-   walked yours, and find the one that's *wrong*. Check your README prediction: what actually gives it
-   away — a subdomain no human would type, an unusually long/random name, a repeating interval? Name
-   the packet and say, in one sentence, **why** it's the beacon.
+6. [ ] **Now hunt the beacon.** Open the provided synthetic beacon capture. Walk its DNS lookups the way
+   you just walked yours, and find the one that's *wrong*. Check your README prediction: what actually
+   gives it away — a subdomain no human would type, an unusually long/random name, a repeating interval?
+   Name the packet and say, in one sentence, **why** it's the beacon.
+
+7. [ ] **Do it for real (recommended).** `make fetch-data`, unzip the MTA.net capture with the password
+   from the [about page](https://www.malware-traffic-analysis.net/about.html), and open the real `.pcap`
+   in the lab container. Apply the *same* workflow — isolate the DNS, then hunt the HTTP/DNS callbacks —
+   to genuine RAT C2 traffic. The tells you defended on the synthetic capture should transfer; note where
+   real traffic is messier than the model. (Read-only: never run anything it references.)
 
 ## Success criteria — you're done when
 - [ ] You can point to the DNS query and the A record it returned in your own capture.

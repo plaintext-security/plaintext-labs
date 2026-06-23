@@ -148,7 +148,7 @@ def demo_commands() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Networking Lab Demo")
+    print("Networking Lab Demo — read the wire, then hunt the beacon")
     print("=" * 64)
     print()
     print("Goal: capture a DNS query + TCP handshake and read each packet.")

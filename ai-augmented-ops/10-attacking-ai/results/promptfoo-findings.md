@@ -1,5 +1,5 @@
 # promptfoo Evaluation Results
-## Meridian Financial — SoC Copilot Adversarial Evaluation
+## SOC Copilot — Adversarial Evaluation
 
 **Date:** <!-- fill in -->
 **Model:** tinyllama (via ollama:0.3.14)

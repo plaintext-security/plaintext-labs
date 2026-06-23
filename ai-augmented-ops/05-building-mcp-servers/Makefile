@@ -13,7 +13,7 @@ shell:     ## Open a shell in the lab container
 	docker compose exec lab bash
 
 demo:      ## Call each MCP tool and show the JSON response
-	@echo "=== MCP Server Demo — Meridian Security Tools ==="
+	@echo "=== MCP Server Demo — SOC Security Tools ==="
 	@echo ""
 	docker compose run --rm lab sh -c '\
 		pip install -q requests 2>/dev/null; \

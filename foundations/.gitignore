@@ -2,6 +2,15 @@
 *.pcapng
 *.cap
 *.log
+# Exceptions: small CURATED seed/fallback logs committed on purpose. The large
+# real datasets (loghub OpenSSH_2k.log, etc.) are fetched by `make fetch-data`
+# and stay ignored — only these tiny hand-curated teaching files are tracked.
+!04-linux/data/auth_sample.log
+!04-linux/data/compromise_overlay.log
+!10-scripting/data/ssh_auth.log
+# Fetched real binary samples (downloaded by `make fetch-data`, never committed)
+*.evtx
+OpenSSH_2k.log
 recon-report.md
 engagement-report.md
 breach-analysis.md

@@ -1,0 +1,44 @@
+# Track 12 capstone — starter stack.
+# Two backing services (Ollama for generation, ChromaDB for the RAG vector store)
+# plus a lab container that holds the stub MCP server and the seed runbook corpus.
+# This is a SCAFFOLD: bring it up, then build your copilot / attack / fix under submission/.
+services:
+  ollama:
+    image: ollama/ollama:0.3.14
+    container_name: cap12-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=15m
+
+  chromadb:
+    image: chromadb/chroma:0.5.23
+    container_name: cap12-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - ANONYMIZED_TELEMETRY=false
+
+  lab:
+    image: python:3.12-slim
+    container_name: cap12-lab
+    depends_on:
+      - ollama
+      - chromadb
+    volumes:
+      - ./:/lab
+    working_dir: /lab
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=http://chromadb:8000
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-tinyllama}
+      - DATA_DIR=/lab/data
+    command: sleep infinity
+
+volumes:
+  ollama-data:
+  chroma-data:

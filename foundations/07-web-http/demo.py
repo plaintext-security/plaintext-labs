@@ -182,7 +182,7 @@ def demo_role_header() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Web HTTP Lab Demo")
+    print("Web HTTP Lab Demo — read the cookie, audit the headers")
     print("=" * 64)
     print()
     print("Demonstrates HTTP mechanics using a local echo server.")

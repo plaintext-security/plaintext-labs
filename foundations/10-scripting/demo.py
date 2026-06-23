@@ -24,9 +24,16 @@ def section(title: str) -> None:
     print(DIVIDER)
 
 
+def reference_log() -> Path:
+    """Prefer the REAL loghub OpenSSH log (run `make fetch-data`); fall back to
+    the small committed sample if the fetch hasn't run yet."""
+    real = DATA_DIR / "OpenSSH_2k.log"
+    return real if real.exists() else DATA_DIR / "ssh_auth.log"
+
+
 def run_reference() -> collections.Counter:
-    log = DATA_DIR / "ssh_auth.log"
-    pattern = re.compile(r"Failed password for \S+ from (\S+) port")
+    log = reference_log()
+    pattern = re.compile(r"Failed password for (?:invalid user )?\S+ from (\S+) port")
     counts: collections.Counter = collections.Counter()
     unparsed = 0
 
@@ -41,19 +48,25 @@ def run_reference() -> collections.Counter:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Scripting Lab Demo")
+    print("Scripting Lab Demo — rank brute-force source IPs")
     print("=" * 64)
     print()
     print("Goal: build topips.py that reads an SSH auth log and ranks")
     print("source IPs by failed-login count. This demo shows the target output.")
 
+    log = reference_log()
+    src = ("REAL loghub OpenSSH dataset" if log.name == "OpenSSH_2k.log"
+           else "committed sample (run `make fetch-data` for the real log)")
     section("Expected output — top failed-login IPs")
+    print(f"\n  Source: {src} — data/{log.name}")
     counts = run_reference()
     print()
     print(f"  {'IP':<22}  {'Count':>5}")
     print(f"  {'-'*22}  {'-'*5}")
-    for ip, count in counts.most_common():
-        bar = "█" * count
+    top = counts.most_common(15)
+    busiest = top[0][1] if top else 1
+    for ip, count in top:
+        bar = "█" * max(1, round(40 * count / busiest))  # scaled, capped at 40 cols
         print(f"  {ip:<22}  {count:>5}  {bar}")
 
     section("Key Python building blocks")

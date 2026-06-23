@@ -7,12 +7,23 @@
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs.git
 cd plaintext-labs/foundations/05-windows
-make demo   # parse the bundled EVTX-shaped sample + print the PowerShell guide
+make demo        # parse the bundled EVTX-shaped sample + print the PowerShell guide
+make fetch-data  # (optional) download REAL .evtx samples from EVTX-ATTACK-SAMPLES
 ```
 
-No Docker required — the log analysis runs on macOS/Linux/Windows with Python 3. The bundled
-`data/evtx_sample.json` is a small, EVTX-shaped event sample modelling a real Windows intrusion;
-`triage.py` is the analysis tool you'll read and extend.
+No Docker required for the core lab — the log analysis runs on macOS/Linux/Windows with Python 3. The
+bundled `data/evtx_sample.json` is a small, EVTX-shaped event sample modelling a commodity-loader
+intrusion (encoded PowerShell + service install + Run key); `triage.py` is the analysis tool you'll
+read and extend.
+
+`make fetch-data` pulls **real `.evtx` captures** from
+[sbousseaden/EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) — genuine
+Windows logs recorded while running the actual techniques: encoded PowerShell
+([T1059.001](https://attack.mitre.org/techniques/T1059/001/), a 4104 script-block log) and a
+service-install for persistence ([T1543.003](https://attack.mitre.org/techniques/T1543/003/), a 7045
+event). Running these through `triage.py` requires converting the binary `.evtx` to JSON first
+(`Get-WinEvent -Path sample.evtx | ConvertTo-Json`, or `evtx_dump`/`python-evtx` on Linux) — see
+`data/PROVENANCE.md`.
 
 For the optional **live** steps (enumerating local admins, services, Run keys on a real host) you
 want a Windows machine you own — a free
@@ -110,8 +121,12 @@ Foundations capstone's log-parsing tool.
 > PowerShell, 4688 → T1059.001), decode the payload, and extend a triage tool to catch it next time."
 
 ## Stretch
-- Pull a **real** `.evtx` from [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
-  (real logs from actual attack techniques), open it with `Get-WinEvent -Path sample.evtx`, and run
-  your extended triage logic against an export of it.
+- Pull the **real** `.evtx` samples with `make fetch-data` (from
+  [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) — real logs from actual
+  attack techniques): the T1059.001 encoded-PowerShell script-block log
+  (`Credential Access/phish_windows_credentials_powershell_scriptblockLog_4104.evtx`) and the
+  T1543.003 service install (`Lateral Movement/LM_Remote_Service02_7045.evtx`). Open one with
+  `Get-WinEvent -Path sample.evtx`, export it to JSON (`| ConvertTo-Json`), and run your extended
+  triage logic against the real export — then compare it to the bundled model.
 - Add a 4104 (PowerShell script-block) check to `triage.py` and explain why 4104 sometimes shows you
   the decoded script when 4688's command line doesn't.

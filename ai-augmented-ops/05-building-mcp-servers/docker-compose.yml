@@ -3,7 +3,7 @@
 services:
   mcp-server:
     build: .
-    image: plaintext/meridian-mcp
+    image: plaintext/soc-mcp
     container_name: ai05-mcp-server
     ports:
       - "8080:8080"

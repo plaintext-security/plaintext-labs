@@ -1,26 +1,36 @@
-# Runbook — Phishing Response
-**Document type:** Runbook | **Owner:** Security Operations | **Last reviewed:** 2025-01-30
+# LastPass Breach — The Home-Computer / Third-Party Media Software Vector
+**Document type:** Public post-mortem detail | **Source:** LastPass second-incident write-up
 
-## Trigger
-User reports a suspicious email, or email security gateway quarantines a message with a malicious
-link or attachment.
+## The unusual entry point of stage 2
+LastPass's detailed write-up of the second incident describes a notable attack vector: the threat
+actor targeted **one of only four DevOps engineers** who had access to the decryption keys needed to
+access the cloud storage service. The attacker compromised that engineer's **personal/home
+computer**.
 
-## Triage (15 minutes)
-1. Retrieve the email from quarantine or from the user's mailbox using the Exchange admin tools.
-2. Identify: sender domain, reply-to address, all embedded URLs (defang before documenting).
-3. Check whether any user has *clicked* the link — query URL filtering logs for the domain.
-4. If a user clicked: escalate to credential incident runbook (document 02). Otherwise P3.
+## How the home computer was compromised
+According to LastPass's account, the attacker **exploited a vulnerable third-party media-server
+software package** running on the DevOps engineer's home computer. Exploiting that software enabled
+remote code execution, which let the attacker implant a **keylogger**.
 
-## Containment
-1. Remove the email from all mailboxes using `Search-Mailbox -DeleteContent` or equivalent.
-2. Block the sender domain and all embedded domains in the email security gateway.
-3. Submit the URL and attachment hash to threat intelligence platform for enrichment.
-4. If attachment: submit to sandbox; preserve a copy in forensic evidence store.
+## From keylogger to corporate vault
+With the keylogger in place, the attacker captured the engineer's **master password** as it was
+entered — after the engineer authenticated with MFA — and thereby gained access to the engineer's
+**corporate LastPass vault**. That vault contained the credentials and keys that ultimately unlocked
+the cloud backup storage described in document 03.
 
-## Notification
-- Notify the reporting user with thanks and a one-paragraph explanation (trust-building).
-- If 10+ recipients: draft an all-staff notification via Communications. Do not send without CISO review.
+## Why this vector matters
+- It crossed the **work/home boundary**: a personal machine, outside corporate endpoint controls,
+  became the foothold into highly privileged corporate access.
+- It shows the limit of MFA alone: MFA was satisfied, but a keylogger on a trusted endpoint captured
+  the master password directly.
+- It explains why only a **small number of engineers** held the keys — and why compromising **one**
+  of them was sufficient.
 
-## ATT&CK mapping
-- T1566.001 — Phishing: Spearphishing Attachment
-- T1566.002 — Phishing: Spearphishing Link
+## Key facts
+- Target: a **DevOps engineer** with access to storage decryption keys (one of four).
+- Vector: **vulnerable third-party media-server software on the engineer's home computer** → RCE →
+  **keylogger**.
+- Result: captured **master password** → access to the engineer's **corporate vault** → storage keys.
+
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident
