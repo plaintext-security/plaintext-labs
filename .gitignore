@@ -7,6 +7,9 @@
 .env
 .env.*
 *.pem
+# Exception: a curated, KEYLESS, already-expired sample cert is committed on
+# purpose as deterministic offline seed data for the cert-expiry lab.
+!foundations/01-security-principles/sample-expired-cert.pem
 *.key
 *_rsa
 *_dsa

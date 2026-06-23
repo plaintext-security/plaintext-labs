@@ -3,14 +3,15 @@
 *Variant D · concept autopsy. [← Back to the module concept](README.md)*
 
 ## Setup
-This lab has **no exploitation and no Docker** — the skill is *judgment*, not tooling. It ships a small
-helper in the companion [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo
-that prints the autopsy template and a tiny cert-expiry checker you'll make your own.
+This lab has **no exploitation and no Docker** — the skill is *judgment*, not tooling. The companion
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo ships the autopsy
+template and a **spec for `cert_check.py` that you implement yourself** (a reference build sits in
+`solution/` — open it to *check* your work after yours runs, not before).
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/foundations/01-security-principles
-make demo       # print the principle-autopsy template
+make demo       # print the autopsy template, then run YOUR cert_check.py
 ```
 
 Python 3 only. You'll also want the [GAO report](https://www.gao.gov/products/gao-18-559) from the
@@ -38,23 +39,24 @@ report) → **Map** (name the principle) → **Record** (one row in the autopsy)
 2. [ ] **Hop 1 — the entry (the unpatched Struts hole).**
    **Predict:** which CIA property is first put at risk when an attacker can run commands on your server?
    **Read:** find **CVE-2017-5638** and the patch timeline in the GAO report (a fix existed before the
-   breach). **Map:** this is a missing/late control — patch management. **Record:** owner = the entry;
-   property at risk = confidentiality; breaking change = apply the available patch promptly.
+   breach). **Map:** name the *class* of control that failed — what kind of hygiene lets an
+   already-fixed bug stay exploitable for months? **Record:** the failure, the property at risk, and the
+   one change that would have broken the chain right here.
 
 3. [ ] **Hop 2 — the spread (the flat internal network).**
    **Predict:** one server is compromised. Should the attacker now be able to reach *every* database?
-   **Read:** find how attackers moved internally and why segmentation didn't stop them.
-   **Map:** name the principle that was **missing** — defense in depth *and* least privilege (the server
-   could reach data it had no business touching). **Record:** principle = defense in depth / least
-   privilege; breaking change = network segmentation + scope the server's access.
+   **Read:** find how attackers moved internally and why nothing stopped them.
+   **Map:** name the principle(s) that were **missing** — what design would have meant a single
+   compromised host *couldn't* reach data it had no business touching? **Record:** the principle, and the
+   breaking change that contains the blast radius.
 
 4. [ ] **Hop 3 — the blind spot (the expired certificate).**
    **Predict:** the data leaving the network — why did nobody notice for ~76 days?
    **Read:** find the expired certificate on the traffic-inspection device and how long it was blind.
-   **Map:** this is the subtle one. Tie it to **two** ideas: **Accounting** (the logging/monitoring leg
-   of AAA) and the **availability of detection** (the defense itself was unusable). **Record:**
-   principle = AAA/accounting + availability-of-monitoring; breaking change = monitor the monitors
-   (alert on expired certs / dead inspection).
+   **Map:** this is the subtle one — and it touches *two* ideas, not one. The detective control existed
+   but couldn't do its job: which leg of **AAA** went dark, and which CIA property of the *defense itself*
+   was lost? **Record:** the principle(s), and the breaking change ("monitor the monitors" — what exactly
+   would you alert on?).
 
 5. [ ] **Render the autopsy.** Write the one-page memo: a row per hop (the failure · the principle ·
    the one breaking change), then a two-sentence bottom line answering *"was there one thing that
@@ -84,7 +86,9 @@ against a host you own (or `badssl.com`'s [expired-cert example](https://expired
 failure path). This is the Equifax blind spot, encoded so it can't silently recur on *your* systems.
 Have a model draft it; **review every line** — confirm it actually fails on the expired host for the
 right reason — and commit *your* reviewed version. (Standard library only: `ssl` + `socket` +
-`datetime`.)
+`datetime`.) The repo ships `cert_check.py` as a **spec/skeleton** — fill in `main()`, then
+`make cert-demo` runs it against a bundled, already-expired sample cert (offline, deterministic). Only
+once yours works, compare against `solution/cert_check.py`.
 
 ## AI acceleration
 Before writing the autopsy, ask a model to map the Equifax failures to principles, then audit it. It

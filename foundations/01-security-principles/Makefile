@@ -1,20 +1,36 @@
-.PHONY: demo cert-demo
+.PHONY: demo cert-demo solution-demo
 
-# Print the principle-autopsy guide, then run the cert-expiry checker against
-# the bundled expired sample cert — fully offline, no network required.
+# Print the principle-autopsy guide, then try YOUR cert-expiry checker.
 demo:
 	python3 guide.py
 	@echo
 	@$(MAKE) --no-print-directory cert-demo
 
-# Demonstrate cert_check.py on the bundled expired sample (deterministic,
-# network-free). It exits non-zero on the expired cert by design, so we report
-# that as the expected "blind spot" outcome rather than failing the target.
+# Run YOUR cert_check.py against the bundled expired sample (offline,
+# deterministic). It's a skeleton until you build it — until then this prints
+# how to start. Once implemented, it exits non-zero on the expired cert, which
+# is the correct "blind spot" outcome.
 cert-demo:
 	@echo "── cert_check.py — the Equifax blind spot (Hop 3) ──"
-	@echo "Checking bundled sample-expired-cert.pem (offline, deterministic):"
+	@echo "Running YOUR cert_check.py on sample-expired-cert.pem (offline):"
 	@echo
-	@python3 cert_check.py --pem sample-expired-cert.pem; \
-	  status=$$?; echo; \
-	  echo "(exit $$status — non-zero is correct: an expired cert is a FAIL,"; \
-	  echo " just as Equifax's lapsed inspection cert should have been.)"
+	@if python3 cert_check.py --pem sample-expired-cert.pem 2>/tmp/cert_check_err; then \
+	  echo; echo "(exit 0 — but an EXPIRED cert should FAIL. Re-check your exit codes.)"; \
+	else \
+	  if grep -q NotImplementedError /tmp/cert_check_err; then \
+	    echo "cert_check.py isn't built yet — it's your exercise."; \
+	    echo "Implement main() per the spec in the file, then re-run 'make cert-demo'."; \
+	    echo "See lab.md → 'Automate & own it'. Reference: solution/cert_check.py."; \
+	  else \
+	    cat /tmp/cert_check_err; echo; \
+	    echo "(non-zero exit — correct: an expired cert is a FAIL, just as"; \
+	    echo " Equifax's lapsed inspection cert should have been.)"; \
+	  fi; \
+	fi; \
+	rm -f /tmp/cert_check_err
+
+# Sanity-check the reference build (for verifying your own against, or for CI).
+solution-demo:
+	@echo "── reference solution on sample-expired-cert.pem ──"
+	@python3 solution/cert_check.py --pem sample-expired-cert.pem; \
+	  echo "(exit $$? — non-zero is correct on an expired cert.)"

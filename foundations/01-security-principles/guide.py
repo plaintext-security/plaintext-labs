@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Security Principles lab — breach analysis guide + CISA KEV sampler.
+Security Principles lab — Equifax principle-autopsy guide + CISA KEV sampler.
 
-Prints the breach-analysis template and fetches recent high-profile CVEs
-from the CISA Known Exploited Vulnerabilities catalog as breach candidates.
+Prints the principle-autopsy template and fetches recent high-profile CVEs
+from the CISA Known Exploited Vulnerabilities catalog as breach candidates
+(for the Stretch: re-run the autopsy on a different breach).
 
 Usage:
     python3 guide.py          # print guide + sample KEV entries
-    python3 guide.py --check  # validate a completed breach-analysis.md
+    python3 guide.py --check  # smoke-check a completed principle-autopsy.md
 """
 from __future__ import annotations
 
@@ -35,48 +36,44 @@ def fetch_kev(n: int = 5) -> list[dict]:
 
 def print_guide() -> None:
     print("=" * 64)
-    print("Security Principles — Breach Analysis Guide")
+    print("Security Principles — Equifax Principle-Autopsy Guide")
     print("=" * 64)
 
     print("""
-Module 01: Reason About a Breach with First Principles
+Module 01: The Equifax Autopsy — Map Every Failure to a First Principle
 
-This lab has no tooling — only a documented breach and your analysis.
-Your deliverable is breach-analysis.md.
+This lab has no tooling — only a documented breach and your judgment.
+Your deliverable is principle-autopsy.md. The blanks below are scaffolding,
+not answers: you fill every cell from the GAO report (gao.gov/products/gao-18-559).
 
 ──────────────────────────────────────────────────────────────
-BREACH ANALYSIS TEMPLATE
+PRINCIPLE AUTOPSY TEMPLATE  (copy into principle-autopsy.md)
 ──────────────────────────────────────────────────────────────
 
-## Breach: [Name / CVE / Incident]
-Source: [URL to post-mortem / CISA KEV / NVD]
+## Equifax (2017) — Principle Autopsy
+Source: GAO-18-559 + CISA KEV / NVD for CVE-2017-5638
 
-### 1. Three-sentence summary
-What was accessed:
-How it happened:
-What control failed:
+### Prediction (write this BEFORE you read — grade it at the end)
+The one thing I think failed:
 
-### 2. CIA triad mapping
-| Property       | Violated? | How                          |
-|----------------|-----------|------------------------------|
-| Confidentiality | Yes/No   | [what data was exposed]      |
-| Integrity       | Yes/No   | [what was modified/replaced] |
-| Availability    | Yes/No   | [what was disrupted]         |
+### The chain — one row per hop
+| Hop | The failure (what happened) | Principle that failed | The one change that breaks the chain here |
+|-----|-----------------------------|-----------------------|-------------------------------------------|
+| 1. The entry (unpatched Struts) |  |  |  |
+| 2. The spread (flat network)    |  |  |  |
+| 3. The blind spot (expired cert)|  |  |  |
 
-### 3. Failed controls
-| Control       | Principle (least-priv / defense-in-depth / etc.) |
-|---------------|--------------------------------------------------|
-| [Control 1]   | [Principle]                                      |
-| [Control 2]   | [Principle]                                      |
+### Bottom line (2 sentences)
+Was there one thing that failed? →
+Why "they didn't patch" is an incomplete answer →
 
-### 4. Two controls that would have broken the chain
-1. [Control] → protects [CIA property] via [principle]
-2. [Control] → protects [CIA property] via [principle]
+### Prediction scorecard
+What my step-1 guess got right / missed:
 
-### 5. AI reconciliation
-Ask a model to produce its own CIA/principle mapping of the same breach.
-Paste its output here, then annotate where it disagrees with you and
-why you kept or changed your answer.
+──────────────────────────────────────────────────────────────
+NEXT: build cert_check.py (your exercise) — see lab.md → "Automate & own it",
+then `make cert-demo`. Stretch: re-run this autopsy on another breach using a
+CISA KEV entry below.
 """)
 
 
@@ -107,11 +104,11 @@ def check_analysis(path: Path) -> int:
     print(f"\n[Check] Validating: {path.name}\n")
 
     checks = [
-        (r"cia|confidential|integrity|availab",  "CIA triad addressed"),
-        (r"least.priv|defense.in.depth|princip",  "Security principle named"),
-        (r"control|mitigation|patch|fix",          "Controls identified"),
-        (r"cve|breach|incident|vulnerabilit",       "Specific breach referenced"),
-        (r"ai|model|claude|gpt|gemini",             "AI reconciliation step done"),
+        (r"cia|confidential|integrity|availab|aaa|account",  "CIA / AAA addressed"),
+        (r"least.priv|defense.in.depth|segment|princip",     "Security principle named"),
+        (r"patch|segment|monitor|cert|control|breaking",     "Breaking-change control identified"),
+        (r"struts|cve-2017-5638|equifax|expired",            "Grounded in the Equifax specifics"),
+        (r"predict|chain|bottom.line|no single",             "Prediction scored + chain bottom line"),
     ]
 
     passed = 0
@@ -127,11 +124,11 @@ def check_analysis(path: Path) -> int:
 
 def main() -> None:
     if "--check" in sys.argv:
-        candidates = [Path("breach-analysis.md")] + list(Path(".").glob("*.md"))
+        candidates = [Path("principle-autopsy.md")] + list(Path(".").glob("*.md"))
         for p in candidates:
-            if p.exists() and "breach" in p.name.lower():
+            if p.exists() and ("autopsy" in p.name.lower() or "principle" in p.name.lower()):
                 sys.exit(check_analysis(p))
-        print("No breach-analysis.md found in current directory.")
+        print("No principle-autopsy.md found in current directory.")
         sys.exit(1)
 
     print_guide()
@@ -140,7 +137,8 @@ def main() -> None:
 
     print(DIVIDER)
     print("When done:")
-    print("  python3 guide.py --check   # validate your breach-analysis.md")
+    print("  python3 guide.py --check   # smoke-check your principle-autopsy.md")
+    print("  (a keyword smell test — not a grade; your committed autopsy is the proof)")
     print(DIVIDER + "\n")
 
 
