@@ -1,0 +1,41 @@
+title: AWS IAM CreateUser Followed by AttachUserPolicy (REGRESSED — too narrow, misses attacks)
+id: deadbeef-1111-1111-1111-111111111111
+status: experimental
+description: |
+  SECOND deliberately regressed copy of data/sigma_rule.yml, for the eval harness. This regression
+  is the OPPOSITE failure of the over-broad one: the admin-policy list was narrowed to ONLY
+  'AdministratorAccess'. It looks tighter and "cleaner", but it now goes SILENT on the equally
+  dangerous IAMFullAccess and PowerUserAccess escalations — a false "all clear" on real attacks.
+  This is the failure that buries the alert that mattered: recall collapses while precision looks
+  perfect. The eval must catch this as a RECALL / false-negative regression.
+references:
+  - https://attack.mitre.org/techniques/T1098/
+author: plaintext eval harness (regressed fixture)
+date: 2026-03-01
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1098
+logsource:
+  product: aws
+  service: cloudtrail
+detection:
+  create_user:
+    eventSource: iam.amazonaws.com
+    eventName: CreateUser
+  attach_policy:
+    eventSource: iam.amazonaws.com
+    eventName: AttachUserPolicy
+    requestParameters.policyArn|contains:
+      - 'AdministratorAccess'
+  timeframe: 5m
+  condition: create_user followed by attach_policy
+falsepositives:
+  - Legitimate automated account provisioning.
+level: critical
+fields:
+  - eventTime
+  - userIdentity.arn
+  - sourceIPAddress
+  - requestParameters.userName
+  - requestParameters.policyArn

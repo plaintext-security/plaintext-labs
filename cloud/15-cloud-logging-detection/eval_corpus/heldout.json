@@ -1,0 +1,96 @@
+{
+  "_comment": "HELD-OUT evaluation corpus for the IAM privilege-escalation Sigma rule (CreateUser -> AttachUserPolicy admin within 5m). DISTINCT from data/cloudtrail/events.json (the demo/tuning set the rule was written against). Each case is a labelled mini-timeline: 'attack' cases the rule MUST fire on, 'benign' cases it must NOT. Neutral framing (no fictional org). Account 111122223333 throughout. The near-misses are the point: legitimate provisioning that LOOKS like the attack, and an attack variant that hides from a naive rule. NOTE: every event here is a CloudTrail MANAGEMENT event (IAM/STS/EC2 control-plane). S3 object-level (data-plane) reads are NOT logged by default, so a corpus that pretends GetObject exfil is always visible would be dishonest; where data-plane access matters, it is represented only as the management-plane footprint a default trail actually captures.",
+  "cases": [
+    {
+      "id": "ATK-01",
+      "label": "attack",
+      "rationale": "Canonical T1098: new user granted AdministratorAccess 9s later, same external IP. The rule must fire.",
+      "records": [
+        {"eventTime": "2026-03-02T02:11:04Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0 Python/3.11 Linux/6.1", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": {"userName": "svc-helper", "path": "/"}},
+        {"eventTime": "2026-03-02T02:11:13Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0 Python/3.11 Linux/6.1", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": {"userName": "svc-helper", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"}}
+      ]
+    },
+    {
+      "id": "ATK-02",
+      "label": "attack",
+      "rationale": "Same sequence but IAMFullAccess (an admin-equivalent policy) and a 4-minute gap — still inside the 5m window. Must fire.",
+      "records": [
+        {"eventTime": "2026-03-02T07:40:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.91", "userAgent": "aws-cli/2.15.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/DeployRole/s1"}, "requestParameters": {"userName": "ci-runner-x"}},
+        {"eventTime": "2026-03-02T07:43:55Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.91", "userAgent": "aws-cli/2.15.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/DeployRole/s1"}, "requestParameters": {"userName": "ci-runner-x", "policyArn": "arn:aws:iam::aws:policy/IAMFullAccess"}}
+      ]
+    },
+    {
+      "id": "ATK-03",
+      "label": "attack",
+      "rationale": "PowerUserAccess attached 2 minutes after CreateUser. PowerUser is in the admin set the rule watches. Must fire.",
+      "records": [
+        {"eventTime": "2026-03-03T18:02:10Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-west-2", "sourceIPAddress": "192.0.2.55", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/ops-temp"}, "requestParameters": {"userName": "break-glass-2"}},
+        {"eventTime": "2026-03-03T18:04:01Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-west-2", "sourceIPAddress": "192.0.2.55", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/ops-temp"}, "requestParameters": {"userName": "break-glass-2", "policyArn": "arn:aws:iam::aws:policy/PowerUserAccess"}}
+      ]
+    },
+    {
+      "id": "ATK-04",
+      "label": "attack",
+      "rationale": "Noisy interleave: between the CreateUser and the admin AttachUserPolicy the attacker runs recon (ListRoles, GetUser) and attaches a harmless ReadOnly policy first. The rule must still correlate the create with the LATER admin attach inside the window. A rule that only checks the immediately-next event would miss this.",
+      "records": [
+        {"eventTime": "2026-03-04T11:00:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": {"userName": "persist-acct"}},
+        {"eventTime": "2026-03-04T11:00:20Z", "eventSource": "iam.amazonaws.com", "eventName": "ListRoles", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": null},
+        {"eventTime": "2026-03-04T11:01:05Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": {"userName": "persist-acct", "policyArn": "arn:aws:iam::aws:policy/ReadOnlyAccess"}},
+        {"eventTime": "2026-03-04T11:02:40Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "198.51.100.7", "userAgent": "Boto3/1.34.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/compromised-dev"}, "requestParameters": {"userName": "persist-acct", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"}}
+      ]
+    },
+    {
+      "id": "BEN-01",
+      "label": "benign",
+      "rationale": "Legitimate provisioning: CreateUser then attach a SCOPED, non-admin policy (S3 read-only). NEAR-MISS — same two event names as the attack, but the policy is not admin. A rule that drops the policy filter would false-positive here.",
+      "records": [
+        {"eventTime": "2026-03-02T09:00:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "app-reader"}},
+        {"eventTime": "2026-03-02T09:00:08Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "app-reader", "policyArn": "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"}}
+      ]
+    },
+    {
+      "id": "BEN-02",
+      "label": "benign",
+      "rationale": "CreateUser and an admin AttachUserPolicy that ARE both present but 47 minutes apart (well outside the 5m correlation window) and for DIFFERENT users. NEAR-MISS on the sequence. A rule that ignores the time window or the username match would false-positive.",
+      "records": [
+        {"eventTime": "2026-03-05T08:00:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "new-analyst"}},
+        {"eventTime": "2026-03-05T08:47:30Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "existing-admin-user", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"}}
+      ]
+    },
+    {
+      "id": "BEN-03",
+      "label": "benign",
+      "rationale": "Routine read-only console workday: list/describe/get calls from a corporate IP. No CreateUser at all. The rule must stay silent.",
+      "records": [
+        {"eventTime": "2026-03-02T13:00:00Z", "eventSource": "s3.amazonaws.com", "eventName": "ListBuckets", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.1.45", "userAgent": "aws-cli/2.15.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/analyst-jo"}, "requestParameters": null},
+        {"eventTime": "2026-03-02T13:01:10Z", "eventSource": "ec2.amazonaws.com", "eventName": "DescribeInstances", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.1.45", "userAgent": "aws-cli/2.15.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/analyst-jo"}, "requestParameters": null},
+        {"eventTime": "2026-03-02T13:02:00Z", "eventSource": "iam.amazonaws.com", "eventName": "GetUser", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.1.45", "userAgent": "aws-cli/2.15.0", "userIdentity": {"type": "IAMUser", "arn": "arn:aws:iam::111122223333:user/analyst-jo"}, "requestParameters": {"userName": "analyst-jo"}}
+      ]
+    },
+    {
+      "id": "BEN-04",
+      "label": "benign",
+      "rationale": "CreateUser alone, no policy attach follows (the operator stopped to await approval). A single CreateUser is benign a hundred times a day; the rule fires only on the SEQUENCE. Must stay silent.",
+      "records": [
+        {"eventTime": "2026-03-06T10:15:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "contractor-week"}}
+      ]
+    },
+    {
+      "id": "BEN-05",
+      "label": "benign",
+      "rationale": "AttachUserPolicy of AdministratorAccess to a long-EXISTING user (no preceding CreateUser in the window). Granting admin to an existing identity is a different signal (and a different rule's job); this sequence rule must not fire. NEAR-MISS on the admin-attach half alone.",
+      "records": [
+        {"eventTime": "2026-03-07T14:30:00Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "platform-admin-lee", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"}}
+      ]
+    },
+    {
+      "id": "BEN-06",
+      "label": "benign",
+      "rationale": "High-volume but routine management traffic from a corporate IP, including a CreateUser followed by attaching only a tightly-scoped customer-managed CI policy (not admin). NEAR-MISS volume + a non-admin attach. Must stay silent.",
+      "records": [
+        {"eventTime": "2026-03-04T16:00:00Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "ci-deploy-bot"}},
+        {"eventTime": "2026-03-04T16:00:05Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy", "awsRegion": "us-east-1", "sourceIPAddress": "10.0.4.20", "userAgent": "Terraform/1.7.0", "userIdentity": {"type": "AssumedRole", "arn": "arn:aws:sts::111122223333:assumed-role/TerraformProvisioner/run"}, "requestParameters": {"userName": "ci-deploy-bot", "policyArn": "arn:aws:iam::111122223333:policy/CI-Deploy-Scoped"}}
+      ]
+    }
+  ]
+}

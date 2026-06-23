@@ -1,5 +1,6 @@
 # Module 09 — Detecting AD Attacks lab.
-.PHONY: up down reset demo shell
+# No `grade` target: Plaintext is an honor system. `make eval` is a regression gate, not a grader.
+.PHONY: up down reset demo shell eval gate
 
 up:
 	docker compose up -d --build
@@ -51,4 +52,30 @@ demo:       ## Run chainsaw over EVTX samples with bundled Sigma rules
 	@echo "=== Rules summary ==="
 	docker compose run --rm lab sh -c \
 	    'for r in data/rules/*.yml; do echo "Rule: $$r"; grep "title:" $$r; grep "tags:" $$r -A3 | grep attack; echo; done'
-	@echo "=== Demo complete. Run 'make shell' to write and test your own rules. ==="
+	@echo ""
+	@echo "########################################################################"
+	@echo "# HELD-OUT EVAL — coverage above is not effectiveness. The detections"
+	@echo "# scored against a held-out benign+attack corpus they were NOT tuned on:"
+	@echo "# GREEN on the good rules, RED on a rule regressed into noise."
+	@echo "########################################################################"
+	docker compose run --rm lab sh -c '\
+	    set +e; \
+	    echo "--- GOOD ruleset on the held-out corpus — gate should PASS ---"; \
+	    python3 scripts/eval_detections.py --ruleset good --gate; good=$$?; \
+	    echo; \
+	    echo "--- REGRESSED ruleset (exclusions dropped) — gate should FAIL ---"; \
+	    python3 scripts/eval_detections.py --ruleset regressed --gate; bad=$$?; \
+	    echo; \
+	    echo "=== Verdict ==="; \
+	    if [ $$good -eq 0 ] && [ $$bad -ne 0 ]; then \
+	        echo "PASS: gate is GREEN on the good rules and RED on the regression — the gate works."; \
+	    else \
+	        echo "UNEXPECTED: good=$$good (want 0), regressed=$$bad (want non-zero)."; exit 1; \
+	    fi'
+	@echo "=== Demo complete. 'make eval' scores the good rules + gate; 'make gate' proves the gate goes RED on the regression; 'make shell' to write your own. ==="
+
+eval:       ## Score the GOOD ruleset on the held-out corpus + enforce the gate (exits non-zero on any miss or false positive)
+	docker compose run --rm lab python3 scripts/eval_detections.py --ruleset good --gate
+
+gate:       ## Prove the gate catches a regression: score the deliberately-too-broad ruleset (expects non-zero)
+	docker compose run --rm lab python3 scripts/eval_detections.py --ruleset regressed --gate

@@ -5,4 +5,5 @@ services:
     working_dir: /lab
     volumes:
       - ./data:/lab/data
+      - ./scripts:/lab/scripts
     command: sleep infinity

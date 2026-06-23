@@ -1,0 +1,19 @@
+# REGRESSED FIXTURE — do NOT use in production.
+# A "tuning" change that looked harmless: someone narrowed the match to the long-form
+# -EncodedCommand flag only, to "cut noise". It silently stops catching the far more
+# common ` -enc ` short form — three held-out malicious samples now slip past.
+# This is the planted regression the gate must catch.
+title: PowerShell Encoded Command Execution (regressed)
+id: 7b2c0a1e-3d4f-4a5b-9c8d-1e2f3a4b5c6d
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains: [' -encodedcommand ']
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001

@@ -1,0 +1,40 @@
+title: AWS IAM CreateUser Followed by AttachUserPolicy (REGRESSED — over-broad)
+id: deadbeef-0000-0000-0000-000000000000
+status: experimental
+description: |
+  DELIBERATELY REGRESSED copy of data/sigma_rule.yml, used only by the eval harness to prove
+  the regression gate can go RED. The regression: the `requestParameters.policyArn|contains`
+  admin-policy filter has been DROPPED, so the rule now fires on ANY CreateUser followed by ANY
+  AttachUserPolicy — including legitimate provisioning that attaches a scoped, non-admin policy.
+  This is the classic "someone widened the rule to catch more and flooded the queue" failure: it
+  still catches the real attacks (recall stays high) but its false-positive rate explodes on the
+  held-out benign near-misses. The eval must catch this as a precision/FP-rate regression.
+references:
+  - https://attack.mitre.org/techniques/T1098/
+author: plaintext eval harness (regressed fixture)
+date: 2026-03-01
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1098
+logsource:
+  product: aws
+  service: cloudtrail
+detection:
+  create_user:
+    eventSource: iam.amazonaws.com
+    eventName: CreateUser
+  attach_policy:
+    eventSource: iam.amazonaws.com
+    eventName: AttachUserPolicy
+  timeframe: 5m
+  condition: create_user followed by attach_policy
+falsepositives:
+  - EVERYTHING that legitimately provisions a user and attaches any policy — which is the bug.
+level: critical
+fields:
+  - eventTime
+  - userIdentity.arn
+  - sourceIPAddress
+  - requestParameters.userName
+  - requestParameters.policyArn

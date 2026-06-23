@@ -1,0 +1,246 @@
+[
+  {
+    "id": "HO-K01",
+    "rule": "kerberoast",
+    "label": "attack",
+    "System": { "EventID": 4769, "TimeCreated": "2024-03-08T02:41:09.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "mfowler",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "svc-sql-reporting",
+      "ServiceSid": "S-1-5-21-3300-3300-3300-1410",
+      "TicketOptions": "0x40810000",
+      "TicketEncryptionType": "0x17",
+      "IpAddress": "::ffff:10.20.0.50",
+      "IpPort": "53120",
+      "Status": "0x0"
+    },
+    "_description": "Kerberoast: RC4 (0x17) TGS for a human-named service account from the attacker host. MUST fire."
+  },
+  {
+    "id": "HO-K02",
+    "rule": "kerberoast",
+    "label": "attack",
+    "System": { "EventID": 4769, "TimeCreated": "2024-03-08T02:41:11.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "mfowler",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "svc-web-api",
+      "ServiceSid": "S-1-5-21-3300-3300-3300-1411",
+      "TicketOptions": "0x40810000",
+      "TicketEncryptionType": "0x17",
+      "IpAddress": "::ffff:10.20.0.50",
+      "IpPort": "53121",
+      "Status": "0x0"
+    },
+    "_description": "Kerberoast bulk SPN sweep: second RC4 service ticket seconds later. MUST fire."
+  },
+  {
+    "id": "HO-K03",
+    "rule": "kerberoast",
+    "label": "benign",
+    "System": { "EventID": 4769, "TimeCreated": "2024-03-08T09:12:55.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "rpatel",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "svc-sql-reporting",
+      "ServiceSid": "S-1-5-21-3300-3300-3300-1410",
+      "TicketOptions": "0x40810010",
+      "TicketEncryptionType": "0x12",
+      "IpAddress": "::ffff:10.20.0.81",
+      "IpPort": "49710",
+      "Status": "0x0"
+    },
+    "_description": "Near-miss benign: SAME service account, but AES256 (0x12) from a normal workstation. The discriminator is etype, not the SPN. MUST NOT fire."
+  },
+  {
+    "id": "HO-K04",
+    "rule": "kerberoast",
+    "label": "benign",
+    "System": { "EventID": 4769, "TimeCreated": "2024-03-08T07:03:18.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "ws-fin-07",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "ws-fin-07$",
+      "ServiceSid": "S-1-5-21-3300-3300-3300-2207",
+      "TicketOptions": "0x40810000",
+      "TicketEncryptionType": "0x17",
+      "IpAddress": "::ffff:10.20.0.77",
+      "IpPort": "50122",
+      "Status": "0x0"
+    },
+    "_description": "Near-miss benign: RC4 ticket but ServiceName is a MACHINE account ($). Machine-to-machine RC4 is normal. MUST NOT fire (this is the false positive a too-broad RC4-only rule generates)."
+  },
+  {
+    "id": "HO-D01",
+    "rule": "dcsync",
+    "label": "attack",
+    "System": { "EventID": 4662, "TimeCreated": "2024-03-08T03:58:44.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-5-21-3300-3300-3300-1502",
+      "SubjectUserName": "mfowler",
+      "SubjectDomainName": "CORP",
+      "ObjectServer": "DS",
+      "ObjectType": "19195a5b-6da0-11d0-afd3-00c04fd930c9",
+      "ObjectName": "DC=corp,DC=example",
+      "OperationType": "Object Access",
+      "Properties": "1131f6ae-9c07-11d1-f79f-00c04fc2dcd2 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
+    },
+    "_description": "DCSync: human account mfowler exercises DS-Replication-Get-Changes-All on the domain object. MUST fire."
+  },
+  {
+    "id": "HO-D02",
+    "rule": "dcsync",
+    "label": "benign",
+    "System": { "EventID": 4662, "TimeCreated": "2024-03-08T03:58:46.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-5-21-3300-3300-3300-1002",
+      "SubjectUserName": "DC2$",
+      "SubjectDomainName": "CORP",
+      "ObjectServer": "DS",
+      "ObjectType": "19195a5b-6da0-11d0-afd3-00c04fd930c9",
+      "ObjectName": "DC=corp,DC=example",
+      "OperationType": "Object Access",
+      "Properties": "1131f6ae-9c07-11d1-f79f-00c04fc2dcd2 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
+    },
+    "_description": "Near-miss benign: legitimate DC-to-DC replication by the DC2$ machine account. Same rights, machine account -> normal. MUST NOT fire."
+  },
+  {
+    "id": "HO-D03",
+    "rule": "dcsync",
+    "label": "benign",
+    "System": { "EventID": 4662, "TimeCreated": "2024-03-08T11:21:02.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-5-21-3300-3300-3300-1620",
+      "SubjectUserName": "tquinn",
+      "SubjectDomainName": "CORP",
+      "ObjectServer": "DS",
+      "ObjectType": "bf967aba-0de6-11d0-a285-00aa003049e2",
+      "ObjectName": "CN=tquinn,OU=Users,DC=corp,DC=example",
+      "OperationType": "Object Access",
+      "Properties": "59ba2f42-79a2-11d0-9020-00c04fc2d3cf"
+    },
+    "_description": "Near-miss benign: a 4662 for an admin reading a user object's general-info property set — NOT a replication right. The discriminator is the replication GUID + non-DC subject, not 'any 4662'. MUST NOT fire."
+  },
+  {
+    "id": "HO-A01",
+    "rule": "asrep",
+    "label": "attack",
+    "System": { "EventID": 4768, "TimeCreated": "2024-03-08T02:09:31.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "svc-legacy-app",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "TargetSid": "S-1-5-21-3300-3300-3300-1430",
+      "ServiceName": "krbtgt",
+      "TicketOptions": "0x40800010",
+      "Status": "0x0",
+      "TicketEncryptionType": "0x17",
+      "PreAuthType": "0",
+      "IpAddress": "::ffff:10.20.0.50",
+      "IpPort": "51890"
+    },
+    "_description": "AS-REP roast: PreAuthType=0 success for an account with pre-auth disabled, from the attacker host. MUST fire."
+  },
+  {
+    "id": "HO-A02",
+    "rule": "asrep",
+    "label": "benign",
+    "System": { "EventID": 4768, "TimeCreated": "2024-03-08T08:44:17.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "rpatel",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "krbtgt",
+      "TicketOptions": "0x40800010",
+      "Status": "0x0",
+      "TicketEncryptionType": "0x12",
+      "PreAuthType": "2",
+      "IpAddress": "::ffff:10.20.0.81",
+      "IpPort": "49301"
+    },
+    "_description": "Near-miss benign: normal AS-REQ with PreAuthType=2 (encrypted timestamp pre-auth). MUST NOT fire."
+  },
+  {
+    "id": "HO-A03",
+    "rule": "asrep",
+    "label": "benign",
+    "System": { "EventID": 4768, "TimeCreated": "2024-03-08T06:30:00.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "TargetUserName": "DC2$",
+      "TargetDomainName": "CORP.EXAMPLE",
+      "ServiceName": "krbtgt",
+      "TicketOptions": "0x40800010",
+      "Status": "0x0",
+      "TicketEncryptionType": "0x12",
+      "PreAuthType": "0",
+      "IpAddress": "::ffff:10.20.0.2",
+      "IpPort": "50050"
+    },
+    "_description": "Near-miss benign: PreAuthType=0 but for the DC2$ machine account (some service principals legitimately skip pre-auth). MUST NOT fire — the rule excludes machine accounts."
+  },
+  {
+    "id": "HO-P01",
+    "rule": "pth",
+    "label": "attack",
+    "System": { "EventID": 4624, "TimeCreated": "2024-03-08T04:22:55.000Z", "Computer": "dc1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-0-0",
+      "SubjectUserName": "-",
+      "SubjectDomainName": "-",
+      "TargetUserSid": "S-1-5-21-3300-3300-3300-500",
+      "TargetUserName": "Administrator",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "LogonProcessName": "NtLmSsp",
+      "AuthenticationPackageName": "NTLM",
+      "WorkstationName": "FIN-OPS-LT",
+      "IpAddress": "10.20.0.50",
+      "IpPort": "52401",
+      "LogonGuid": "{00000000-0000-0000-0000-000000000000}"
+    },
+    "_description": "Pass-the-hash: Administrator NTLM Type 3 from the attacker host, zero LogonGuid (no Kerberos). MUST fire."
+  },
+  {
+    "id": "HO-P02",
+    "rule": "pth",
+    "label": "benign",
+    "System": { "EventID": 4624, "TimeCreated": "2024-03-08T09:33:41.000Z", "Computer": "fs1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-0-0",
+      "SubjectUserName": "-",
+      "SubjectDomainName": "-",
+      "TargetUserSid": "S-1-5-21-3300-3300-3300-1103",
+      "TargetUserName": "rpatel",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "LogonProcessName": "Kerberos",
+      "AuthenticationPackageName": "Kerberos",
+      "WorkstationName": "WS-FIN-12",
+      "IpAddress": "10.20.0.81",
+      "IpPort": "49555",
+      "LogonGuid": "{7f3a1c92-44b1-4e0a-9c2d-1a2b3c4d5e6f}"
+    },
+    "_description": "Near-miss benign: a user accessing a file share over Kerberos network logon. Type 3 but Kerberos, not NTLM. MUST NOT fire."
+  },
+  {
+    "id": "HO-P03",
+    "rule": "pth",
+    "label": "benign",
+    "System": { "EventID": 4624, "TimeCreated": "2024-03-08T05:00:12.000Z", "Computer": "fs1.corp.example", "Channel": "Security" },
+    "EventData": {
+      "SubjectUserSid": "S-1-0-0",
+      "SubjectUserName": "-",
+      "SubjectDomainName": "-",
+      "TargetUserSid": "S-1-5-21-3300-3300-3300-2210",
+      "TargetUserName": "FS1$",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "LogonProcessName": "NtLmSsp",
+      "AuthenticationPackageName": "NTLM",
+      "WorkstationName": "FS1",
+      "IpAddress": "10.20.0.10",
+      "IpPort": "445",
+      "LogonGuid": "{00000000-0000-0000-0000-000000000000}"
+    },
+    "_description": "Near-miss benign: NTLM Type 3, but the target is a MACHINE account (FS1$) — a legacy service auth. MUST NOT fire — the rule excludes machine accounts (this is the false positive a too-broad NTLM-only rule generates)."
+  }
+]

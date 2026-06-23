@@ -26,3 +26,4 @@ RUN pip install --no-cache-dir sigma-cli pySigma-backend-elasticsearch
 
 WORKDIR /lab
 COPY data /lab/data
+COPY scripts /lab/scripts
