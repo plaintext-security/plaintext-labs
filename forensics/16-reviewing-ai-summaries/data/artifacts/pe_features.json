@@ -1,0 +1,15 @@
+{
+  "_comment": "PE feature record for the recovered dropper, carried over from the Meridian case (Module 12). PRIMARY ARTIFACT. The SHA256 here is the SAME as the 4688 log's svchost32.exe — this is the authoritative hash. Any hash the summary cites for the dropper must match this exactly.",
+  "filename": "svchost32.exe",
+  "path": "C:\\Windows\\Temp\\svchost32.exe",
+  "sha256": "4f1d2c0b9a8e7f6d5c4b3a29180706f5e4d3c2b1a0f9e8d7c6b5a4938271605f",
+  "md5": "9b1c3d5e7f0a2b4c6d8e0f1a2b3c4d5e",
+  "size_bytes": 184320,
+  "imphash": "a3c1f0e8d2b46570",
+  "strings_of_interest": ["update-cdn82.net", "svchost32", "/update.bin"],
+  "attck": [
+    { "technique": "T1071.001", "name": "Application Layer Protocol: Web Protocols", "tactic": "Command and Control" },
+    { "technique": "T1036.004", "name": "Masquerading: Masquerade Task or Service", "tactic": "Defense Evasion" },
+    { "technique": "T1547.001", "name": "Registry Run Keys / Startup Folder", "tactic": "Persistence" }
+  ]
+}

@@ -1,0 +1,105 @@
+---
+# Module 12 — Declared baseline (the SOURCE OF TRUTH).
+# This is the Module-06 five-control CIS-equivalent hardening playbook, extended
+# with the rp_filter sysctl so all three injected drifts map to a named control.
+# A `--check --diff` run that reports zero changes == "no drift".
+# Run: ansible-playbook -i inventory data/playbook.yml
+
+- name: Meridian Linux Hardening — declared baseline (CIS L1 equivalent)
+  hosts: target
+  gather_facts: yes
+  become: yes
+
+  vars:
+    ssh_permit_root_login: "no"
+    umask_value: "027"
+    password_min_length: 14
+
+  tasks:
+
+    # Control 1: Disable root SSH login (CIS 5.2.10)
+    - name: "[CIS-5.2.10] Disable root SSH login"
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin {{ ssh_permit_root_login }}'
+        state: present
+        backup: yes
+      notify: Restart sshd
+      tags: ssh
+
+    # Control 2: Password complexity (CIS 5.4.1)
+    - name: "[CIS-5.4.1] Ensure pam_pwquality minlen=14"
+      lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: '^#?minlen'
+        line: 'minlen = {{ password_min_length }}'
+        state: present
+        create: yes
+      tags: password
+
+    - name: "[CIS-5.4.1] Ensure pam_pwquality minclass=4"
+      lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: '^#?minclass'
+        line: 'minclass = 4'
+        state: present
+      tags: password
+
+    # Control 3: auditd present + enabled (CIS 4.1.1)
+    - name: "[CIS-4.1.1] Ensure auditd is installed"
+      package:
+        name: auditd
+        state: present
+      tags: auditd
+
+    # Control 4: secure default umask (CIS 5.5.5)
+    - name: "[CIS-5.5.5] Set default umask to 027 in /etc/login.defs"
+      lineinfile:
+        path: /etc/login.defs
+        regexp: '^UMASK'
+        line: 'UMASK           {{ umask_value }}'
+        state: present
+      tags: umask
+
+    # Control 5: sysctl hardening — ASLR + reverse-path filtering (CIS 3.x)
+    - name: "[CIS-3.x] Enable ASLR (kernel.randomize_va_space=2)"
+      sysctl:
+        name: kernel.randomize_va_space
+        value: '2'
+        state: present
+        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        reload: no
+      tags: sysctl
+
+    # This is the control drift #1 reverts — declared value is 1.
+    - name: "[CIS-3.3.7] Enable reverse-path filtering (net.ipv4.conf.all.rp_filter=1)"
+      sysctl:
+        name: net.ipv4.conf.all.rp_filter
+        value: '1'
+        state: present
+        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        reload: no
+      tags: sysctl
+
+    # Control 6 (reconcile-only): no world-writable files under /srv/meridian.
+    # Drift #3 drops one here; reconcile strips the world-writable bit.
+    - name: "[CIS-6.1.10] Ensure /srv/meridian holds no world-writable files"
+      shell: |
+        set -e
+        mkdir -p /srv/meridian
+        found=$(find /srv/meridian -xdev -type f -perm -0002 2>/dev/null)
+        if [ -n "$found" ]; then
+          echo "$found" | xargs -r chmod o-w
+          echo "CHANGED"
+        fi
+      register: ww_fix
+      changed_when: "'CHANGED' in ww_fix.stdout"
+      tags: perms
+
+  handlers:
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted
+      ignore_errors: yes

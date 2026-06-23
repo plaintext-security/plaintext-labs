@@ -1,0 +1,25 @@
+# Detector configuration the eval scores. The GOOD detectors live here; the
+# regressed variants live in ../regressed/ and are swapped in by `--demo`.
+#
+# In real use you drop in YOUR Modules 11/12 rules — the corpus, eval, and gate
+# are unchanged. The thresholds below are the only tunable knobs for the
+# timestomp detector; the YARA detector is the rule file itself.
+
+timestomp:
+  # Honest stand-in for the Module-11 $SI/$FN detector: flag a file when the
+  # absolute gap between its $STANDARD_INFORMATION and $FILE_NAME modified times
+  # exceeds this many seconds. Real istat-based detection is the same idea on
+  # parsed NTFS attributes; here it runs over the bundled metadata fixtures.
+  divergence_seconds: 86400   # 1 day — wide enough to ignore install write-skew
+
+yara:
+  rule_file: meridian.yar     # relative to /data; the regression swaps this out
+
+# --- Gate floors: chosen per the rule's JOB (see eval-report.md). -------------
+# timestomp is a HUNTING rule  -> favour recall  (don't miss a hidden host)
+# yara feeds AUTO-TRIAGE       -> favour precision (don't drown the queue)
+gate:
+  timestomp:
+    min_recall: 0.90
+  yara:
+    min_precision: 0.95

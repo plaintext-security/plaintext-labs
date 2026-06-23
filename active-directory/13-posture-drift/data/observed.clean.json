@@ -1,0 +1,19 @@
+{
+  "_comment": "Pristine clean-domain observed posture. bin/drift-introduce.sh resets observed.json from this file before applying its mutations, so `make demo` (clean) and `make drift` (decayed) are both reproducible from a known state.",
+
+  "kerberoastable_accounts": [],
+  "asrep_roastable_accounts": [],
+  "unconstrained_delegation_principals": [],
+  "dangerous_aces": [],
+
+  "privileged_group_rosters": {
+    "Domain Admins": ["tallen", "Administrator"],
+    "Enterprise Admins": ["Administrator"],
+    "Backup Operators": ["svc-backup"],
+    "IT-Admins": ["tallen", "sgarcia", "pmartinez"]
+  },
+
+  "krbtgt": {
+    "age_days": 12
+  }
+}

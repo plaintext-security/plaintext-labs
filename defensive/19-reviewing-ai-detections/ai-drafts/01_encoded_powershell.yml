@@ -1,0 +1,25 @@
+title: PowerShell Encoded Command (AI draft)
+id: a1111111-0000-4000-8000-000000000001
+status: experimental
+description: >
+  AI-drafted rule meant to catch PowerShell launched with an encoded command.
+  PLANTED BUG: keys on the field `ProcessCommandLine`, but this estate's Sysmon
+  process-creation events carry the value under `CommandLine`. The rule converts
+  and runs cleanly, yet matches nothing — the wrong-field tell. Fire it at the
+  corpus and watch it miss its malicious target.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    ProcessCommandLine|contains:
+      - ' -enc '
+      - ' -encodedcommand '
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001

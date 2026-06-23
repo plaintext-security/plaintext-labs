@@ -1,0 +1,14 @@
+# Module 12 — Configuration & Posture Drift
+# Single privileged container = Ansible controller + hardened target (localhost),
+# the Module-06 shape. `make up` converges the baseline so the host is at t=0
+# (zero drift) before anything else runs.
+services:
+  lab:
+    build: .
+    image: plaintext/config-drift:1.0
+    container_name: config-drift-lab
+    privileged: true
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

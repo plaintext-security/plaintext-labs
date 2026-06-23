@@ -1,0 +1,11 @@
+# EVTX extract — Windows Security 4688 (process creation), host WS-FIN-07, UTC.
+# PRIMARY ARTIFACT. Exported from the workstation jchen logged into. Columns:
+# UtcTime,EventID,NewProcessName,ParentProcessName,CommandLine,SHA256
+#
+# The dropper svchost32.exe is here at 22:18:33 (after the 22:14 VPN login).
+# Its SHA256 is the ground truth for any hash the summary cites.
+UtcTime,EventID,NewProcessName,ParentProcessName,CommandLine,SHA256
+2024-03-14T22:18:01Z,4688,C:\Windows\System32\cmd.exe,C:\Windows\explorer.exe,"cmd.exe /c whoami",-
+2024-03-14T22:18:33Z,4688,C:\Windows\Temp\svchost32.exe,C:\Windows\System32\cmd.exe,"svchost32.exe -install",4f1d2c0b9a8e7f6d5c4b3a29180706f5e4d3c2b1a0f9e8d7c6b5a4938271605f
+2024-03-14T22:18:41Z,4688,C:\Windows\System32\schtasks.exe,C:\Windows\Temp\svchost32.exe,"schtasks /create /tn UpdateSvc /tr C:\Windows\Temp\svchost32.exe /sc onlogon",-
+2024-03-14T22:19:07Z,4688,C:\Windows\System32\reg.exe,C:\Windows\Temp\svchost32.exe,"reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v UpdateSvc",-

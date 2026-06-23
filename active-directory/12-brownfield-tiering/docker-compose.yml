@@ -1,0 +1,10 @@
+services:
+  lab:
+    build: .
+    image: plaintext/ad-brownfield-tiering:latest
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data
+      - ./wave-check.py:/lab/wave-check.py
+      - ./flat-walk.py:/lab/flat-walk.py
+    command: sleep infinity

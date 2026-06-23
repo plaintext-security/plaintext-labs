@@ -1,0 +1,23 @@
+# The REGRESSED detector configuration the gate must catch.
+#
+# Two planted regressions vs. data/detectors.yml:
+#   1. timestomp.divergence_seconds dropped from 86400 (1 day) to 2 seconds — so
+#      low it trips on legitimate installer write-skew (ts-009) and the benign
+#      near-misses (ts-007, ts-008). FP-rate explodes, precision collapses, and
+#      because this rule is gated on RECALL it still looks fine on recall alone —
+#      but the scorecard exposes the precision/FP-rate damage.
+#   2. yara.rule_file swapped to the loosened ../regressed/meridian_loose.yar,
+#      which fires on "/update.bin" alone and so flags the benign auto-updater.
+#      Its precision drops below the 0.95 floor and the gate goes RED.
+
+timestomp:
+  divergence_seconds: 2
+
+yara:
+  rule_file: ../regressed/meridian_loose.yar
+
+gate:
+  timestomp:
+    min_recall: 0.90
+  yara:
+    min_precision: 0.95

@@ -1,0 +1,19 @@
+---
+# Module 13 — the DEFENDED EXCEPTION for the legacy-app group.
+# The vendor app on host-05 requires a loose umask; the full-baseline umask of
+# 027 (CIS-5.5.5) takes its app DOWN. Rather than break production (wrong) or
+# silently skip the host (a lie in the compliance report), we grant a documented
+# relaxed profile for the ONE breaking control, with a compensating control.
+#
+# This override is the exception MECHANISM the rollout reads when RING includes
+# the legacy host with EXCEPTION=1. See exception-adr.md (learner deliverable).
+profile_name: "relaxed-legacy"
+umask_value: "022"    # EXCEPTION to CIS-5.5.5 — vendor app requires it.
+# every other control still applies at full strength:
+root_ssh: "no"
+rp_filter: "1"
+password_minlen: 14
+auditd_enabled: "yes"
+# Compensating control + remediation (recorded, not silent):
+#   - host-05 is network-isolated (no inbound except the app LB).
+#   - vendor replacement scheduled Q3; exception expires at cutover.

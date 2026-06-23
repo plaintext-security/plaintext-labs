@@ -1,0 +1,24 @@
+title: Credential Dumping via LSASS Access (AI draft)
+id: a4444444-0000-4000-8000-000000000004
+status: experimental
+description: >
+  AI-drafted rule meant to catch LSASS credential access. PLANTED BUG: WRONG
+  LOGSOURCE. LSASS process-access detection comes from Sysmon Event ID 10
+  (category `process_access`), but this rule declares
+  `category: process_creation`. Pointed at a process-creation pipeline/corpus it
+  evaluates against the wrong event class and never fires. The condition reads
+  fine in isolation; the logsource/field mismatch is the tell.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess: '0x1410'
+  condition: selection
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1003.001

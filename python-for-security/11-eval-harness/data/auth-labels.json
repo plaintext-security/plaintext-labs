@@ -1,0 +1,47 @@
+{
+  "_README": "Ground truth for the eval harness. The unit of judgment is the SOURCE IP: the brute-force parser emits a per-IP verdict (attack | benign), so the labels are keyed by IP. YOU own these labels — they were authored by hand against what each line actually represents, NOT by the tool under test. Each entry carries a `reason` so a reviewer can audit the call. This corpus is HELD OUT: it is not the Module-02 sample log the parser was tuned against.",
+  "unit": "source_ip",
+  "verdicts": {
+    "203.0.113.10": {
+      "label": "attack",
+      "reason": "Classic fast brute force: 12 failed passwords across 5 usernames in ~33s. Trips any sane per-minute threshold; both parsers should catch this."
+    },
+    "192.0.2.55": {
+      "label": "attack",
+      "reason": "Invalid-user dictionary sweep: 11 failures in ~27s ('Failed password for invalid user ...'). A parser whose regex only matches 'Failed password for <user>' and not the 'invalid user' variant will MISS this — a near-miss against the regex, not the threshold."
+    },
+    "198.51.100.7": {
+      "label": "attack",
+      "reason": "SLOW-AND-LOW spray: 12 failures spaced ~95s apart over ~17 minutes, so it NEVER reaches 10 failures inside any 60s window. The strict per-minute rule alone is blind to it; catching it needs a longer-window / total-volume rule. This is the load-bearing recall case the regressed parser drops."
+    },
+    "10.0.5.20": {
+      "label": "benign",
+      "reason": "NEAR-MISS: the nightly backup cron mistypes its password twice (2 failures in ~5s) then succeeds (Accepted). Two failures is normal operational noise, not an attack — flagging it is a false positive."
+    },
+    "10.0.5.31": {
+      "label": "benign",
+      "reason": "NEAR-MISS: a human fat-fingers their password once then logs in. One failure followed by Accepted. Benign."
+    },
+    "10.0.5.40": {
+      "label": "benign",
+      "reason": "Successful publickey login for deploy. No failures at all."
+    },
+    "10.0.5.41": {
+      "label": "benign",
+      "reason": "Successful publickey login for deploy. No failures at all."
+    },
+    "10.0.5.42": {
+      "label": "benign",
+      "reason": "Connection closed at preauth — ordinary scanner/keepalive noise, no failed password."
+    },
+    "10.0.5.43": {
+      "label": "benign",
+      "reason": "Client-initiated disconnect. No failed password."
+    },
+    "192.0.2.99": {
+      "label": "benign",
+      "reason": "MALFORMED near-miss: the word 'password' contains a Cyrillic homoglyph ('pаssword'), so it is NOT a genuine 'Failed password' event. A single line anyway. The parser must neither crash on it nor flag the IP."
+    }
+  },
+  "_unlabelled_note": "Lines whose source IP is not in `verdicts` (truncated 192.0.2.x line, the empty line, the garbage line, CRON session lines) carry no IP-keyed verdict and are excluded from scoring — they exist to prove the parser does not CRASH on malformed input. See tests/test_robustness.py."
+}

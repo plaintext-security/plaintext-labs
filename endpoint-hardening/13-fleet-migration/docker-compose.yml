@@ -1,0 +1,15 @@
+# Module 13 — Fleet Migration
+# Single Ansible-controller container that models a small in-service fleet
+# (~6 hosts) as per-host state dirs + tiny HTTP health endpoints. The rolling
+# rollout (rings, serial, max_fail_percentage, health gate) runs entirely here,
+# zero cloud cost, deterministic and CI-runnable.
+services:
+  lab:
+    build: .
+    image: plaintext/fleet-migration:1.0
+    container_name: fleet-migration-lab
+    privileged: true
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

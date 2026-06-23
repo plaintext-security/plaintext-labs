@@ -1,0 +1,10 @@
+services:
+  lab:
+    build: .
+    image: plaintext/ad-posture-drift:latest
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data
+      - ./bin:/lab/bin
+      - ./drift-detect.py:/lab/drift-detect.py
+    command: sleep infinity

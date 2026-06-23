@@ -1,0 +1,28 @@
+# Module 11 — PQC Migration: the brownfield TLS server.
+#
+# Alpine 3.22 ships OpenSSL 3.5.x, which supports the hybrid PQC group
+# X25519MLKEM768 NATIVELY (no oqs-provider needed). We pin the Alpine minor so
+# the OpenSSL version is deterministic — a server built on an OpenSSL < 3.5 is
+# the exact silent-fallback failure this lab teaches, so the base image is
+# load-bearing.
+#
+# If your registry/proxy cannot pull alpine:3.22, the FALLBACK is OpenSSL
+# 3.0–3.4 + oqs-provider (openquantumsafe/oqs-ossl3); see VALIDATION.md. With
+# alpine:3.22 NO third-party provider is required.
+FROM alpine:3.22
+
+RUN apk add --no-cache \
+      nginx \
+      openssl \
+      bash
+
+# The classical (baseline) and migrated nginx configs both live in /lab/data;
+# `make up` copies the classical one into place and `make migrate` swaps it.
+WORKDIR /lab
+COPY . /lab
+
+# Generate the self-signed RSA server cert at build/start (gitignored, never
+# committed) and install the classical-only config, then run nginx in the
+# foreground.
+EXPOSE 443
+CMD ["/lab/data/server-entrypoint.sh"]
