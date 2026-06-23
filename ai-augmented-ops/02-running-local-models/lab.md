@@ -1,6 +1,6 @@
 # Lab 02 — Running Local Models
 
-*Hands-on lab · [← Back to the module concept](README.md)*
+*Hands-on lab · Type 7 Build-&-Operate · [← Back to the module concept](README.md)*
 
 
 ## Setup
@@ -18,11 +18,13 @@ The `make demo` target runs all five benchmark prompts and prints a results tabl
 latency and token throughput for each. It takes 2–5 minutes on CPU.
 
 ## Scenario
-Meridian's security team wants to justify local-model infrastructure to their CISO. The
-argument isn't just privacy — it's that a local model processing 40 alerts per minute is
-operationally useful; one that processes 4 is not. Your job: benchmark the local model
-on the five security-domain prompts in `data/benchmark-prompts.txt`, interpret the
-throughput vs. quality results, and produce a one-page evaluation report.
+A security team wants to justify local-model infrastructure to their CISO. The argument
+isn't just privacy — it's that a local model processing 40 alerts per minute is operationally
+useful; one that processes 4 is not. And neither number can be quoted from a model card: it
+depends on *your* hardware and *your* prompts. Your job: stand up the local model as a running
+service, benchmark it on the five security-domain prompts in `data/benchmark-prompts.txt`,
+interpret the throughput vs. quality results *from your own measurements*, and produce a one-page
+evaluation report.
 
 > Everything runs locally. No external targets, no cloud API keys required.
 
@@ -31,10 +33,13 @@ throughput vs. quality results, and produce a one-page evaluation report.
 1. [ ] `make demo` and read the benchmark output. For each of the five prompts, record the
    latency (seconds) and throughput (tokens/sec) in `results/benchmark-results.md`.
    The demo script prints these for you — copy them into the table template in that file.
+   This is your throughput measurement, on *your* CPU — not a leaderboard's.
 
 2. [ ] Qualitatively evaluate each answer: is it factually correct, partially correct, or
    wrong? Mark each cell in `results/benchmark-results.md` as Correct / Partial / Wrong
-   and add a one-sentence note explaining what the model got right or missed.
+   and add a one-sentence note explaining what the model got right or missed. This is your
+   first, by-hand cut at *quality eval* — the discipline Module 11 generalises into a
+   held-out scorecard and a regression gate.
 
 3. [ ] `make shell` and call the Ollama API directly to explore the model metadata:
    ```bash
@@ -51,18 +56,22 @@ throughput vs. quality results, and produce a one-page evaluation report.
    throughput drop match the quality improvement? Is the tradeoff worth it for these prompts?
 
 5. [ ] Write a one-paragraph "Recommendation" at the bottom of `results/benchmark-results.md`:
-   which model and configuration would you recommend for Meridian's alert triage pipeline,
-   and why? Cite the throughput number and at least one qualitative quality finding.
+   which model and configuration would you recommend for this team's alert triage pipeline,
+   and why? Cite the throughput number and at least one qualitative quality finding — both
+   from *your own run*, not a published benchmark.
 
 ## Success criteria — you're done when
-- [ ] `results/benchmark-results.md` contains latency and throughput data for all five prompts.
-- [ ] Each answer is marked Correct / Partial / Wrong with a one-sentence explanation.
+- [ ] `make demo` runs and the local model serves inference over its OpenAI-compatible API (the running service exists).
+- [ ] `results/benchmark-results.md` contains latency and throughput data for all five prompts, measured on your hardware.
+- [ ] Each answer is marked Correct / Partial / Wrong with a one-sentence explanation (your by-hand quality pass).
 - [ ] The model card section (parameters, quantisation, context length) is filled in.
-- [ ] The Recommendation paragraph is written and cites a concrete throughput number.
+- [ ] The Recommendation paragraph is written and cites a concrete throughput number from your own run.
 
 ## Deliverables
-`results/benchmark-results.md` (your completed evaluation). Commit it — this is the
-technical evidence behind Meridian's infrastructure decision.
+`results/benchmark-results.md` (your completed evaluation) **and** `benchmark.py` (see
+*Automate & own it*). Commit both — the report is the technical evidence behind the
+infrastructure decision; the script is the reusable measurement. (Lab artifacts — model
+weights, raw API dumps — stay out of commits.)
 
 ## Automate & own it
 **Required.** Write `benchmark.py` — a Python script that reads `data/benchmark-prompts.txt`,
@@ -70,23 +79,28 @@ sends each prompt to the Ollama API, records latency and token count, and writes
 table to stdout. The script should accept `--model` and `--host` arguments. Have a model
 draft the HTTP client and result-formatting logic; you review the error handling (what happens
 if the model isn't pulled yet? if Ollama is unreachable?) and add it. Run the script and
-confirm it produces the same table `make demo` shows. Commit it.
+confirm it produces the same table `make demo` shows. Commit it — this is the throughput half
+of "measure on your own hardware," made repeatable. (The quality half becomes the scored,
+held-out eval you build in Module 11.)
 
 ## AI acceleration
 Paste your benchmark results table into a frontier model and ask it to interpret the
 quality/speed tradeoff for a high-volume SOC alert triage use case. Compare its analysis
 to your own. Where do they agree? Where does the model offer a dimension you hadn't
-considered? Document the differences in the Recommendation paragraph.
+considered? The numbers are yours — measured on your hardware on your prompts — so the
+recommendation is yours to defend. Document the differences in the Recommendation paragraph.
 
 ## Connects forward
-The model you benchmark here is the inference engine for the RAG system in Module 04,
-the triage script in Module 07, and the attack surface in Module 10. Understanding its
-throughput and quality ceiling now prevents surprises later.
+The service you stand up here is the inference engine for the RAG system in Module 04, the
+triage script in Module 07, and the attack surface in Module 10 — and the by-hand quality pass
+you do in step 2 is the seed of **Module 11 (AI Evaluation & Observability)**, which turns
+"I eyeballed the answers" into a held-out test set, a scorecard, and a regression gate.
+Understanding its throughput and quality ceiling now prevents surprises later.
 
 ## Marketable proof
 > "I can deploy and benchmark a local language model, measure its throughput and quality
-> on domain-specific prompts, and produce a hardware-justified recommendation for or
-> against local inference in a security operations context."
+> on domain-specific prompts on my own hardware, and produce a hardware-justified
+> recommendation for or against local inference in a security operations context."
 
 ## Stretch
 - Build a simple HTTP load test against the Ollama API (10 concurrent requests) and
