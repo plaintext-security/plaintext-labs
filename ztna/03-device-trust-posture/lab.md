@@ -2,6 +2,11 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+**Type 7 · Build-&-Operate.** You stand up a self-hosted device-identity mesh (headscale +
+WireGuard), enroll a device into it, and **prove access is bound to that device** — an enrolled node
+reaches the protected service, an unenrolled one is denied. The deliverable is the *running, reviewed
+system plus the proof of device-bound access*, not a writeup. No grader; you verify your own work
+against the observable success criteria below.
 
 ## Setup
 
@@ -11,118 +16,147 @@ This is a **reference lab** with a one-command environment in the companion
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/ztna/03-device-trust-posture
-make up        # start headscale + a target service container
-make demo      # register a node, show it in the device list, verify access control
+make up        # start headscale (control server) + the protected target service
+make demo      # register a node, list it, and verify device-bound access control
 make down      # stop when done
 ```
 
-The environment starts two containers: `headscale` (the coordination server on port 8080) and
-`target-service` (a simple nginx container serving a status page — this is the protected resource).
-A third container, `node`, acts as a registered device in the mesh.
+The environment starts `headscale` (the coordination/control server on 8080), `target-service` (an
+nginx container serving a status page — the protected resource), and `node` (a container that acts as
+an enrolled device in the mesh).
 
 > Everything runs locally inside Docker networking. No external services are contacted.
 
 ## Scenario
 
-Meridian's current remote access model extends full network trust to any VPN-authenticated user,
-regardless of device state. A contractor BYOD laptop — no EDR, unknown patch level, no disk
-encryption — gets the same access as a fully managed, CrowdStrike-enrolled corporate laptop. You'll
-stand up headscale as a ZT-aligned alternative, demonstrate that only registered devices can reach
-the protected service, and map the fictional Meridian device posture policy (in
-`data/device-posture-policy.json`) to the controls Tailscale ACLs would enforce in production.
+A remote-access model that extends trust to **any authenticated user regardless of device** is the
+LastPass-2022 failure waiting to happen: a contractor's BYOD laptop — no EDR, unknown patch level, no
+disk encryption — gets the same reach as a fully managed corporate machine, and one keylogged
+credential on the unmanaged box becomes a launch point into everything behind the VPN. You'll stand up
+headscale as the ZT-aligned alternative where **access is bound to a known device, not just a
+credential**, prove that only an enrolled device can reach the protected service, and map a structured
+device-posture policy to the controls a production deployment (Cloudflare Access + an EDR like
+CrowdStrike) would enforce — honestly labelling that posture half as *assessed from config*, since it
+can't be self-hosted for free.
+
+> **Authorization note:** this lab attacks/probes only the containers it ships. Only ever run access
+> probes against systems you own or have explicit written permission to test.
 
 ## Do
 
-1. [ ] Run `make up` and then `make demo`. Observe the output: the `node` container registers with
-   headscale, and the demo confirms the node appears in `headscale nodes list`. Now inspect the
-   headscale ACL configuration — which nodes are allowed to reach the `target-service`? What is
-   the default posture for an *unregistered* device (can it reach the service)?
+Build the mesh, operate it, then prove access is device-bound — the unenrolled device must be denied.
 
-2. [ ] **Verify access from a registered node.** Run a shell in the `node` container and confirm
-   it can reach the target service:
+**Build & operate the device-identity mesh**
+1. [ ] `make up` then `make demo`. Watch the `node` container generate a WireGuard keypair and
+   register with headscale, then confirm it appears in `headscale nodes list`. Now inspect the ACL
+   (`data/headscale-acl.yaml`): which tag is required to reach `tag:target`, and — crucially — what is
+   the default disposition for a device that is *not* enrolled or *not* tagged? (Goal: confirm the
+   policy is **default-deny**, not default-allow.)
+
+2. [ ] **Prove access from the enrolled device.** Shell into the registered node and reach the target:
    ```bash
    docker compose exec node curl -s http://target-service/
    ```
-   You should see the nginx status page. This is a registered device — it has a valid WireGuard
-   keypair registered with headscale.
+   You should see the nginx status page. This device holds a WireGuard keypair registered with
+   headscale — its *identity* is what the ACL allows, not its IP.
 
-3. [ ] **Verify access is denied from an unregistered container.** Start an ad-hoc container
-   without a registered keypair and try to reach the service:
+**Prove access is device-bound (the deliverable)**
+3. [ ] **Prove an unenrolled device is denied.** Start an ad-hoc container with **no** registered
+   keypair and try to reach the service:
    ```bash
-   docker run --rm --network ztna-03_ztna-net curlimages/curl:8.9.1 curl -s --max-time 5 http://target-service/
+   docker run --rm --network ztna-03_ztna-net curlimages/curl:8.9.1 \
+     curl -s --max-time 5 http://target-service/
    ```
-   This should time out or be refused. The service is not exposed to the Docker network directly —
-   it is only reachable via the mesh ACL. Document what you observe.
+   This must time out or be refused — the service is reachable only via the mesh ACL, and an
+   unenrolled device has no identity the ACL trusts. **Capture the exact command and output for both
+   the enrolled and unenrolled case: this contrast is the artifact** — access bound to a known device,
+   not a credential.
 
-4. [ ] **Read the device posture policy.** Open `data/device-posture-policy.json`. It describes
-   what a production deployment (Cloudflare Access + CrowdStrike) would check for a Meridian
-   device. For each check in the policy, identify which Meridian gap (from Lab 01) it directly
-   addresses. Write a mapping table: `posture_check → gap_from_lab01`.
+**Reason about and extend the ACL (the ZT judgment)**
+4. [ ] **Read the ACL as a Zero-Trust policy.** In `data/headscale-acl.yaml`, identify (a) the tag
+   required for `tag:target`, (b) what happens to a device that is registered but *not* tagged
+   `corp-managed`, and (c) how you'd add a second tier so contractor devices reach only a
+   `tag:contractor-allowed` subset. Write that additional stanza into your deliverable. Watch for the
+   trap: a stanza that accidentally introduces an **implicit default-allow** is the opposite of ZT,
+   however valid it looks.
 
-5. [ ] **Reason about the headscale ACL.** Open `data/headscale-acl.yaml` and read the ACL policy.
-   Identify: (a) which tag is required to access `tag:target`, (b) what would happen if a device
-   was registered but *not* tagged `corp-managed`, and (c) how you would add a second tier for
-   contractor devices that can only reach a `tag:contractor-allowed` subset of services. Write the
-   additional ACL stanza in your deliverable.
+**Map posture to production controls (honestly: assessed, not demonstrated)**
+5. [ ] **Read the posture policy.** Open `data/device-posture-policy.json` — the checks a production
+   deployment (Cloudflare Access + CrowdStrike) would enforce (patch level, EDR running, disk
+   encryption). For each check, name the device-trust gap it closes, and map it to the LastPass-2022
+   failure it would have caught (the unpatched home machine, the disabled/absent EDR). Write the
+   mapping table. **Label this section "assessed from config":** the lab proves device *identity*; this
+   posture half is what an EDR/MDM stack would *enforce* — you are reasoning about it, not running it.
 
-6. [ ] **FIDO2 / passkeys (prose exercise).** Go to [WebAuthn.io](https://webauthn.io/) in your
-   browser. Register a passkey (using your browser's built-in authenticator — Touch ID, Windows
-   Hello, or a software authenticator). Then authenticate with it. In your deliverable, write a
-   paragraph explaining: what cryptographic operation happens during registration, what happens
-   during authentication, and why the private key never leaves the device boundary. Relate this to
-   NIST 800-207 Tenet 3 (all communication is secured; users and devices are authenticated per-session).
+**FIDO2 / passkeys (browser exercise)**
+6. [ ] Go to [WebAuthn.io](https://webauthn.io/), register a passkey with your built-in authenticator
+   (Touch ID / Windows Hello / a software authenticator), then authenticate with it. In your
+   deliverable, write a short paragraph: what cryptographic operation happens at registration, what
+   happens at authentication, and why the private key never leaves the device boundary. Relate it to
+   NIST 800-207 Tenet 3 — and to the module's split: WireGuard proves the device, FIDO2 proves the
+   user on it.
 
 ## Success criteria — you're done when
 
-- [ ] `make demo` runs cleanly and shows the registered node in `headscale nodes list`.
-- [ ] You have verified that a registered node can reach `target-service` and an unregistered
-  container cannot.
-- [ ] The posture-to-gap mapping table is written.
-- [ ] The ACL extension stanza is written and syntactically correct.
+- [ ] `make demo` runs cleanly and the enrolled node appears in `headscale nodes list`.
+- [ ] You have proven **both** sides of device-bound access: an enrolled node reaches `target-service`
+      and an unenrolled container is denied — with exact commands and output captured for each.
+- [ ] The ACL is confirmed **default-deny**, and your contractor-tier extension stanza is written and
+      syntactically correct (no implicit default-allow).
+- [ ] The posture-check → device-trust-gap mapping table is written and explicitly labelled *assessed
+      from config*, tying at least one check to the LastPass-2022 failure.
 - [ ] The FIDO2 paragraph is in the deliverable.
 
 ## Deliverables
 
 `device-trust-analysis.md` containing:
-- The registered vs. unregistered access test results (with exact commands and output)
-- The posture check → Lab 01 gap mapping table
-- The extended ACL stanza for contractor devices
-- The FIDO2 paragraph
+- **The device-bound access proof** — enrolled-reaches vs. unenrolled-denied, with exact commands and
+  output (this is the centerpiece artifact).
+- The extended ACL stanza for the contractor tier.
+- The posture-check → device-trust-gap mapping table, labelled *assessed from config*.
+- The FIDO2 paragraph.
+
+Lab *artifacts* (WireGuard keys, the headscale DB) stay out of commits.
 
 ## Automate & own it
 
-**Required.** Write a Bash or Python script (`posture-check.sh` or `posture-check.py`) that
-simulates a device posture check locally: given a set of checks (OS patch level via `uname -r` or
-`systeminfo`, disk encryption status, EDR process running), it returns PASS / FAIL per check and an
-overall posture verdict. Have a model draft it; **review every check** — a posture check that always
-returns PASS because the detection logic is wrong is worse than no check at all. Test it on your
-own machine and verify the output reflects reality before committing.
+**Required.** Write a Bash or Python script (`posture-check.sh` / `posture-check.py`) that runs a
+device posture check **locally**: given a set of checks (OS/patch level via `uname -r` or
+`systeminfo`, disk-encryption status, an EDR process running), it returns PASS/FAIL per check and an
+overall verdict. Have a model draft it, then **review every check** — a posture check that always
+returns PASS because its detection logic is broken is *worse* than no check at all (it manufactures
+false confidence, the LastPass home machine "passing"). Run it on your own machine and confirm the
+output reflects reality before committing. (AI drafts; you prove each check is real and you own it.)
 
 ## AI acceleration
 
-Models generate headscale ACL HuJSON and posture policy JSON accurately. Use one to extend the ACL
-stanza for the contractor tier — then manually verify it against the headscale ACL spec that a
-`tag:contractor` device cannot reach `tag:corp-only` resources. The test is: can you construct a
-curl command from an untagged container that succeeds? If yes, the ACL has a hole.
+Models generate headscale/Tailscale ACL HuJSON and posture JSON accurately — use one to draft the
+contractor-tier stanza. Then refuse to trust it: the test is **can you construct a `curl` from an
+untagged/unenrolled container that succeeds?** If yes, the ACL has an implicit default-allow and the
+model's valid-looking output was wrong. Manually verify against the ACL spec that a `tag:contractor`
+device cannot reach `tag:corp-only`. You direct it; you own the deny.
 
 ## Connects forward
 
-- Module 04 uses device trust and identity together in the ZTNA architecture patterns — headscale
-  represents the "network mesh" pattern in the comparison.
-- Module 05 uses Cloudflare's device posture integration (CrowdStrike ZTA score, OS version) as a
-  gate on application access — the production version of the `device-posture-policy.json` from this lab.
+- **Module 04 (ZTNA Architectures, ADR)** weighs device-mesh vs. proxy patterns — headscale is the
+  "network mesh" option in that decision.
+- **Module 05 (SASE)** uses Cloudflare's device-posture integration (CrowdStrike ZTA score, OS
+  version) as a gate on application access — the production version of this lab's
+  `device-posture-policy.json`, with the posture half actually enforced.
+- **Module 06 (Identity-Aware Access)** combines device trust with identity at the proxy.
 
 ## Marketable proof
 
-> "I can deploy a WireGuard mesh with headscale, enforce device-level access control via ACL
-> policies, and map device posture requirements to both the Tailscale and Cloudflare Access control
-> models — the skills for a ZT infrastructure engineer or network security architect."
+> "I can deploy a self-hosted WireGuard mesh with headscale, enforce **device-bound** access via
+> default-deny ACLs — proven by denying an unenrolled device — and map device-posture requirements to
+> the Tailscale and Cloudflare Access control models: the skills of a ZT infrastructure engineer or
+> network security architect."
 
 ## Stretch
 
-- Register a second node with a different tag (`contractor`) and write an ACL that allows it to
-  reach a different service (`tag:contractor-allowed`) but blocks it from `tag:corp-only`. Verify
-  both access paths with curl from inside the respective containers.
-- Extend `posture-check.sh` to query the headscale API (`GET /api/v1/node`) for the registered
-  nodes, check whether each node's last-seen timestamp is within the last 24 hours (a stale node
-  is a red flag), and flag any that are overdue.
+- Register a second node tagged `contractor`, write an ACL that lets it reach `tag:contractor-allowed`
+  but blocks `tag:corp-only`, and verify **both** paths with `curl` from inside the respective
+  containers — proving the segmentation, not just the happy path.
+- Extend `posture-check.sh` to query the headscale API (`GET /api/v1/node`) for registered nodes,
+  flag any whose last-seen timestamp is older than 24 hours (a stale node is a red flag), and report
+  the overdue ones.
