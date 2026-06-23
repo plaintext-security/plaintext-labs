@@ -38,15 +38,23 @@ track required.
    beaconing show up?)
 3. [ ] Extract the indicators (IPs, domains, hashes) — then check your findings against the site's
    write-up.
-4. [ ] Note a detection you could build from the network artifact.
+4. [ ] **Author a detection and prove it fires (the build half).** Don't stop at "a detection I
+   could build" — build it. Author a detection for the behaviour you found — a Zeek/Sigma rule or a
+   codified check for the ~300 s beaconing interval, the DGA-style DNS, or the rare long-lived C2
+   connection — and run it over the bundled `data/zeek/` logs to confirm it **fires on the C2
+   activity**. Then point it at a benign baseline (a few normal `conn`/`dns` lines you add, or a
+   clean capture) and confirm it stays **quiet**. This mirrors module 05's custom Suricata rule:
+   the find and the verified detection are equal halves.
 
 ## Success criteria — you're done when
 - [ ] Zeek logs are generated and you found the malicious activity in them.
 - [ ] You extracted indicators and they match the published write-up.
-- [ ] You can describe a network detection for the behaviour.
+- [ ] You **authored a detection** (Zeek/Sigma rule or scripted check) that fires on the C2 behaviour
+  in the bundled logs and stays quiet on a benign baseline.
 
 ## Deliverables
-`nsm.md`: the Zeek logs that mattered, the indicators you pulled, and your detection idea.
+`nsm.md`: the Zeek logs that mattered, the indicators you pulled, and your authored detection plus
+the fires-on-C2 / quiet-on-benign proof. Commit the rule/check alongside it.
 
 ## AI acceleration
 Have a model summarise a large Zeek log or explain a DNS pattern — then verify against the write-up.

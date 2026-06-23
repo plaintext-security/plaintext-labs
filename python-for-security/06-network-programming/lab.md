@@ -42,16 +42,32 @@ packet trace with `scapy` to verify the TCP handshake is what you think it is.
 4. [ ] Load `output/scan.pcap` with `scapy.rdpcap()` and print the count of SYN, SYN-ACK,
    and RST packets. Verify the counts match what you'd expect from a TCP handshake plus a
    closed-port RST.
-5. [ ] Run `make demo` and compare your output with the reference.
+5. [ ] **Prove it with a test you wrote (the ownership half).** Don't stop at "the counts make
+   sense." Write `test_scanner.py` that imports your scan function and asserts its verdicts against
+   the fixed `target` port set:
+   - Scanning `target` returns **OPEN** for 22, 80, 443, 8080 and **CLOSED** for 9999 — assert each.
+   - The scan **does not hang** on the closed port (a bounded `settimeout` means the test returns
+     promptly).
+   - If `scapy` capture runs in your environment, add a check that `rdpcap("output/scan.pcap")`
+     yields **≥1 SYN-ACK** (an open port's handshake) and **≥1 RST** (the closed-port reply).
+
+   The socket-level OPEN/CLOSED asserts are the **gating** check — they're deterministic against the
+   known target. The pcap SYN-ACK/RST asserts are **optional**: `scapy` raw capture can need
+   privileges that aren't available headless, so guard them with a `pytest.mark.skipif` (or a
+   try/except skip) rather than letting a capture-permission issue fail the gate. Have a model draft
+   the test; read every assert; run `python -m pytest test_scanner.py`.
+6. [ ] Run `make demo` and compare your output with the reference.
 
 ## Success criteria — you're done when
 - [ ] `scanner.py` correctly identifies all four open ports and the one closed port, with banners.
 - [ ] `scanner.py` does not hang on a closed or filtered port.
 - [ ] `output/scan.pcap` exists and is readable by `rdpcap()`.
 - [ ] The SYN/SYN-ACK/RST counts in step 4 make sense given what you scanned.
+- [ ] `test_scanner.py` asserts OPEN for 22/80/443/8080 and CLOSED for 9999 (plus, where `scapy`
+  capture is available, ≥1 SYN-ACK and ≥1 RST), and passes under `python -m pytest test_scanner.py`.
 
 ## Deliverables
-`scanner.py` + `sniffer.py`. Commit both. Add `output/` to `.gitignore`.
+`scanner.py` + `sniffer.py` + `test_scanner.py`. Commit all three. Add `output/` to `.gitignore`.
 
 ## Automate & own it
 **Required.** Add a `--rate-limit` flag to `scanner.py` that enforces a delay (in ms) between

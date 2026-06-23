@@ -1,0 +1,57 @@
+# Module 11 — Secrets Handling in Pipelines (OIDC)
+# Services: LocalStack (simulated AWS STS + IAM) + a "runner" container that plays the
+# role of a CI job. The runner mints a short-lived OIDC-style JWT, serves its JWKS, and
+# calls AssumeRoleWithWebIdentity to get temporary credentials — no long-lived AWS key
+# is ever stored. `make up` registers the IAM OIDC provider + a scoped role; `make demo`
+# runs the bad (static-key) pipeline and the good (OIDC) pipeline and proves the contrast.
+services:
+  localstack:
+    image: localstack/localstack:3.7.0
+    environment:
+      - SERVICES=iam,sts
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot: create the IAM OIDC provider + a role whose trust policy is scoped to the
+  # intended repo/branch (sub) and audience (aud). Deliberately registers NOTHING that
+  # would admit a fork — that scoping is the lab's whole point.
+  seed:
+    build: .
+    image: plaintext/pipeline-secrets
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - ./:/lab
+    command: bash /lab/data/setup.sh
+    restart: "no"
+
+  # The "CI runner": stays up so you can shell in and run the pipelines by hand.
+  runner:
+    build: .
+    image: plaintext/pipeline-secrets
+    depends_on:
+      - seed
+    environment:
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+      # NOTE: no AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY here on purpose — the OIDC
+      # runner arrives with NO long-lived credential. The bad pipeline injects one to
+      # contrast; the good pipeline federates instead.
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

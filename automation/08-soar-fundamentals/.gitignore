@@ -1,0 +1,6 @@
+# Runtime output — never commit; the workflow JSON is the versioned artifact.
+data/tickets/
+data/pending_approval/
+data/approved/
+data/containment/
+data/expired/

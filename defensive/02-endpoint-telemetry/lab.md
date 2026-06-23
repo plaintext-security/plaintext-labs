@@ -38,16 +38,24 @@ yourself.
 2. [ ] Find the malicious process: trace its command line and its parent. (What's a normal parent
    for this process — and is this one normal?)
 3. [ ] Identify the Sysmon Event IDs that captured the activity.
-4. [ ] Note what a detection for this would key on.
+4. [ ] **Author a detection and prove it fires (the build half).** Don't stop at "a detection would
+   key on X" — write it. Author a Sigma rule (or a precise predicate in your script) for the
+   malicious behaviour you found — e.g. WINWORD/Office spawning `cmd`/`powershell`, or an encoded
+   PowerShell download. Run it over the bundled `data/sysmon_events.json` and confirm it **fires on
+   the malicious chain**. Then add one benign event (a normal `powershell.exe` from a console, say)
+   and confirm your rule stays **quiet** — a detection that also fires on benign activity is noise.
+   Finding the footprint and authoring a verified detection for it are equal halves.
 
 ## Success criteria — you're done when
 - [ ] You found the malicious process and its ancestry in real telemetry.
 - [ ] You can name the Sysmon Event IDs involved.
-- [ ] You can describe what a detection would match on.
+- [ ] You **authored a detection** (Sigma rule or scripted predicate) that fires on the malicious
+  chain in `sysmon_events.json` and does **not** fire on a benign event you added.
 
 ## Deliverables
 `endpoint-telemetry.md`: the malicious event, its process ancestry, the Event IDs, and your
-detection idea.
+authored detection plus the fires-on-malicious / quiet-on-benign proof. Commit the rule/predicate
+alongside it.
 
 ## AI acceleration
 Have a model explain an unfamiliar command line or Event ID — then confirm against the process tree

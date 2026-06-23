@@ -45,7 +45,19 @@ main navigation — the kind of thing a pentester's spider would find in the fir
    `<a href>` or via the regex pass.
 5. [ ] Confirm that `/internal/status` is discovered by the regex pass (it's embedded in a
    JavaScript comment, not an anchor tag).
-6. [ ] Run `make demo` and compare your link map against the reference scraper. Did you find every
+6. [ ] **Prove it with a test you wrote (the ownership half).** Don't leave the guards as by-hand
+   checks. Write `test_scraper.py` that runs your crawl against the `target` app and asserts:
+   - The hidden `/internal/status` endpoint **is** in the resulting link map (discovery works).
+   - An off-host URL is **not** followed — feed the crawler an external URL (e.g. inject one into
+     the start set or a stubbed page) and assert no off-host URL appears in the visited set
+     (the scope guard holds).
+   - A 404 path **does not crash** the crawl — request a missing path and assert the crawl
+     completes and records it, rather than raising.
+
+   Have a model draft the test; read every assert; run `python -m pytest test_scraper.py` and
+   confirm green. A committed test for the off-host/404 guards beats a reference diff — it survives
+   leaving the lab and goes in the portfolio.
+7. [ ] Run `make demo` and compare your link map against the reference scraper. Did you find every
    endpoint it did, including the hidden one? If it found something you missed, work out why.
 
 ## Success criteria — you're done when
@@ -54,10 +66,12 @@ main navigation — the kind of thing a pentester's spider would find in the fir
 - [ ] It does not follow links off the target host (try embedding an external URL in a comment
   and confirming the scraper ignores it).
 - [ ] It does not crash on a 404 response.
+- [ ] `test_scraper.py` asserts hidden-endpoint discovery, the off-host guard, and 404 resilience,
+  and passes under `python -m pytest test_scraper.py`.
 
 ## Deliverables
-`scraper.py` + `output/linkmap.json` (the discovered endpoints). Commit `scraper.py`; add
-`output/` to `.gitignore`.
+`scraper.py` + `test_scraper.py`. Commit both; add `output/` to `.gitignore` (commit
+`linkmap.json` only if you want the sample run in the portfolio).
 
 ## Automate & own it
 **Required.** Add a `--depth` flag to `scraper.py` (default 3) that limits how many links the

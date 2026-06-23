@@ -1,0 +1,36 @@
+lab: offensive/07-web-access-control
+# Grades the attacker->fixer state: after you patch app/app.py, both exploits must now
+# return HTTP 403. Apply your fixes, then `make grade` (it runs the checks in the container).
+checks:
+  - name: writeup-complete
+    type: structural
+    file: access-control.md
+    must_match: ["IDOR", "403"]                    # the finding + the proven post-fix status
+
+  - name: idor-now-denied
+    # target_state: jsmith requesting another user's order (102) must now be denied (403),
+    # proving Bug 1's missing ownership check was added.
+    type: target_state
+    run: >-
+      docker compose run --rm lab python3 -c "import sys; sys.path.insert(0,'/lab/app');
+      from app import app; app.config['TESTING']=True; c=app.test_client();
+      c.post('/api/login', json={'username':'jsmith','password':'password'});
+      r=c.get('/api/orders/102');
+      print('IDOR /api/orders/102 ->', r.status_code);
+      sys.exit(0 if r.status_code==403 else 1)"
+    expect_exit: 0
+    timeout: 120
+
+  - name: escalation-now-denied
+    # target_state: the spoofed X-Role: admin header must no longer reach the admin endpoint
+    # (403), proving Bug 2's client-header trust was removed.
+    type: target_state
+    run: >-
+      docker compose run --rm lab python3 -c "import sys; sys.path.insert(0,'/lab/app');
+      from app import app; app.config['TESTING']=True; c=app.test_client();
+      c.post('/api/login', json={'username':'jsmith','password':'password'});
+      r=c.get('/api/admin/users', headers={'X-Role':'admin'});
+      print('escalation /api/admin/users + X-Role:admin ->', r.status_code);
+      sys.exit(0 if r.status_code==403 else 1)"
+    expect_exit: 0
+    timeout: 120
