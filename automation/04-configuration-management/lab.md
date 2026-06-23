@@ -22,7 +22,9 @@ auth enabled, `telnet` present). `data/roles/hardening/` holds the role you'll c
 You're the platform engineer who owns the Linux hardening baseline for a fleet. Hardening the box once
 is the easy half — you've been told the audit finding that actually keeps recurring is *snowflake
 servers*: hosts that were hardened months ago and have since drifted, silently, back toward insecure
-defaults through untracked manual change (the CISA/NSA Top Ten Misconfigurations shape). Your job is to
+defaults through untracked manual change — the dominant real-world failure documented in the CISA/NSA
+[*Top Ten Cybersecurity Misconfigurations* advisory (AA23-278A, 2023)](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-278a).
+Your job is to
 build the **closed loop** that keeps the host on-spec: declare the baseline, detect when reality wanders
 off it, reconcile it back, and prove it's quiet — all repeatably, all without a human deciding to look.
 

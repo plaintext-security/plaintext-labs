@@ -1,5 +1,8 @@
-# Meridian Cloud Infrastructure — first draft (intentionally misconfigured for lab exercise)
+# Cloud infrastructure — first draft (intentionally misconfigured for lab exercise)
 # DO NOT apply to a real cloud account.
+#
+# Every misconfiguration below is a line of Terraform that, shipped, becomes a named real breach.
+# The point of the scanner+gate you build is to catch each one in the diff before it deploys.
 
 terraform {
   required_providers {
@@ -15,13 +18,16 @@ provider "aws" {
 }
 
 # Misconfiguration 1: S3 bucket with public ACL, no versioning, no access logging, no encryption
+# Real-world anchor: the 2017 wave of public-S3-bucket leaks (Accenture, Verizon/Nice Systems,
+# Booz Allen Hamilton, Dow Jones) — terabytes of sensitive data exposed by exactly this shape:
+# a bucket left publicly readable. checkov: CKV_AWS_20 (public ACL), CKV_AWS_19 (encryption).
 resource "aws_s3_bucket" "data_lake" {
-  bucket = "meridian-data-lake"
+  bucket = "data-lake"
   # Missing: server_side_encryption_configuration
   # Missing: versioning
   # Missing: logging
   tags = {
-    Name = "meridian-data-lake"
+    Name = "data-lake"
   }
 }
 
@@ -31,8 +37,11 @@ resource "aws_s3_bucket_acl" "data_lake_acl" {
 }
 
 # Misconfiguration 2: Security group open to the world on SSH
+# Real-world anchor: the 2019 Capital One breach began with an over-permissive WAF/SG and an
+# SSRF-to-IMDS pivot — internet-reachable ingress plus an over-broad instance role is the path.
+# checkov: CKV_AWS_24 (0.0.0.0/0 on port 22).
 resource "aws_security_group" "admin_sg" {
-  name        = "meridian-admin"
+  name        = "admin"
   description = "Admin access"
 
   ingress {
@@ -51,8 +60,12 @@ resource "aws_security_group" "admin_sg" {
 }
 
 # Misconfiguration 3: EC2 instance with admin IAM role and no IMDSv2 requirement
+# Real-world anchor: 2019 Capital One — the EC2 instance carried an over-broad role and IMDSv1 was
+# reachable, so the SSRF could read instance credentials and list/exfil the S3 buckets. Enforcing
+# IMDSv2 (http_tokens = "required") and least-privilege on the role each break that chain.
+# checkov: CKV_AWS_290/CKV_AWS_355 (wildcard policy), CKV_AWS_79 (IMDSv2 not enforced).
 resource "aws_iam_role" "admin_role" {
-  name = "meridian-admin-role"
+  name = "admin-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -87,6 +100,6 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids = [aws_security_group.admin_sg.id]
 
   tags = {
-    Name = "meridian-bastion"
+    Name = "bastion"
   }
 }

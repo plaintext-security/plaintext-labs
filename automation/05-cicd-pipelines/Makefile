@@ -19,7 +19,7 @@ demo:      ## Run gitleaks detect against data/ and show checklist
 		git init -q /tmp/demo-repo && \
 		cp -r data/ /tmp/demo-repo/ && \
 		cd /tmp/demo-repo && \
-		git add -A && git -c user.email=lab@meridian git -c user.name=Lab commit -qm "demo" && \
+		git add -A && git -c user.email=lab@example.com git -c user.name=Lab commit -qm "demo" && \
 		gitleaks detect --source . --no-banner || true; \
 		echo; \
 		echo "=== CI Review Checklist ==="; \

@@ -4,7 +4,7 @@ status: test
 description: Detects creation of a new local user account via the net user /add command, a common persistence technique.
 references:
   - https://attack.mitre.org/techniques/T1136/001/
-author: Meridian Detection Engineering
+author: Detection Engineering
 date: 2024-11-15
 tags:
   - attack.persistence

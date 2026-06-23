@@ -26,4 +26,4 @@ jobs:
           aws-region: us-east-1
 
       - name: Deploy
-        run: aws s3 sync ./dist s3://meridian-api-artifacts/
+        run: aws s3 sync ./dist s3://acme-api-artifacts/

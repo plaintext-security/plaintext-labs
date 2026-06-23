@@ -44,9 +44,11 @@ Build it, operate it, then prove it's reproducible from zero.
    the output files appear under `data/output/`.
 3. [ ] **Treat state as a credential.** Open `terraform.tfstate`. Find the `id` field for each
    resource and note that the file records resource *attributes* verbatim — in a cloud config this is
-   where database passwords and API keys would sit in plaintext. Confirm `terraform.tfstate` is in
-   `.gitignore` and understand *why* (it never goes in git; in real use it lives in an encrypted,
-   locked backend).
+   where database passwords and API keys would sit in plaintext. This is not hypothetical: in Sysdig's
+   **SCARLETEEL** operation (Feb 2023), attackers pulled cleartext IAM access keys straight from a
+   `terraform.tfstate` file left in an S3 bucket and rode them into a second AWS account. Confirm
+   `terraform.tfstate` is in `.gitignore` and understand *why* (it never goes in git; in real use it
+   lives in an encrypted, locked backend).
 
 **Read the plan-diff — your safety surface**
 4. [ ] Change the `content` of one `local_file` resource in `data/main.tf`. Run `tofu plan` and

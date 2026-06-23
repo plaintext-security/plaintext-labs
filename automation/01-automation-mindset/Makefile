@@ -1,7 +1,7 @@
 .PHONY: demo
 
 demo:      ## Print the automation assessment framework
-	@echo "=== Meridian Security Automation Assessment Framework ==="
+	@echo "=== SOC Automation Assessment Framework ==="
 	@echo
 	@echo "Axes:"
 	@echo "  Repeatability: How often does this task occur? (daily / weekly / ad-hoc)"
@@ -18,4 +18,4 @@ demo:      ## Print the automation assessment framework
 	@echo "Kill-switch requirement:"
 	@echo "  Every automation must be stoppable within 60 seconds without a code change."
 	@echo
-	@echo "See data/automation-assessment.md for the full Meridian task list."
+	@echo "See data/automation-assessment.md for the full task list."

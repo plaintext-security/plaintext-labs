@@ -21,7 +21,7 @@ resource "local_file" "environment_config" {
 
 resource "local_file" "asset_manifest" {
   filename = "${path.module}/output/assets.txt"
-  content  = "# Meridian asset manifest\nenv=${var.env_name}\ngenerated=true\n"
+  content  = "# asset manifest\nenv=${var.env_name}\ngenerated=true\n"
 }
 
 output "config_path" {

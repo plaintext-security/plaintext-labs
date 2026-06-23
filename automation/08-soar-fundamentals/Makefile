@@ -3,7 +3,7 @@
 up:
 	docker compose up -d --build
 	@echo "n8n available at http://localhost:5678"
-	@echo "Import data/meridian-workflow.json via n8n Settings > Import"
+	@echo "Import data/incident-playbook.json via n8n Settings > Import"
 
 down:
 	docker compose down
@@ -14,9 +14,9 @@ reset:
 shell:
 	docker compose exec n8n sh
 
-demo:      ## Trigger the Meridian webhook and show ticket output
-	@echo "Triggering webhook with a HIGH alert..."
-	curl -s -X POST http://localhost:5678/webhook/meridian-alert \
+demo:      ## Trigger the SOC alert webhook and show ticket output
+	@echo "Triggering webhook with a HIGH alert (source IP is a real Tor exit node)..."
+	curl -s -X POST http://localhost:5678/webhook/soc-alert \
 		-H "Content-Type: application/json" \
 		-d '{"source_ip":"185.220.101.1","alert":"brute force detected","severity":"HIGH"}' \
 		| python3 -m json.tool || true

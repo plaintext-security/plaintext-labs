@@ -14,7 +14,7 @@ set -euo pipefail
 
 ISSUER_HOST="oidc-provider:8080"               # our local OIDC issuer (host:port, no scheme for IAM)
 ISSUER_URL="http://${ISSUER_HOST}"
-ROLE_NAME="MeridianDeployRole"
+ROLE_NAME="DeployRole"
 LAB=/lab
 
 echo "==> Registering IAM OIDC identity provider for ${ISSUER_URL}"
@@ -31,7 +31,7 @@ PROVIDER_ARN="arn:aws:iam::000000000000:oidc-provider/${ISSUER_HOST}"
 echo "    provider: ${PROVIDER_ARN}"
 
 echo "==> Creating deploy role ${ROLE_NAME} with a SCOPED trust policy"
-echo "    (aud = sts.amazonaws.com, sub = repo:meridian/api:ref:refs/heads/main only)"
+echo "    (aud = sts.amazonaws.com, sub = repo:acme-corp/api:ref:refs/heads/main only)"
 awslocal iam create-role \
   --role-name "${ROLE_NAME}" \
   --assume-role-policy-document "file://${LAB}/data/trust-policy.json" \

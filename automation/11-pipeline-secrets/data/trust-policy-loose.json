@@ -10,7 +10,7 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringLike": {
-          "oidc-provider:8080:sub": "repo:meridian/*:*"
+          "oidc-provider:8080:sub": "repo:acme-corp/*:*"
         }
       }
     }

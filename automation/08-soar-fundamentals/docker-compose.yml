@@ -8,6 +8,8 @@ services:
       app = Flask(__name__)
       @app.route('/api/v3/ip/<ip>')
       def enrich(ip):
+          # 185.220.101.1 is a real Tor exit node (check.torproject.org/torbulkexitlist);
+          # 8.8.8.8 is Google DNS (clean); 1.2.3.4 is a placeholder that returns unknown.
           verdicts = {'185.220.101.1': 'malicious', '8.8.8.8': 'clean', '1.2.3.4': 'unknown'}
           v = verdicts.get(ip, random.choice(['clean','suspicious']))
           return jsonify({'ioc': ip, 'verdict': v, 'abuse_score': 90 if v == 'malicious' else 5})
