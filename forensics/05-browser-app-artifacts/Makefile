@@ -4,8 +4,8 @@
 
 # Real public dataset: Digital Corpora "Nitroba University Harassment" scenario PCAP.
 # Browser/webmail artifacts (webmail sessions, user-agents) are reconstructed from the capture.
-# See PROVENANCE.md for dataset details, exact URL, and SHA-256 placeholder.
-NITROBA_URL := https://downloads.digitalcorpora.org/corpora/scenarios/2008-nitroba/nitroba.pcap
+# Pulled from the shared dataset cache (lib/fetch.sh, source name digitalcorpora-nitroba).
+# See PROVENANCE.md for dataset details and SHA-256 placeholder.
 
 up:  ## Build and start the hindsight + sqlite3 container
 	docker compose up -d --build
@@ -15,8 +15,9 @@ fetch-data:  ## Download the real Nitroba scenario PCAP into data/ (idempotent, 
 	@if [ -f data/nitroba.pcap ]; then \
 		echo "exists: data/nitroba.pcap"; \
 	else \
-		echo "fetch:  data/nitroba.pcap (~60MB) from $(NITROBA_URL)"; \
-		curl -fsSL "$(NITROBA_URL)" -o data/nitroba.pcap; \
+		echo "fetch:  data/nitroba.pcap (~60MB)"; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		fetch_file digitalcorpora-nitroba data/nitroba.pcap; \
 	fi
 	@echo "Done. Verify SHA-256 against PROVENANCE.md. The bundled data/History (Chrome SQLite)"
 	@echo "remains the offline demo seed; nitroba.pcap is the real artifact for webmail reconstruction."

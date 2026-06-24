@@ -42,10 +42,13 @@ detect:    ## make detect LOG=path — run the detection against your own captur
 # Stands up the recommended Vulhub environment so you can actually exploit it.
 # Requires Docker Hub access (Vulhub images live there). Clones into ./target/.
 target-up: ## Clone + start the recommended Vulhub target (Log4Shell / Solr on :8983)
-	@test -d target/vulhub || git clone --depth 1 https://github.com/vulhub/vulhub target/vulhub
-	cd target/vulhub/log4j/CVE-2021-44228 && docker compose up -d
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	repo=$$(fetch_repo vulhub) && \
+	cd "$$repo/log4j/CVE-2021-44228" && docker compose up -d
 	@echo "Target up: http://localhost:8983/solr/  (exploit it, then re-run detect on its logs)"
 
 target-down: ## Stop the Vulhub target
-	@cd target/vulhub/log4j/CVE-2021-44228 && docker compose down || true
+	@. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	repo=$$(fetch_repo vulhub) && \
+	cd "$$repo/log4j/CVE-2021-44228" && docker compose down || true
 

@@ -5,7 +5,9 @@
 demo:
 	python3 triage.py
 
-# Download REAL .evtx samples from sbousseaden/EVTX-ATTACK-SAMPLES into data/.
+# Download REAL .evtx samples from sbousseaden/EVTX-ATTACK-SAMPLES into data/ via
+# the shared dataset cache (lib/fetch.sh) — the repo is shallow-cloned ONCE and the
+# two technique samples are copied out of the cached clone.
 # These are genuine Windows event logs captured from live attack techniques:
 #   - encoded/obfuscated PowerShell (T1059.001, EID 4104 script-block)
 #   - a remote service install for persistence (T1543.003, EID 7045)
@@ -14,8 +16,8 @@ demo:
 # converter (python-evtx / evtx_dump / Get-WinEvent). Not run in this environment.
 # Validate on a runner: `make fetch-data`, convert to JSON, then `python3 triage.py <json>`.
 fetch-data:
-	curl -fsSL -o "data/T1059.001_encoded_powershell_4104.evtx" \
-		"https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Credential%20Access/phish_windows_credentials_powershell_scriptblockLog_4104.evtx"
-	curl -fsSL -o "data/T1543.003_service_install_7045.evtx" \
-		"https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Lateral%20Movement/LM_Remote_Service02_7045.evtx"
+	@. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		EVTX=$$(fetch_repo evtx-attack-samples); \
+		cp "$$EVTX/Credential Access/phish_windows_credentials_powershell_scriptblockLog_4104.evtx" "data/T1059.001_encoded_powershell_4104.evtx"; \
+		cp "$$EVTX/Lateral Movement/LM_Remote_Service02_7045.evtx" "data/T1543.003_service_install_7045.evtx"
 	@echo "Fetched real .evtx samples -> data/ (convert to JSON to run through triage.py)"

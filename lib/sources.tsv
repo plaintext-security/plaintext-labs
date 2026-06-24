@@ -7,6 +7,7 @@
 loghub-openssh	file	https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log	-	real sshd brute-force log (logpai/loghub, ICSE'23)
 loghub-apache	file	https://raw.githubusercontent.com/logpai/loghub/master/Apache/Apache_2k.log	-	real Apache error log (logpai/loghub)
 loghub-linux	file	https://raw.githubusercontent.com/logpai/loghub/master/Linux/Linux_2k.log	-	real Linux syslog (logpai/loghub)
+suricata-wrccdc-2018-alerts	file	https://raw.githubusercontent.com/FrankHassanabad/suricata-sample-data/master/samples/wrccdc-2018/alerts-only.json	-	real Suricata eve.json alerts over WRCCDC-2018 PCAP (FrankHassanabad/suricata-sample-data)
 # --- Windows event logs / ATT&CK tests ---------------------------------------------------------------------------------
 evtx-attack-samples	repo	https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES	-	real attack EVTX (GPL-3.0); reference paths under the clone
 atomic-red-team	repo	https://github.com/redcanaryco/atomic-red-team	-	ATT&CK atomic tests
@@ -19,6 +20,7 @@ digitalcorpora-nitroba	file	https://downloads.digitalcorpora.org/corpora/scenari
 mta-2024-12-17-smartapesg	file	https://www.malware-traffic-analysis.net/2024/12/17/2024-12-17-SmartApeSG-to-NetSupport-RAT.pcap.zip	-	pw-zip 'infected'; RAT C2
 mta-2024-07-30	file	https://www.malware-traffic-analysis.net/2024/07/30/2024-07-30-traffic-analysis-exercise.pcap.zip	-	pw-zip 'infected'
 mta-2024-10-23-redline	file	https://www.malware-traffic-analysis.net/2024/10/23/2024-10-23-Redline-Stealer-infection-traffic.pcap.zip	-	pw-zip 'infected'; RedLine stealer
+mta-2024-10-23-redline-iocs	file	https://www.malware-traffic-analysis.net/2024/10/23/2024-10-23-IOCs-for-Redline-Stealer-infection.txt.zip	-	pw-zip 'infected'; IOCs for the 2024-10-23 RedLine capture
 # --- vulnerable targets / tools -----------------------------------------------------------------------------------------
 vulhub	repo	https://github.com/vulhub/vulhub	-	per-CVE vulnerable docker-compose envs
 # --- threat-intel feeds (re-fetched when stale) -------------------------------------------------------------------------

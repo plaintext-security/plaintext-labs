@@ -1,20 +1,23 @@
 .PHONY: up down reset demo shell create-image fetch-data
 
-# Real timestomp artifact from the public EVTX-ATTACK-SAMPLES corpus (by sbousseaden).
-# See PROVENANCE.md for dataset details, exact URLs, and SHA-256 placeholders.
-EVTX_BASE := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master
+# Real timestomp artifact from the public EVTX-ATTACK-SAMPLES corpus (by sbousseaden),
+# pulled from the shared dataset cache (lib/fetch.sh, source name evtx-attack-samples).
+# Paths index into the cached clone, so they use real spaces (quoted at copy time).
+# See PROVENANCE.md for dataset details and SHA-256 placeholders.
 EVTX_FILES := \
-	Defense%20Evasion/sysmon_2_11_evasion_timestomp_MACE.evtx
+	"Defense Evasion/sysmon_2_11_evasion_timestomp_MACE.evtx"
 
 fetch-data:  ## Download the real timestomp EVTX sample into data/ (idempotent)
 	@mkdir -p data
-	@for f in $(EVTX_FILES); do \
-		out="data/$$(basename $$f)"; \
+	@. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+	repo=$$(fetch_repo evtx-attack-samples); \
+	for f in $(EVTX_FILES); do \
+		out="data/$$(basename "$$f")"; \
 		if [ -f "$$out" ]; then \
 			echo "exists: $$out"; \
 		else \
 			echo "fetch:  $$out"; \
-			curl -fsSL "$(EVTX_BASE)/$$f" -o "$$out"; \
+			cp "$$repo/$$f" "$$out"; \
 		fi; \
 	done
 	@echo "Done. Verify SHA-256 against PROVENANCE.md, then run 'make demo'."

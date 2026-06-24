@@ -25,6 +25,7 @@ import datetime
 import io
 import ipaddress
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -33,6 +34,12 @@ import httpx
 FEODO_URL = "https://feodotracker.abuse.ch/downloads/ipblocklist.json"
 URLHAUS_URL = "https://urlhaus.abuse.ch/downloads/csv_recent/"
 DB_PATH = Path(__file__).parent / "db.json"
+
+# When the shared dataset cache (lib/fetch.sh) has already pulled the raw feeds,
+# the Makefile passes their local paths here so we transform cached files instead
+# of re-hitting abuse.ch. Unset -> fall back to fetching the live URLs directly.
+FEODO_FILE = os.environ.get("FEODO_FILE")
+URLHAUS_FILE = os.environ.get("URLHAUS_FILE")
 
 # A few well-known benign anchors so the corpus has guaranteed "clean" answers
 # (Google / Cloudflare public resolvers) and RFC1918 examples for the report.
@@ -49,9 +56,12 @@ def _now() -> str:
 
 def fetch_feodo(client: httpx.Client) -> list[dict]:
     """Malicious C2 IPs from Feodo Tracker."""
-    resp = client.get(FEODO_URL)
-    resp.raise_for_status()
-    rows = resp.json()
+    if FEODO_FILE:
+        rows = json.loads(Path(FEODO_FILE).read_text())
+    else:
+        resp = client.get(FEODO_URL)
+        resp.raise_for_status()
+        rows = resp.json()
     out = []
     for r in rows:
         out.append(
@@ -71,10 +81,14 @@ def fetch_feodo(client: httpx.Client) -> list[dict]:
 
 def fetch_urlhaus(client: httpx.Client) -> tuple[list[dict], list[dict]]:
     """Malware-distribution URLs from URLhaus -> (ip records, sample records)."""
-    resp = client.get(URLHAUS_URL)
-    resp.raise_for_status()
+    if URLHAUS_FILE:
+        text = Path(URLHAUS_FILE).read_text()
+    else:
+        resp = client.get(URLHAUS_URL)
+        resp.raise_for_status()
+        text = resp.text
     # The CSV has a multi-line comment header beginning with '#'.
-    lines = [ln for ln in resp.text.splitlines() if not ln.startswith("#") and ln.strip()]
+    lines = [ln for ln in text.splitlines() if not ln.startswith("#") and ln.strip()]
     reader = csv.reader(io.StringIO("\n".join(lines)))
     ip_records: list[dict] = []
     sample_records: list[dict] = []

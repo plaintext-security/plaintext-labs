@@ -11,5 +11,6 @@ shell:
 demo:
 	docker compose run --rm lab python3 pipeline.py
 fetch-data: ## Pull the real loghub OpenSSH_2k.log (2000 lines, host "LabSZ") into data/
-	curl -fsSL https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log -o data/OpenSSH_2k.log
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	fetch_file loghub-openssh data/OpenSSH_2k.log
 	@echo "Fetched data/OpenSSH_2k.log — pipeline.py will now consume the real log. See data/PROVENANCE.md."

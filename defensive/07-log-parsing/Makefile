@@ -18,14 +18,11 @@ demo:      ## Normalise the sample log and report the parse rate (incl. unparsed
 
 # Fetch real public logs to normalise at volume and across TWO formats (sshd + Apache).
 # See data/PROVENANCE.md. Not run in CI — you run it locally.
-SSH_LOG_URL    ?= https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log
-APACHE_LOG_URL ?= https://raw.githubusercontent.com/logpai/loghub/master/Apache/Apache_2k.log
 fetch-data: ## Download real loghub OpenSSH + Apache logs → data/raw/
 	@mkdir -p data/raw
-	@echo "Downloading $(SSH_LOG_URL) ..."
-	curl -fL -o data/raw/OpenSSH_2k.log "$(SSH_LOG_URL)"
-	@echo "Downloading $(APACHE_LOG_URL) ..."
-	curl -fL -o data/raw/Apache_2k.log "$(APACHE_LOG_URL)"
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	fetch_file loghub-openssh data/raw/OpenSSH_2k.log && \
+	fetch_file loghub-apache data/raw/Apache_2k.log
 	@echo "Done. Real logs in data/raw/ — normalise both formats and measure your parse rate:"
 	@echo "  python normalize.py data/raw/OpenSSH_2k.log   # sshd lines parse; others fall through"
 

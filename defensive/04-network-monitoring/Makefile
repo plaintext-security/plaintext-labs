@@ -15,10 +15,9 @@ zeek:
 	docker compose --profile zeek run --rm zeek zeek -C -r /lab/$(PCAP)
 
 # Fetch the real MTA.net capture and rebuild the Zeek logs from it (see data/PROVENANCE.md).
-PCAP_URL ?= https://www.malware-traffic-analysis.net/2024/12/17/2024-12-17-SmartApeSG-to-NetSupport-RAT.pcap.zip
 fetch-data: ## Download the real MTA.net PCAP and run Zeek over it → data/zeek/*.log
-	@echo "Downloading $(PCAP_URL) ..."
-	curl -fL -o data/capture.pcap.zip "$(PCAP_URL)"
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	fetch_file mta-2024-12-17-smartapesg data/capture.pcap.zip
 	# MTA.net zips are password-protected; password is the standard "infected".
 	cd data && unzip -P infected -o capture.pcap.zip && mv *.pcap capture.pcap
 	# Run Zeek over the capture to regenerate conn.log, dns.log, http.log, etc.

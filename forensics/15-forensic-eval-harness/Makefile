@@ -7,10 +7,10 @@
 #   - a real Latrodectus PE from MalwareBazaar (abuse.ch) — a true-malicious item
 #     to score the YARA rule against (zip stays packed; password 'infected').
 #   - a real Windows .evtx from EVTX-ATTACK-SAMPLES — a genuine artifact behind a
-#     timestomp/behaviour near-miss.
+#     timestomp/behaviour near-miss (pulled from the shared dataset cache,
+#     lib/fetch.sh, source name evtx-attack-samples).
 # The committed inert fixtures remain the zero-cost default; fetch-data is additive.
 MB_API   := https://mb-api.abuse.ch/api/v1/
-EVTX_URL := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Defense%20Evasion/DE_1102_security_log_cleared.evtx
 
 up:        ## Build and start the lab container
 	docker compose up -d --build
@@ -49,7 +49,9 @@ fetch-data:  ## Download real labelled samples (MalwareBazaar PE + EVTX) — see
 		echo "exists: data/real-samples/DE_1102_security_log_cleared.evtx"; \
 	else \
 		echo "fetch:  data/real-samples/DE_1102_security_log_cleared.evtx"; \
-		curl -fsSL "$(EVTX_URL)" -o data/real-samples/DE_1102_security_log_cleared.evtx; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		repo=$$(fetch_repo evtx-attack-samples); \
+		cp "$$repo/Defense Evasion/DE_1102_security_log_cleared.evtx" data/real-samples/DE_1102_security_log_cleared.evtx; \
 	fi
 	@if [ -n "$(MB_AUTHKEY)" ] && [ -n "$(MB_SHA256)" ]; then \
 		echo "fetch:  data/real-samples/$(MB_SHA256).zip (packed, NOT unzipped)"; \

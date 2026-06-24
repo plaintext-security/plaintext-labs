@@ -15,10 +15,9 @@ suricata:
 	docker compose --profile suricata run --rm suricata suricata -r /data/$(PCAP) -l /data/ -S /data/local.rules
 
 # Fetch the real MTA.net capture and run Suricata over it (see data/PROVENANCE.md).
-PCAP_URL ?= https://www.malware-traffic-analysis.net/2024/12/17/2024-12-17-SmartApeSG-to-NetSupport-RAT.pcap.zip
 fetch-data: ## Download the real MTA.net PCAP and run Suricata over it → data/eve.json
-	@echo "Downloading $(PCAP_URL) ..."
-	curl -fL -o data/capture.pcap.zip "$(PCAP_URL)"
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	fetch_file mta-2024-12-17-smartapesg data/capture.pcap.zip
 	# MTA.net zips are password-protected; password is the standard "infected".
 	cd data && unzip -P infected -o capture.pcap.zip && mv *.pcap capture.pcap
 	# Update the ET Open ruleset, then run Suricata over the capture → data/eve.json.

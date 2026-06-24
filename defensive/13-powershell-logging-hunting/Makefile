@@ -22,12 +22,10 @@ hunt:      ## make hunt FILE=mylog.json — run the hunt against your own 4104 e
 
 # Fetch a real 4104 EVTX and rebuild data/scriptblock-4104.json from it (see data/PROVENANCE.md).
 # NOT run in CI — you run it locally. Requires git + python-evtx (pip install python-evtx).
-EVTX_REPO ?= https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES
 EVTX_SAMPLE ?= Other/emotet/exec_emotet_ps_4104.evtx
 fetch-data: ## Clone EVTX-ATTACK-SAMPLES and convert a real 4104 capture → data/scriptblock-4104.json
-	@echo "Cloning $(EVTX_REPO) (shallow) ..."
-	rm -rf data/EVTX-ATTACK-SAMPLES
-	git clone --depth 1 "$(EVTX_REPO)" data/EVTX-ATTACK-SAMPLES
 	pip install --quiet python-evtx
-	python3 convert_evtx.py "data/EVTX-ATTACK-SAMPLES/$(EVTX_SAMPLE)" data/scriptblock-4104.json
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	repo=$$(fetch_repo evtx-attack-samples) && \
+	python3 convert_evtx.py "$$repo/$(EVTX_SAMPLE)" data/scriptblock-4104.json
 	@echo "Done. data/scriptblock-4104.json now holds REAL 4104 records — hunt with: make demo"

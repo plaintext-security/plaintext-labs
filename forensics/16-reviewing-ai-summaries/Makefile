@@ -7,8 +7,8 @@
 # are the zero-cost default; this adds a genuine Windows .evtx so a learner can
 # practise tracing an AI-asserted CVE/technique to a real event log. The anchored
 # Lunar Spider case used Zerologon (CVE-2020-1472), so a real Zerologon log is the
-# on-theme choice from the public EVTX-ATTACK-SAMPLES corpus.
-EVTX_URL := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Credential%20Access/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx
+# on-theme choice from the public EVTX-ATTACK-SAMPLES corpus, pulled from the shared
+# dataset cache (lib/fetch.sh, source name evtx-attack-samples).
 
 up:        ## Build and start the lab container
 	docker compose up -d --build
@@ -51,6 +51,8 @@ fetch-data:  ## Download a real Zerologon .evtx into data/artifacts/ (idempotent
 		echo "exists: data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
 	else \
 		echo "fetch:  data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
-		curl -fsSL "$(EVTX_URL)" -o "data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx"; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		repo=$$(fetch_repo evtx-attack-samples); \
+		cp "$$repo/Credential Access/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx" "data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx"; \
 	fi
 	@echo "Done. Verify SHA-256 against PROVENANCE.md. Use it to practise tracing an AI-asserted CVE to a real log."

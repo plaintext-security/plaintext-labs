@@ -4,8 +4,8 @@
 
 # Real Windows .evtx from the public EVTX-ATTACK-SAMPLES corpus (by sbousseaden) — an execution
 # chain (cmd/svchost reverse shell, Sysmon EID 1) that plaso parses natively into the timeline.
-# See PROVENANCE.md for dataset details, exact URL, and SHA-256 placeholder.
-EVTX_URL := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Execution/revshell_cmd_svchost_sysmon_1.evtx
+# Pulled from the shared dataset cache (lib/fetch.sh, source name evtx-attack-samples).
+# See PROVENANCE.md for dataset details and SHA-256 placeholder.
 
 up:  ## Build and start the plaso container
 	docker compose up -d --build
@@ -16,7 +16,9 @@ fetch-data:  ## Download a real EVTX-ATTACK-SAMPLES .evtx into data/artifacts/ (
 		echo "exists: data/artifacts/revshell_cmd_svchost_sysmon_1.evtx"; \
 	else \
 		echo "fetch:  data/artifacts/revshell_cmd_svchost_sysmon_1.evtx"; \
-		curl -fsSL "$(EVTX_URL)" -o data/artifacts/revshell_cmd_svchost_sysmon_1.evtx; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		repo=$$(fetch_repo evtx-attack-samples); \
+		cp "$$repo/Execution/revshell_cmd_svchost_sysmon_1.evtx" data/artifacts/revshell_cmd_svchost_sysmon_1.evtx; \
 	fi
 	@echo "Done. Verify SHA-256 against PROVENANCE.md, then run 'make l2t' to timeline the real .evtx."
 
