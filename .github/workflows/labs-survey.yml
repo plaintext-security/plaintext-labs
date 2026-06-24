@@ -1,0 +1,148 @@
+name: Labs Survey
+
+# Runs EVERY runnable reference lab once and reports which pass — so the ~150 labs
+# that have never been CI-validated get a verdict without anyone hand-running them.
+#
+# This is the DISCOVERY counterpart to labs-ci.yml:
+#   - labs-ci.yml  = the GATE. Only `.ci-demo` labs; a failure fails the build.
+#   - labs-survey  = the SCOUT. Every lab with a `make demo`; continue-on-error;
+#                    never fails the build — it produces a PASS/FAIL scorecard and,
+#                    on request, opens a PR promoting the green labs to `.ci-demo`.
+#
+# A lab is surveyed when it has a `demo:` Makefile target and NO `.ci-skip` marker.
+#   - `make up`   runs only if an `up:` target exists   (script-only labs skip it).
+#   - `make demo` is the verdict.
+#   - `make down` always runs for teardown if a `down:` target exists.
+#
+# Mirrors scripts/local-lab-check.sh (the same sweep you can run on your own machine
+# with `scripts/local-lab-check.sh --all`).
+#
+# To take a lab OUT of the survey (genuinely can't run on a clean Ubuntu+Docker
+# runner — needs real cloud creds, a real VM, or paid SaaS), drop a `.ci-skip` file
+# in its dir whose contents say why. Note: the cloud track mostly runs on LocalStack,
+# so it does NOT need skipping — let the survey prove it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Optional: restrict to a track or lab prefix, e.g. forensics or forensics/03"
+        type: string
+      promote:
+        description: "After the survey, open a PR adding .ci-demo to every passing lab"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 4 * * 1"        # Mondays 04:00 UTC — weekly full sweep
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labs-survey-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      labs: ${{ steps.set.outputs.labs }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - id: set
+        shell: bash
+        run: |
+          set -euo pipefail
+          filter='${{ inputs.only }}'
+          labs=""
+          # Every dir with a `demo:` Makefile target, minus infra dirs and .ci-skip labs.
+          while IFS= read -r mk; do
+            d=$(dirname "$mk"); d=${d#./}
+            case "$d" in lib|scripts|tools|.github*|*/lib) continue;; esac
+            [ -f "$d/.ci-skip" ] && continue
+            if [ -n "$filter" ]; then case "$d" in $filter*) ;; *) continue;; esac; fi
+            labs="$labs$d"$'\n'
+          done < <(grep -rl '^demo:' --include=Makefile . | sort)
+          json=$(printf '%s' "$labs" | grep -v '^$' | jq -R . | jq -cs .)
+          echo "labs=$json" >> "$GITHUB_OUTPUT"
+          echo "Surveying $(printf '%s' "$labs" | grep -vc '^$') labs:"; printf '%s' "$labs"
+
+  survey:
+    needs: discover
+    if: needs.discover.outputs.labs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        lab: ${{ fromJSON(needs.discover.outputs.labs) }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - name: up / demo / down
+        id: run
+        working-directory: ${{ matrix.lab }}
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set +e
+          status=PASS; stage=""
+          if grep -qE '^up:' Makefile; then
+            echo "::group::make up"; make up; rc=$?; echo "::endgroup::"
+            [ $rc -ne 0 ] && { status=FAIL; stage=up; }
+          fi
+          if [ "$status" = PASS ]; then
+            echo "::group::make demo"; make demo; rc=$?; echo "::endgroup::"
+            [ $rc -ne 0 ] && { status=FAIL; stage=demo; }
+          fi
+          grep -qE '^down:' Makefile && make down >/dev/null 2>&1
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "$status ${stage:+($stage) }${{ matrix.lab }}"
+      - name: record result
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p results
+          safe=$(printf '%s' "${{ matrix.lab }}" | tr '/' '__')
+          printf '%s %s\n' "${{ steps.run.outputs.status || 'FAIL' }}" "${{ matrix.lab }}" > "results/$safe.txt"
+      - uses: actions/upload-artifact@v4   # pin to SHA to match repo policy (see labs-ci.yml)
+        if: always()
+        with:
+          name: result-${{ strategy.job-index }}
+          path: results/*.txt
+          retention-days: 7
+
+  report:
+    needs: survey
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # only used when promote=true (commit .ci-demo markers)
+      pull-requests: write      # only used when promote=true (open the PR)
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/download-artifact@v4   # pin to SHA to match repo policy
+        with:
+          path: results
+          pattern: result-*
+          merge-multiple: true
+      - id: summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat results/*.txt 2>/dev/null | sort -k2 > all.txt || true
+          pass=$(grep -c '^PASS' all.txt || true); fail=$(grep -c '^FAIL' all.txt || true)
+          {
+            echo "# Labs survey — ${pass:-0} passing / ${fail:-0} failing"
+            echo
+            echo "## ✅ Passing — promote to .ci-demo"
+            grep '^PASS' all.txt | awk '{print "- `"$2"`"}' || echo "_none_"
+            echo
+            echo "## ❌ Failing — triage (real cloud creds / VM / learner-exercise / genuinely broken)"
+            grep '^FAIL' all.txt | awk '{print "- `"$2"`"}' || echo "_none_"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          grep '^PASS' all.txt | awk '{print $2}' > greens.txt || true
+      - name: Promote passing labs to .ci-demo (open PR)
+        if: ${{ inputs.promote == true }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/promote_ci_demo.sh greens.txt
