@@ -1,8 +1,11 @@
 # Techniques the SOC has decided it must cover (one ATT&CK ID per line).
 # The coverage report flags any of these your rule set does NOT detect — your blind spots.
-T1059.001   # PowerShell
-T1547.001   # Registry Run Key persistence
-T1003.001   # LSASS credential dumping
-T1021.001   # Remote Desktop lateral movement
-T1486       # Data encrypted for impact (ransomware)
-T1566.001   # Spearphishing attachment
+# Each is a REAL MITRE ATT&CK technique with a REAL Atomic Red Team test (the atomic
+# that exercises it) — so "covered" is verifiable: run the atomic, confirm the rule fires.
+# Atomics live at https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/<ID>
+T1059.001   # PowerShell — atomics/T1059.001 (encoded-command execution)
+T1547.001   # Registry Run Key persistence — atomics/T1547.001
+T1003.001   # LSASS credential dumping — atomics/T1003.001 (procdump / comsvcs minidump)
+T1021.001   # Remote Desktop lateral movement — atomics/T1021.001
+T1486       # Data encrypted for impact (ransomware) — atomics/T1486
+T1566.001   # Spearphishing attachment — atomics/T1566.001

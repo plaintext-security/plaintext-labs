@@ -28,6 +28,16 @@ scorecard + gate on the good rules; `make gate` proves the gate catches the
 regression (exits non-zero). All offline and deterministic — no SIEM, no
 network. This is honor-system: the gate is a regression guard, not a grader.
 
+**Opt-in: score the shipped rules over REAL telemetry — no Windows host.**
+`make fetch-events` clones [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
+(real Sysmon captures for these techniques) and converts the matching events into
+`heldout/corpus-real.jsonl`; `make eval-real` then scores the **same Sigma rules**
+over them. You'll watch the run-key rule fire on a genuine `…\CurrentVersion\Run`
+write — and the LSASS rule **miss**, because real `GrantedAccess` is `0x1fffff`,
+not the textbook `0x1410` the rule assumes. That gap between your tuning fixtures
+and real telemetry is the whole point of detection testing (see `PROVENANCE.md`).
+The committed synthetic corpus stays the deterministic gate; this adds real events.
+
 For real host testing: install
 [Invoke-AtomicRedTeam](https://github.com/redcanaryco/atomic-red-team/wiki/Installing-Invoke-AtomicRedTeam)
 on your own Windows lab VM and wire it to your SIEM from module 06.

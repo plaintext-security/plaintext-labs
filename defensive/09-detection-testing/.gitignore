@@ -1,0 +1,5 @@
+# Opt-in real-events corpus, built at lab time by `make fetch-events` from
+# EVTX-ATTACK-SAMPLES. Derived from upstream attack captures — NEVER commit it;
+# the committed deterministic gate is heldout/corpus.jsonl.
+heldout/corpus-real.jsonl
+__pycache__/
