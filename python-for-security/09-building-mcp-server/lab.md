@@ -33,7 +33,7 @@ result the LLM can parse.
 
 ## Do
 1. [ ] `make demo` — watch the test client call the reference `server.py` and print the enriched
-   result for three IPs: one malicious, one clean, one that returns a 404 from the mock API.
+   result for three IPs: one real malicious C2, one clean, one that returns a 404 from the API.
 2. [ ] Write `server.py` using `fastmcp`:
    ```python
    import fastmcp, httpx, os, re
@@ -90,8 +90,9 @@ server pattern also connects to Track 12 (AI-augmented ops) directly.
 > propagation."
 
 ## Stretch
-- Add a `list_recent_iocs(limit: int = 10) -> list[dict]` tool that queries a mock "recent
-  alerts" endpoint and returns the last N IOCs — giving an LLM a way to ask "what are we seeing
-  right now?" without being prompted with specific IOCs.
+- Add a `list_recent_iocs(limit: int = 10) -> list[dict]` tool that returns the N most recently
+  reported IOCs straight from the real abuse.ch snapshot the API serves (URLhaus is already
+  ordered most-recent-first) — giving an LLM a way to ask "what are we seeing right now?" without
+  being prompted with specific IOCs.
 - Connect the server to a real MCP client (Claude Desktop or Cursor) and verify the tool appears
   in the tool list and executes correctly.

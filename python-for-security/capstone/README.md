@@ -11,7 +11,7 @@ Build a small but genuinely useful security tool — e.g. an IOC enrichment CLI 
 
 ## What you build
 
-1. A genuinely useful security tool (enrichment CLI, parser, or MCP tool) with a real `--help` and graceful error handling.
+1. A genuinely useful security tool (enrichment CLI, parser, or MCP tool) with a real `--help` and graceful error handling — fed a **real feed or dataset** (abuse.ch URLhaus/Feodo, a public log/PCAP corpus, a real CVE/NVD record), not synthetic stand-ins, with provenance documented.
 2. A `pytest` suite covering core logic and malformed/edge input, runnable in CI.
 3. A write-up naming what AI generated, what you changed, and a bug/risk you caught in the generated code.
 
@@ -54,6 +54,7 @@ honestly — a strong report in one column doesn't excuse a gap in another.
 | **Code quality** | Monolithic; no error handling | Structured, handles malformed input, passes `ruff`, has `--help` | Idiomatic, typed, packaged installable; clean separation of concerns |
 | **Tests** | None, or happy-path only | `pytest` covering core logic *and* edge/malformed input | Meaningful coverage incl. failure modes; tests run in CI |
 | **Robustness** | Crashes on bad input/API errors | Fails gracefully; rate-limits/retries on API calls | Secrets handled safely (env, not hardcoded); validates input |
+| **Real data** | Toy/synthetic inputs the tool invents | **Required:** consumes a real feed or dataset (abuse.ch URLhaus/Feodo, a public log/PCAP corpus, a real CVE/NVD record), with provenance noted | Wires to a live feed with a cached offline fallback so it runs with no network |
 | **Ownership of AI code** | Pasted AI output unread | Write-up names what AI generated and what you changed and why | Documents a caught bug/risk in the generated code that you fixed |
 
 > No live target needed; if the tool talks to an API, use your own keys (env vars, never committed).

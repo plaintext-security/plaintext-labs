@@ -1,5 +1,5 @@
-# EVTX extract — Windows Security 4688 (process creation), host WS-FIN-07, UTC.
-# PRIMARY ARTIFACT. Exported from the workstation jchen logged into. Columns:
+# EVTX extract — Windows Security 4688 (process creation), host BEACHHEAD-WS01, UTC.
+# PRIMARY ARTIFACT. Exported from the workstation jsmith logged into. Columns:
 # UtcTime,EventID,NewProcessName,ParentProcessName,CommandLine,SHA256
 #
 # The dropper svchost32.exe is here at 22:18:33 (after the 22:14 VPN login).

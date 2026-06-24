@@ -19,7 +19,7 @@ hardcoded credential in a test fixture. Your task is to find every bug, write te
 each one, and fix the script until all tests pass.
 
 ## Scenario
-Meridian's junior analyst received this script from an AI assistant and is about to run it in
+A junior analyst received this script from an AI assistant and is about to run it in
 production. Your lead asks you to do a proper review before it goes anywhere near live data.
 Review it, write the failing tests, fix the bugs, get the tests green, and package the fixed
 version as an installable tool.
@@ -59,12 +59,12 @@ Do not commit `data/ai_generated.py` changes.
 
 ## Automate & own it
 **Required.** Write a `pyproject.toml` that packages `fixed.py` as a distributable tool:
-- `[project]` with name `meridian-log-analyzer`, version `0.1.0`, and dependencies list.
-- `[project.scripts]` entry point that makes `meridian-log-analyzer` the CLI command.
+- `[project]` with name `log-analyzer`, version `0.1.0`, and dependencies list.
+- `[project.scripts]` entry point that makes `log-analyzer` the CLI command.
 - `[tool.ruff]` section that enables the `S` (security) rule set.
 
 Have a model draft the `pyproject.toml`; verify that `pip install -e .` works inside the
-container and that `meridian-log-analyzer --help` responds. Commit the file.
+container and that `log-analyzer --help` responds. Commit the file.
 
 ## AI acceleration
 Ask a model to review `data/ai_generated.py` for security issues. Compare its findings to your

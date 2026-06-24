@@ -1,11 +1,12 @@
-# Meridian Financial — Raw Forensic Findings
-**Case ID:** MFI-2024-0315  
+# Raw Forensic Findings — Workstation Compromise & Cloud Pivot
+**Case ID:** IR-2024-0315  
 **Status:** Pre-report notes — NOT a finished report  
 **Prepared by:** IR Team  
 **Date collected:** 2024-03-15 through 2024-03-16
 
-These are the raw findings from the Meridian investigation, covering modules 08–12.
-Use these to complete the formal incident report (report-template.md).
+These are the raw findings from the investigation, covering modules 08–12.
+Use these to complete the formal incident report (report-template.md). The attack chain is
+modelled on the publicly documented Lunar Spider / Latrodectus case (The DFIR Report, 2025-09-29).
 
 ---
 
@@ -17,11 +18,11 @@ Use these to complete the formal incident report (report-template.md).
 - **Files:** `/tmp/svchost32.exe` written at 2024-03-15T14:21:55Z (52,224 bytes).
   `/tmp/.s` (hidden dot-file, 0 bytes) written at 2024-03-15T14:22:41Z.
 - **Scope assessment:** Velociraptor hunt over 47 additional endpoints returned no further
-  anomalies. Compromise appears isolated to WORKSTATION-04.
+  anomalies. Compromise appears isolated to `BEACHHEAD-WS01`.
 
 ## From Module 09 — Network Forensics (Zeek + tshark)
 
-- **DNS query:** `update-cdn82.net` → resolved to `198.51.100.42` at 2024-03-15T14:20:01Z.
+- **DNS query:** `workspacin.cloud` → resolved to `198.51.100.42` at 2024-03-15T14:20:01Z.
 - **HTTP session:** GET `/update.bin` to `198.51.100.42:80` at 2024-03-15T14:21:40Z.
   Response: HTTP 200, Content-Type: `application/octet-stream`, 52,224 bytes transferred.
 - **File hash (conn.log/files.log):** MD5 `aabbccdd1122334455667788aabbccdd` (synthetic).
@@ -32,21 +33,21 @@ Use these to complete the formal incident report (report-template.md).
 
 ### Endpoint (EVTX)
 - **Event 4698** at 14:18:03Z: Scheduled task `\MicrosoftEdgeUpdateTaskUser` created by
-  `MFIN\dev-svc01`. Task action: execute `/tmp/svchost32.exe`.
-- **Event 4688** at 14:18:45Z: `WINWORD.EXE` spawned `cmd.exe`.
+  `CORP\jsmith`. Task action: execute `/tmp/svchost32.exe`.
+- **Event 4688** at 14:18:45Z: `wscript.exe` (running `Form_W-9.js`) spawned `cmd.exe`.
 - **Event 4688** at 14:19:12Z: `cmd.exe` spawned `powershell.exe -w hidden -EncodedCommand [base64]`.
-- **Event 4624** at 14:20:01Z: Network logon (Type 3) from `10.0.0.50` as `dev-svc01`.
+- **Event 4624** at 14:20:01Z: Network logon (Type 3) from `10.0.0.50` as `jsmith`.
 - **Event 4663** at 14:21:55Z: `powershell.exe` wrote `/tmp/svchost32.exe`.
 
 ### Cloud (CloudTrail)
-- **14:35:02Z:** `dev-svc01` → `GetCallerIdentity` from `198.51.100.42` (attacker IP).
-- **14:35:18Z–14:36:05Z:** `dev-svc01` → `ListUsers`, `ListRoles`, `ListAttachedUserPolicies`
+- **14:35:02Z:** `jsmith` → `GetCallerIdentity` from `198.51.100.42` (attacker IP).
+- **14:35:18Z–14:36:05Z:** `jsmith` → `ListUsers`, `ListRoles`, `ListAttachedUserPolicies`
   (IAM reconnaissance, 3 calls in 47 seconds).
-- **14:38:12Z:** `dev-svc01` → `CreateUser` for `svc-backup-restore`.
-- **14:38:45Z:** `dev-svc01` → `AttachUserPolicy` with `arn:aws:iam::aws:policy/AdministratorAccess`
-  to `svc-backup-restore`.
-- **14:39:02Z:** `dev-svc01` → `CreateAccessKey` for `svc-backup-restore` (key ID: `AKIA999NEWKEY0001`).
-- **15:52:17Z:** `svc-backup-restore` → `AssumeRole` for `MeridianProdDeploy`.
+- **14:38:12Z:** `jsmith` → `CreateUser` for `svc-backup`.
+- **14:38:45Z:** `jsmith` → `AttachUserPolicy` with `arn:aws:iam::aws:policy/AdministratorAccess`
+  to `svc-backup`.
+- **14:39:02Z:** `jsmith` → `CreateAccessKey` for `svc-backup` (key ID: `AKIA999NEWKEY0001`).
+- **15:52:17Z:** `svc-backup` → `AssumeRole` for `prod-deploy`.
 
 ## From Module 11 — Anti-Forensics
 
@@ -58,7 +59,7 @@ Use these to complete the formal incident report (report-template.md).
 
 - **CAPA profile (hypothetical):** scheduled task persistence (T1053.005), HTTP C2 (T1071.001),
   DLL injection (T1055.001), VM check (T1497.001), runtime API resolution (T1027).
-- **YARA match:** `MeridianDropper_C2_Domain` rule fires on embedded string `update-cdn82.net`.
+- **YARA match:** `latrodectus_loader_c2_domain` rule fires on embedded string `workspacin.cloud`.
 - **Sample not submitted to sandboxing** — analysis limited to static triage in this engagement.
 
 ---
@@ -68,16 +69,17 @@ Use these to complete the formal incident report (report-template.md).
 | Type | Value |
 |------|-------|
 | IP | 198.51.100.42 |
-| Domain | update-cdn82.net |
-| URI | http://update-cdn82.net/update.bin |
+| Domain | workspacin.cloud |
+| URI | http://workspacin.cloud/update.bin |
 | File path | /tmp/svchost32.exe |
 | File path | /tmp/.s |
 | File MD5 | aabbccdd1122334455667788aabbccdd (synthetic) |
-| IAM user | svc-backup-restore |
+| IAM user | svc-backup |
 | IAM key | AKIA999NEWKEY0001 |
-| IAM role assumed | arn:aws:iam::123456789012:role/MeridianProdDeploy |
+| IAM role assumed | arn:aws:iam::123456789012:role/prod-deploy |
 | Scheduled task | \MicrosoftEdgeUpdateTaskUser |
 
 ---
 
-*These are training notes using a fictional scenario. All IP addresses, domains, and hashes are synthetic.*
+*These are training notes using a fictional scenario. All IP addresses, domains, and hashes are
+synthetic; the attack chain is modelled on the publicly documented Lunar Spider / Latrodectus case.*

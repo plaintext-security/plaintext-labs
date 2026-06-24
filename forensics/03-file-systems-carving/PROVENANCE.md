@@ -25,7 +25,7 @@ Two-Month Intrusion"** (2025-09-29) — `Form_W-9.js` → `update.msi` → Latro
 
 ## Replaces
 
-This replaces the prior **synthetic "Meridian" FAT32 seed**. The committed `data/disk.img` (2MB
+This replaces the prior **synthetic FAT32 seed**. The committed `data/disk.img` (2MB
 FAT32 with a planted deleted file) is retained only as an offline **fallback** so `make demo` runs
 with no network. The M57 USB image is the primary artifact.
 

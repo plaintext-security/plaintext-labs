@@ -13,12 +13,13 @@ make demo    # runs all 3 test alerts through the 4-stage pipeline
 make down
 ```
 
-Bundled data: `data/alerts.json` (3 test alerts — true positive,
-false positive, brute-force success) and `data/intel.json` (5 IP
-verdicts). The `playbook.py` harness implements the four-stage SOAR
-pattern in plain Python with explicit code for the human-gate
-contract: no host is isolated and no network path is blocked without
-human approval.
+Bundled data: `alerts.json` (3 test alerts — true positive,
+false positive, brute-force success) and `intel.json` (IP
+verdicts whose feed schemas and malware families are anchored to real
+abuse.ch ThreatFox + AbuseIPDB intel — see `data/PROVENANCE.md`). The
+`playbook.py` harness implements the four-stage SOAR pattern in plain
+Python with explicit code for the human-gate contract: no host is
+isolated and no network path is blocked without human approval.
 
 > **Authorization:** this lab simulates alert processing and
 > containment actions only — no live firewall or host calls are made.

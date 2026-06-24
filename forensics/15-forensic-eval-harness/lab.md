@@ -30,7 +30,7 @@ rule and red on the regression. That contrast is the whole lesson.
 ## Scenario
 
 You wrote two detectors earlier in the track: a `$SI`/`$FN` timestomp detector (Module 11) and a YARA
-rule for the Meridian dropper (Module 12). Both fired on the sample that prompted them. Now your lead
+rule for the Latrodectus loader (Module 12). Both fired on the sample that prompted them. Now your lead
 is about to run them across a 200,000-file enterprise disk image and asks the question you cannot answer
 with adjectives: *do they actually discriminate malicious from benign — and how will we know the day a
 rule edit silently blinds them?* Your job is to stop trusting the single-sample success: build a

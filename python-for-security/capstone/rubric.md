@@ -9,11 +9,13 @@ ship; exemplary is the portfolio piece.** Score each dimension independently.
 | **Code quality** | Monolithic; no error handling | Structured, handles malformed input, passes `ruff`, has `--help` | Idiomatic, typed, packaged installable; clean separation of concerns |
 | **Tests** | None, or happy-path only | `pytest` covering core logic *and* edge/malformed input | Meaningful coverage incl. failure modes; tests run in CI |
 | **Robustness** | Crashes on bad input/API errors | Fails gracefully; rate-limits/retries on API calls | Secrets handled safely (env, not hardcoded); validates input |
+| **Real data** | Toy/synthetic inputs the tool invents | **Required:** consumes a real feed or dataset (abuse.ch URLhaus/Feodo, a public log/PCAP corpus, a real CVE/NVD record), with provenance noted | Wires to a live feed with a cached offline fallback so it runs with no network |
 | **Ownership of AI code** | Pasted AI output unread | Write-up names what AI generated and what you changed and why | Documents a caught bug/risk in the generated code that you fixed |
 
 ## What "done" means
 
 - [ ] Every dimension is at least **Proficient**.
+- [ ] The tool consumes a **real feed or dataset** (not synthetic/invented data), with its source/provenance documented.
 - [ ] The deliverable is reproducible from what you committed.
 - [ ] No secrets, captures, keys, or heavy artifacts in git history.
 - [ ] No live target needed; if the tool talks to an API, use your own keys (env vars, never committed).

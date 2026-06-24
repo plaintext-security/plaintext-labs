@@ -8,7 +8,7 @@
     "dst_ip": "185.220.101.47",
     "dst_port": 80,
     "host": "WS-JSMITH",
-    "user": "jsmith@meridian.local",
+    "user": "jsmith@corp.local",
     "severity": "high",
     "additional": {
       "sysmon_parent": "WINWORD.EXE → cmd.exe → powershell.exe -enc",
@@ -24,7 +24,7 @@
     "dst_ip": "93.184.220.29",
     "dst_port": 80,
     "host": "WS-BMARTIN",
-    "user": "bmartin@meridian.local",
+    "user": "bmartin@corp.local",
     "severity": "medium",
     "additional": {
       "sysmon_parent": "chrome.exe → (direct)",

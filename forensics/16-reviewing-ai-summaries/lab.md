@@ -21,7 +21,7 @@ make up && make demo
 AI-generated summary (a committed fixture) and the primary artifacts it claims to describe, so the
 review is deterministic and runs offline, in CI too. Python stdlib for the verifier; the artifacts
 are small bundled logs, an EVTX-style event extract, a CloudTrail JSON slice, and a PE feature record
-carried over from the Meridian case.
+carried over from the Module 12 case.
 
 `make demo` runs a small **claim-verifier** that walks the summary's structured fields — every CVE,
 every ATT&CK ID, every hash, every cited timestamp — and prints which trace to a bundled artifact and
@@ -31,7 +31,7 @@ the spine of the lesson.
 
 ## Scenario
 
-The Meridian investigation is wrapping up. A teammate, short on time, fed the merged timeline and
+The investigation is wrapping up. A teammate, short on time, fed the merged timeline and
 artifacts to a model and produced `data/ai-incident-summary.md` — a polished report with a timeline, an
 IOC table, ATT&CK mappings, and a root-cause conclusion. It is going into the official incident report
 **with your name on the review line**. Before you sign it, you must verify it. The summary contains
@@ -53,7 +53,7 @@ next one.
 
 2. [ ] **Verify every structured field first — it's where fluency outruns grounding and the check is
    cheapest.** For each CVE in the summary, search [NVD](https://nvd.nist.gov/vuln/search) and confirm it
-   exists *and* its affected products match the Meridian environment. For each ATT&CK `T####`, open the
+   exists *and* its affected products match the affected environment. For each ATT&CK `T####`, open the
    [MITRE technique page](https://attack.mitre.org/techniques/enterprise/) and confirm both the ID *and the
    tactic* match the behaviour the artifact shows. For each hash, recompute it against the bundled artifact.
    Record every mismatch with the *tell* that exposed it.

@@ -31,6 +31,6 @@
 
 - `data/cloudtrail/cloudtrail.json` — small bundled AWS CloudTrail set, **modelled on the public
   Lunar Spider cloud TTPs** (see `../ANCHOR.md`) with neutral naming: principal `jsmith`, backdoor
-  user `svc-backup`, role `prod-deploy`. Renamed from the prior `meridian_cloudtrail.json`. It stays
+  user `svc-backup`, role `prod-deploy`. Renamed from the prior synthetic seed. It stays
   synthetic on purpose (an IAM recon → CreateUser/CreateAccessKey → AssumeRole sequence) and is not
   fetched.

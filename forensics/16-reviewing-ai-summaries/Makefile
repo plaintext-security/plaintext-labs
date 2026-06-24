@@ -1,6 +1,14 @@
 # Forensics Module 16 — Reviewing AI Incident Summaries.
 # Standard targets every reference lab provides: up / down / reset / shell / demo.
-.PHONY: up down reset shell demo verify
+.PHONY: up down reset shell demo verify fetch-data
+
+# Optional REAL artifact to verify AI claims against (see PROVENANCE.md). The
+# committed artifacts (auth.log, winlog_4688.csv, cloudtrail.json, pe_features.json)
+# are the zero-cost default; this adds a genuine Windows .evtx so a learner can
+# practise tracing an AI-asserted CVE/technique to a real event log. The anchored
+# Lunar Spider case used Zerologon (CVE-2020-1472), so a real Zerologon log is the
+# on-theme choice from the public EVTX-ATTACK-SAMPLES corpus.
+EVTX_URL := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Credential%20Access/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx
 
 up:        ## Build and start the lab container
 	docker compose up -d --build
@@ -35,3 +43,14 @@ demo:      ## Run the claim-verifier over the seeded summary; flag unsupported c
 # --- Your turn: point it at your own summary / artifact set -------------------
 verify:    ## make verify SUMMARY=... ARTIFACTS=... — run the verifier on your inputs
 	docker compose run --rm lab python3 /scripts/check_summary.py $(SUMMARY) $(ARTIFACTS)
+
+# --- Optional: pull a REAL .evtx to verify a claim against a genuine log -------
+fetch-data:  ## Download a real Zerologon .evtx into data/artifacts/ (idempotent) — see PROVENANCE.md
+	@mkdir -p data/artifacts
+	@if [ -f data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx ]; then \
+		echo "exists: data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
+	else \
+		echo "fetch:  data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
+		curl -fsSL "$(EVTX_URL)" -o "data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx"; \
+	fi
+	@echo "Done. Verify SHA-256 against PROVENANCE.md. Use it to practise tracing an AI-asserted CVE to a real log."

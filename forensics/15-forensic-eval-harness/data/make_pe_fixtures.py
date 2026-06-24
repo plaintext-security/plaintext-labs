@@ -3,7 +3,7 @@
 
 These are NOT real malware: each is a tiny file that starts with the `MZ`
 magic so a real `yara` binary treats it as a PE, followed by a handful of
-ASCII strings chosen to be either malicious (the Meridian dropper's C2 domain
+ASCII strings chosen to be either malicious (the Latrodectus loader's C2 domain
 / masquerade name) or benign. No executable code, no live sample, safe to
 commit and safe in CI.
 
@@ -16,9 +16,9 @@ import sys
 # (filename, list-of-embedded-strings). Malicious vs benign is recorded ONLY in
 # labels.json — the generator stays label-free so it can't leak ground truth.
 FIXTURES = {
-    # --- malicious: real Meridian dropper indicators (see Module 12 YARA rule) -
-    "pe-001-svchost32.exe":  ["This program cannot be run in DOS mode.", "update-cdn82.net", "svchost32", "/update.bin"],
-    "pe-002-dropper.bin":    ["This program cannot be run in DOS mode.", "update-cdn82.net", "C:\\Windows\\Temp\\"],
+    # --- malicious: Latrodectus loader indicators (see Module 12 YARA rule) ----
+    "pe-001-svchost32.exe":  ["This program cannot be run in DOS mode.", "workspacin.cloud", "svchost32", "/update.bin"],
+    "pe-002-dropper.bin":    ["This program cannot be run in DOS mode.", "workspacin.cloud", "C:\\Windows\\Temp\\"],
     "pe-003-loader.exe":     ["This program cannot be run in DOS mode.", "svchost32", "/update.bin", "CreateRemoteThread"],
 
     # --- benign: ordinary software -------------------------------------------

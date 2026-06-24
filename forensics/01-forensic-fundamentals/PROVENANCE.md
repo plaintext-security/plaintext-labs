@@ -23,7 +23,7 @@ intrusion chain (`Form_W-9.js` → `update.msi` → Latrodectus → Rclone/`siho
 
 ## Replaces
 
-This replaces the prior **synthetic "Meridian Financial" seed**. The bundled
+This replaces the prior **synthetic financial-org seed**. The bundled
 `data/evidence-sample.txt` / `data/evidence-sample.bin` are retained only as a tiny **offline
 fallback** so `make demo` runs with no network; the M57 image is the primary artifact.
 

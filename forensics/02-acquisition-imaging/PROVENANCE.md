@@ -24,7 +24,7 @@ Two-Month Intrusion"** (2025-09-29) — `Form_W-9.js` → `update.msi` → Latro
 
 ## Replaces
 
-This replaces the prior **synthetic "Meridian Financial" seed** and the runtime-generated 1MB
+This replaces the prior **synthetic financial-org seed** and the runtime-generated 1MB
 `/dev/urandom` source, which is retained only as an offline **fallback** so `make demo` runs with
 no network. The M57 USB image is the primary artifact.
 

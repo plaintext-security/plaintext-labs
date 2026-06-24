@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Financial — SOAR response playbook.
+"""SOAR response playbook.
 
 This harness implements the four-stage SOAR pattern:
   1. Trigger    — an alert arrives from the SIEM/IDS
@@ -183,7 +183,7 @@ def step_contain(alert: dict, approved: bool) -> list[str]:
 # ── YAML export ───────────────────────────────────────────────────────────────
 
 PLAYBOOK_YAML = """\
-# Meridian Financial — SOAR Alert Response Playbook
+# SOAR Alert Response Playbook
 # Workflow-as-code: commit this alongside your detection rules.
 # Import into Shuffle, Tines, or any SOAR that supports YAML workflows.
 
@@ -311,7 +311,7 @@ def demo() -> int:
     intel  = json.loads(INTEL_FILE.read_text())
 
     print("=" * 64)
-    print("Meridian Financial SOAR Playbook")
+    print("SOAR Alert Response Playbook")
     print(f"Processing {len(alerts)} incoming alerts")
     print("=" * 64)
     print(f"\nPlaybook: Trigger → Enrich → Triage → [Human Gate] → Contain")

@@ -4,27 +4,34 @@
 
 ## Setup
 This is a **reference lab** — a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. Planned shape:
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/defensive/18-detection-drift
-make up        # start the log ingest + a tiny "estate" of sources emitting events
-make demo      # baseline → inject drift → detect the delta → reconcile, end to end
-make shell     # work inside the container
-make down      # stop it
+make up           # build the Python container
+make demo         # drift check at t=0 (CLEAN) then t=30 (3 drifts, non-zero exit)
+make baseline     # snapshot t=0 health + per-rule recall — your known-good
+make drift-check  # the scheduled control: re-run the loop, non-zero exit if drift
+make shell        # work inside the container
+make down         # stop it
 ```
 
-Planned contents:
+What ships:
 
-- A small **estate** of telemetry sources (e.g. 3–4 simulated hosts) emitting JSONL events to an
-  ingest at a steady rate, plus a declared **baseline manifest** (`baseline/sources.yml`) listing
-  the sources you expect, their expected interval, and a 7-day volume average.
-- A handful of **Sigma detections** (carried over from module 08's shape) and a small **held-out
-  corpus** (`corpus/`) of labelled known-bad + known-good events for re-scoring.
-- A **drift injector** (`drift/inject.py`) that can: silently kill a source, *degrade* a source to a
-  fraction of its volume, and rename a field in the event schema so a rule rots.
-- Starter scaffolds you complete: `health/heartbeat.py` and `health/rescore.py`.
+- A small **estate** of telemetry sources (4 simulated `corp.local` hosts:
+  `WIN10-01`, `FS01`, `DC01`, `LEGACY03`) and a declared **baseline manifest**
+  (`baseline/sources.yml`) — per source, the heartbeat interval and volume floor you
+  expect. This is the "expected" half you tune.
+- A healthy event stream (`data/events_t0.jsonl`) and a **drifted** one one month
+  later (`data/events_t30.jsonl`) — the drift is *baked into the fixtures*, not
+  printed in the manifest, so you have to detect it.
+- A held-out **labelled corpus** (`corpus/corpus_t0.jsonl`, `corpus/corpus_t30.jsonl`)
+  of known-bad + known-good events for re-scoring, plus the Sigma detection that rots
+  under schema drift (`rules/encoded_powershell.yml`, carried over from module 08).
+- The **drift harness** `drift_check.py` — it runs both checks (telemetry heartbeat +
+  volume, and detection re-score against the corpus) and exits non-zero when drift is
+  present. `make demo` shows it catching all three injected drifts.
 
 > Everything runs locally against bundled data you own. No external targets, no authorization needed.
 
@@ -37,49 +44,62 @@ is still green. Your job: build the steady-state loop that *would* have caught a
 can reconcile back to a known-good baseline.
 
 ## Do
-1. [ ] **Declare the baseline.** Run `make demo` once to see the loop end to end, then open
-   `baseline/sources.yml`. Record, for each source, the heartbeat interval you expect and a volume
-   floor (a sensible fraction of its baseline rate). Run `make baseline` to snapshot the *current*
-   per-rule scores against the held-out corpus — this is your t=0 detection effectiveness.
-2. [ ] **Build the heartbeat + volume check.** Complete `health/heartbeat.py` so it reports, per
-   source: last-seen timestamp, whether it's overdue, and whether its recent volume has dropped below
-   the floor. *Hint:* a binary up/down check is not enough — the degraded source is still "up."
-3. [ ] **Inject drift.** Run `make drift` (wraps `drift/inject.py`). It silently (a) stops one source,
-   (b) degrades another to ~10% volume, and (c) renames a field one rule matches on. Do **not** look at
-   which — find them.
-4. [ ] **Detect telemetry drift.** Run your heartbeat check. It should flag the dead source *and* the
-   degraded one. Confirm the binary "is it up?" view would have missed the degraded one.
-5. [ ] **Detect detection drift.** Complete `health/rescore.py` to re-fire every rule against the
-   held-out corpus and diff per-rule recall vs. your t=0 baseline. The field-rename should surface as a
-   rule whose recall fell to zero while it still "runs" without error.
-6. [ ] **Report the delta.** Emit one drift report: expected-vs-observed sources (table), and any rule
-   whose score regressed, with the suspected cause for each.
-7. [ ] **Reconcile.** For each finding, take the right action and *prove steady-state*: redeploy/repair
-   the sources, fix the rotted rule's field and re-score to baseline, and — for the source that turns
-   out to be intentionally decommissioned — **prune the baseline** so it stops alarming. Re-run the loop:
-   it should report no drift.
+1. [ ] **See the loop end to end.** Run `make demo`. It runs the harness twice: at
+   **t=0** against the healthy estate (verdict CLEAN, exit 0), then at **t=30**
+   against the drifted estate (3 drifts, non-zero exit). Read the t=30 output but
+   don't trust the labels yet — work out *why* each line fired.
+2. [ ] **Declare and snapshot the baseline.** Open `baseline/sources.yml` and study the
+   declared `heartbeat_interval_s` and `volume_floor` per source. Tune them against
+   what *you* judge sensible (too tight pages on jitter; too loose never catches a
+   degraded collector) and justify each number. Run `make baseline` to snapshot t=0
+   health + per-rule recall — this is your known-good.
+3. [ ] **Read the harness.** Open `drift_check.py` and trace its two checks: the
+   telemetry heartbeat+volume check (`--baseline` vs. `--events`) and the detection
+   re-score (`--rule` fired against `--corpus`, diffed vs. `--baseline-recall`).
+   Confirm you understand *how* a degraded-but-up source is distinguished from a dead
+   one — a binary up/down check would miss it.
+4. [ ] **Detect telemetry drift.** Run the check against the t=30 events
+   (`make drift-check`). It should flag **both** the dead source and the
+   degraded (low-volume) one. Identify which host is which from the output.
+5. [ ] **Detect detection drift.** The same run re-scores `rules/encoded_powershell.yml`
+   against `corpus/corpus_t30.jsonl`. Find the rule whose recall fell to zero while it
+   still parses and runs — then open the corpus and the rule and identify the **renamed
+   field** that rotted it.
+6. [ ] **Report the delta.** Emit one drift report: expected-vs-observed sources
+   (table) and the rule whose score regressed, with the suspected cause for each of the
+   three drifts.
+7. [ ] **Reconcile and prove steady-state.** For each finding, take the right action:
+   fix the rotted rule's field and re-score to baseline; and for `LEGACY03` (which turns
+   out to be intentionally decommissioned) set `decommissioned: true` in
+   `baseline/sources.yml` so it stops alarming. Re-run `make drift-check` against the
+   reconciled state and confirm the rule recall is back to baseline and the
+   decommissioned source no longer fires.
 
 ## Success criteria — you're done when
-- [ ] Your heartbeat check flags **both** the dead source and the degraded (low-volume) source.
-- [ ] Your re-score surfaces the rotted rule as a recall regression (and you've identified the renamed field).
-- [ ] Your drift report names all three injected drifts with a plausible, evidence-backed cause for each.
-- [ ] After reconciliation the loop reports **clean** — and the decommissioned source no longer alarms.
+- [ ] The check flags **both** the dead source and the degraded (low-volume) source — and
+  you can state which host is which.
+- [ ] The re-score surfaces the rotted rule as a recall regression and you've named the
+  renamed field (`CommandLine` → `ProcessCommandLine`).
+- [ ] Your drift report names all three drifts with a plausible, evidence-backed cause for each.
+- [ ] After reconciliation the rule re-scores to baseline and the decommissioned source no longer alarms.
 - [ ] You can state your chosen heartbeat interval and volume floor and *why* those numbers (not a vibe).
 
 ## Deliverables
-`health/heartbeat.py` + `health/rescore.py` (your completed detectors), the `baseline/sources.yml`
-you tuned, the **drift report** (`drift-report.md`), and a **`reconciliation-runbook.md`**: the
-decision tree for each drift class (source dead vs. degraded vs. decommissioned; rule rotted) and the
-exact action each demands. **Commit all of these.** Lab artifacts (raw event dumps, the injector's
-state) stay out of commits.
+The tuned `baseline/sources.yml` (with `LEGACY03` reconciled), the fixed
+`rules/encoded_powershell.yml`, a **drift report** (`drift-report.md`), and a
+**`reconciliation-runbook.md`**: the decision tree for each drift class (source dead
+vs. degraded vs. decommissioned; rule rotted) and the exact action each demands.
+**Commit all of these.** Lab artifacts (raw event dumps) stay out of commits.
 
 ## Automate & own it
-**Required.** Wrap the loop into one scheduled command — `make drift-check` — that runs the heartbeat,
-the re-score, and emits the report with a non-zero exit when drift is present, and wire it to run on a
-schedule (a cron entry or a GitHub Actions `schedule:` trigger committed alongside). Have a model draft
-the runner and the schedule; **you read every line**, you set the thresholds against your real baseline,
-and you confirm it actually exits non-zero on injected drift before trusting it. A steady-state loop that
-nobody scheduled is a script, not a control.
+**Required.** `make drift-check` already runs the loop with a non-zero exit on drift —
+turn it into a *scheduled control*. Wire it to run on a schedule (a cron entry or a
+GitHub Actions `schedule:` trigger committed alongside) and have it emit the drift
+report as an artifact, paging only when the exit is non-zero. Have a model draft the
+schedule + report wiring; **you read every line**, you set the thresholds in
+`baseline/sources.yml` against your real baseline, and you confirm it actually exits
+non-zero on the t=30 fixtures before trusting it. A steady-state loop that nobody
+scheduled is a script, not a control.
 
 ## AI acceleration
 Let a model draft the heartbeat logic, the volume-baseline query, and the report formatter — it's good

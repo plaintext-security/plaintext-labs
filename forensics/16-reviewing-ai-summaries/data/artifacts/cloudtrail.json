@@ -1,26 +1,26 @@
 {
-  "_comment": "CloudTrail slice — Meridian AWS org, us-east-1, UTC. PRIMARY ARTIFACT. Shows the attacker pivoting to cloud with jchen's federated session after the host compromise. No GetObject on a public bucket, no S3 exfil event exists here — a summary claim of 'data exfiltrated via S3' would be unsupported.",
+  "_comment": "CloudTrail slice — AWS org, us-east-1, UTC. PRIMARY ARTIFACT. Shows the attacker pivoting to cloud with jsmith's federated session after the host compromise. No GetObject on a public bucket, no S3 exfil event exists here — a summary claim of 'data exfiltrated via S3' would be unsupported.",
   "Records": [
     {
       "eventTime": "2024-03-14T22:41:12Z",
       "eventName": "GetCallerIdentity",
       "eventSource": "sts.amazonaws.com",
-      "userIdentity": { "type": "AssumedRole", "userName": "jchen", "arn": "arn:aws:sts::4455:assumed-role/FinAnalyst/jchen" },
+      "userIdentity": { "type": "AssumedRole", "userName": "jsmith", "arn": "arn:aws:sts::4455:assumed-role/prod-deploy/jsmith" },
       "sourceIPAddress": "203.0.113.66"
     },
     {
       "eventTime": "2024-03-14T22:43:50Z",
       "eventName": "ListBuckets",
       "eventSource": "s3.amazonaws.com",
-      "userIdentity": { "type": "AssumedRole", "userName": "jchen" },
+      "userIdentity": { "type": "AssumedRole", "userName": "jsmith" },
       "sourceIPAddress": "203.0.113.66"
     },
     {
       "eventTime": "2024-03-14T22:47:09Z",
       "eventName": "CreateAccessKey",
       "eventSource": "iam.amazonaws.com",
-      "userIdentity": { "type": "AssumedRole", "userName": "jchen" },
-      "requestParameters": { "userName": "jchen" },
+      "userIdentity": { "type": "AssumedRole", "userName": "jsmith" },
+      "requestParameters": { "userName": "jsmith" },
       "sourceIPAddress": "203.0.113.66"
     }
   ]

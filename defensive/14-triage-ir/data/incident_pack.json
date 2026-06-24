@@ -39,9 +39,9 @@
                        "confidence": 75, "source": "MalwareBazaar", "first_seen": "2024-03-10"}
   },
   "affected_assets": [
-    {"hostname": "WS-JSMITH", "ip": "10.0.1.55", "owner": "jsmith@meridian.local",
+    {"hostname": "WS-JSMITH", "ip": "10.0.1.55", "owner": "jsmith@corp.local",
      "role": "Finance analyst workstation", "network_segment": "FINANCE-VLAN"},
-    {"hostname": "SRV-01",    "ip": "10.0.1.100", "owner": "ops-team@meridian.local",
+    {"hostname": "SRV-01",    "ip": "10.0.1.100", "owner": "ops-team@corp.local",
      "role": "Internal Linux server", "network_segment": "SERVER-VLAN"}
   ],
   "questions": {

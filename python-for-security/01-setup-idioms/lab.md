@@ -21,7 +21,7 @@ The container ships `python3.12`, `venv`, `ruff`, and `bandit`. The `data/` dire
 commonly produces. Everything runs locally; no credentials, no external calls.
 
 ## Scenario
-The Meridian Financial security team inherited a script from a contractor. Before it runs anywhere
+A security team inherited a script from a contractor. Before it runs anywhere
 near production, your lead asks you to audit it with the same tools used in CI. `data/insecure.py`
 contains four common anti-patterns. Your job: identify each one, understand why it matters, and
 produce a clean version that passes both `ruff` and `bandit`.

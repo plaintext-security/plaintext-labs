@@ -13,7 +13,7 @@ timestomp:
   divergence_seconds: 86400   # 1 day — wide enough to ignore install write-skew
 
 yara:
-  rule_file: meridian.yar     # relative to /data; the regression swaps this out
+  rule_file: latrodectus_loader.yar   # relative to /data; the regression swaps this out
 
 # --- Gate floors: chosen per the rule's JOB (see eval-report.md). -------------
 # timestomp is a HUNTING rule  -> favour recall  (don't miss a hidden host)

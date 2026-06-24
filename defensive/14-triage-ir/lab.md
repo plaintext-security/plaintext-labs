@@ -13,11 +13,13 @@ make demo    # walks through INC-2024-0315-001 across all 5 NIST phases
 make down
 ```
 
-Bundled data: `data/incident_pack.json` — a structured incident pack
-for INC-2024-0315-001 (the Meridian Cobalt Strike compromise from
-modules 02/05/06/11/14): initial alert, 8 observables, 8-event
-timeline, threat-intel enrichment, affected assets, and per-phase
-triage questions. The `triage.py` harness walks through NIST SP
+Bundled data: `incident_pack.json` — a structured incident pack
+for INC-2024-0315-001 (a Cobalt Strike macro-phishing compromise, the
+same kill chain carried through modules 02/05/06/11): initial alert, 8
+observables, 8-event timeline, threat-intel enrichment, affected assets,
+and per-phase triage questions. The pack's malware family and C2 IOC
+type are anchored to real abuse.ch ThreatFox Cobalt Strike intel (see
+`data/PROVENANCE.md`). The `triage.py` harness walks through NIST SP
 800-61 phases (Detection → Containment → Eradication → Recovery →
 Post-Incident Review) so you practice the reasoning without needing a
 TheHive/Jira instance.

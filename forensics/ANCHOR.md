@@ -14,19 +14,23 @@ actor evicted before ransomware. Public IOCs (C2 e.g. `workspacin[.]cloud`, `clo
 the report; full PCAP/EVTX are DFIR-Labs-gated, so labs use **other public datasets** for hands-on
 artifacts and cite this case as the *story*.
 
-## De-Meridian naming map (apply consistently everywhere)
+## Canonical naming (apply consistently everywhere)
 
-| Old (invented "Meridian") | New (neutral, grounded) |
+No invented brand. The org is referred to neutrally as "the affected organization" and the Lunar
+Spider case is cited as the real parallel. Use these grounded names across every lab's `lab.md`,
+scripts, and seed/fixture files:
+
+| Entity | Canonical name |
 |---|---|
-| "Meridian Financial", "Meridian" (the org) | "the affected organization" / drop the brand; cite the Lunar Spider case as the real parallel |
-| `MERIDIAN-FIN-WS01`, `WORKSTATION-04`, `MERIDIAN-WS04` | `BEACHHEAD-WS01` (the initially compromised workstation) |
-| `MERIDIAN-FS01`, `meridian-fs01` | `FILESHARE-SRV01` |
-| (domain controller, where referenced) | `DC01` |
-| `dev-svc01` | `jsmith` (compromised user) |
-| `svc_batch_finance` | `svc-backup` (service account) |
-| `update-cdn82.net` (C2) | `workspacin[.]cloud` (real Latrodectus C2 from the case) — defang in prose |
-| `svchost32.exe`, `MeridianDropper` | dropper chain `Form_W-9.js` → `update.msi`; exfil tool `sihosts.exe` (renamed rclone) |
-| `MeridianProdDeploy`, `meridian-fin-reports` (S3) | `prod-deploy`, `corp-fin-reports` (neutral) |
-| YARA rule names `meridian*` | `latrodectus_loader` / `lunarspider_*` (family-grounded) |
+| The org | "the affected organization" / drop the brand; cite the Lunar Spider case as the real parallel |
+| Initially compromised workstation | `BEACHHEAD-WS01` |
+| File server (where referenced) | `FILESHARE-SRV01` |
+| Domain controller (where referenced) | `DC01` |
+| Compromised user | `jsmith` |
+| Service / backdoor account | `svc-backup` |
+| C2 domain | `workspacin[.]cloud` (real Latrodectus C2 from the case) — defang in prose |
+| Dropper chain | `Form_W-9.js` → `update.msi`; on-disk masquerade `svchost32.exe`; exfil tool `sihosts.exe` (renamed rclone) |
+| Production deploy role / finance S3 bucket | `prod-deploy`, `corp-fin-reports` |
+| YARA rule names | `latrodectus_loader` / `lunarspider_*` (family-grounded) |
 
-Keep host/account names internally consistent across a lab's lab.md, scripts, and seed/fixture files.
+Keep host/account names internally consistent across a lab's `lab.md`, scripts, and seed/fixture files.

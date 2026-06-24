@@ -1,5 +1,5 @@
 """
-Meridian Financial — log enrichment tool (contractor submission).
+Log enrichment tool (contractor submission).
 DO NOT deploy: this script contains known security anti-patterns for the lab exercise.
 """
 
@@ -7,7 +7,7 @@ import subprocess
 import os
 
 # Anti-pattern 1: hardcoded credential
-API_KEY = "s3cr3t-meridian-key-do-not-share"
+API_KEY = "s3cr3t-api-key-do-not-share"
 
 # Anti-pattern 2: shell=True in subprocess
 def run_enrichment(ip_address):
