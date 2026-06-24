@@ -1,0 +1,14 @@
+# One-command lab environment for Forensics Module 15 — Forensic Eval Harness.
+# `make up` builds it; `make shell` drops you in; `make demo` runs the scorecard +
+# regression gate (green on the good detectors, red on the planted regression).
+services:
+  lab:
+    build: .
+    image: plaintext/forensic-eval-harness
+    container_name: forensic-eval-harness-lab
+    working_dir: /lab
+    # Mount the module dir so the detector configs / corpus you edit on the host are
+    # immediately visible in the container. No network — the eval is fully offline.
+    volumes:
+      - ./:/lab
+    command: sleep infinity

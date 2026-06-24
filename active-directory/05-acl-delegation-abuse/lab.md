@@ -14,7 +14,7 @@ make shell   # interactive shell
 make down
 ```
 
-The environment includes a Samba4 DC with the Meridian misconfigurations pre-seeded:
+The environment includes a Samba4 DC with the Corp misconfigurations pre-seeded:
 - `svc-deploy` has `GenericWrite` on `IT-Admins` group.
 - `Finance-Managers` has `GenericWrite` on `Finance-Users` group.
 - `svc-backup` has unconstrained delegation.
@@ -26,7 +26,9 @@ The environment includes a Samba4 DC with the Meridian misconfigurations pre-see
 
 ## Scenario
 
-You've obtained credentials for `jsmith` and identified via BloodHound that `svc-deploy` has `GenericWrite` on `IT-Admins`, and that `IT-Admins` members have local admin rights on the DC. If you can compromise `svc-deploy`, you can add `jsmith` to `IT-Admins` and move to domain admin. Your goal: identify the misconfigurations via LDAP, verify them, and demonstrate the exploitation chain.
+You've obtained credentials for `jsmith` and identified via BloodHound that `svc-deploy` has `GenericWrite` on `IT-Admins`, and that `IT-Admins` members have local admin rights on the DC. If you can compromise `svc-deploy`, you can add `jsmith` to `IT-Admins` and move to domain admin. Your goal: identify the misconfigurations via LDAP, verify them, and demonstrate the exploitation chain — for real, against the live DC.
+
+**Real-world anchor — noPac (CVE-2021-42278 + CVE-2021-42287).** The "write right gets you to Domain Admin" pattern you exploit here is exactly what made noPac so dangerous in the wild. Any authenticated user could rename a machine account they created (the default `ms-DS-MachineAccountQuota` of 10 lets you create one) so its `sAMAccountName` collided with a DC's, then request a service ticket for the DC's service after deleting the decoy — a straight path from *any* domain user to Domain Admin. CVE-2021-42278 (the `sAMAccountName` validation gap) and CVE-2021-42287 (the KDC S4U2self fallback) are both in CISA's KEV catalog. Read both NVD entries and keep them in your report: your `GenericWrite`→`IT-Admins`→DA chain and noPac are two instances of the same root cause — **an authenticated principal holding a write primitive over an object that controls privilege.**
 
 ## Do
 
@@ -34,7 +36,7 @@ You've obtained credentials for `jsmith` and identified via BloodHound that `svc
 
 2. [ ] **Read the BloodHound ACL findings.** From `data/acl-findings.json`, answer: which principal has `GenericWrite` on `IT-Admins`, what does that right let you do to the group, and what is the next hop once `jsmith` is a member?
 
-3. [ ] **Simulate the GenericWrite exploit.** Using the `svc-deploy` credential you cracked in module 03, exercise the `GenericWrite` to add `jsmith` to `IT-Admins` (Impacket's group/ACL tooling, or `samba-tool` from inside the DC container for the lab demo). Verify the new membership via LDAP.
+3. [ ] **Exploit the GenericWrite for real.** Using the `svc-deploy` credential you cracked in module 03, exercise the `GenericWrite` to add `jsmith` to `IT-Admins` against the live DC — `net rpc group addmem` / Impacket's `net.py` over the wire, or `samba-tool group addmembers` executed inside the DC container. Then verify the new membership via LDAP (`ldapsearch ... "(cn=IT-Admins)" member`). The membership change must be observable on the DC, not asserted from the JSON.
 
 4. [ ] **Identify unconstrained delegation.** Query for accounts with the unconstrained-delegation `userAccountControl` bit set. Which account appears besides the DCs, and why does `svc-backup` holding unconstrained delegation create a TGT-theft risk?
 
@@ -52,7 +54,9 @@ You've obtained credentials for `jsmith` and identified via BloodHound that `svc
 
 ## Deliverables
 
-`acl-abuse-report.md` — the misconfigurations found (with the LDAP evidence), the exploitation chain, ATT&CK mappings (T1484.001 for group modification, T1134.001 for token impersonation via delegation), and remediations. Commit it alongside `acl-findings.json` (the pre-generated data is fine to commit — it's seed data, not a live secret).
+`acl-abuse-report.md` — the misconfigurations found (with the LDAP evidence), the exploitation chain, ATT&CK mappings (T1484.001 for group modification, T1134.001 for token impersonation via delegation), the noPac (CVE-2021-42278/42287) write-up tying it to your chain's root cause, and remediations. Commit it alongside `acl-findings.json` (the pre-generated data is fine to commit — it's seed data, not a live secret).
+
+**Further reading:** NVD CVE-2021-42278 (<https://nvd.nist.gov/vuln/detail/CVE-2021-42278>) and CVE-2021-42287 (<https://nvd.nist.gov/vuln/detail/CVE-2021-42287>) — the two CVEs that compose the noPac chain.
 
 ## Automate & own it
 

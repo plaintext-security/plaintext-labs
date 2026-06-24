@@ -1,0 +1,26 @@
+$TTL 300
+@   IN  SOA ns1.corp-fictional.com. admin.corp-fictional.com. (
+            2026060101 ; Serial
+            3600       ; Refresh
+            900        ; Retry
+            604800     ; Expire
+            300 )      ; Minimum TTL
+
+@       IN  NS  ns1.corp-fictional.com.
+ns1     IN  A   127.0.0.1
+
+; SPF record (softfail — finding)
+@       IN  TXT "v=spf1 ip4:203.0.113.10 ip4:203.0.113.20 include:sendgrid.net ~all"
+
+; MX record
+@       IN  MX  10 mail.corp-fictional.com.
+mail    IN  A   203.0.113.10
+
+; DKIM record (selector: corp2024) — sample RSA public key
+corp2024._domainkey IN TXT ( "v=DKIM1; k=rsa; "
+    "p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLzF9amygy"
+    "kEMmYz0+Kcj3bKBp29Nk1iatJ3LgBcjMbFBqPbzE8L+gsDqNlTp11GqJqDN5Z+"
+    "xOHDe5TwQrDPFa2j5GzGQTBxlvwFWzOd8dV9tF/TKJ2sHMFLhB0D8QIDAQAB" )
+
+; DMARC record (none policy — finding)
+_dmarc  IN  TXT "v=DMARC1; p=none; adkim=r; aspf=r; pct=100"

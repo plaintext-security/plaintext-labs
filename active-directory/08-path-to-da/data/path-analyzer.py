@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-path-analyzer.py — Meridian Financial attack path analyser.
+path-analyzer.py — Corp attack path analyser.
 Reads bloodhound-attack-paths.json and prints a structured report.
 
 Usage: python3 path-analyzer.py bloodhound-attack-paths.json
@@ -15,7 +15,7 @@ def print_separator(char="=", width=70):
 
 def analyse(data: dict) -> None:
     print_separator()
-    print("MERIDIAN FINANCIAL — ATTACK PATH ANALYSIS")
+    print("CORP — ATTACK PATH ANALYSIS")
     print(f"Domain: {data['meta']['domain']}")
     print(f"Total paths found: {data['meta']['total_paths']}")
     print_separator()

@@ -1,0 +1,12 @@
+# Module 12 — Choosing Your Crypto.
+# A light env: the only runnable piece is the dependency-free ADR linter.
+# `make demo` runs it over the sample ADRs (one good, one deliberately broken).
+services:
+  lab:
+    build: .
+    image: plaintext/choosing-crypto:1.0
+    working_dir: /lab
+    # Mount the module dir so the ADRs you write on the host are linted in place.
+    volumes:
+      - ./:/lab
+    command: sleep infinity

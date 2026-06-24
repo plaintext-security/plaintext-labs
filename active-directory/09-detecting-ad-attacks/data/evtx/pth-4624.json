@@ -3,7 +3,7 @@
     "System": {
       "EventID": 4624,
       "TimeCreated": "2024-01-15T04:11:07.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
@@ -12,7 +12,7 @@
       "SubjectDomainName": "-",
       "TargetUserSid": "S-1-5-21-1000-1000-1000-500",
       "TargetUserName": "Administrator",
-      "TargetDomainName": "MERIDIAN",
+      "TargetDomainName": "CORP",
       "LogonType": "3",
       "LogonProcessName": "NtLmSsp",
       "AuthenticationPackageName": "NTLM",
@@ -27,7 +27,7 @@
     "System": {
       "EventID": 4624,
       "TimeCreated": "2024-01-15T09:05:22.000Z",
-      "Computer": "fs01.meridian.local",
+      "Computer": "fs01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
@@ -36,7 +36,7 @@
       "SubjectDomainName": "-",
       "TargetUserSid": "S-1-5-21-1000-1000-1000-1103",
       "TargetUserName": "jsmith",
-      "TargetDomainName": "MERIDIAN",
+      "TargetDomainName": "CORP",
       "LogonType": "3",
       "LogonProcessName": "Kerberos",
       "AuthenticationPackageName": "Kerberos",

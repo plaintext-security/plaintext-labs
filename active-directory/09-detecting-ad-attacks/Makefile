@@ -1,6 +1,17 @@
 # Module 09 — Detecting AD Attacks lab.
 # No `grade` target: Plaintext is an honor system. `make eval` is a regression gate, not a grader.
-.PHONY: up down reset demo shell eval gate
+.PHONY: up down reset demo shell eval gate fetch-data
+
+# Pull REAL attack EVTX from the shared cache (sbousseaden/EVTX-ATTACK-SAMPLES) into data/evtx/.
+# chainsaw then hunts genuine Windows Security logs, not hand-shaped JSON. Run this once before `make demo`.
+# NOT run in CI (needs git + network); you run it locally.
+fetch-data: ## Fetch real DCSync / PtH / Zerologon EVTX from the cached EVTX-ATTACK-SAMPLES repo
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	repo=$$(fetch_repo evtx-attack-samples) && \
+	cp "$$repo/Credential Access/CA_DCSync_4662.evtx" data/evtx/dcsync-4662.evtx && \
+	cp "$$repo/Lateral Movement/LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx" data/evtx/pth-4624.evtx && \
+	cp "$$repo/Credential Access/Zerologon_VoidSec_CVE-2020-1472_4626_LT3_Anonym_follwedby_4742_DC_Anony_DC.evtx" data/evtx/zerologon-cve-2020-1472.evtx
+	@echo "Done. data/evtx/ now holds REAL Windows EVTX — chainsaw hunts these directly in 'make demo'."
 
 up:
 	docker compose up -d --build
@@ -25,13 +36,14 @@ demo:       ## Run chainsaw over EVTX samples with bundled Sigma rules
 	        --csv 2>/dev/null || \
 	    python3 data/evtx_demo.py data/evtx/kerberoast-4769.json kerberoast'
 	@echo ""
-	@echo "--- 2. DCSync detection (Event 4662, DS-Replication rights) ---"
+	@echo "--- 2. DCSync detection — REAL EVTX (Event 4662, DS-Replication rights) ---"
+	@echo "    Hunts the genuine CA_DCSync_4662.evtx from EVTX-ATTACK-SAMPLES (run 'make fetch-data' first)."
 	docker compose run --rm lab sh -c '\
+	    test -f data/evtx/dcsync-4662.evtx || { echo "[!] data/evtx/dcsync-4662.evtx missing — run: make fetch-data"; exit 0; }; \
 	    chainsaw hunt data/evtx/dcsync-4662.evtx \
 	        -s data/rules/dcsync.yml \
 	        --mapping data/sigma-mappings.yml \
-	        --csv 2>/dev/null || \
-	    python3 data/evtx_demo.py data/evtx/dcsync-4662.json dcsync'
+	        --csv 2>/dev/null'
 	@echo ""
 	@echo "--- 3. AS-REP roasting detection (Event 4768, no preauth) ---"
 	docker compose run --rm lab sh -c '\
@@ -41,13 +53,23 @@ demo:       ## Run chainsaw over EVTX samples with bundled Sigma rules
 	        --csv 2>/dev/null || \
 	    python3 data/evtx_demo.py data/evtx/asrep-4768.json asrep'
 	@echo ""
-	@echo "--- 4. Pass-the-Hash detection (Event 4624 Type 3 NTLM) ---"
+	@echo "--- 4. Pass-the-Hash detection — REAL EVTX (Event 4624 Type 3 NTLM) ---"
+	@echo "    Hunts the genuine LM_4624_mimikatz_sekurlsa_pth EVTX (run 'make fetch-data' first)."
 	docker compose run --rm lab sh -c '\
+	    test -f data/evtx/pth-4624.evtx || { echo "[!] data/evtx/pth-4624.evtx missing — run: make fetch-data"; exit 0; }; \
 	    chainsaw hunt data/evtx/pth-4624.evtx \
 	        -s data/rules/pth.yml \
 	        --mapping data/sigma-mappings.yml \
-	        --csv 2>/dev/null || \
-	    python3 data/evtx_demo.py data/evtx/pth-4624.json pth'
+	        --csv 2>/dev/null'
+	@echo ""
+	@echo "--- 5. Zerologon (CVE-2020-1472) — REAL EVTX, chainsaw built-in rules ---"
+	@echo "    Hunts the genuine Zerologon_VoidSec_CVE-2020-1472 EVTX (run 'make fetch-data' first)."
+	docker compose run --rm lab sh -c '\
+	    test -f data/evtx/zerologon-cve-2020-1472.evtx || { echo "[!] data/evtx/zerologon-cve-2020-1472.evtx missing — run: make fetch-data"; exit 0; }; \
+	    chainsaw hunt data/evtx/zerologon-cve-2020-1472.evtx \
+	        -s data/rules/zerologon.yml \
+	        --mapping data/sigma-mappings.yml \
+	        --csv 2>/dev/null'
 	@echo ""
 	@echo "=== Rules summary ==="
 	docker compose run --rm lab sh -c \

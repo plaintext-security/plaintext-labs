@@ -3,12 +3,12 @@
     "System": {
       "EventID": 4769,
       "TimeCreated": "2024-01-15T02:17:43.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "jsmith",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "ServiceName": "svc-mssql",
       "ServiceSid": "S-1-5-21-1000-1000-1000-1200",
       "TicketOptions": "0x40810000",
@@ -23,12 +23,12 @@
     "System": {
       "EventID": 4769,
       "TimeCreated": "2024-01-15T09:15:22.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "tallen",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "ServiceName": "fs01",
       "ServiceSid": "S-1-5-21-1000-1000-1000-1000",
       "TicketOptions": "0x40810010",
@@ -43,12 +43,12 @@
     "System": {
       "EventID": 4769,
       "TimeCreated": "2024-01-15T02:17:45.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "jsmith",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "ServiceName": "svc-backup",
       "ServiceSid": "S-1-5-21-1000-1000-1000-1201",
       "TicketOptions": "0x40810000",

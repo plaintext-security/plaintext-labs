@@ -31,7 +31,9 @@ portable to a hosted runner.
 Your team ships infrastructure from a Git repo and, today, runs its security tools by hand — so they
 run inconsistently and the misconfiguration that ships is "the one we forgot to check." Your job is to
 **build the gate**: a pipeline that runs a secret scan, an IaC scan, and an SBOM step on every change,
-fails closed on a finding, and is itself hardened so it can't become the next Codecov. Then you
+fails closed on a finding, and is itself hardened so it can't become the next Codecov (the 2021
+Bash-Uploader supply-chain compromise — see the [Codecov post-mortem](https://about.codecov.io/apr-2021-post-mortem/)).
+Then you
 **operate it** — run it against a clean change and watch it pass, run it against a bad change and watch
 it block the merge.
 

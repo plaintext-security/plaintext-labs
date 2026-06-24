@@ -3,21 +3,21 @@
 .PHONY: up down reset demo
 
 KEYCLOAK_URL = http://localhost:8080
-REALM        = meridian
-CLIENT_ID    = meridian-app
-CLIENT_SECRET = meridian-app-secret
+REALM        = corp
+CLIENT_ID    = corp-app
+CLIENT_SECRET = corp-app-secret
 TOKEN_URL    = $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/token
 
-up:    ## Start Keycloak with the Meridian realm pre-loaded
+up:    ## Start Keycloak with the Corp realm pre-loaded
 	docker compose up -d
 	@echo "Waiting for Keycloak to be ready..."
-	@until docker compose exec keycloak curl -sf http://localhost:8080/realms/meridian > /dev/null 2>&1; do \
+	@until docker compose exec keycloak curl -sf http://localhost:8080/realms/corp > /dev/null 2>&1; do \
 		printf '.'; sleep 3; \
 	done
 	@echo ""
 	@echo "Keycloak is ready."
 	@echo "  Admin console : http://localhost:8080/admin  (admin / admin)"
-	@echo "  Meridian realm: http://localhost:8080/realms/meridian"
+	@echo "  Corp realm: http://localhost:8080/realms/corp"
 
 down:  ## Stop Keycloak
 	docker compose down
@@ -27,7 +27,7 @@ reset: ## Tear down completely (container + volumes)
 
 demo:  ## Walk the full OIDC flow: get a JWT for analyst + admin, decode claims
 	@echo "============================================================"
-	@echo "  Lab 02 — OIDC Token Demo: Meridian realm"
+	@echo "  Lab 02 — OIDC Token Demo: Corp realm"
 	@echo "============================================================"
 	@echo ""
 	@echo "--- Step 1: Obtain access token for 'analyst' ---"

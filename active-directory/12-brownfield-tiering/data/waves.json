@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "description": "The staged migration plan, ordered by blast radius (lowest-risk pilot first). Each wave is a SET OF MUTATIONS to apply to baseline.json, plus the two-part proof wave-check.py runs after applying it: (a) no legitimate admin is locked out, (b) the targeted PATH-001 hop is now dead. This is the worked-example wave plan; the learner authors their own migration-runbook.md and may reorder.",
+    "model": "strangler-fig: scaffold beside flat -> pilot one OU -> prove -> widen wave by wave -> retire flat last"
+  },
+  "waves": [
+    {
+      "id": "wave-1",
+      "name": "Pilot: deny Tier 0 logon on the Finance pilot host (FIN-WS01)",
+      "blast_radius": "one OU (Finance pilot workstation)",
+      "mutations": [
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS01.CORP.LOCAL"}
+      ],
+      "targets_path_hop": 3,
+      "no_lockout_assertions": [
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "tallen", "must_still_log_on_to": "DC01.CORP.LOCAL"},
+        {"account": "sgarcia", "must_still_log_on_to": "FIN-WS01.CORP.LOCAL"}
+      ],
+      "rollback": "Unlink the Deny-logon GPO from the Finance pilot OU; tallen regains logon on FIN-WS01."
+    },
+    {
+      "id": "wave-2",
+      "name": "Protected Users for the Tier 0 accounts",
+      "blast_radius": "Tier 0 accounts (domain-wide, but only their Kerberos surface)",
+      "mutations": [
+        {"action": "add_to_protected_users", "account": "tallen"}
+      ],
+      "targets_path_hop": 3,
+      "no_lockout_assertions": [
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "tallen", "must_still_log_on_to": "DC01.CORP.LOCAL"}
+      ],
+      "rollback": "Remove tallen from Protected Users. Caveat: any NTLM/RC4-dependent task for tallen breaks while in Protected Users — confirm none exists before this wave."
+    },
+    {
+      "id": "wave-3",
+      "name": "Widen Deny-logon to the remaining Tier 2 OUs (HR, IT, Finance-WS02)",
+      "blast_radius": "all Tier 2 workstation OUs",
+      "mutations": [
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS02.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS02.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "HR-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "HR-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "IT-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "IT-WS01.CORP.LOCAL"}
+      ],
+      "targets_path_hop": 3,
+      "no_lockout_assertions": [
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "sgarcia", "must_still_log_on_to": "IT-WS01.CORP.LOCAL"}
+      ],
+      "rollback": "Unlink the Deny-logon GPO from the widened OU scope."
+    }
+  ]
+}

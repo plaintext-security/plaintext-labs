@@ -1,7 +1,7 @@
 {
   "user": {
     "role": "analyst",
-    "email": "jdoe@meridian.com",
+    "email": "jdoe@corp.com",
     "sub": "auth0|user_analyst_001"
   },
   "action": "write",

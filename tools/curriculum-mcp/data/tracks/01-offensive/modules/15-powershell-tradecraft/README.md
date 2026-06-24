@@ -1,8 +1,13 @@
 # Module 15 — PowerShell Offensive Tradecraft
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — build the core PowerShell primitives (download cradle, EncodedCommand, obfuscation, AMSI bypass) and pair each with the exact telemetry it leaves (4104 script-block logging) — quiet, not invisible. (Secondary: Misconception Reveal — the trusted, signed shell is still loud.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 **Offensive Security** — *the attacker's favourite tool is already installed, signed, and trusted on every Windows box.*
+
+<!-- module-meta -->
+**Difficulty:** Advanced &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 PowerShell is the single most-abused execution vector on Windows — signed by Microsoft, present

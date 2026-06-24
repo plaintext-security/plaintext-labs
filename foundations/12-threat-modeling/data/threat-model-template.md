@@ -2,7 +2,7 @@
 
 <!-- Template: fill in every section; delete placeholder text before submitting -->
 
-**System:** [e.g. Meridian Financial Customer Portal]
+**System:** [e.g. Acme Corp Customer Portal]
 **Modeler:** [Your name]
 **Date:** [Date]
 

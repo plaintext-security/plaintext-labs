@@ -1,0 +1,1 @@
+../../../../plaintext-labs/defensive/19-reviewing-ai-detections/lab.md

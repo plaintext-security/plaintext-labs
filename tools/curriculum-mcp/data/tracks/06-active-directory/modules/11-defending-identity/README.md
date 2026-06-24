@@ -1,9 +1,14 @@
 # Module 11 — Defending Identity
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 10 · Design→Red-team-your-own→Harden — design a tiered administrative model for Corp that structurally breaks each hop in PATH-001 (module 08), implement it as GPO restrictions and group-membership rules, then re-walk PATH-001 against the new design to prove the path now dies, delivering the architecture plus a control matrix mapping each technique to the control that prevents it. (Secondary: Decision / ADR — defend the tradeoff calls, e.g. Protected Users vs Authentication Policy Silos, tier-by-OU vs tier-by-group.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *the attacks in modules 03-08 are symptoms; the tiered admin model is the architecture that makes them structurally impossible.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -11,7 +16,7 @@ Hardening individual misconfigurations (module 10) is necessary but insufficient
 
 ## Objective
 
-Design a tiered administrative model for Meridian Financial that structurally breaks each hop in the primary attack path (module 08, PATH-001), implement it as a set of GPO restrictions and group membership rules, and produce a control matrix mapping each attack technique to the control that prevents it.
+Design a tiered administrative model for Corp that structurally breaks each hop in the primary attack path (module 08, PATH-001), implement it as a set of GPO restrictions and group membership rules, and produce a control matrix mapping each attack technique to the control that prevents it.
 
 ## The core idea
 

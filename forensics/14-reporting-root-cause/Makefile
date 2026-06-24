@@ -1,13 +1,31 @@
-.PHONY: demo lint
+.PHONY: demo lint fetch-data
+
+# Optional REAL artifact so the report's findings/IOCs can be cross-checked against a
+# genuine log from the anchor case's escalation step — Zerologon (CVE-2020-1472), used
+# by Lunar Spider for lateral movement. Public EVTX-ATTACK-SAMPLES corpus, pulled from
+# the shared dataset cache (lib/fetch.sh, source name evtx-attack-samples). See
+# PROVENANCE.md. The writing exercise needs no download; this is additive.
+
+fetch-data:  ## Download a real Zerologon .evtx into data/artifacts/ (idempotent) — see PROVENANCE.md
+	@mkdir -p data/artifacts
+	@if [ -f data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx ]; then \
+		echo "exists: data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
+	else \
+		echo "fetch:  data/artifacts/Zerologon_CVE-2020-1472_..._5805.evtx"; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		repo=$$(fetch_repo evtx-attack-samples); \
+		cp "$$repo/Credential Access/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx" "data/artifacts/Zerologon_CVE-2020-1472_DFIR_System_NetLogon_Error_EventID_5805.evtx"; \
+	fi
+	@echo "Done. Verify SHA-256 against PROVENANCE.md."
 
 demo:
 	@echo "============================================================"
-	@echo "  Meridian Financial — Reporting & Root-Cause Analysis Lab"
+	@echo "  Reporting & Root-Cause Analysis Lab"
 	@echo "============================================================"
 	@echo ""
 	@echo "Files for this exercise:"
 	@echo "  data/report-template.md   — fill in this template"
-	@echo "  data/meridian-findings.md — raw investigation findings"
+	@echo "  data/incident-findings.md — raw investigation findings"
 	@echo "  scripts/lint_report.py    — structural linter"
 	@echo ""
 	@echo "--- GRADING RUBRIC ---"

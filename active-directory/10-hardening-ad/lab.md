@@ -9,34 +9,34 @@
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/10-hardening-ad
 make up      # start the Samba4 DC + hardening-tools container
-make demo    # run dacledit ACL audit against the Meridian DC
+make demo    # run dacledit ACL audit against the Corp DC
 make shell   # interactive shell
 make down
 ```
 
 The lab includes:
-- Samba4 DC with the Meridian misconfigurations from modules 02-09.
+- Samba4 DC with the Corp misconfigurations from modules 02-09.
 - A tools container with `dacledit.py`, `ldapsearch`, and Ansible.
-- `data/hardening-checklist.md` — a CIS-aligned AD hardening checklist with the Meridian gap analysis.
+- `data/hardening-checklist.md` — a CIS-aligned AD hardening checklist with the Corp gap analysis.
 - `data/ad-hardening.yml` — a starter Ansible playbook documenting remediations as tasks.
 
 > All hardening is against your own lab domain. No external targets.
 
 ## Scenario
 
-You are the AD hardening lead at Meridian Financial, following the red team engagement from modules 02-08. Your job: run an automated posture audit to score the current state, identify the highest-risk findings, and produce an Ansible playbook that remediates the top 5 findings. The playbook should be reviewable, idempotent, and verifiable.
+You are the AD hardening lead at Corp, following the red team engagement from modules 02-08. Your job: run an automated posture audit to score the current state, identify the highest-risk findings, and produce an Ansible playbook that remediates the top 5 findings. The playbook should be reviewable, idempotent, and verifiable.
 
 ## Do
 
 1. [ ] **Run the ACL posture audit.** Read the ACLs on the three highest-risk objects (start with `IT-Admins`) with `dacledit.py`. Identify: which principals have write rights, and do any non-default accounts appear?
 
-2. [ ] **Audit Kerberoastable accounts.** Run the ldapsearch from module 02 for SPNs. Count the accounts and their password ages from `data/meridian-domain.md`. Score: 3 Kerberoastable accounts with multi-year-old passwords = HIGH risk.
+2. [ ] **Audit Kerberoastable accounts.** Run the ldapsearch from module 02 for SPNs. Count the accounts and their password ages from `data/corp-domain.md`. Score: 3 Kerberoastable accounts with multi-year-old passwords = HIGH risk.
 
 3. [ ] **Audit no-preauth accounts.** Query for `DONT_REQUIRE_PREAUTH`. Two accounts = HIGH risk.
 
 4. [ ] **Audit unconstrained delegation.** Query for the delegation flag. One non-DC account = HIGH risk.
 
-5. [ ] **Review `data/hardening-checklist.md`.** Go through each item. For the Meridian domain, mark each as: Compliant / Non-compliant / Not Applicable. Calculate a rough score (compliant / total applicable).
+5. [ ] **Review `data/hardening-checklist.md`.** Go through each item. For the Corp domain, mark each as: Compliant / Non-compliant / Not Applicable. Calculate a rough score (compliant / total applicable).
 
 6. [ ] **Review and extend `data/ad-hardening.yml`.** Open the Ansible playbook. It documents the remediations as tasks, with `ansible.builtin.debug` tasks that print what the real remediation would do (since we can't apply changes via WinRM to a Samba4 container in this lab without extra setup). Add at least two tasks:
    - A task to remove the `DONT_REQUIRE_PREAUTH` flag from `svc-legacy`
@@ -62,7 +62,7 @@ You are the AD hardening lead at Meridian Financial, following the red team enga
 ## Success criteria — you're done when
 
 - [ ] You have run `dacledit.py` and identified the ACL misconfigurations.
-- [ ] You have a completed posture checklist with Meridian compliance scores.
+- [ ] You have a completed posture checklist with Corp compliance scores.
 - [ ] The Ansible playbook has at least 7 tasks (5 from the starter + 2 you added).
 - [ ] Each task has a descriptive `name:` and the correct module + parameters.
 - [ ] You **applied** two fixes to the live DC with `samba-tool` and **proved** them: the AS-REP
@@ -71,7 +71,7 @@ You are the AD hardening lead at Meridian Financial, following the red team enga
 
 ## Deliverables
 
-`data/hardening-checklist.md` (with your Meridian compliance annotations) + `data/ad-hardening.yml` (extended with your tasks) + `posture-report.md` (the scored gap analysis and the *measured* before/after posture delta, including the proof that the AS-REP roast against `svc-legacy` now fails). Commit all three.
+`data/hardening-checklist.md` (with your Corp compliance annotations) + `data/ad-hardening.yml` (extended with your tasks) + `posture-report.md` (the scored gap analysis and the *measured* before/after posture delta, including the proof that the AS-REP roast against `svc-legacy` now fails). Commit all three.
 
 ## Automate & own it
 

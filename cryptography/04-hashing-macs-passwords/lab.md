@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's legacy payroll application stores employee passwords as unsalted SHA-256
+Corp's legacy payroll application stores employee passwords as unsalted SHA-256
 hashes. A penetration test extracted the hash database. Your job: demonstrate how quickly an
 unsalted SHA-256 database can be cracked, then implement Argon2id storage, and show the
 cracking cost difference.
@@ -58,7 +58,7 @@ cracking cost difference.
 ## Deliverables
 
 `password-analysis.md` — your cracking results (how many cracked, how fast), the Argon2id
-timing (hashes per second), and a one-page argument for migrating Meridian's password storage
+timing (hashes per second), and a one-page argument for migrating Corp's password storage
 from SHA-256 to Argon2id including work factor recommendation. Commit it.
 
 ## Automate & own it
@@ -85,7 +85,7 @@ Applied-Crypto Failures) includes finding unsalted or weak password hashes as an
 ## Marketable proof
 
 > "I demonstrated the difference between unsalted SHA-256 (cracked in milliseconds) and Argon2id
-> (computation-bounded by design), and wrote a migration recommendation for Meridian's password
+> (computation-bounded by design), and wrote a migration recommendation for Corp's password
 > storage with tuned work factor parameters."
 
 ## Stretch

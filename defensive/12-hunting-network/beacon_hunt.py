@@ -119,7 +119,7 @@ def main() -> int:
     records   = parse_conn_log(conn_path)
 
     print("=" * 62)
-    print("Meridian Financial — Network Beacon Hunt (RITA-style)")
+    print("SOC — Network Beacon Hunt (RITA-style)")
     print(f"Loaded {len(records)} conn records from {conn_path}")
     print("=" * 62)
 

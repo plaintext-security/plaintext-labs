@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Ingest the Meridian knowledge base into ChromaDB for the SoC Copilot."""
+"""Ingest the SOC knowledge base into ChromaDB for the SoC Copilot."""
 import os
 import sys
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 CHROMA_HOST = os.environ.get("CHROMA_HOST", "http://chromadb:8000")
-COLLECTION_NAME = "meridian-kb"
+COLLECTION_NAME = "soc-kb"
 CHUNK_SIZE = 500
 OVERLAP = 80
 

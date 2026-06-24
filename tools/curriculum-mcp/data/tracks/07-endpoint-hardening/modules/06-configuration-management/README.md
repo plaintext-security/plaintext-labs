@@ -1,13 +1,18 @@
 # Module 06 — Configuration Management
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — write an idempotent Ansible hardening playbook that applies five CIS-equivalent controls (root SSH, password complexity, auditd, umask, sysctl) and confirms each with a verification task, delivering reusable baseline-as-code. (Secondary: Drift / Steady-State — drifting a setting and catching it with `--check` plus a `drift-check.sh` exercises the steady-state loop.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *Hardening that lives in a runbook dies in a ticket queue; hardening expressed as code survives team changes, scales to thousands of hosts, and can be tested.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 
-The hardening you applied in modules 02–04 produces a host that is secure today. Configuration management is what keeps it secure in six months when a new team member applies a one-off change, when a package update resets a sysctl parameter, or when you need to roll the same baseline to 200 new servers. Without configuration management, hardening is a one-time event that drifts; with it, hardening is a continuous commitment that can be audited.
+The hardening you applied in modules 02–04 produces a host that is secure today. Configuration management is what keeps it secure in six months when a new team member applies a one-off change, when a package update resets a sysctl parameter, or when you need to roll the same baseline to 200 new servers. The 2019 Capital One breach — over 100 million applicants' records — came down to a configuration failure, not a software flaw: the bank's regulator (OCC) fined it $80 million for failing to establish effective controls *before* migrating to the cloud, an unsafe configuration that a one-time setup left in place. Without configuration management, hardening is a one-time event that drifts; with it, hardening is a continuous commitment that can be audited.
 
 ## Objective
 
@@ -19,7 +24,7 @@ Ansible models configuration as desired state expressed in YAML. A playbook says
 
 The Ansible playbook as a hardening artefact has three distinct advantages over a shell script. First, it is self-documenting — each task names the control it implements. Second, it is testable — you can run it against a test environment, verify with `--check` (dry-run mode), and compare before and after states. Third, it is auditable — the git history of the playbook is the change log for your hardening baseline. When an auditor asks "what changed between the January and February baseline?", the answer is a `git diff`.
 
-Roles are the Ansible unit of reuse. A well-structured hardening playbook uses a `security` role (or the community `ansible-lockdown` roles for CIS) that can be applied to different host groups with different variable overrides. For Meridian Financial's Linux fleet, the same role applies to both developer workstations (with some controls relaxed) and production servers (at full stringency) — the variable file determines the posture; the role logic is shared. This is the "hardening as a policy parameter" model that modern security programmes use.
+Roles are the Ansible unit of reuse. A well-structured hardening playbook uses a `security` role (or the community `ansible-lockdown` roles for CIS) that can be applied to different host groups with different variable overrides. For a typical Linux fleet, the same role applies to both developer workstations (with some controls relaxed) and production servers (at full stringency) — the variable file determines the posture; the role logic is shared. This is the "hardening as a policy parameter" model that modern security programmes use.
 
 Drift detection is the operational complement to idempotent application. Ansible's `--check` mode reports what *would* change if the playbook ran — run it in check mode on a scheduled basis and treat any pending change as a drift alert. A playbook that reports nothing to change confirms the host is in the expected state. A playbook that reports changes reveals that someone (or some package update) has modified the configuration since the last enforcement run. Combined with the telemetry from module 05, this gives you both the configuration ground truth and the event stream that explains how it changed.
 
@@ -36,6 +41,9 @@ Drift detection is the operational complement to idempotent application. Ansible
 **Idempotency and testing**
 - [Molecule — Ansible testing framework](https://docs.ansible.com/projects/molecule/) — the standard way to test Ansible roles against Docker containers; read the Getting Started guide for the test-driven hardening pattern.
 
+**When configuration is the breach**
+- [OCC assesses $80M penalty against Capital One (OCC press release, 2020)](https://www.occ.gov/news-issuances/news-releases/2020/nr-occ-2020-101.html) — the regulator's finding on the 2019 breach: a failure to establish effective controls before cloud migration. A misconfiguration, not a CVE — the case for configuration-as-code and drift detection.
+
 ## Key concepts
 
 - Ansible models desired state; idempotency means running the playbook twice is safe and produces no unintended changes.
@@ -43,6 +51,7 @@ Drift detection is the operational complement to idempotent application. Ansible
 - Roles enable variable-parameterised policy: same role, different posture by variable file.
 - `--check` mode as a drift detector: treat pending changes as drift alerts.
 - The `ansible-lockdown` community maintains production-grade CIS roles — adopt before you write.
+- Capital One 2019: a misconfiguration (not a CVE) caused the breach — configuration-as-code and drift detection are the control.
 
 ## AI acceleration
 

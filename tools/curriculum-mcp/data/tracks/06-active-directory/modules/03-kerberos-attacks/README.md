@@ -1,13 +1,18 @@
 # Module 03 — Kerberos Attacks
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — execute Kerberoasting (T1558.003) and AS-REP roasting (T1558.004) against a live Samba4 AD domain, crack at least one recovered ticket hash offline, and pin the detection seam (the RC4-downgrade in Event 4769) that explains why the attack is otherwise invisible. (Secondary: Blast-Radius Trace — show which service accounts the roast opens onward.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *Kerberos was designed for a world where everyone on the network is trusted; Active Directory inherited that assumption and never fully escaped it.*
 
+<!-- module-meta -->
+**Difficulty:** Advanced &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 
-Kerberoasting and AS-REP roasting are in the top MITRE ATT&CK technique lists for a reason: they are fully authenticated, use the normal Kerberos protocol, generate no logon failures, and produce offline-crackable hashes. A domain with even one service account on a weak password is vulnerable. The detection requires specific audit settings that most environments don't have, and even with them, the signal is easy to miss. Understanding these attacks at the protocol level — not just running a tool — is what allows you to tune both the attack and the defence.
+Kerberoasting and AS-REP roasting are in the top MITRE ATT&CK technique lists for a reason: they are fully authenticated, use the normal Kerberos protocol, generate no logon failures, and produce offline-crackable hashes. A domain with even one service account on a weak password is vulnerable. The detection requires specific audit settings that most environments don't have, and even with them, the signal is easy to miss. Understanding these attacks at the protocol level — not just running a tool — is what allows you to tune both the attack and the defence. And when the protocol itself is broken, a single Kerberos flaw becomes instant domain takeover: the **noPac** chain — [CVE-2021-42278](https://nvd.nist.gov/vuln/detail/CVE-2021-42278) (sAMAccountName spoofing) paired with [CVE-2021-42287](https://nvd.nist.gov/vuln/detail/CVE-2021-42287) (PAC confusion in the KDC), both CISA KEV-listed — let any authenticated user rename a controlled machine account to impersonate a domain controller and obtain a TGT as a DC.
 
 ## Objective
 
@@ -32,6 +37,9 @@ The encryption type matters: a TGS encrypted with **RC4** (etype 23) cracks orde
 **AS-REP roasting**
 - [T1558.004 — AS-REP Roasting (MITRE ATT&CK)](https://attack.mitre.org/techniques/T1558/004/) — detection guidance and mitigations. Note that the mitigation is simply: audit for the flag and remove it.
 
+**noPac — sAMAccountName spoofing to DC compromise**
+- [CVE-2021-42278 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2021-42278) and [CVE-2021-42287 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2021-42287) — the two AD Domain Services elevation-of-privilege CVEs that combine into noPac. Read both summaries: 42278 is the sAMAccountName spoof, 42287 is the KDC's PAC mix-up that turns the spoof into a DC-level TGT. Both are KEV-listed; the fix is the November 2021 patch.
+
 **Impacket toolkit**
 - [Impacket (GitHub — SecureAuthCorp/impacket)](https://github.com/fortra/impacket) — the Python library and toolkit used for the attacks. Read the `examples/` README for `GetUserSPNs.py` and `GetNPUsers.py`.
 
@@ -44,6 +52,7 @@ The encryption type matters: a TGS encrypted with **RC4** (etype 23) cracks orde
 - AS-REP roasting = request AS-REP for an account with `DONT_REQUIRE_PREAUTH`, crack offline. No credentials needed.
 - RC4 (etype 23) cracks ~10× faster than AES256 (etype 18) — the encryption type downgrade is the detection signal.
 - Windows Event 4769 with RC4 encryption type from a non-RODC service account is the primary detection indicator.
+- noPac (CVE-2021-42278 + CVE-2021-42287) chains sAMAccountName spoofing with a KDC PAC flaw so any authenticated user impersonates a DC — patch (Nov 2021) and alert on machine-account renames.
 - Mitigation: strong, unique, regularly rotated service account passwords; prefer Managed Service Accounts (MSAs/gMSAs) which have 120-char random passwords.
 
 ## AI acceleration

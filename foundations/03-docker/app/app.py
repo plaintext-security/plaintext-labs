@@ -7,7 +7,7 @@ import os
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        msg = b"Hello from Meridian Docker Lab\n"
+        msg = b"Hello from the Docker lab service\n"
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(msg)))

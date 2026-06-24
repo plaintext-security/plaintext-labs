@@ -1,13 +1,18 @@
 # Module 08 — Secret Detection & Leakage
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 2 · Misconception Reveal — you predict that deleting a committed secret removes it, then find it alive in git history; the fix is revoke-and-rotate plus a pre-commit/CI gate that stops the next one. (Secondary: Judgment-as-Code / Gate.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 08 — Cryptography, PKI & Secrets]** — *Secrets that escaped into source control don't expire when you remove them from the latest commit — they live in every clone of the repository's history.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 
-Secret leakage in git repositories is one of the most consistently exploited entry points in cloud breaches. The pattern is predictable: a developer accidentally commits an AWS key or database password, catches it and deletes the file in the next commit — but the secret remains in the git history, accessible to anyone who clones the repository. Tools like gitleaks and trufflehog are designed specifically for this problem, scanning the full commit history rather than just the current state. Running them in CI is the control that catches secrets before they land in the remote; running them retrospectively is how you audit repositories that predate the control.
+In 2022, **Toyota** disclosed that an access key to a customer-data server had sat in a **public GitHub repository for nearly five years** — from December 2017 until it was caught in September 2022 — exposing data for roughly **296,000** customers ([BleepingComputer — "Toyota discloses data leak after access key exposed on GitHub"](https://www.bleepingcomputer.com/news/security/toyota-discloses-data-leak-after-access-key-exposed-on-github/)). A subcontractor had committed a fragment of the T-Connect source containing the key; nobody noticed for half a decade. That is the exact failure this module's tooling exists to catch — and it is why scanning *history*, not just the current tree, matters: secret leakage in git repositories is one of the most consistently exploited entry points in cloud breaches. The pattern is predictable: a developer accidentally commits an AWS key or database password, catches it and deletes the file in the next commit — but the secret remains in the git history, accessible to anyone who clones the repository. Tools like gitleaks and trufflehog are designed specifically for this problem, scanning the full commit history rather than just the current state. Running them in CI is the control that catches secrets before they land in the remote; running them retrospectively is how you audit repositories that predate the control.
 
 ## Objective
 
@@ -15,7 +20,7 @@ Use gitleaks and trufflehog to scan a seed git repository with planted credentia
 
 ## The core idea
 
-The core misconception that makes git secret leakage persistent is treating "I deleted the file" as equivalent to "I removed the secret." Git is an append-only log — it retains every version of every file in every commit. Removing a file in a new commit creates a new tree object without the file, but the old tree object (with the file) is still reachable from the previous commit's hash. Any clone of the repository, any CI/CD system that ran against an earlier commit, and any mirror or fork made before the deletion all retain the secret. The remediation for a committed secret is not a deletion commit — it is a credential rotation (assume the secret is compromised) followed by a history rewrite (`git filter-repo`) if access to the git host is needed for compliance, combined with the understanding that every clone made before the rewrite still has the old history.
+The core misconception that makes git secret leakage persistent is treating "I deleted the file" as equivalent to "I removed the secret." Git is an append-only log — it retains every version of every file in every commit. Removing a file in a new commit creates a new tree object without the file, but the old tree object (with the file) is still reachable from the previous commit's hash. Any clone of the repository, any CI/CD system that ran against an earlier commit, and any mirror or fork made before the deletion all retain the secret — and as Toyota's five-year exposure shows, a key that is never noticed is never even "deleted," it simply stays live and reachable. The remediation for a committed secret is not a deletion commit — it is a credential rotation (assume the secret is compromised) followed by a history rewrite (`git filter-repo`) if access to the git host is needed for compliance, combined with the understanding that every clone made before the rewrite still has the old history.
 
 gitleaks is a purpose-built git history scanner. It uses a rule set of regular expressions and entropy analysis to identify secrets in commits, file contents, and diff output. Its default ruleset covers AWS access keys (AKIA...), GitHub personal access tokens (ghp_...), private keys (BEGIN RSA/EC PRIVATE KEY), Stripe keys, Slack tokens, and hundreds of other patterns. gitleaks can scan a local repository, a remote URL, a specific commit range, or even a GitHub organisation's repositories in bulk. The key operational use is pre-commit hooks (catching secrets before they reach the remote) and CI checks (failing a pull request if a secret is detected).
 
@@ -24,6 +29,9 @@ trufflehog takes a different approach. Rather than relying primarily on regex pa
 The pre-commit hook is the most important control in this module. A hook that runs gitleaks before every commit catches secrets at the developer workstation before they touch the remote. Configured organisation-wide via `.pre-commit-config.yaml` and enforced in CI (where commits that bypass local hooks can still be scanned), it creates a defence-in-depth posture: local hooks catch most secrets, CI is the backstop, and periodic retroactive scans of the full history find anything that slipped through before the controls were in place.
 
 ## Learn (~3 hrs)
+
+**Git secret-leakage's real-world failure — the *why* (~10 min)**
+- [BleepingComputer — "Toyota discloses data leak after access key exposed on GitHub" (2022)](https://www.bleepingcomputer.com/news/security/toyota-discloses-data-leak-after-access-key-exposed-on-github/) — a server access key committed to a public repo by a subcontractor sat exposed Dec 2017–Sep 2022 (~296K customers affected). The case for scanning *history* and enforcing pre-commit/CI checks: a secret nobody notices stays live for years.
 
 **gitleaks**
 - [gitleaks README (GitHub)](https://github.com/gitleaks/gitleaks) — read the installation, usage, and configuration sections; understand the rule format and how to add custom rules.
@@ -45,7 +53,8 @@ The pre-commit hook is the most important control in this module. A hook that ru
 - trufflehog: entropy + live verification; "Verified: true" = confirmed live credential = immediate rotation required.
 - Remediation: rotate first (assume compromised), then rewrite history if required, then notify all forks/mirrors.
 - Defence-in-depth: pre-commit hook (developer workstation) + CI check (remote) + periodic retrospective scan (history).
+- **Toyota 2022** (a server access key public on GitHub for ~5 years, ~296K customers exposed) is the canonical case for scanning history and enforcing pre-commit/CI checks, not just the current tree.
 
 ## AI acceleration
 
-Ask an AI to generate a custom gitleaks rule for detecting Meridian Financial's internal API key format (e.g. `meridian-[a-z0-9]{32}`). Verify the regex matches your planted credential and does not match the benign strings in the repository. Then add the rule to `data/gitleaks.toml` and confirm gitleaks detects the custom pattern.
+Ask an AI to generate a custom gitleaks rule for detecting Corp's internal API key format (e.g. `corp-[a-z0-9]{32}`). Verify the regex matches your planted credential and does not match the benign strings in the repository. Then add the rule to `data/gitleaks.toml` and confirm gitleaks detects the custom pattern.

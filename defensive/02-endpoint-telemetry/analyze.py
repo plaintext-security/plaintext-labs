@@ -239,7 +239,7 @@ def check_network(events: list[dict]) -> None:
 def main() -> int:
     events = load_events(EVENTS_PATH)
     print("=" * 62)
-    print("Meridian Financial — Endpoint Telemetry Analysis")
+    print("SOC — Endpoint Telemetry Analysis")
     print(f"Source: {EVENTS_PATH.name}  ({len(events)} events)")
     print("=" * 62)
     print()

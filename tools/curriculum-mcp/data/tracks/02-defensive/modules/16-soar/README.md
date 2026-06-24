@@ -1,9 +1,14 @@
 # Module 16 — Response Automation (SOAR)
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — build a SOAR playbook that takes a real alert, enriches it, decides (with optional AI triage), and tickets/contains it; you commit a running trigger→enrich→decide→act playbook with a human approval gate. (Secondary: Judgment-as-Code/Gate — the gate is what stops you automating a wrong decision at machine speed.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *automate the boring 80% of response — with a human on the trigger.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 A SOC drowns in repetitive response: enrich the alert, check the intel, open a ticket, maybe contain.

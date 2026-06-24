@@ -1,0 +1,27 @@
+{
+  "_comment": "Ground-truth answer key for the held-out corpus. Kept SEPARATE from the corpus and the detectors so nothing can peek. 1 = malicious/timestomped (positive), 0 = benign/legitimate (negative). The eval scores detector verdicts against these labels to compute the confusion matrix and precision/recall.",
+  "timestomp": {
+    "ts-001": 1,
+    "ts-002": 0,
+    "ts-003": 1,
+    "ts-004": 0,
+    "ts-005": 1,
+    "ts-006": 0,
+    "ts-007": 0,
+    "ts-008": 0,
+    "ts-009": 0,
+    "ts-010": 0,
+    "ts-011": 1,
+    "ts-012": 0
+  },
+  "yara": {
+    "pe-001-svchost32.exe": 1,
+    "pe-002-dropper.bin": 1,
+    "pe-003-loader.exe": 1,
+    "pe-004-notepad.exe": 0,
+    "pe-005-7zip.exe": 0,
+    "pe-006-autoupdate.exe": 0,
+    "pe-007-installer.exe": 0,
+    "pe-008-svchost.exe": 0
+  }
+}

@@ -34,7 +34,9 @@ WHERE shell NOT LIKE '%false'
 ORDER BY uid;
 
 -- Query 3: Cron jobs (T1053.003 — Scheduled Task/Job: Cron)
--- Lists all cron entries — common persistence mechanism.
+-- Lists all cron entries — common persistence mechanism. The osquery table is
+-- `crontab` (it parses /etc/cron.d/, /etc/crontab, and user crontabs). This surfaces
+-- the seeded Atomic Red Team T1053.003 artifact: a cron entry running a payload from /tmp.
 SELECT
   command,
   path,
@@ -43,7 +45,7 @@ SELECT
   day_of_month,
   month,
   day_of_week
-FROM cron_tabs
+FROM crontab
 ORDER BY path;
 
 -- Query 4: SUID/SGID binaries (T1548.001 — Abuse Elevation Control: SUID/SGID)

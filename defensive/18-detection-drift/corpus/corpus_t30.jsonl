@@ -1,0 +1,5 @@
+{"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "ProcessCommandLine": "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA", "_label": "malicious"}
+{"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "ProcessCommandLine": "powershell.exe -ep bypass -EncodedCommand SQBuAHYAbwBrAGUALQBNAGkAbQBpAGsAYQ==", "_label": "malicious"}
+{"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "ProcessCommandLine": "powershell.exe -File C:\\scripts\\inventory.ps1", "_label": "benign"}
+{"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "ProcessCommandLine": "powershell.exe -Command Get-Service -Name Spooler", "_label": "benign"}
+{"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "ProcessCommandLine": "powershell.exe -Command Get-ChildItem -Path C:\\ -Encoding UTF8", "_label": "benign"}

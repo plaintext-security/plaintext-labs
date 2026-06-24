@@ -12,12 +12,12 @@ make up
 ```
 
 The lab container has Python + passlib + bcrypt; no GPU required. The bundled
-`data/hashes.txt` contains 11 hashes from a simulated Meridian Financial dump
+`data/hashes.txt` contains 11 hashes from a simulated credential dump
 (MD5, NTLM, bcrypt, SHA-256, SHA-1) — passwords drawn from rockyou.txt.
 
 ## Scenario
 
-You've exfiltrated a credential dump from Meridian Financial's internal
+You've exfiltrated a credential dump from the target org's internal
 identity store. Crack it the way an attacker would: identify hash types,
 run a dictionary attack, apply rules-based mutations, then assess what
 defenses would have stopped you.
@@ -47,7 +47,7 @@ defenses would have stopped you.
 5. [ ] Re-run with rule-based mutations enabled and observe which additional hashes (if
    any) fall. What mutations does `apply_rules()` try, and why are they realistic?
 
-6. [ ] Write the three defenses you'd recommend Meridian adopt, ranked by impact.
+6. [ ] Write the three defenses you'd recommend the org adopt, ranked by impact.
 
 ## Success criteria — you're done when
 
@@ -59,7 +59,7 @@ defenses would have stopped you.
 ## Deliverables
 
 `cracking.md`: hash types identified, which cracked (mode + time), and the three
-defenses you'd prioritise for Meridian. (Don't commit real wordlists or raw dumps.)
+defenses you'd prioritise for the org. (Don't commit real wordlists or raw dumps.)
 
 ## Automate & own it
 
@@ -76,8 +76,8 @@ AI drafts the script; you review every function before committing. Commit
 
 Ask a model to identify a hash from its format and suggest the hashcat mode —
 then verify before you spend GPU time. A wrong mode is hours wasted.
-Also: prompt a model to generate a contextual wordlist for "Meridian Financial"
-(company names, financial jargon) and check what it adds to the hit rate.
+Also: prompt a model to generate a contextual wordlist for the target company
+(company names, industry jargon) and check what it adds to the hit rate.
 
 ## Connects forward
 

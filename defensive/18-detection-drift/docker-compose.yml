@@ -1,0 +1,13 @@
+# One-command lab environment for Module 18 — Detection Drift.
+# `make up` builds it; `make shell` drops you in; `make demo` runs the worked example.
+services:
+  lab:
+    build: .
+    image: plaintext/detection-drift
+    working_dir: /lab
+    # Mount the module dir so the baseline + scaffolds you edit on the host are
+    # immediately visible in the container.
+    volumes:
+      - ./:/lab
+    # Keep it alive for `make shell` / interactive work.
+    command: sleep infinity

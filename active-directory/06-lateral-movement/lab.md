@@ -15,7 +15,7 @@ make down
 ```
 
 The environment provides:
-- `samba-dc` (10.10.0.10) — Meridian DC
+- `samba-dc` (10.10.0.10) — Corp DC
 - `ws-fin-01` (10.10.0.101) — Finance workstation running a minimal SMB service
 - `ws-it-01` (10.10.0.102) — IT workstation running a minimal SMB service
 - `attacker` (10.10.0.20) — Debian container with `netexec`, impacket

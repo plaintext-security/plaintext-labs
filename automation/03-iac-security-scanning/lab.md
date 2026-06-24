@@ -29,7 +29,10 @@ installed.
 ## Scenario
 The platform team writes Terraform; nobody built security into the pipeline. A developer submitted a PR
 to create the company's first S3 bucket and a bastion host — the PR description says "just a quick bucket
-for file sharing." You have the module and one job that matters more than the scan: **leave behind a
+for file sharing." Each planted misconfiguration in `data/misconfig.tf` is annotated with the named
+real breach it would become: the public bucket is the **2017 S3 leak wave** (Accenture, Verizon/Nice,
+Booz Allen, Dow Jones); the open SG + over-broad EC2 role + IMDSv1 is the **2019 Capital One**
+SSRF-to-IMDS chain. You have the module and one job that matters more than the scan: **leave behind a
 gate** that blocks any future PR re-introducing these misconfigurations, while letting the
 genuinely-intended ones through. The scan finds the bad patterns; *you* render the verdict on the
 decisions; the gate makes the verdict permanent.

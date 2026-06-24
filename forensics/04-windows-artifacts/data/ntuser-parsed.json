@@ -1,6 +1,6 @@
 {
   "hive": "NTUSER.DAT",
-  "description": "Synthetic registry hive for Meridian Financial forensics lab",
+  "description": "Synthetic registry hive for the Windows-artifacts forensics lab",
   "note": "Pre-parsed representation. In a real investigation, parse with python-registry or RegRipper.",
   "keys": {
     "Software\\Microsoft\\Windows\\CurrentVersion\\Run": {
@@ -12,7 +12,7 @@
         },
         "OneDriveSync": {
           "type": "REG_SZ",
-          "data": "C:\\Users\\svc_batch_finance\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe /background"
+          "data": "C:\\Users\\svc-backup\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe /background"
         },
         "BackupHelper": {
           "type": "REG_SZ",
@@ -46,7 +46,7 @@
       "values": {
         "url1": {
           "type": "REG_SZ",
-          "data": "\\\\meridian-fs01\\finance\\restricted"
+          "data": "\\\\FILESHARE-SRV01\\finance\\restricted"
         },
         "url2": {
           "type": "REG_SZ",

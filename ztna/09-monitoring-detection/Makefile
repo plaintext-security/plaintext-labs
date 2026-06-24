@@ -19,7 +19,7 @@ demo:      ## Run the unexpected-country detection against the bundled ZT access
 	docker compose run --rm lab sh -c '\
 		echo "=== Zero Trust Detection Lab ==="; \
 		echo ""; \
-		echo "Log summary: 20 structured ZT access events (Meridian Financial)"; \
+		echo "Log summary: 20 structured ZT access events (Corp)"; \
 		echo "Signals planted: unexpected-country login, auth flood, data exfil volume"; \
 		echo ""; \
 		echo "== 1. Fire the unexpected-country Sigma rule =="; \

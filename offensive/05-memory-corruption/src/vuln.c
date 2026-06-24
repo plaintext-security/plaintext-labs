@@ -1,8 +1,8 @@
 /*
- * Meridian Financial — deliberately vulnerable authentication stub.
+ * vuln-login — deliberately vulnerable authentication stub (INTENTIONALLY VULNERABLE).
  *
  * Compile with mitigations disabled (for teaching purposes only):
- *   gcc -O0 -fno-stack-protector -z execstack -no-pie -o meridian-login vuln.c
+ *   gcc -O0 -fno-stack-protector -z execstack -no-pie -o vuln-login vuln.c
  *
  * Vulnerability: vuln() reads up to 256 bytes into a 64-byte stack buffer.
  * Stack layout at vuln() entry (with -O0 on x86-64):
@@ -44,7 +44,7 @@ void vuln(void) {
 }
 
 int main(void) {
-    write(1, "Meridian Financial — intranet token auth\n", 41);
+    write(1, "vuln-login -- intranet token auth\n", 34);
     write(1, "Enter token: ", 13);
     vuln();
     write(1, "Auth complete.\n", 15);

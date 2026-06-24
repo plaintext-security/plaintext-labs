@@ -5,10 +5,10 @@
 
 demo:   ## Print scenario summary and expected gap categories
 	@echo "============================================================"
-	@echo "  Lab 01 — Zero Trust Gap Analysis: Meridian Financial"
+	@echo "  Lab 01 — Zero Trust Gap Analysis: Corp"
 	@echo "============================================================"
 	@echo ""
-	@echo "Scenario seed file: data/meridian-access-map.md"
+	@echo "Scenario seed file: data/corp-access-map.md"
 	@echo "Read it, then produce gap-analysis.md."
 	@echo ""
 	@echo "NIST 800-207 pillars to assess:"

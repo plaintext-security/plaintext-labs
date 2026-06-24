@@ -1,8 +1,9 @@
 # Track 12 — AI-Augmented Security Operations: Capstone starter
 
 > **Capstone scaffold — not a solution.** This is the skeleton for the AI-Augmented Security Operations
-> capstone: a place to build the deliverable, plus the acceptance rubric you grade yourself
-> against. The full prose, phase projects, and the rendered rubric live in the curriculum:
+> capstone: a running stack to build on (Ollama + ChromaDB + a lab container), a stub MCP tool, a small
+> seed runbook corpus (incl. a deliberately poisoned doc to red-team), plus the acceptance rubric you
+> grade yourself against. The full prose, phase projects, and the rendered rubric live in the curriculum:
 > [`tracks/12-ai-augmented-ops/`](https://github.com/plaintext-security/plaintext/tree/main/tracks/12-ai-augmented-ops).
 
 ## The capstone
@@ -24,6 +25,11 @@ Drop your work under `submission/` (gitignored heavy artifacts stay out — see 
 ai-augmented-ops/capstone/
 ├── README.md          # this file — brief + acceptance criteria
 ├── rubric.md          # the self-assessment rubric you grade yourself against
+├── docker-compose.yml # the starter stack: Ollama + ChromaDB + lab container
+├── Makefile           # make up | shell | tool | down | grade
+├── tools/
+│   └── incident_tool.py   # stub MCP tool (one real tool) — extend it into your copilot's tool
+├── data/runbooks/     # small seed corpus, incl. 05-...-INJECTED.md (your red-team target)
 └── submission/        # YOUR work goes here
     submission/copilot/                  # MCP server + RAG corpus loader
     submission/attack/                   # the prompt-injection / exfil PoC
@@ -34,10 +40,19 @@ ai-augmented-ops/capstone/
 ## How to use it
 
 ```bash
-# from the repo root
 cd ai-augmented-ops/capstone
-# ... build your deliverable under submission/ ...
+make up        # start Ollama + ChromaDB + lab; pull tinyllama + nomic-embed-text
+make tool      # self-test the stub MCP tool against the seed runbooks (no client needed)
+make shell     # drop into the lab container and build under submission/
+make down      # tear down when finished
 ```
+
+The scaffold gives you a running stack and a working one-tool MCP server so you start at the
+*interesting* part. The seed corpus (`data/runbooks/`) is anchored to real incidents and includes
+`05-vendor-advisory-INJECTED.md` — a deliberately poisoned runbook in the EchoLeak
+(CVE-2025-32711) / Invariant Labs tool-poisoning shape. Ingest it, show your copilot follows the
+hidden instruction, then harden so the same content is treated as data and the attack fails — that
+build → attack → fix is the capstone.
 
 This is an honor-system curriculum — no tool grades you. Grade yourself honestly against
 [`rubric.md`](rubric.md): the capstone is a portfolio artifact judged by a human (you, a peer,

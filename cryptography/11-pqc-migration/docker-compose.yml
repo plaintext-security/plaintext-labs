@@ -1,0 +1,54 @@
+# Module 11 — PQC Migration.
+# A brownfield TLS server (classical ECDHE/RSA baseline) plus two clients:
+# a MODERN one (OpenSSL 3.5, can offer X25519MLKEM768) and a LEGACY one
+# (OpenSSL 3.1, classical-only). The whole lab lives in the gap between them.
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: plaintext/pqc-migration-server:1.0
+    container_name: pqc-server
+    working_dir: /lab
+    # Mount the module dir so the migrated config you edit on the host is
+    # immediately visible to nginx in the container (edit -> make reload).
+    volumes:
+      - ./:/lab
+    expose:
+      - "443"
+    # 8443 on the host lets you point a host openssl/testssl.sh at it too.
+    ports:
+      - "8443:443"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo Q | openssl s_client -connect 127.0.0.1:443 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  modern:
+    build:
+      context: .
+      dockerfile: Dockerfile.modern
+    image: plaintext/pqc-migration-modern:1.0
+    container_name: pqc-modern
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    depends_on:
+      server:
+        condition: service_healthy
+    command: sleep infinity
+
+  legacy:
+    build:
+      context: .
+      dockerfile: Dockerfile.legacy
+    image: plaintext/pqc-migration-legacy:1.0
+    container_name: pqc-legacy
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    depends_on:
+      server:
+        condition: service_healthy
+    command: sleep infinity

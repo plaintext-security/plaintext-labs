@@ -1,9 +1,14 @@
 # Module 04 — Network Security Monitoring
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — run Zeek over real network traffic, read its protocol logs to find malicious activity, then author and prove a network detection (beaconing, DGA DNS, rare long-lived C2) that fires on the malicious logs and stays quiet on a benign baseline; you commit the Zeek setup plus a verified detection. (Secondary: Reconstruct — reading the attack back off the wire from the logs.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *the network doesn't lie; Zeek turns packets into evidence.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Endpoints can be blinded, but traffic still crosses the wire. Network Security Monitoring with Zeek
@@ -12,7 +17,10 @@ reveal C2, exfiltration, and lateral movement an endpoint might miss. It's a cor
 visibility, and you can practice it on real malicious traffic for free.
 
 ## Objective
-Run Zeek over real network traffic and read its logs to find malicious activity.
+Run Zeek over real network traffic and read its logs to find malicious activity — then *author* a
+network detection for the behaviour you found (beaconing, DGA DNS, rare long-lived C2) and **prove
+it** fires on the malicious logs and stays quiet on a benign baseline. Finding it on the wire and
+building a verified detection are equal halves.
 
 ## The core idea
 Endpoints can be blinded — an attacker disables the agent, lives off the land, encrypts the payload
@@ -52,6 +60,7 @@ expensive to store — most shops keep metadata long and full packets briefly.
 - Zeek scripting and signatures (high level)
 - Indicators in network logs (JA3, suspicious DNS, beaconing)
 - Full-packet capture vs metadata (Arkime)
+- Author then verify: write the network detection (Zeek/Sigma) and prove it fires on the C2 logs, quiet on a benign baseline — not just "describe a detection"
 
 ## AI acceleration
 A model summarises a Zeek `conn.log` or explains a suspicious DNS pattern fast — useful triage. But

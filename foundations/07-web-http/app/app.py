@@ -38,7 +38,7 @@ def after_redirect():
 def set_cookie():
     """Sets a session cookie."""
     resp = make_response(jsonify({"message": "Cookie set — send it back on the next request"}))
-    resp.set_cookie("session_token", "meridian-abc123", httponly=True)
+    resp.set_cookie("session_token", "sess-abc123", httponly=True)
     return resp
 
 
@@ -62,7 +62,7 @@ def role_check():
     if role == "admin":
         return jsonify({
             "role": role,
-            "data": "SECRET: quarterly financials for Meridian Financial",
+            "data": "SECRET: internal quarterly financials",
             "warning": "IDOR! The server trusted the X-Role header from the client."
         }), 200
     return jsonify({"role": role, "data": "Public data only"})

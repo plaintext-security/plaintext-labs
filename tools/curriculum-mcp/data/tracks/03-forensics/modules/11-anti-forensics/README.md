@@ -1,9 +1,14 @@
 # Module 11 — Anti-Forensics & Detecting It
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 2 · Misconception Reveal — disprove "timestomping erases the trail" by comparing NTFS Standard-Information vs File-Name timestamps on a manipulated file with The Sleuth Kit, then codify the SI/FN divergence into a Python detector. (Secondary: Tool-Build — the mismatch-flagging script is a real reusable detection tool.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *recognise the attacker's attempts to erase their tracks — and understand why those attempts rarely succeed completely.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~3.5–5.5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -13,6 +18,15 @@ are standard post-exploitation steps in sophisticated intrusions. A responder wh
 anti-forensics looks like will declare a disk clean when it isn't. A responder who does recognise
 the artifacts of evasion can often reconstruct what was hidden — because the *absence* of expected
 data is itself evidence, and because many anti-forensics techniques leave their own traces.
+
+This is not a theoretical threat: timestomping specifically (MITRE ATT&CK
+[T1070.006](https://attack.mitre.org/techniques/T1070/006/)) is documented in real intrusions by
+**Stuxnet**, **APT28**, **APT29**, **Lazarus Group**, and as a built-in feature of **Cobalt
+Strike's** `timestomp` command — the ATT&CK page lists dozens of such procedure examples. Stuxnet is
+the textbook case: it set its dropped driver files' timestamps to match legitimate Windows files so
+they would not stand out in a directory listing sorted by date. Each of those operations left the
+`$FILE_NAME` timestamps it didn't touch — which is exactly the muddy-boot-print discrepancy this
+module teaches you to find.
 
 ## Objective
 
@@ -63,7 +77,7 @@ volume." That absence goes in the report.
 - [SANS FOR508 — NTFS Timestamps White Paper (PDF)](https://www.sans.org/white-papers/36842/) — the definitive reference on how NTFS timestamps propagate (copy, move, open, execute) under normal conditions; the baseline you need to recognise abnormal SI/FN divergence. Free download.
 
 **Anti-forensics techniques and detection (~1 hr)**
-- [Timestomping — MITRE ATT&CK T1070.006](https://attack.mitre.org/techniques/T1070/006/) — the technique page: how it's done, which tools implement it, and the detection recommendations. Read the "Detection" section carefully — it maps directly to the lab exercise.
+- [Timestomping — MITRE ATT&CK T1070.006](https://attack.mitre.org/techniques/T1070/006/) — the technique page: how it's done, which tools implement it, and the detection recommendations. Read the "Detection" section carefully — it maps directly to the lab exercise; the "Procedure Examples" list (Stuxnet, APT28/29, Lazarus, Cobalt Strike) shows how broadly real adversaries use it.
 - [Harlan Carvey — "Windows Anti-Forensics"](https://windowsir.blogspot.com/) — Carvey's blog is the practitioner reference for Windows artifact analysis, including anti-forensics detection; search the blog for "timestomp" and "log clearing" entries.
 
 **File system carving and wiping (~0.5 hrs)**
@@ -76,6 +90,7 @@ volume." That absence goes in the report.
 - Deleted files: recoverable on HDD from slack/unallocated; TRIM on SSD may zero cells immediately
 - Log tampering: event 1102/104 signals legitimate clearing; sequence-number gaps signal raw deletion
 - Wiping artifacts: wiper binary in prefetch, $LogFile MFT update entries, shell history
+- Timestomping is real and widespread (ATT&CK T1070.006: Stuxnet, APT28/29, Lazarus, Cobalt Strike) — Stuxnet matched its drivers' timestamps to legitimate Windows files
 
 ## AI acceleration
 

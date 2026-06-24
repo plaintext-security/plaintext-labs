@@ -1,0 +1,13 @@
+# One-command lab environment for Forensics Module 16 — Reviewing AI Summaries.
+# `make up` builds it; `make shell` drops you in; `make demo` runs the claim-verifier.
+services:
+  lab:
+    build: .
+    image: plaintext/reviewing-ai-summaries
+    container_name: reviewing-ai-summaries-lab
+    working_dir: /lab
+    # Mount the module dir so the findings/policy you write are visible on the host.
+    # No network — the review is deterministic and offline (recorded fixtures only).
+    volumes:
+      - ./:/lab
+    command: sleep infinity

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pivoting demo — Meridian Financial network segmentation bypass.
+Pivoting demo — network segmentation bypass.
 
 Demonstrates:
   1. Network discovery — attacker maps reachable hosts and routes
@@ -63,7 +63,7 @@ def http_get(url: str, timeout: float = 5.0) -> tuple[int, str]:
 
 def demo() -> int:
     print("=" * 64)
-    print("Meridian Financial — Network Pivoting Demo")
+    print("Network Pivoting Demo")
     print("Technique: TCP relay through dual-homed pivot host")
     print("=" * 64)
 

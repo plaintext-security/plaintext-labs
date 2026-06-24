@@ -1,4 +1,4 @@
-# Lab 13 — Incident Response Process: Mapping the Meridian Incident to NIST SP 800-61
+# Lab 13 — Incident Response Process: Mapping the Incident to NIST SP 800-61
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
@@ -14,7 +14,7 @@ cd plaintext-labs/forensics/13-ir-process
 make demo    # prints the incident brief and the exercise prompts
 ```
 
-Open `data/meridian-incident-brief.md` — a two-page fictional incident scenario. The brief
+Open `data/incident-brief.md` — a two-page fictional incident scenario. The brief
 contains a partial timeline with intentional gaps, a list of response actions taken, and several
 decision points where the team's choices had downstream consequences. Your task is to analyse
 the response against NIST SP 800-61.
@@ -24,15 +24,15 @@ the response against NIST SP 800-61.
 
 ## Scenario
 
-Meridian Financial has completed the containment and recovery phase of the incident documented
+The affected organization has completed the containment and recovery phase of the incident documented
 across modules 08–12. You are the IR team lead, presenting a post-incident analysis to the
 security steering committee. The committee wants to know: what happened, what worked, what
-failed, and what Meridian should do differently. You have the incident brief and the findings
+failed, and what the organization should do differently. You have the incident brief and the findings
 from the previous modules.
 
 ## Do
 
-1. [ ] **Read `data/meridian-incident-brief.md` in full.** Identify the four NIST SP 800-61
+1. [ ] **Read `data/incident-brief.md` in full.** Identify the four NIST SP 800-61
    phases in the brief. For each phase, find at least one action the team took and at least
    one action that was missing or delayed.
 
@@ -42,7 +42,7 @@ from the previous modules.
    your recommendation.
 
 3. [ ] **Evaluate the containment decision.** The brief notes that the team waited 4 hours
-   after the initial SIEM alert before isolating WORKSTATION-04. Using the detection-to-action
+   after the initial SIEM alert before isolating `BEACHHEAD-WS01`. Using the detection-to-action
    timeline from the brief, argue either that this delay was justified or that it was too long.
    Use the NIST 800-61 "Containment" decision factors (section 3.2.4) as your framework.
 
@@ -57,7 +57,7 @@ from the previous modules.
      or accelerating detection of a similar incident in the future?
 
 6. [ ] **NIST phase scorecard.** Create a simple table: four phases, each scored Adequate /
-   Partial / Inadequate for the Meridian response, with one sentence of evidence for each score.
+   Partial / Inadequate for the response, with one sentence of evidence for each score.
 
 ## Success criteria — you're done when
 
@@ -83,7 +83,7 @@ Commit to your portfolio repo:
    (default: 2 hours) and labels it as a "response delay."
 4. Prints a summary: phases represented, total timeline duration, number of delays flagged.
 
-A sample timeline CSV matching the Meridian incident is in `data/meridian-timeline.csv`.
+A sample timeline CSV matching the incident is in `data/incident-timeline.csv`.
 Have a model draft the script; **test it against the sample CSV** and confirm the output
 makes sense before using it in a real post-incident review. Commit `ir_timeline_checker.py`.
 
@@ -114,7 +114,7 @@ Executive Summary in that report.
   Lessons Learned) and compare it to NIST 800-61. Where do they diverge? Write a half-page
   comparison and note which phase breakdown you'd argue for in a regulated financial services
   environment and why.
-- Draft a one-page IR runbook for the specific attack pattern in the Meridian incident (phishing
+- Draft a one-page IR runbook for the specific attack pattern in this incident (phishing
   → endpoint compromise → credential extraction → cloud pivot). Format it as a decision tree
   with detection → containment → eradication steps. This becomes a portfolio artifact demonstrating
   you can operationalise an incident into repeatable procedure.

@@ -1,4 +1,4 @@
-# Meridian Financial — dumped password hashes
+# Acme Corp — dumped password hashes (lab)
 # Format: username:hash_type:hash
 # These are hashes of passwords from the rockyou.txt wordlist
 # (for teaching purposes only — never commit real credentials)

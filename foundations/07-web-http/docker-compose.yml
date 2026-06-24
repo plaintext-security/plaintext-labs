@@ -3,9 +3,18 @@ services:
     build: app/
     image: plaintext/http-echo-server
 
+  # Real intentionally-vulnerable target (OWASP flagship). Its responses carry
+  # GENUINE missing security headers and real Set-Cookie flags — point your
+  # header-audit script here, not just at the toy echo server. Reachable from
+  # the lab container as http://juice-shop:3000 (and host http://localhost:3000).
+  juice-shop:
+    image: bkimminich/juice-shop:v17.1.1
+    ports:
+      - "3000:3000"
+
   lab:
     image: python:3.12-slim
-    depends_on: [echo-server]
+    depends_on: [echo-server, juice-shop]
     command: sleep infinity
     volumes:
       - .:/lab

@@ -1,0 +1,1 @@
+../../../../plaintext-labs/endpoint-hardening/13-fleet-migration/lab.md

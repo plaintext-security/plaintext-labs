@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ingest.py — Chunk and embed the Meridian knowledge base into ChromaDB.
+ingest.py — Chunk and embed the LastPass-2022 post-mortem knowledge base into ChromaDB.
 
 Usage:
     python3 scripts/ingest.py [--data-dir data/knowledge-base] [--chroma-host http://chromadb:8000]
@@ -12,7 +12,7 @@ import sys
 
 CHUNK_SIZE = 500       # characters per chunk
 CHUNK_OVERLAP = 80     # character overlap between consecutive chunks
-COLLECTION_NAME = "meridian-kb"
+COLLECTION_NAME = "soc-kb"
 
 
 def install_deps():

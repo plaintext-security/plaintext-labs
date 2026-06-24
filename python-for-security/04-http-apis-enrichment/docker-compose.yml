@@ -1,7 +1,9 @@
 services:
   threat-api:
     build: ./mock-api
-    image: plaintext/mock-threat-api:1.0
+    image: plaintext/real-threat-api:1.0
+    volumes:
+      - ./feeds:/feeds:ro
     ports:
       - "8080:8080"
 

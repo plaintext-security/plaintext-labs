@@ -10,41 +10,56 @@ This is a **reference lab** — its environment lives in the companion
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/forensics/04-windows-artifacts
-make up        # build the chainsaw + python-registry container
-make demo      # parse the bundled EVTX and registry hive; print key findings
-make shell     # drop in to explore interactively
-make down      # stop when done
+make up         # build the chainsaw + python-registry container
+make fetch-data # download the real EVTX-ATTACK-SAMPLES .evtx files into data/
+make demo       # parse the bundled EVTX and registry hive; print key findings
+make shell      # drop in to explore interactively
+make down       # stop when done
 ```
 
-The container includes `chainsaw` and `python-registry`. Seed files:
-- `data/security.evtx` — a small Windows Security event log with planted attack events
-- `data/ntuser.dat` — a small synthetic registry hive with persistence and MRU entries
+The container includes `chainsaw` and `python-registry`. The **primary artifact is real**: `make
+fetch-data` pulls Windows `.evtx` from the public
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) corpus (by sbousseaden,
+~200 real `.evtx` mapped to MITRE ATT&CK). See `PROVENANCE.md` for the exact files and URLs. The
+samples cover the lab's three questions:
+- a logon sample (EID 4624) — *who authenticated*
+- a process-creation sample (EID 4688) — *what ran*
+- `Defense Evasion/DE_1102_security_log_cleared.evtx` (real EID 1102 log-clear) — *how the attacker covered tracks*
 
-> Everything runs locally against bundled data. No authorization needed.
+Supporting seed files (offline fallback / registry, so `make demo` works before `fetch-data`):
+- `data/security-events.jsonl` — pre-shaped Security events for the offline demo
+- `data/ntuser-parsed.json` — a small synthetic registry hive with persistence and MRU entries
+
+> Everything runs locally against bundled or downloaded public data. No authorization needed.
 
 ## Scenario
-The Meridian IR team has triaged the suspect workstation and collected two key artifacts from the compromised finance host: a Security event log and the user's registry hive. The endpoint was running for approximately 12 hours after the anomalous outbound connection before the IR team arrived. Your task is to parse both artifacts and answer three questions: **Who authenticated?** **What ran?** **How did it persist?**
+This module is anchored to the **Lunar Spider** intrusion (The DFIR Report, 2025) — a single
+malicious JavaScript click that grew into a near-two-month domain compromise. The IR team has
+triaged the initially compromised workstation (`BEACHHEAD-WS01`) and collected two key artifacts:
+a Security event log and the user's registry hive. The endpoint was running for approximately 12
+hours after the anomalous outbound connection before the IR team arrived. Your task is to parse
+both artifacts and answer three questions: **Who authenticated?** **What ran?** **How did it persist?**
 
 > Only examine evidence you are authorised to handle. In a real case, these files would arrive with a verified hash from Module 01.
 
 ## Do
 
-1. [ ] **Hunt the event log with chainsaw.**
-   Run `chainsaw hunt` against `data/security.evtx` with Sigma rules:
+1. [ ] **Hunt the real event logs with chainsaw.**
+   After `make fetch-data`, run `chainsaw hunt` against the downloaded `data/*.evtx` with Sigma rules:
    ```bash
-   chainsaw hunt data/security.evtx --sigma /opt/sigma-rules/ --mapping /opt/chainsaw/mappings/sigma-event-logs-all.yml
+   chainsaw hunt data/ --sigma /opt/sigma-rules/ --mapping /opt/chainsaw/mappings/sigma-event-logs-all.yml
    ```
-   If Sigma rules are unavailable, use `chainsaw search` to find logon events:
+   If Sigma rules are unavailable, use `chainsaw search` to find logon and process events:
    ```bash
-   chainsaw search --event-id 4624 data/security.evtx
-   chainsaw search --event-id 4688 data/security.evtx
+   chainsaw search --event-id 4624 data/         # who authenticated
+   chainsaw search --event-id 4688 data/         # what ran
    ```
    Document: which accounts authenticated? Which processes were created? Note any 4688 events with suspicious parent-child relationships (e.g., `cmd.exe` spawned by `outlook.exe`).
 
 2. [ ] **Find the log clear event.**
-   Search for Event ID 1102 (Security log cleared):
+   Search the real `Defense Evasion/DE_1102_security_log_cleared.evtx` sample for Event ID 1102 (Security log cleared):
    ```bash
-   chainsaw search --event-id 1102 data/security.evtx
+   chainsaw search --event-id 1102 data/
    ```
    Was the log cleared? If so, who cleared it and when? What does this tell you about the attacker's post-exploitation behavior?
 
@@ -67,7 +82,7 @@ The Meridian IR team has triaged the suspect workstation and collected two key a
    # TypedPaths MRU (Explorer address bar)
    key = reg.open('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\TypedPaths')
    ```
-   What files were recently opened? Do the paths align with the exfiltration scenario from Module 01?
+   What files were recently opened? Do the paths (e.g. `\\FILESHARE-SRV01\finance\restricted`) align with the exfiltration scenario from Module 01?
 
 5. [ ] **Document your findings.**
    Write `windows-artifact-findings.md` with:
@@ -80,7 +95,7 @@ The Meridian IR team has triaged the suspect workstation and collected two key a
 ## Success criteria — you're done when
 - [ ] At least three Event ID 4624 or 4688 events are documented with fields extracted.
 - [ ] Persistence entries from the registry are identified and noted as suspicious or benign.
-- [ ] MRU entries are extracted and correlated with the Meridian scenario.
+- [ ] MRU entries are extracted and correlated with the intrusion scenario.
 - [ ] `windows-artifact-findings.md` includes a timeline narrative.
 - [ ] You can explain what Event ID 1102 means and why finding it is significant.
 

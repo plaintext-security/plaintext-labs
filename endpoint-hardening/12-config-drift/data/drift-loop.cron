@@ -1,0 +1,6 @@
+# Module 12 — schedule the drift loop so it runs while you sleep.
+# Install in-container with:  crontab /lab/data/drift-loop.cron
+# (A drift control you have to remember to run by hand is not a drift control.)
+# Runs the full detect -> diff -> alert -> reconcile beat daily at 02:30,
+# appending structured drift-event records to /lab/drift-events.log.
+30 2 * * * /lab/data/drift-loop.sh loop >> /lab/drift-events.log 2>&1

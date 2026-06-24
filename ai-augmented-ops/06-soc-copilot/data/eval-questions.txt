@@ -1,8 +1,0 @@
-Is 185.220.101.42 malicious?
-What containment steps should I follow for a ransomware event?
-Is there an open incident for host MERIDIAN-WKS-023?
-What is the SLA for patching a Critical CVSS score vulnerability?
-Summarise the credential phishing incident from 2024.
-What detection rule covers lateral movement via PsExec?
-How long does Meridian retain network flow logs?
-What is the escalation path for a P1 incident?

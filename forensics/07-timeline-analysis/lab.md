@@ -10,20 +10,34 @@ This is a **reference lab** — its environment lives in the companion
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/forensics/07-timeline-analysis
-make up        # build the plaso container
-make demo      # run log2timeline against the bundled artifacts, filter with psort, display
-make shell     # drop in to explore interactively
-make down      # stop when done
+make up         # build the plaso container
+make fetch-data # download a real .evtx sample (EVTX-ATTACK-SAMPLES) to timeline yourself
+make demo       # run log2timeline against the bundled artifacts, filter with psort, display
+make shell      # drop in to explore interactively
+make down       # stop when done
 ```
 
 The container includes `log2timeline.py` (plaso) and `psort.py`. Seed data:
 - `data/artifacts/` — mixed log files for plaso ingestion (EVTX-shaped JSON, web server log, browser history snippet, prefetch-shaped JSON)
-- `data/timeline.csv` — pre-computed timeline from the full Meridian scenario for analysis exercises
+- `data/timeline.csv` — pre-computed timeline (25 events) modelled on a **real intrusion** (see below) for analysis exercises
 
-> Everything runs locally against bundled data. No authorization needed.
+**Real reference case & artifact.** This lab is anchored to a named, public intrusion: **The DFIR
+Report — "From a Single Click: How Lunar Spider Enabled a Near Two-Month Intrusion"**
+(<https://thedfirreport.com/2025/09/29/from-a-single-click-how-lunar-spider-enabled-a-near-two-month-intrusion/>).
+The bundled `data/timeline.csv` is **modelled on that case's event sequence** with neutral naming
+(host `BEACHHEAD-WS01`, file share `FILESHARE-SRV01`, user `jsmith`). To build a timeline from a
+*real* Windows event log, `make fetch-data` pulls a `.evtx` from the public **EVTX-ATTACK-SAMPLES**
+corpus (<https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES>) into `data/artifacts/`, which plaso
+parses natively.
+
+> Everything runs locally against bundled or freely-fetched public data. No authorization needed.
 
 ## Scenario
-The Meridian IR investigation has now collected artifacts from five sources: Windows Security events, the finance user's browser history, web server logs from the internal file share, a prefetch artifact, and a memory capture timestamp. Your task is to **build a super-timeline** from these sources and answer the question the IR lead is asking: *"Give me a 60-second walk-through of what happened, in order, with a timestamp for every key action."*
+The investigation (modelled on the **Lunar Spider** intrusion above) has collected artifacts from
+five sources: Windows Security events, the user's browser history, web server logs from the internal
+file share, a prefetch artifact, and a memory capture timestamp. Your task is to **build a
+super-timeline** from these sources and answer the question the IR lead is asking: *"Give me a
+60-second walk-through of what happened, in order, with a timestamp for every key action."*
 
 > In a real investigation, timeline inputs would be forensically acquired and hash-verified artifacts from earlier phases of the investigation.
 
@@ -50,8 +64,8 @@ The Meridian IR investigation has now collected artifacts from five sources: Win
    ```
    How many events fall in the window? Print and review them in chronological order.
 
-4. [ ] **Analyze the pre-computed Meridian timeline.**
-   Open `data/timeline.csv` — a richer pre-computed timeline from the full scenario. Find and note (with timestamps) the following events:
+4. [ ] **Analyze the pre-computed timeline.**
+   Open `data/timeline.csv` — a richer pre-computed timeline (25 events) modelled on the Lunar Spider case. Find and note (with timestamps) the following events:
    - The first indication of attacker access (failed logon attempt)
    - The successful logon from the attacker's IP
    - The first browser search indicating intent
@@ -76,7 +90,7 @@ The Meridian IR investigation has now collected artifacts from five sources: Win
 ## Success criteria — you're done when
 - [ ] `log2timeline.py` ran and produced a plaso store without critical errors.
 - [ ] `psort.py` produced a filtered incident-window CSV.
-- [ ] At least 8 key events from the Meridian scenario are documented with timestamps in `timeline-narrative.md`.
+- [ ] At least 8 key events from the scenario are documented with timestamps in `timeline-narrative.md`.
 - [ ] At least one gap or anomaly is identified and its investigative significance explained.
 - [ ] The prose narrative traces every claim to a specific event source and timestamp.
 

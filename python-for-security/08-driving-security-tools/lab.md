@@ -2,32 +2,42 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+> **Lab environment: real-feed rewire — validation deferred.** The VT-shaped enrichment API now
+> serves real abuse.ch data (Feodo Tracker + URLhaus) from `feeds/db.json` instead of synthetic
+> detection ratios; the IOC list is real abuse.ch IOCs. (MISP stays local — it is the
+> system-of-record the analyst writes to.) `make up && make demo && make down` has **not** yet been
+> re-run on a clean Linux runner against this change; validate before marking the lab done.
 
 ## Setup
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/08-driving-security-tools
-make up        # starts mock MISP + mock VT API + student container
+make up        # starts local MISP + real-feed VT-shaped API + student container
 make demo      # runs the full workflow: create event → enrich → tag
+make refresh   # (optional, needs network) re-fetch the LIVE abuse.ch feeds into feeds/db.json
 make shell
 make down
 ```
 
-Three containers: a **mock MISP** instance (real MISP API shape, local) on port 8080; a **mock
-VirusTotal API** on port 8081; and the **student container** with `pymisp` and `httpx` installed.
+Three containers: a **local MISP** instance (real MISP API shape) on port 8080; a **VirusTotal-shaped
+enrichment API** on port 8081 backed by **real abuse.ch threat intel** (Feodo Tracker + URLhaus,
+served from `feeds/db.json` with `source`/`fetched_at` provenance); and the **student container**
+with `pymisp` and `httpx` installed.
 
-`data/iocs.txt` contains 10 IOCs (IPs and hashes) to process. The mock VT API returns realistic
-detection-ratio JSON for each.
+`data/iocs.txt` contains 10 real IOCs — malicious botnet C2 IPs from Feodo Tracker, URLhaus
+malware-sample ids, and two known-clean public resolvers. The VT-shaped API returns a real
+detection verdict for each (high malicious-engine count for the real C2 IPs, zero for the clean
+resolvers). Run `make refresh` to pull today's live IOCs.
 
-> **Authorization note:** These tools run against local mock services only. In production, MISP
-> and VT API calls affect real shared threat intelligence — always review before publishing events
-> to a community instance.
+> **Authorization note:** These tools run against a local MISP and a local copy of real feed data.
+> In production, MISP and VT API calls affect real shared threat intelligence — always review
+> before publishing events to a community instance.
 
 ## Scenario
-Meridian's CSIRT received a phishing report. The analyst extracted 10 IOCs from the email headers
-and attachments. Your task: create a MISP event for the incident, add all 10 IOCs as attributes
-with correct types, enrich each with the mock VT detection ratio, tag the event with TLP:AMBER,
-and mark it ready for review.
+Your CSIRT received a phishing report. The analyst extracted 10 IOCs from the email headers and
+attachments — here, real abuse.ch-sourced IOCs. Your task: create a MISP event for the incident,
+add all 10 IOCs as attributes with correct types, enrich each with the (real) VT-shaped detection
+ratio, tag the event with TLP:AMBER, and mark it ready for review.
 
 ## Do
 1. [ ] Browse the mock MISP UI at `http://localhost:8080` and skim the `pymisp` quickstart so you
@@ -36,11 +46,13 @@ and mark it ready for review.
 2. [ ] Write `workflow.py` using `pymisp`:
    - Connect to `http://misp:8080` with the API key from `os.environ["MISP_KEY"]` (pre-set
      in the container).
-   - Create a `MISPEvent` with `info="Meridian Phishing Q4"`, threat level 2, analysis 1.
-   - For each IOC in `data/iocs.txt`, detect the type (`ip-dst` for IPs, `sha256` for
-     64-char hex, `md5` for 32-char hex) and add it as an attribute.
-3. [ ] Enrich each attribute: query the mock VT API at `http://vt-api:8081/api/v3/ip/<ip>`
-   or `.../hash/<hash>` and attach the detection ratio as the attribute's `comment` field.
+   - Create a `MISPEvent` with `info="Phishing campaign — abuse.ch-sourced IOCs"`, threat level 2,
+     analysis 1.
+   - For each IOC in `data/iocs.txt`, detect the type (`ip-dst` for IPs, `other` for the numeric
+     URLhaus sample ids) and add it as an attribute.
+3. [ ] Enrich each attribute: query the VT-shaped API at `http://vt-api:8081/api/v3/ip_addresses/<ip>`
+   or `.../files/<sample_id>` and attach the (real) detection ratio as the attribute's `comment`
+   field.
 4. [ ] Tag the event: `tlp:amber` and `misp-galaxy:mitre-attack-pattern="Phishing T1566"`.
 5. [ ] Publish the event and print its MISP URL.
 6. [ ] Verify: query MISP for events with tag `tlp:amber` and confirm your event appears.

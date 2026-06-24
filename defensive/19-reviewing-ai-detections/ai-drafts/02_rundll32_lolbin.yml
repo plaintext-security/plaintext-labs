@@ -1,0 +1,23 @@
+title: Rundll32 LOLBin Execution (AI draft)
+id: a2222222-0000-4000-8000-000000000002
+status: experimental
+description: >
+  AI-drafted rule meant to catch suspicious rundll32 invocations (script: /
+  javascript: protocol handlers). PLANTED BUG: an over-broad condition. It keys
+  only on `Image|endswith: '\rundll32.exe'` with no constraint on the command
+  line, so it fires on EVERY rundll32 — including the benign Control Panel call
+  in the corpus. The result is a false positive on known-good telemetry; a clean
+  read of "detects rundll32" looks fine until you fire it.
+references:
+  - https://attack.mitre.org/techniques/T1218/011/
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\rundll32.exe'
+  condition: selection
+level: medium
+tags:
+  - attack.defense_evasion
+  - attack.t1218.011

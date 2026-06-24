@@ -1,9 +1,27 @@
 # Module 11 — Defending Identity lab.
-# Conceptual/design module — no container required.
-.PHONY: demo
+# Design module with a LIVE compliance check: `make compliance` runs tier-compliance-check.py
+# against the bundled Samba DC to prove whether the running domain obeys the tiered-admin design.
+.PHONY: demo up down reset shell compliance
+
+up:         ## Start the Samba DC + the compliance-check container
+	docker compose up -d --build
+
+down:       ## Stop and remove containers
+	docker compose down
+
+reset:      ## Tear down completely
+	docker compose down --rmi local --volumes --remove-orphans
+
+shell:      ## Open a shell in the lab container
+	docker compose exec lab bash
+
+compliance: ## Run the LIVE tiered-admin compliance check against the DC (ldap3; exit 1 on any fail)
+	docker compose run --rm lab sh -c '\
+	    until python3 -c "import socket; socket.create_connection((\"10.10.0.10\", 389), 3)" 2>/dev/null; do sleep 3; done; \
+	    python3 tier-compliance-check.py'
 
 demo:       ## Print the defense control matrix
-	@echo "=== Meridian Financial — Defense Control Summary ==="
+	@echo "=== Corp — Defense Control Summary ==="
 	@echo ""
 	@echo "PREVENTION CONTROLS (eliminate the attack surface)"
 	@echo "  T1558.003 Kerberoasting:        Migrate to gMSA (eliminates crackable hash)"
@@ -21,7 +39,7 @@ demo:       ## Print the defense control matrix
 	@echo "  T1550.002: Event 4624 LogonType=3 AuthPackage=NTLM unusual source"
 	@echo "  T1484.001: Event 4728 (member added to privileged group)"
 	@echo ""
-	@echo "TIERED ADMIN MODEL — Meridian"
+	@echo "TIERED ADMIN MODEL — Corp"
 	@echo "  Tier 0 (Control Plane): dc01, dc02 | Accounts: tallen, Administrator"
 	@echo "  Tier 1 (Management Plane): fs01, backup01, wsus01 | Accounts: sgarcia, pmartinez"
 	@echo "  Tier 2 (User Plane): WS-FIN-*, WS-HR-*, WS-IT-* | Accounts: Finance, HR users"

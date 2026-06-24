@@ -1,0 +1,33 @@
+{
+  "_comment": "DECLARED HARDENED BASELINE for Corp (the committed 'this is good' posture from Modules 10-12). This file IS the decision log: when you bless a sanctioned change you edit it here and commit with who/why. Thresholds are chosen by the operator and justified inline below. drift-detect.py diffs the OBSERVED posture (data/observed.json) against this and reports per-fact deltas, not a score.",
+
+  "_thresholds": {
+    "krbtgt_max_age_days": 180,
+    "_krbtgt_justification": "MITRE ATT&CK mitigation M1015 (Active Directory Configuration) recommends rotating krbtgt regularly; 180 days is the common operational ceiling. Stricter (e.g. 90) is defensible — set it to your tolerance. A krbtgt older than this is standing T1558.001 (Golden Ticket) risk and scores as drift."
+  },
+
+  "kerberoastable_accounts": [],
+  "_kerberoastable_comment": "Accounts with a servicePrincipalName that are user (not computer) objects and RC4-eligible. Hardened state: none (all service accounts migrated to gMSA / long random passwords per Module 10). A NEW SPN appearing here is drift -> T1558.003.",
+
+  "asrep_roastable_accounts": [],
+  "_asrep_comment": "Accounts with DONT_REQUIRE_PREAUTH (userAccountControl & 0x400000). Hardened: none.",
+
+  "unconstrained_delegation_principals": [],
+  "_unconstrained_comment": "Principals with TRUSTED_FOR_DELEGATION (uAC & 0x80000). Hardened: none (svc-backup converted to constrained delegation per Module 08 M-004).",
+
+  "dangerous_aces": [],
+  "_dangerous_aces_comment": "Non-default GenericWrite / WriteDacl / WriteOwner / AllExtendedRights ACEs on privileged objects. Each entry: {principal, right, on_object}. Hardened: none (the svc-deploy GenericWrite on IT-Admins that drove PATH-001 step 3 was removed per Module 08 M-002).",
+
+  "privileged_group_rosters": {
+    "_comment": "The EXACT expected membership of each privileged group. Any unexpected member is drift -> T1098 (Account Manipulation). Any expected member missing is also drift (someone removed a needed admin).",
+    "Domain Admins": ["tallen", "Administrator"],
+    "Enterprise Admins": ["Administrator"],
+    "Backup Operators": ["svc-backup"],
+    "IT-Admins": ["tallen", "sgarcia", "pmartinez"]
+  },
+
+  "krbtgt": {
+    "_comment": "Days since krbtgt password was last set (simulated clock). Hardened state: freshly rotated.",
+    "age_days": 12
+  }
+}

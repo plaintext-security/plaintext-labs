@@ -1,23 +1,23 @@
 [
   {
     "id": "INC-2025-0042",
-    "title": "Possible lateral movement from MERIDIAN-WKS-023",
+    "title": "Possible lateral movement from WKS-023",
     "severity": "HIGH",
     "status": "open",
     "created": "2025-05-20T13:30:00Z",
     "assigned_to": "soc-team",
-    "description": "Following ALT-2025-0002 (encoded PowerShell) and ALT-2025-0004 (PsExec installation), possible lateral movement campaign from MERIDIAN-WKS-023. Investigation in progress.",
+    "description": "Following ALT-2025-0002 (encoded PowerShell) and ALT-2025-0004 (PsExec installation), possible lateral movement campaign from WKS-023. Investigation in progress.",
     "related_alerts": ["ALT-2025-0002", "ALT-2025-0004"],
     "mitre_techniques": ["T1059.001", "T1021.002"]
   },
   {
     "id": "INC-2025-0043",
-    "title": "Suspected account compromise — bchen@meridian.fin",
+    "title": "Suspected account compromise — bchen@corp.example",
     "severity": "HIGH",
     "status": "open",
     "created": "2025-05-21T02:20:00Z",
     "assigned_to": "soc-team",
-    "description": "Impossible travel alert for bchen@meridian.fin. Account sessions revoked pending investigation. User contacted; claims to be in London only.",
+    "description": "Impossible travel alert for bchen@corp.example. Account sessions revoked pending investigation. User contacted; claims to be in London only.",
     "related_alerts": ["ALT-2025-0006"],
     "mitre_techniques": ["T1078", "T1539"]
   },

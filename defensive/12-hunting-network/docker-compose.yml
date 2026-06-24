@@ -1,4 +1,7 @@
 # One-command lab environment for Module 12 — Network Hunting.
+# The 'lab' service runs the beacon hunter over the bundled Zeek conn.log.
+# The 'zeek' service (profile) regenerates conn.log from a real PCAP via
+# `make fetch-data` — see data/PROVENANCE.md.
 services:
   lab:
     build: .
@@ -7,3 +10,11 @@ services:
     volumes:
       - ./:/lab
     command: sleep infinity
+  zeek:
+    image: zeek/zeek:6.2.1
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: zeek --version
+    profiles:
+      - zeek

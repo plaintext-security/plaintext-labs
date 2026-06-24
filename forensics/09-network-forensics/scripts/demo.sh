@@ -5,8 +5,9 @@ set -e
 PCAP=/data/capture.pcap
 
 echo "============================================================"
-echo "  Meridian Financial — Network Forensics Demo"
+echo "  Network Forensics Demo"
 echo "  Running Zeek over: $PCAP"
+echo "  (real Redline Stealer capture if fetched; synthetic fallback otherwise)"
 echo "============================================================"
 echo ""
 
@@ -76,11 +77,12 @@ fi
 echo ""
 
 echo "============================================================"
-echo "  KEY FINDINGS:"
-echo "  1. DNS query for update-cdn82.net resolved to 198.51.100.42"
-echo "  2. HTTP GET /update.bin to 198.51.100.42 returned"
-echo "     Content-Type: application/octet-stream"
-echo "  3. Connection to 198.51.100.42 is anomalous — outside expected"
-echo "     cloud provider ranges for Meridian Financial"
-echo "  Action: flag session for file extraction and hash check."
+echo "  WHAT TO LOOK FOR:"
+echo "  - REAL PCAP (Redline Stealer, 2024-10-23): correlate dns.log /"
+echo "    conn.log / http.log against the published IOCs file. Identify the"
+echo "    C2 host(s), the stealer's HTTP/POST exfil, and any transferred file"
+echo "    hash. Submit hashes to VirusTotal; do not replay the traffic."
+echo "  - SYNTHETIC fallback: DNS for workspacin.cloud -> 198.51.100.42, then"
+echo "    HTTP GET /update.bin returning application/octet-stream."
+echo "  Action: flag the C2 session for file extraction and hash check."
 echo "============================================================"

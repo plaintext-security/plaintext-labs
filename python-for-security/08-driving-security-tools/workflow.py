@@ -17,8 +17,7 @@ VT_URL   = os.environ.get("VT_URL", "http://localhost:8081")
 DATA_FILE = Path(__file__).parent / "data" / "iocs.txt"
 
 IP_RE   = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
-SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
-MD5_RE  = re.compile(r"^[0-9a-fA-F]{32}$")
+SAMPLE_RE = re.compile(r"^\d{4,}$")  # URLhaus sample id (numeric)
 
 SESSION = requests.Session()
 SESSION.headers.update({"Authorization": MISP_KEY, "Content-Type": "application/json", "Accept": "application/json"})
@@ -27,10 +26,8 @@ SESSION.headers.update({"Authorization": MISP_KEY, "Content-Type": "application/
 def detect_attr_type(ioc: str) -> str:
     if IP_RE.match(ioc):
         return "ip-dst"
-    if SHA256_RE.match(ioc):
-        return "sha256"
-    if MD5_RE.match(ioc):
-        return "md5"
+    if SAMPLE_RE.match(ioc):
+        return "other"  # URLhaus payload reference (real malware-distribution sample)
     return "other"
 
 
@@ -55,7 +52,7 @@ def main() -> None:
 
     # 1. Create event
     event_payload = {
-        "info": "Meridian Phishing Q4",
+        "info": "Phishing campaign — abuse.ch-sourced IOCs",
         "threat_level_id": "2",
         "analysis": "1",
         "distribution": "0",

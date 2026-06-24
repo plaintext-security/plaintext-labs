@@ -21,7 +21,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's security team has been asked to produce a monthly vulnerability report for
+The organization's security team has been asked to produce a monthly vulnerability report for
 the payroll server fleet. The operations team manages 15 Ubuntu 22.04 servers and wants to know:
 what CVEs exist, which to patch first, and what the patch command is. You will run the full
 triage cycle on one host and produce a prioritised remediation list.

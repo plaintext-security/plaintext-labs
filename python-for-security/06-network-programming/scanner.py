@@ -2,6 +2,11 @@
 """
 Reference port scanner and banner grabber.
 Uses standard library only.
+
+Target is the real Apache Solr 8.11.0 image (Vulhub Log4Shell / CVE-2021-44228
+reference). Solr's HTTP/Jetty admin listens on 8983 (not 80), so an HTTP probe
+is sent for 8983 as well; the banner grab is otherwise generic and works for any
+service that replies on connect.
 """
 
 import argparse
@@ -14,7 +19,7 @@ def grab_banner(host: str, port: int, timeout: float = 1.0) -> str:
     try:
         with socket.create_connection((host, port), timeout=timeout) as s:
             s.settimeout(timeout)
-            if port in (80, 8080):
+            if port in (80, 8080, 8983):
                 s.sendall(HTTP_PROBE)
             try:
                 banner = s.recv(1024).decode("utf-8", errors="replace").strip()

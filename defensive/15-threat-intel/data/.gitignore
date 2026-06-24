@@ -1,0 +1,5 @@
+# Ignore the live ThreatFox feed pulled by `make fetch-data`.
+threatfox_recent.csv
+
+# Re-include the committed format-true snapshot — curated seed, not a generated artifact.
+!threatfox_sample.csv

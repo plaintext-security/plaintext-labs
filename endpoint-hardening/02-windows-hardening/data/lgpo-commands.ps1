@@ -7,7 +7,7 @@
 #Requires -RunAsAdministrator
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== Meridian Financial — CIS Windows 11 Level 1 Hardening ===" -ForegroundColor Cyan
+Write-Host "=== CIS Windows 11 Level 1 Hardening ===" -ForegroundColor Cyan
 Write-Host "Applying controls. Each block reports its CIS ID." -ForegroundColor Yellow
 Write-Host ""
 

@@ -1,0 +1,19 @@
+{
+  "_comment": "Held-out file-metadata corpus for the $SI/$FN timestomp detector (Module 11). Each record carries the $STANDARD_INFORMATION and $FILE_NAME modified times (ISO-8601, UTC). The honest stand-in detector flags a file when |si_modified - fn_modified| exceeds a divergence threshold (seconds). The hard cases are benign files that LEGITIMATELY rewrite timestamps. Ground truth is in labels.json, NOT here — keep the answer key separate so the detector can't peek.",
+  "files": [
+    { "id": "ts-001", "path": "C:/Windows/Temp/svchost32.exe",        "si_modified": "2024-03-15T02:14:07Z", "fn_modified": "2021-06-01T13:22:55Z" },
+    { "id": "ts-002", "path": "C:/Users/jchen/Downloads/invoice.pdf",  "si_modified": "2024-03-10T09:01:12Z", "fn_modified": "2024-03-10T09:01:12Z" },
+    { "id": "ts-003", "path": "C:/Windows/System32/drivers/x.sys",     "si_modified": "2019-01-01T00:00:00Z", "fn_modified": "2024-03-15T02:15:40Z" },
+    { "id": "ts-004", "path": "C:/Program Files/Acme/acme.exe",        "si_modified": "2024-02-28T11:30:00Z", "fn_modified": "2024-02-28T11:30:00Z" },
+    { "id": "ts-005", "path": "C:/Temp/payload.dll",                   "si_modified": "2024-03-15T02:16:03Z", "fn_modified": "2016-09-12T08:00:00Z" },
+    { "id": "ts-006", "path": "C:/Users/jchen/notes.txt",              "si_modified": "2024-03-09T17:44:21Z", "fn_modified": "2024-03-09T17:44:21Z" },
+
+    { "id": "ts-007", "path": "C:/Program Files/Vendor/installer.exe", "si_modified": "2023-11-04T10:00:00Z", "fn_modified": "2024-03-14T16:02:11Z", "_note": "BENIGN NEAR-MISS: vendor installer rewrites its own SI mtime to the release date; SI/FN diverge but it is legitimate." },
+    { "id": "ts-008", "path": "C:/Backups/db.bak",                     "si_modified": "2022-08-19T03:00:00Z", "fn_modified": "2024-03-14T01:00:05Z", "_note": "BENIGN NEAR-MISS: backup script ran `touch -r` to preserve a source mtime; SI predates FN but it is legitimate." },
+    { "id": "ts-009", "path": "C:/Program Files/Editor/editor.exe",    "si_modified": "2024-01-20T12:00:00Z", "fn_modified": "2024-01-20T12:00:03Z", "_note": "BENIGN: 3-second installer write skew — under any sane threshold." },
+    { "id": "ts-010", "path": "C:/Users/jchen/AppData/cache.db",       "si_modified": "2024-03-11T22:10:44Z", "fn_modified": "2024-03-11T22:10:44Z" },
+
+    { "id": "ts-011", "path": "C:/Windows/Tasks/update.job",           "si_modified": "2024-03-15T02:17:30Z", "fn_modified": "2020-02-02T02:02:02Z" },
+    { "id": "ts-012", "path": "C:/inetpub/wwwroot/index.html",         "si_modified": "2024-03-02T08:15:00Z", "fn_modified": "2024-03-02T08:15:00Z" }
+  ]
+}

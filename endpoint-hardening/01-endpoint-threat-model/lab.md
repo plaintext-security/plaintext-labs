@@ -10,26 +10,34 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/endpoint-hardening/01-endpoint-threat-model
-make demo      # print the Meridian endpoint profile and scoring rubric
+make demo      # print the endpoint profile and scoring rubric
 ```
 
 No container is required. This is a design exercise. The `data/` directory contains
-`meridian-endpoint-profile.md` — a description of a representative Meridian Financial
-workstation and server — and a blank threat model template.
+`endpoint-profile.md` — a description of a representative financial-services
+workstation and server, modelled on real-breach starting points — and a blank threat
+model template.
 
 > No external targets. This lab produces documentation, not packets.
 
 ## Scenario
 
-Meridian Financial has asked you to threat model two representative hosts before they begin
-their CIS hardening project: a **finance analyst workstation** (Windows 11, Office 365, VPN
-client, access to the financial reporting share) and a **Linux application server**
+A mid-size financial-services firm has asked you to threat model two representative hosts before
+they begin their CIS hardening project: a **finance analyst workstation** (Windows 11, Office 365,
+VPN client, access to the financial reporting share) and a **Linux application server**
 (Ubuntu 22.04, running the internal payroll API, domain-joined via SSSD). Your threat model
 will drive the hardening priorities for the rest of Track 07.
 
+The profile is deliberately modelled on how real intrusions start. Its standout weakness — a VPN
+account with **no MFA**, including one left active for a former contractor — is the exact initial-access
+vector behind the **Colonial Pipeline ransomware attack (May 2021, DarkSide)**: one compromised
+password on an inactive, MFA-less VPN account took down the largest US fuel pipeline for six days.
+Anchor at least one of your attack paths to that real vector (ATT&CK **T1078.002 Valid Accounts:
+Domain Accounts**).
+
 ## Do
 
-1. [ ] `make demo` to read the Meridian endpoint profiles. Note the software installed, the
+1. [ ] `make demo` to read the endpoint profiles. Note the software installed, the
    network position, and the data each host holds.
 
 2. [ ] Open `data/threat-model-template.md` and complete the **Assets** section for both
@@ -38,7 +46,9 @@ will drive the hardening priorities for the rest of Track 07.
 
 3. [ ] Complete the **Attack paths** section. For each asset, trace at least one realistic
    attack path using STRIDE categories. Reference the relevant ATT&CK technique IDs (e.g.
-   T1003.001 for LSASS credential dumping). Keep paths grounded: phishing → code execution →
+   T1003.001 for LSASS credential dumping). **At least one path must be the real Colonial
+   Pipeline initial-access vector** — compromised VPN account, no MFA (T1078.002) — and trace it
+   through to a crown-jewel asset. Keep paths grounded: phishing → code execution →
    privilege escalation → credential access is a real playbook; "attacker gains physical
    access to the data centre" is not the right threat for a laptop.
 
@@ -54,12 +64,13 @@ will drive the hardening priorities for the rest of Track 07.
 
 - [ ] Both hosts have a completed threat model with assets, paths, and mitigations.
 - [ ] Every attack path references at least one ATT&CK technique ID.
+- [ ] One path is the real Colonial Pipeline vector (compromised VPN account, no MFA — T1078.002).
 - [ ] Every mitigation is mapped to a CIS control or ATT&CK mitigation.
 - [ ] You have a prioritised top-five list that you can defend with reasoning.
 
 ## Deliverables
 
-`threat-model.md` — your completed threat model for both Meridian hosts. Commit it to your
+`threat-model.md` — your completed threat model for both hosts. Commit it to your
 portfolio repo. This document drives the rest of the track.
 
 ## Automate & own it
@@ -74,9 +85,10 @@ counts are correct before committing.
 
 Ask an AI to generate a STRIDE analysis for the finance analyst workstation role. Use its
 output as a *starting point* — then challenge every threat: is this technique observed in the
-wild against this OS? Does Meridian's specific software stack change the exposure? Add the
+wild against this OS? Does this org's specific software stack change the exposure? Add the
 organisation-specific paths (payroll API access, VPN split-tunnel, domain join) that the
-model can't infer. The model drafts the shape; you fill in what it can't know.
+model can't infer — and verify the AI didn't miss the real Colonial Pipeline VPN/MFA vector that
+the profile hands you. The model drafts the shape; you fill in what it can't know.
 
 ## Connects forward
 

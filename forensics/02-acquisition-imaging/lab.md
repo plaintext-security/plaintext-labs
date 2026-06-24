@@ -16,13 +16,37 @@ make shell     # drop into the container to work interactively
 make down      # stop when done
 ```
 
-The container includes `dc3dd`. No large binary files are committed — the source device is
-created at runtime as a 1MB sparse file inside the container.
+The container includes `dc3dd`. No large binary files are committed — the synthetic source device is
+created at runtime as a 1MB sparse file inside the container (a tiny **fallback** so the worked
+`make demo` runs with no network).
 
-> Everything runs locally in Docker. No external targets, no authorization needed.
+**Real evidence (primary artifact).** Image a *real* device instead of the synthetic 1MB file:
+this lab is anchored to the **Digital Corpora M57-Patents** scenario — the first four weeks
+(Nov 13–Dec 12 2009) of the fictional-but-real-public M57 Patents company, an outsourced
+patent-search firm whose investigations include data exfiltration and illegal activity. It is a
+genuine, citable public forensic corpus (Garfinkel et al.; digitalcorpora.org). Run
+`make fetch-data` to download a real M57 USB image, then image *that* with `dc3dd` and verify it.
+
+- Dataset root: <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/>
+- USB images (smallest suitable for imaging practice): <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/usb/>
+
+See `PROVENANCE.md` in this directory.
+
+> Fetching and hash validation are **deferred to runner-validation** — `make fetch-data` is wired
+> but not yet executed here.
+
+> Everything runs locally in Docker against files you own (or the freely licensed M57 corpus). No
+> external targets, no authorization needed.
 
 ## Scenario
-A Meridian Financial endpoint was flagged by the EDR at 02:17 UTC — anomalous outbound connection from a finance workstation. Before the machine is powered down, the IR lead asks you to **capture a memory image** (conceptual walkthrough) and **demonstrate disk imaging on a test device** using `dc3dd` with inline hash verification. You need to prove the image matches the source before passing it to the disk analyst.
+An endpoint at the affected organization (`BEACHHEAD-WS01`) was flagged by the EDR at 02:17 UTC —
+anomalous outbound connection from a finance workstation. This mirrors the real **Lunar Spider**
+intrusion documented by The DFIR Report, where a single click on a malicious `Form_W-9.js` led to a
+near-two-month compromise and Rclone exfiltration (tool renamed `sihosts.exe`). Before the machine
+is powered down, the IR lead asks you to **capture a memory image** (conceptual walkthrough) and
+**demonstrate disk imaging on a test device** (the M57 USB image, or the synthetic fallback) using
+`dc3dd` with inline hash verification. You need to prove the image matches the source before passing
+it to the disk analyst.
 
 > Only acquire and image systems you own or have explicit written authorization to examine. Never run acquisition tools against production systems without written approval and a documented chain of custody.
 

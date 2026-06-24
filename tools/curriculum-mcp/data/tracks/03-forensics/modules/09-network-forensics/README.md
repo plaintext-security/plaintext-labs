@@ -1,9 +1,14 @@
 # Module 09 — Network Forensics
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — reconstruct an attack from a PCAP with Zeek and tshark — trace the suspicious DNS query, rebuild the HTTP session that followed, and extract the transferred payload — into artifact-cited findings. (Secondary: Tool-Build — turn the Zeek-log triage into a reusable script.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *reconstruct what moved across the wire — sessions, files, and intent — from the packet record.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -15,9 +20,18 @@ high-fidelity, attacker-unmodifiable (from the victim's perspective), and routin
 most organisations that run perimeter logging. A practitioner who can read that testimony fluently
 is the person in the room who can actually say what left.
 
+The closest thing the field has to a shared training ground is **[Malware-Traffic-Analysis.net](https://www.malware-traffic-analysis.net/)**,
+Brad Duncan's long-running archive of *real* malware-infection packet captures — each a genuine
+capture of an actual infection chain (a malspam download, the C2 callback, the follow-on payload),
+paired with a write-up of the answer. It is where most analysts cut their teeth on real C2 patterns,
+because the traffic is authentic: real domains, real beacon timing, real droppers pulled over HTTP.
+Working its exercises is how you calibrate "does this DNS query look like a DGA?" against ground
+truth instead of intuition — the exact judgment this module's Zeek-and-tshark workflow is meant to
+sharpen.
+
 ## Objective
 
-Analyse a simulated Meridian Financial PCAP using Zeek and tshark: identify a suspicious DNS
+Analyse a simulated intrusion PCAP using Zeek and tshark: identify a suspicious DNS
 query, reconstruct the HTTP session that followed, and extract the transferred payload, producing
 artifact-cited findings.
 
@@ -76,6 +90,7 @@ and it's what you'll reconstruct in post-incident forensics from the flow record
 - HTTP reconstruction: `files.log` for hashes, `--export-objects` for transferred bytes
 - TLS sessions: SNI and certificate data are still visible even without decryption keys
 - Beacon pattern detection: regular intervals in `conn.log` across time are detectable by timing even if content is encrypted
+- Calibrate against ground truth: Malware-Traffic-Analysis.net is the standard archive of real infection PCAPs with answer-key write-ups
 
 ## AI acceleration
 

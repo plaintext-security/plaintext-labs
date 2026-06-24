@@ -1,9 +1,14 @@
 # Module 01 — Reconnaissance & OSINT
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 1 · Concept Autopsy — pin down the passive/active boundary by mapping a target's external attack surface from public sources (CT logs, DNS, tech fingerprints) and writing the principle memo that draws the line. (Secondary: Tool-Build — the lab ships a reusable recon/attack-surface harness.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *the engagement starts here; the wider the attack surface you find, the more there is to test.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 You can't attack what you can't see. Recon — passive OSINT and active mapping — is where
@@ -30,7 +35,12 @@ believes, because nobody keeps an accurate inventory of what they expose — ass
 genuinely hard problem on the defensive side too. Recon is the hunt for the assets that fell off the
 inventory. Certificate Transparency is the cheat code here: every TLS certificate is logged publicly,
 so every subdomain anyone ever got a cert for is discoverable without sending the target a single
-packet.
+packet. And the assets that fall off the inventory are exactly where the critical bugs live: the
+forgotten edge device — a FortiGate, a Jira instance, a VPN appliance — running a version vulnerable
+to something like **FortiOS [CVE-2024-21762](https://nvd.nist.gov/vuln/detail/CVE-2024-21762)** (a
+CVSS 9.8 pre-auth RCE in the SSL-VPN, on CISA's Known Exploited Vulnerabilities list). Recon that
+finds and fingerprints that box is the whole engagement; everything after is just walking through the
+door it left open.
 
 The judgment that matters: **scope is what turns recon from a skill into a liability.** "Passive"
 does not automatically mean "in scope," and a model will happily synthesise a tidy attack-surface map
@@ -47,11 +57,12 @@ the value is the operator who confirms, contextualises, and stays in bounds.
 **Sources & tooling**
 - [OSINT Framework](https://osintframework.com/) — a navigable map of open-source intelligence sources.
 - [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) — read the **Information Gathering** chapter for web-specific recon.
+- [CISA Known Exploited Vulnerabilities catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) — the list of CVEs being actively exploited (e.g. FortiOS CVE-2024-21762); cross-reference what your recon fingerprints against it to find what's worth attacking.
 
 ## Key concepts
 - Passive vs active reconnaissance (and why the line matters legally)
 - Subdomain enumeration (DNS, certificate transparency)
-- Technology fingerprinting
+- Technology fingerprinting (and matching versions to known-exploited CVEs, e.g. FortiOS CVE-2024-21762)
 - OSINT: people, emails, leaked credentials, metadata
 - Defining and staying inside scope
 

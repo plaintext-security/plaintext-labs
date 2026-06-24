@@ -1,5 +1,5 @@
-# Meridian Financial — AI-generated Terraform
-# Prompt: "Create a Terraform config for Meridian's S3 data bucket and an EC2 instance with admin access"
+# AI-generated Terraform (for adversarial review)
+# Prompt: "Create a Terraform config for an S3 data bucket and an EC2 instance with admin access"
 # DO NOT apply to a real cloud account — contains deliberate security misconfigurations for lab exercise.
 
 terraform {
@@ -17,9 +17,9 @@ provider "aws" {
 
 # Misconfiguration 1: S3 bucket — public ACL, no encryption, no versioning, no access logging
 resource "aws_s3_bucket" "data_bucket" {
-  bucket = "meridian-data-pipeline"
+  bucket = "data-pipeline"
   tags = {
-    Name = "meridian-data-pipeline"
+    Name = "data-pipeline"
     # Missing: Environment tag (often required by policy)
   }
 }
@@ -32,14 +32,14 @@ resource "aws_s3_bucket_acl" "data_bucket_acl" {
 # This is the "access logging bucket" — it is a genuine false positive for access logging
 # on itself (a logging bucket logging to itself causes an infinite loop).
 resource "aws_s3_bucket" "access_logs" {
-  bucket = "meridian-access-logs"
+  bucket = "access-logs"
   # checkov:skip=CKV_AWS_18:This is the access logging bucket itself; logging it to itself causes infinite loop
-  tags = { Name = "meridian-access-logs" }
+  tags = { Name = "access-logs" }
 }
 
 # Misconfiguration 2: IAM role with wildcard actions (over-broad admin)
 resource "aws_iam_role" "ec2_admin_role" {
-  name = "meridian-ec2-admin"
+  name = "ec2-admin"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -81,13 +81,13 @@ resource "aws_instance" "app_server" {
   }
 
   tags = {
-    Name = "meridian-app-server"
+    Name = "app-server"
   }
 }
 
 # Misconfiguration 5: Security group — SSH open to internet
 resource "aws_security_group" "app_sg" {
-  name        = "meridian-app-sg"
+  name        = "app-sg"
   description = "App server security group"
 
   ingress {

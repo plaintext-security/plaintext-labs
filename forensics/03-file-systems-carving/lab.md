@@ -17,12 +17,36 @@ make down      # stop when done
 ```
 
 The container includes `sleuthkit` and `foremost`. `data/disk.img` is a committed 2MB FAT32
-image with a planted "deleted" file — small enough to commit (< 2MB).
+image with a planted "deleted" file — small enough to commit (< 2MB). It is a tiny **fallback** so
+the worked `make demo` runs with no network.
 
-> Everything runs locally against a bundled image you own. No external targets, no authorization needed.
+**Real evidence (primary artifact).** Carve a *real* drive instead of the synthetic image: this lab
+is anchored to the **Digital Corpora M57-Patents** scenario — the first four weeks (Nov 13–Dec 12
+2009) of the fictional-but-real-public M57 Patents company, an outsourced patent-search firm whose
+investigations include data exfiltration and illegal activity. It is a genuine, citable public
+forensic corpus (Garfinkel et al.; digitalcorpora.org). Run `make fetch-data` to download a real M57
+USB image, then run `fls` / `icat` / `foremost` against *that*.
+
+- Dataset root: <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/>
+- USB images (smallest suitable for carving): <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/usb/>
+- Redacted full drive images (larger, richer carving): <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/drives-redacted/>
+
+See `PROVENANCE.md` in this directory.
+
+> Fetching and hash validation are **deferred to runner-validation** — `make fetch-data` is wired
+> but not yet executed here.
+
+> Everything runs locally against a bundled image you own (or the freely licensed M57 corpus). No
+> external targets, no authorization needed.
 
 ## Scenario
-The Meridian IR team recovered a USB drive from the suspect's workstation. Initial triage shows a FAT32 filesystem with what appears to be normal files — but the analyst suspects important files were deleted before the drive was seized. Your task is to parse the filesystem metadata, enumerate deleted entries, and recover whatever was removed. The drive image is `data/disk.img`.
+The affected organization's IR team recovered a USB drive from the compromised workstation
+(`BEACHHEAD-WS01`). This mirrors the real **Lunar Spider** intrusion documented by The DFIR Report,
+where a single click on a malicious `Form_W-9.js` led to a near-two-month compromise and Rclone
+exfiltration. Initial triage shows a FAT32 filesystem with what appears to be normal files — but the
+analyst suspects important files were deleted before the drive was seized. Your task is to parse the
+filesystem metadata, enumerate deleted entries, and recover whatever was removed. The drive image is
+`data/disk.img` (or the M57 image you fetched).
 
 > Only examine evidence you are authorised to handle. In a real case, this image would carry a hash-verified chain of custody from Module 01.
 
@@ -46,7 +70,8 @@ The Meridian IR team recovered a USB drive from the suspect's workstation. Initi
    ```bash
    icat data/disk.img <inode> > /tmp/recovered-file
    ```
-   What is in the recovered file? Does the content make sense as evidence in the Meridian scenario?
+   What is in the recovered file? Does the content make sense as evidence in the scenario (data
+   exfiltration, mirroring the Lunar Spider / M57 exfil activity)?
 
 5. [ ] **Carve unallocated space with foremost.**
    Run `foremost` against the disk image to find any additional content in unallocated space:

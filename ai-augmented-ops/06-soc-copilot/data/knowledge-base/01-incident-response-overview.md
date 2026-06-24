@@ -1,32 +1,34 @@
-# Meridian Financial — Incident Response Overview
-**Document type:** Runbook | **Owner:** Security Operations | **Last reviewed:** 2025-01-15
+# LastPass 2022 Breach — Incident Overview and Timeline
+**Document type:** Public post-mortem summary | **Source:** LastPass disclosures | **Compiled:** 2025
 
 ## Purpose
-This document defines Meridian Financial's incident response lifecycle and the responsibilities
-of each team during a declared security incident.
+This knowledge base is built from LastPass's *public* disclosures about the 2022 breach. It is a
+factual study corpus for a retrieval system — every claim here traces to LastPass's own statements
+or its incident write-ups. Primary source: https://blog.lastpass.com/posts/notice-of-recent-security-incident
 
-## Incident severity levels
+## What happened, in one paragraph
+The 2022 LastPass breach was a **two-stage** intrusion. In the first stage (August 2022) an attacker
+compromised a single software developer's account and accessed the LastPass **development**
+environment, stealing source code and proprietary technical information — no customer data or vaults
+were reached, because the dev environment was separated from production. In the second stage
+(roughly August–December 2022) the attacker used information stolen in stage one to target a
+**different** employee, ultimately reaching cloud-based **backup** storage and exfiltrating customer
+account information and **encrypted customer vault backups**.
 
-| Level | Definition | Response SLA |
-|-------|-----------|-------------|
-| P1 — Critical | Active data exfiltration, ransomware, confirmed account takeover of privileged account | 15 minutes to first responder on call |
-| P2 — High | Suspected compromise, C2 communication confirmed, lateral movement observed | 1 hour |
-| P3 — Medium | Malware detected (not active), phishing landing confirmed, policy violation | 4 hours |
-| P4 — Low | Suspicious activity under investigation, no confirmed compromise | Next business day |
+## High-level timeline
+| Date | Event |
+|------|-------|
+| August 2022 | Stage 1: developer account compromised; attacker accesses the LastPass development environment; source code and technical information stolen. |
+| August 25, 2022 | LastPass publicly discloses the first incident. |
+| Aug–Dec 2022 | Stage 2: attacker uses stolen information to target a second employee (a DevOps engineer) and reach cloud backup storage. |
+| November 30, 2022 | LastPass discloses that an unauthorized party accessed elements of customer information using data taken in the first incident. |
+| December 22, 2022 | LastPass discloses the full scope: customer account data and encrypted vault backups were copied. |
 
-## Lifecycle phases
-1. **Detect** — alert fires in SIEM or EDR; SOC analyst reviews.
-2. **Triage** — analyst confirms true positive, assigns severity, opens an IR ticket.
-3. **Contain** — isolate affected systems; revoke credentials if indicated.
-4. **Investigate** — root cause analysis; determine blast radius.
-5. **Eradicate** — remove malware, close attack path, reset credentials.
-6. **Recover** — restore systems from clean backups; validate integrity.
-7. **Post-incident review** — complete within 5 business days; update runbooks.
+## Why this is a useful corpus
+The two stages are easy to confuse, and several facts are subtle (what was encrypted vs. in
+cleartext; which environment each stage touched). Those distinctions are exactly what a retrieval +
+generation pipeline must get right — a confident answer that conflates the two stages is the silent
+failure this lab is about.
 
-## Escalation path
-- **P1/P2**: On-call SOC analyst → SOC Manager → CISO (within 15 min for P1).
-- Legal and Communications must be notified for any incident involving customer PII.
-- Ransomware events require CISO and General Counsel approval before any communication with threat actors.
-
-## Key contacts
-Refer to the internal on-call roster in ServiceNow. Do not store personal contact details in this document.
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

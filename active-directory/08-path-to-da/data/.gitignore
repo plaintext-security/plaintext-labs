@@ -1,0 +1,13 @@
+# Live BloodHound collection output from `make collect` — generated, never committed.
+# The curated reference dataset (bloodhound-attack-paths.json) IS committed.
+*_bloodhound.zip
+*.zip
+*_users.json
+*_groups.json
+*_computers.json
+*_domains.json
+*_gpos.json
+*_ous.json
+*_containers.json
+*_cas.json
+*_certtemplates.json

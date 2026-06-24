@@ -16,10 +16,11 @@ make down      # remove the image
 ```
 
 `data/seed-repo/` is reconstituted from a committed bundle (`make seed`): a small git repository
-with three files — one clean, one with a hardcoded AWS-key-shaped string (a revoked/test-format
-key, never a live credential), and one with a high-entropy string that looks like a secret. No
-pre-built image is provided — **the point of the lab is that you build the tool image yourself**:
-the starter `Dockerfile` is a placeholder that fails `make demo` until you write the real one.
+seeded with the exact leaked-secret *classes* that show up in real public-repo leaks — a hardcoded
+Stripe key (`sk_live_…`, Stripe's well-known documentation test value, never a live credential), a
+high-entropy hardcoded internal service token, and one clean file as a control. No pre-built image is
+provided — **the point of the lab is that you build the tool image yourself**: the starter `Dockerfile`
+is a placeholder that fails `make demo` until you write the real one.
 
 > **Authorization note:** `trufflehog` scans git history for secrets. Run it only against
 > repositories you own or have explicit written authorization to scan.
@@ -110,8 +111,11 @@ line → you own the tool.**
 Ask a model to write the Dockerfile for `trufflehog`, then run it through the tool checklist: is
 the base image pinned? the tool version pinned? a non-root user? is the binary checksum verified
 before install, or does it `curl | sh`? The checksum step is the model's most common omission —
-and the supply-chain attack it prevents (a tampered binary swapped at the CDN) is real. Diff the
-first draft against your hardened version; that diff is the module's lesson made concrete.
+and the supply-chain attack it prevents is not hypothetical: between 2017 and 2018 the **docker123321**
+account published 17 backdoored Docker Hub images (cryptominers + reverse shells) that drew roughly
+5 million pulls before removal — the reason you pin and build rather than trust a legit-looking name or
+an unverified download. Diff the first draft against your hardened version; that diff is the module's
+lesson made concrete.
 
 ## Connects forward
 

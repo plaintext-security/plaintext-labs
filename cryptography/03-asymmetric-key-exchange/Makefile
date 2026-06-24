@@ -33,7 +33,7 @@ demo:
 	@echo ""
 	@echo "--- Sign and verify with ECDSA ---"
 	docker compose exec lab bash -c '\
-		echo "Meridian payroll batch authorisation" > /tmp/msg.txt && \
+		echo "Corp payroll batch authorisation" > /tmp/msg.txt && \
 		openssl pkeyutl -sign -inkey /tmp/ec-priv.pem -in /tmp/msg.txt \
 		  -out /tmp/sig.bin 2>/dev/null && \
 		openssl pkeyutl -verify -pubin -inkey /tmp/ec-pub.pem \

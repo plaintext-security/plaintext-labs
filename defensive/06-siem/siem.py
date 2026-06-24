@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Financial — minimal SIEM harness.
+"""Minimal SIEM harness for the SOC.
 
 Demonstrates the four core SIEM operations:
   1. Ingest & normalize multi-source events into a common schema.
@@ -236,7 +236,7 @@ def demo(conn: sqlite3.Connection) -> int:
     ).fetchall()
 
     print("=" * 64)
-    print("Meridian Financial SIEM — Correlation Run")
+    print("SOC SIEM — Correlation Run")
     print("=" * 64)
     print(f"\n[Ingested {total} normalized events]")
     for row in sources:
@@ -277,10 +277,10 @@ def demo(conn: sqlite3.Connection) -> int:
 
     print(f"""
 [Analyst recommendation]
-  Priority 1 — Investigate WS-JSMITH immediately: Office macro →
+  Priority 1 — Investigate WIN10-01 immediately: Office macro →
     encoded PS → certutil download → Run key persistence + IDS hit.
   Priority 2 — Contain 45.155.204.42: brute force succeeded as
-    backup-svc; rotate credentials, review access logs.
+    svc-backup; rotate credentials, review access logs.
   Cross-reference: 185.220.101.47 appears in both the Windows exfil
     (8.6 MB) and the IDS PE-download alert — same C2 as module 12.
 """)

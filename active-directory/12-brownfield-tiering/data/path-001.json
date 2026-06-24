@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "description": "PATH-001 (from Module 08), annotated for TIERING. Each hop records which tiering control would KILL it and the precondition that control removes. The migration's job is to make `path_open` evaluate to false for every hop, in waves, without breaking the legitimate logons in baseline.json.",
+    "domain": "CORP.LOCAL",
+    "id": "PATH-001",
+    "name": "Low-priv Finance user to Domain Admin",
+    "goal": "DOMAIN ADMINS@CORP.LOCAL"
+  },
+  "hops": [
+    {
+      "step": 1,
+      "from": "JSMITH@CORP.LOCAL",
+      "to": "SVC-MSSQL@CORP.LOCAL",
+      "edge": "Kerberoast",
+      "attck_technique": "T1558.003",
+      "precondition": {
+        "type": "kerberoastable",
+        "principal": "svc-mssql",
+        "comment": "svc-mssql has an SPN and an RC4-crackable password. Out of scope for tiering per se (Module 10 hardening fixes this) — present so the path is realistic. Tiering does NOT close this hop."
+      },
+      "closed_by_tiering": false
+    },
+    {
+      "step": 2,
+      "from": "SVC-MSSQL@CORP.LOCAL",
+      "to": "FIN-WS01.CORP.LOCAL",
+      "edge": "CredentialReuse / AdminTo",
+      "attck_technique": "T1078.002",
+      "precondition": {
+        "type": "host_access",
+        "host": "FIN-WS01.CORP.LOCAL",
+        "comment": "Attacker now has a foothold on the Finance pilot workstation."
+      },
+      "closed_by_tiering": false
+    },
+    {
+      "step": 3,
+      "from": "FIN-WS01.CORP.LOCAL",
+      "to": "TALLEN@CORP.LOCAL",
+      "edge": "HasSession / HarvestCredential",
+      "attck_technique": "T1003.001",
+      "precondition": {
+        "type": "tier0_logon_on_tier2",
+        "account": "tallen",
+        "host": "FIN-WS01.CORP.LOCAL",
+        "right": "interactive",
+        "comment": "THE BROWNFIELD HOP. Because tallen (a Domain Admin / Tier 0) logs on INTERACTIVELY to FIN-WS01 (Tier 2), a Domain-Admin credential is sitting in LSASS on a workstation the attacker controls. secretsdump/lsass-dump yields tallen's material. CLOSE THIS by denying tallen interactive+RDP logon on the Tier 2 host (SeDenyInteractiveLogonRight / SeDenyRemoteInteractiveLogonRight) and/or putting tallen in Protected Users."
+      },
+      "closed_by_tiering": true,
+      "closes_when": {
+        "all_of": [
+          {"account": "tallen", "denied_right_on_host": "interactive", "host": "FIN-WS01.CORP.LOCAL"},
+          {"account": "tallen", "denied_right_on_host": "remote_interactive", "host": "FIN-WS01.CORP.LOCAL"}
+        ],
+        "comment": "Either deny BOTH logon rights on the host, OR add tallen to Protected Users (which makes the cached credential non-harvestable). The checker treats Protected-Users membership as also closing this hop."
+      }
+    },
+    {
+      "step": 4,
+      "from": "TALLEN@CORP.LOCAL",
+      "to": "DC01.CORP.LOCAL",
+      "edge": "AdminTo / DCSync",
+      "attck_technique": "T1003.006",
+      "precondition": {
+        "type": "credential_available",
+        "account": "tallen",
+        "comment": "With tallen's Domain-Admin credential the attacker DCSyncs DC01 and owns the domain. This hop is only reachable if step 3 succeeded — so killing step 3 kills the path end to end."
+      },
+      "closed_by_tiering": false,
+      "reachable_only_if": "step 3 open"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ in `docker-compose.yml`) to map a calling workload back to its container labels.
 
 ## Scenario
 
-Meridian Financial segmented its Kubernetes traffic in Module 07 — frontend can't reach the database
+Corp segmented its Kubernetes traffic in Module 07 — frontend can't reach the database
 tier. But a pen-test raised the next question: *when the backend calls the ledger, how does the ledger
 know it's really the backend and not something that landed in the allowed segment?* Today: a shared API
 token in an env var. You'll replace it with **workload identity** — every service gets a short-lived,
@@ -42,8 +42,8 @@ can't connect. This is the application/workload pillar the proxy and segmentatio
 ### Part 1: Issue identities to workloads
 1. [ ] **Bring it up and read what got registered.** `make up`, then
    `docker compose exec spire-server spire-server entry show -socketPath /tmp/spire-server/private/api.sock`.
-   Note the two entries: each maps a **selector** (`docker:label:com.meridian.svc:<name>`) to a
-   **SPIFFE ID** (`spiffe://meridian.local/<name>`). The selector is what the agent can observe about a
+   Note the two entries: each maps a **selector** (`docker:label:com.corp.svc:<name>`) to a
+   **SPIFFE ID** (`spiffe://corp.local/<name>`). The selector is what the agent can observe about a
    workload but the workload can't forge from outside. Where are these created? Read `data/setup.sh`.
 
 2. [ ] **Watch a workload fetch its own identity.** `make shell` (drops you into the `client`), then:
@@ -58,7 +58,7 @@ can't connect. This is the application/workload pillar the proxy and segmentatio
 3. [ ] **Make the mTLS call.** `make mtls` (or run `/opt/spire/workload/connect.sh` from the client
    shell). The client fetches its SVID and connects to the backend; **both** ends present an SVID and
    validate the peer against the same trust bundle. Confirm `Verify return code: 0` and that the
-   backend's identity is `spiffe://meridian.local/backend`. Read `workload/backend.sh` — which
+   backend's identity is `spiffe://corp.local/backend`. Read `workload/backend.sh` — which
    `openssl s_server` flag is what *requires* the client to present a valid cert?
 
 4. [ ] **Confirm there's no shared secret and no baked-in key.** Inspect the image / the workload
@@ -68,7 +68,7 @@ can't connect. This is the application/workload pillar the proxy and segmentatio
 
 ### Part 3: Prove the boundary — no identity, no access
 5. [ ] **Run the unregistered workload.** `make deny`. The `rogue` service carries a label
-   (`com.meridian.svc=rogue`) that matches **no registration entry**, so the agent's Workload API
+   (`com.corp.svc=rogue`) that matches **no registration entry**, so the agent's Workload API
    refuses it an SVID. Confirm it gets *no identity*. Then try to make it do mTLS to the backend (it
    has no cert to present) — the handshake cannot complete. This is the core claim: **identity, not
    network position, grants access** — `rogue` is on the same network as `client` and still gets nothing.
@@ -97,7 +97,7 @@ analysis from step 6. Commit it. **Never commit SVIDs, private keys, or the join
 **Required.** Replace the `openssl` plumbing with a real SPIFFE-aware mTLS client: write a small Go
 program using [`go-spiffe/v2`](https://github.com/spiffe/go-spiffe) (or Python with `pyspiffe`) that
 connects to the backend off the Workload API, **authorizes the peer by SPIFFE ID** (accept only
-`spiffe://meridian.local/backend`), and fails closed on any other identity. Have a model draft the
+`spiffe://corp.local/backend`), and fails closed on any other identity. Have a model draft the
 `workloadapi` + `tlsconfig` calls; **you verify** it rejects a peer whose SPIFFE ID doesn't match —
 authenticating the channel is worthless if you don't check *who* is on the other end. Commit it as
 `mtls-client/`.
@@ -124,7 +124,7 @@ issuance + mTLS handshake events are exactly the identity-rich telemetry **Modul
 
 ## Stretch
 - Add a third workload (`ledger`) and write a go-spiffe server that authorizes *only*
-  `spiffe://meridian.local/backend` to call it — then prove `client` is rejected even though it holds a
+  `spiffe://corp.local/backend` to call it — then prove `client` is rejected even though it holds a
   valid SVID (authentication succeeds, authorization denies). That's the SPIFFE→OPA handoff in miniature.
 - Shorten `default_x509_svid_ttl` to `1m` and watch the agent rotate the SVID under a live mTLS
   connection; confirm long-lived connections survive rotation while new ones get the fresh cert.

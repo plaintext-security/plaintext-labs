@@ -11,7 +11,7 @@
       "Condition": {
         "StringEquals": {
           "oidc-provider:8080:aud": "sts.amazonaws.com",
-          "oidc-provider:8080:sub": "repo:meridian/api:ref:refs/heads/main"
+          "oidc-provider:8080:sub": "repo:acme-corp/api:ref:refs/heads/main"
         }
       }
     }

@@ -3,7 +3,7 @@ id: 9f3a2b1e-7c4d-4e5f-8a9b-0c1d2e3f4a5b
 status: experimental
 description: >
   Detects a successful access_allowed event for a user from a country code that
-  is outside Meridian's expected operating countries (US, CA, GB, DE, AU).
+  is outside Corp's expected operating countries (US, CA, GB, DE, AU).
   In a Zero Trust environment every access event is logged; unexpected geography
   on an authenticated session is a high-fidelity signal for credential misuse or
   account compromise.

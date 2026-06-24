@@ -11,19 +11,30 @@ cd plaintext-labs/defensive/02-endpoint-telemetry
 make up
 ```
 
-Run `make demo` to analyze a bundled `data/sysmon_events.json` — 10 events
-spanning a full spear-phishing attack chain (WINWORD.EXE → cmd → PowerShell
-encoded download → rundll32 LOLBin → LSASS dump → Run key persistence → C2
-callback). The script reconstructs the process tree, decodes the base64
-payload, and flags each technique by ATT&CK ID.
+Run `make demo` to analyze the bundled seed `data/sysmon_events.json` — a small
+10-event chain (WINWORD.EXE → cmd → PowerShell encoded download → rundll32 LOLBin
+→ LSASS dump → Run key persistence → C2 callback) kept so the demo runs offline.
+The script reconstructs the process tree, decodes the base64 payload, and flags
+each technique by ATT&CK ID. This seed is a deterministic teaching sample — not
+real telemetry.
 
-For real Sysmon telemetry, deploy [Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+**Analyze a real capture.** Run `make fetch-data` to pull a genuine Sysmon
+`.evtx` from [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
+(GPL-3.0) — specifically `Execution/exec_sysmon_1_lolbin_rundll32_advpack_RegisterOCX.evtx`,
+a real EventID 1 rundll32 LOLBin execution. It converts the EVTX to JSON with
+[python-evtx](https://github.com/williballenthin/python-evtx) (via `evtx_to_json.py`)
+and writes `data/real_sysmon_events.json`; then run
+`python3 analyze.py data/real_sysmon_events.json` to read genuine endpoint
+telemetry. Point `evtx_to_json.py` at any other sample (`Persistence/`,
+`CredentialAccess/`, …) to extend it. Source, exact sample path, and license are
+in `data/PROVENANCE.md`.
+
+To capture your *own* telemetry instead, deploy
+[Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
 with the [SwiftOnSecurity config](https://github.com/SwiftOnSecurity/sysmon-config)
-on your own Windows VM, export events with
+on a Windows VM, export with
 `Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' | ConvertTo-Json | Out-File events.json`,
-then `python3 analyze.py events.json`. For public sample EVTX files, see
-[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) +
-[python-evtx](https://github.com/williballenthin/python-evtx) to export to JSON.
+then `python3 analyze.py events.json`.
 
 ## Scenario
 Find an attacker's footprints in real endpoint telemetry — without needing to have run the attack

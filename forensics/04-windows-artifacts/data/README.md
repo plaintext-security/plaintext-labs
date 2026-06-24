@@ -1,19 +1,25 @@
 # Module 04 — Data Directory
 
-## security-events.jsonl
-Pre-shaped Windows Security event records in JSON format. These represent events from
-`MERIDIAN-FIN-WS01.meridian.internal` during the incident window (2024-03-15 02:09–02:31 UTC).
+## Real EVTX (primary artifact)
+The primary artifact for this lab is **real** Windows `.evtx` from the public
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) corpus
+(by sbousseaden) — ~200 `.evtx` files mapped to MITRE ATT&CK. Run `make fetch-data` to
+download them into this directory; see `PROVENANCE.md` for exact filenames, raw URLs, and
+SHA-256 placeholders. The samples wired in cover the lab's three questions — who authenticated
+(logon / 4624), what ran (process creation / 4688), and how the attacker covered tracks
+(`Defense Evasion/DE_1102_security_log_cleared.evtx`, a real EID 1102 log-clear).
 
-The demo script parses this file directly. In a real investigation, you would use:
-- `chainsaw hunt /path/to/Security.evtx --sigma ...` against a real EVTX file
-- Real EVTX samples: https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES
+Run `chainsaw hunt` / `chainsaw search` (or hayabusa) against the fetched `.evtx` files directly.
 
-To use real EVTX files with this lab: place them in this directory and update the
-docker-compose.yml volume mount or `make demo` command to point at your EVTX.
+## security-events.jsonl (synthetic fallback)
+Pre-shaped Windows Security event records in JSON format, retained as an offline fallback so
+`make demo` works before `fetch-data` has been run. These represent events from
+`BEACHHEAD-WS01.corp.internal` during the incident window (2024-03-15 02:09–02:31 UTC), modelled
+on the Lunar Spider intrusion (see the track ANCHOR). The real `.evtx` above is the primary artifact.
 
 ## ntuser-parsed.json
 Pre-parsed synthetic registry hive representing `NTUSER.DAT` from the compromised
-finance account. In a real investigation, use `python-registry` against a real hive:
+`svc-backup` account. In a real investigation, use `python-registry` against a real hive:
 ```python
 from Registry import Registry
 reg = Registry.Registry('NTUSER.DAT')

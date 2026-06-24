@@ -21,7 +21,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's security team has been asked to audit the payroll application repository
+Corp's security team has been asked to audit the payroll application repository
 before a cloud migration. The repository has been in use for three years. Your job: scan the
 full commit history for secrets, triage each finding, document which are live credentials
 (if any), and write a remediation plan.
@@ -74,7 +74,7 @@ the correct exit code when zero findings are present.
 
 ## AI acceleration
 
-Ask an AI to write a custom gitleaks rule for detecting a Meridian-format internal API key
+Ask an AI to write a custom gitleaks rule for detecting a Corp-format internal API key
 (e.g. `MRDNSK-[A-Z0-9]{20}`). Test the rule: add a fake key in that format to a test file,
 run gitleaks with the custom config, and confirm detection. Then remove the key and confirm
 gitleaks finds it in history. The model drafts the TOML rule; you validate it catches what it

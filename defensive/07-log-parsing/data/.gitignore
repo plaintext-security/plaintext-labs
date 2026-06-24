@@ -1,0 +1,5 @@
+# Fetched real logs (via `make fetch-data`) — never commit.
+# The curated seed auth_sample.txt IS committed (re-included below).
+raw/
+*.log
+!auth_sample.txt

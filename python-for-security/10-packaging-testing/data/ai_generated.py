@@ -1,5 +1,5 @@
 """
-Meridian Log Analyzer — AI-generated first draft.
+ssh-log-analyzer — AI-generated first draft.
 DO NOT deploy: this script contains four deliberate security bugs for the lab exercise.
 
 Bugs planted:
@@ -15,7 +15,7 @@ import sqlite3
 import httpx
 
 # Bug 4: hardcoded credential (should come from environment variable)
-DB_PASSWORD = "meridian_db_secret_2024"
+DB_PASSWORD = "sup3r_s3cret_db_pw_2026"
 
 LOG_PATTERN = re.compile(
     # Bug 3: character class [0-9\.] is wrong — the backslash before the dot inside

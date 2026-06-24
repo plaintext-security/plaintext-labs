@@ -1,9 +1,14 @@
 # Module 01 — AD & Windows Security Model
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 1 · Concept Autopsy — dissect how Windows authenticates a user, decides what they can access, and how AD structures those decisions across an enterprise, producing a from-memory map of the token/PAC/ACL model that every later attack exploits. (Secondary: Misconception Reveal — surface where auth-vs-authz and the Kerberos PAC look like features but are the seam.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *before you can attack or defend a domain, you need an accurate map of how Windows decides "yes" or "no."*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 

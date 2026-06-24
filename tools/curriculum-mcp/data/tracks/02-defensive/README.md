@@ -30,17 +30,19 @@ telemetry in, tested detections out, mapped to attacker behaviour.
 | 14 | [Alert Triage & Incident Response](modules/14-triage-ir/README.md) | A repeatable process from alert to verdict | `TheHive` |
 | 15 | [Threat Intelligence](modules/15-threat-intel/README.md) | Managing IOCs and enriching detections | `MISP`, `OpenCTI` |
 | 16 | [Response Automation (SOAR primer)](modules/16-soar/README.md) | Automating enrich → contain → ticket | `Shuffle` |
+| 17 | [KEV-Driven Defense](modules/17-kev-driven-defense/README.md) | Operationalise CISA KEV: exploit a current entry, then detect it | `Vulhub`, `sigma` |
 
 ## Phases & projects
 
-The sixteen modules run in three phases; each ends in a **project** that integrates its modules.
+The modules run in three phases; each ends in a **project** that integrates its modules.
 
 - **Phase 1 · Get the data** (01–07) — **Project:** a working telemetry pipeline that ingests host
   *and* network data into a searchable SIEM, with a real attack dataset flowing through it.
 - **Phase 2 · Find the attacker** (08–13) — **Project:** a set of detections-as-code mapped to MITRE
   ATT&CK, tested against a real attack dataset, plus one documented threat hunt.
-- **Phase 3 · Respond** (14–16) — **Project:** an incident handled from alert to root cause, with an
-  automated enrich → contain → ticket step (the track capstone).
+- **Phase 3 · Respond & stay current** (14–17) — **Project:** an incident handled from alert to root
+  cause, with an automated enrich → contain → ticket step, plus a KEV-driven coverage loop (exploit a
+  current exploited-in-the-wild CVE and ship the detection for it) — the track capstone.
 
 > **Standalone by design.** Every detection lab here sources a **real public dataset** (and a
 > generate-it-here option), so you can complete this track without having done Offensive. If you
@@ -57,6 +59,22 @@ Stand up a telemetry pipeline, simulate an attack (Atomic Red Team or a replayed
 and catch it: ship the logs, write the detection-as-code mapped to ATT&CK, and produce an
 incident write-up from alert to root cause. **Deliverable:** the tested detections plus the
 investigation.
+
+The starter scaffold and acceptance checks live in
+[`plaintext-labs/defensive/capstone/`](https://github.com/plaintext-security/plaintext-labs/tree/main/defensive/capstone).
+
+### Capstone rubric
+
+You must **catch the attack you simulate** and follow it from alert to root cause.
+**Proficient is the bar to ship.**
+
+| Dimension | Developing | Proficient | Exemplary |
+|---|---|---|---|
+| **Telemetry pipeline** | Logs from one source, not searchable | Host *and* network telemetry flowing into a searchable store | Pipeline reproducible as code; parsing normalised to a common schema |
+| **Detection-as-code** | A rule that only matches the demo data | A versioned detection (Sigma) mapped to ATT&CK that fires on the simulated attack | Validated against benign data for false positives; tuning rationale documented |
+| **The catch** | Attack ran but wasn't detected | The simulated attack (Atomic Red Team / replayed PCAP) is caught by your detection | Detection catches the *technique*, not the exact sample — proven on a variation |
+| **Investigation** | Alert noted, no follow-through | Triaged alert → root cause, with the supporting events cited | Full alert→containment narrative; what the attacker did and what they didn't |
+| **Write-up & automation** | Manual, undocumented | A repeatable process and an incident write-up | An automated enrich→ticket step closes the loop; the whole thing re-runs |
 
 ## AI & automation
 A small local model triages and classifies log lines cheaply at volume; a frontier model

@@ -1,29 +1,30 @@
-# Runbook — Data Loss Prevention Alert Response
-**Document type:** Runbook | **Owner:** Security Operations | **Last reviewed:** 2024-12-05
+# LastPass Breach — Customer Guidance and Risk
+**Document type:** Public post-mortem detail | **Source:** LastPass disclosure (Dec 22, 2022)
 
-## Overview
-Meridian's DLP platform monitors email, web uploads, and USB devices for sensitive data patterns
-(PII, PCI data, internally classified documents). This runbook covers the response to a DLP alert.
+## What customers were told
+LastPass's guidance depended on the strength of each customer's master password.
 
-## Alert types and default severity
-| Alert type | Default severity | Notes |
-|-----------|-----------------|-------|
-| Credit card numbers in outbound email | P2 | Auto-block; review in 30 min |
-| SSN in email or upload | P2 | Auto-block |
-| Internally classified document uploaded to personal cloud storage | P2 | |
-| Large file to USB device | P3 | Review context; IT provisioned USB devices may be legitimate |
-| Bulk email to external domain | P3 | Check for mailing list vs. exfiltration pattern |
+- **Default master-password configuration:** For customers whose accounts followed LastPass's
+  default settings (a master password of at least 12 characters, with 100,100 rounds of PBKDF2 key
+  derivation for accounts created since 2018), LastPass stated it would take an impractical amount of
+  time to guess the master password with generally available password-cracking technology. These
+  customers were told **no action was immediately required**.
+- **Weaker or reused master passwords:** Customers with shorter master passwords, or who had reused
+  their master password elsewhere, were advised to **change the passwords of websites stored in their
+  vault** to minimize risk, because the stolen encrypted vaults could become crackable offline.
 
-## Investigation steps
-1. Identify the user and their manager. Pull HR context (any recent disciplinary action? resignation submitted?).
-2. Review the content: was it actually sensitive? DLP false-positives on patterns like test data or sanitised samples.
-3. Check for other DLP events from the same user in the past 30 days.
-4. If insider threat pattern suspected: escalate to HR and Legal before contacting the user.
+## Residual risk even with a strong master password
+- The **website URLs** in the stolen backups were unencrypted, so attackers can see which services a
+  customer uses and craft **targeted phishing** for those services.
+- Customers were advised to be alert to phishing and social-engineering attempts referencing their
+  LastPass account, and not to act on unsolicited messages asking for their master password (LastPass
+  will never ask for it).
 
-## Data retention for DLP events
-- DLP alert metadata: 2 years.
-- Content captures: 90 days in restricted access storage.
+## Practitioner takeaways
+- A breach of *encrypted* data is still a breach: cleartext metadata (URLs) and the threat of offline
+  cracking against weak master passwords mean "it was encrypted" is not "no impact."
+- Password reuse turns a single vault compromise into many account compromises — the case for unique
+  passwords per site (the very thing a password manager exists to enable).
 
-## Regulatory notes
-- PCI DSS: card number events must be logged and the incident reported to the compliance team.
-- GDPR (where applicable): personal data incidents may require notification to the DPO.
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

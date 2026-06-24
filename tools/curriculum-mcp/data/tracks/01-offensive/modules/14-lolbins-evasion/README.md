@@ -1,9 +1,14 @@
 # Module 14 — Living-off-the-Land & Evasion
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — accomplish download/execute/persist using only native LOLBAS/GTFOBins binaries and pair each with the behavioural telemetry it still leaves (why `certutil` spawned by Word is anomalous). (Secondary: Misconception Reveal — evasion shifts detection from signature to behaviour, it doesn't make you invisible.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *the quietest attacks bring no tools — they use what's already there.*
+
+<!-- module-meta -->
+**Difficulty:** Advanced &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Modern defenses flag unknown binaries, so real operators "live off the land": abusing trusted,

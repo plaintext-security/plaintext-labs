@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Linux privilege escalation demo — Meridian Financial application server.
+Linux privilege escalation demo — lab app server.
 
 Simulates an attacker who has landed a shell as 'appuser' (uid=1001) and must
 escalate to root.  Demonstrates three escalation vectors that linpeas surfaces:
@@ -52,7 +52,7 @@ def run_root(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 def demo() -> int:
     print("=" * 64)
-    print("Meridian Financial app server — Linux Privilege Escalation")
+    print("Linux Privilege Escalation — lab app server")
     print("Technique: SUID binary + sudo NOPASSWD + writable cron")
     print("=" * 64)
 

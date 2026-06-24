@@ -10,8 +10,8 @@ cookie_secret: "lab-cookie-secret-change-in-production-32!"
 
 # ── Authenticate service ─────────────────────────────────────────────────────
 # Pomerium's built-in test IdP issues tokens for any address ending in
-# @example.com. We use this to simulate Meridian's Okta issuing tokens for
-# @meridian.com users without needing a real IdP account.
+# @example.com. We use this to simulate Corp's Okta issuing tokens for
+# @corp.com users without needing a real IdP account.
 authenticate_service_url: https://authenticate.localhost.pomerium.io
 
 # idp_provider / idp_client_id / idp_client_secret are left unset, which

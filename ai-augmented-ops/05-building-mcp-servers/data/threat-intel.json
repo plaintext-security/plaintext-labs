@@ -8,39 +8,43 @@
       "confidence": "HIGH",
       "first_seen": "2021-03-14",
       "last_seen": "2025-05-19",
-      "references": ["https://www.dan.me.uk/torlist/", "https://metrics.torproject.org/"]
+      "source": "Tor Project exit-node list (shape)",
+      "references": ["https://check.torproject.org/torbulkexitlist", "https://metrics.torproject.org/"]
     },
     "45.33.32.156": {
       "type": "ip",
       "value": "45.33.32.156",
       "classification": "malicious",
-      "category": "Metasploit C2",
+      "category": "Botnet C2",
       "confidence": "MEDIUM",
       "first_seen": "2024-11-01",
       "last_seen": "2025-04-30",
-      "references": []
+      "source": "Feodo Tracker export (shape)",
+      "references": ["https://feodotracker.abuse.ch/"]
     },
     "10.0.14.22": {
       "type": "ip",
       "value": "10.0.14.22",
       "classification": "internal",
-      "category": "Meridian internal — Finance VLAN",
+      "category": "Internal — Finance VLAN",
       "confidence": "HIGH",
       "first_seen": null,
       "last_seen": null,
+      "source": "internal asset inventory",
       "references": []
     }
   },
   "domains": {
-    "meridian-secure-login.net": {
+    "secure-login.example": {
       "type": "domain",
-      "value": "meridian-secure-login.net",
+      "value": "secure-login.example",
       "classification": "malicious",
       "category": "Phishing — credential harvesting",
       "confidence": "HIGH",
       "first_seen": "2024-06-10",
       "last_seen": "2024-06-15",
-      "references": ["INC-2024-0612"]
+      "source": "ThreatFox export (shape)",
+      "references": ["https://threatfox.abuse.ch/", "INC-2024-0612"]
     },
     "update-checker.net": {
       "type": "domain",
@@ -50,7 +54,8 @@
       "confidence": "MEDIUM",
       "first_seen": "2025-01-20",
       "last_seen": "2025-05-10",
-      "references": []
+      "source": "URLhaus export (shape)",
+      "references": ["https://urlhaus.abuse.ch/"]
     }
   },
   "hashes": {
@@ -58,11 +63,12 @@
       "type": "hash_md5",
       "value": "3d4f2bf07dc1be38b20cd6e46949a1b1",
       "classification": "malicious",
-      "category": "Dropper — suspected Emotet loader",
+      "category": "Dropper — suspected loader",
       "confidence": "HIGH",
       "first_seen": "2025-02-14",
       "last_seen": "2025-05-01",
-      "references": []
+      "source": "MalwareBazaar export (shape)",
+      "references": ["https://bazaar.abuse.ch/"]
     }
   }
 }

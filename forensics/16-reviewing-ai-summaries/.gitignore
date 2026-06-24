@@ -1,0 +1,7 @@
+# The seeded AI summary + artifacts under data/ are COMMITTED on purpose — they are
+# the lab fixture. (lab.md tells the *learner* not to commit them to *their* repo.)
+# Here we only ignore caches and the learner's own deliverables if authored in-tree.
+__pycache__/
+*.pyc
+review-findings.md
+ai-trust-policy.md

@@ -24,12 +24,25 @@ so you can see the misclassification before you defend it.
 > and adversarial techniques **only** against models and applications you own or have explicit
 > written permission to assess. The Chevy and EchoLeak incidents are why this rule exists.
 
+> **What this lab is — and isn't.** Every attack here is the local, consented miniature of a
+> *real, documented* incident — mapped one-to-one in `data/real-incidents.json`:
+> the alert-text injection rhymes with the **Chevrolet "$1 Tahoe" jailbreak** (2023), the corpus
+> poisoning + tool-exfil is the shape of **EchoLeak / [CVE-2025-32711](https://nvd.nist.gov/vuln/detail/CVE-2025-32711)**
+> (zero-click indirect injection in M365 Copilot), the MCP tool surface is **[Invariant Labs' tool
+> poisoning](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks)** (2025),
+> and the "you own what your AI says" lesson is **Moffatt v. Air Canada (2024 BCCRT 149)**. It is
+> **not** those systems: tinyllama is a tiny local model, so an injection lands more easily than it
+> would against a frontier model with safety training — the *architecture* lesson (a system prompt is
+> not a trust boundary; defend at the input/output/tool layers) transfers; the exact success rates do
+> not. You are reproducing the *mechanism*, not the production target.
+
 ## Scenario
 You're the first red-teamer on your team's new SoC copilot — the RAG + MCP + LLM assistant you
 assembled in module 06 — before it goes live triaging real alerts. Three attack scenarios are
-documented in `data/attack-scenarios.md`. Your job: reproduce each attack, **try the obvious fix
-first and watch it fail**, then harden the architecture, re-attack to prove the fix holds, and turn
-the result into a regression eval that defends the fix for good.
+documented in `data/attack-scenarios.md`, each anchored to a named real-world incident in
+`data/real-incidents.json`. Your job: reproduce each attack, **try the
+obvious fix first and watch it fail**, then harden the architecture, re-attack to prove the fix
+holds, and turn the result into a regression eval that defends the fix for good.
 
 ## Do
 
@@ -87,7 +100,10 @@ the result into a regression eval that defends the fix for good.
 8. [ ] **Document residual risk.** Write `results/security-assessment.md` — one section per layer:
    the attack you landed, the mitigation, the re-attack result, and **what's still exploitable**
    (the paraphrase your filter misses, the allowlisted-domain redirect, the long-injection dilution).
-   This is your AI security risk register.
+   This is your AI security risk register. For each layer, name the real incident it maps to from
+   `data/real-incidents.json` — and remember Air Canada (Moffatt v. Air
+   Canada, 2024 BCCRT 149): whoever ships the copilot owns the consequence of acting on its answer,
+   which is *why* the human-review backstop and output allowlist are not optional.
 
 ## Success criteria — you're done when *(honor system — self-verified; no grader)*
 - [ ] You recorded the step-2 finding: the hardened *system prompt alone* does **not** stop the

@@ -9,7 +9,10 @@ down:
 reset:
 	docker compose down --rmi local --volumes --remove-orphans
 
-# Shell with curl available (use curl against http://echo-server:8080)
+# Shell with curl available. Two targets to read:
+#   http://echo-server:8080  — the legible teaching echo server
+#   http://juice-shop:3000   — the REAL OWASP intentionally-vulnerable app
+#                              (point your header-audit script here)
 shell:
 	docker compose run --rm lab bash
 

@@ -3,15 +3,15 @@
 # Standard targets: demo / reset.
 .PHONY: demo reset
 
-demo:   ## Print the Meridian scenario brief and point to seed materials
+demo:   ## Print the Corp scenario brief and point to seed materials
 	@echo "============================================================"
-	@echo "  Lab 04 — ZTNA Architecture Decision: Meridian Financial"
+	@echo "  Lab 04 — ZTNA Architecture Decision: Corp"
 	@echo "============================================================"
 	@echo ""
 	@echo "Seed file: data/architecture-comparison.md"
 	@echo "  Read it fully before starting the ADR exercise."
 	@echo ""
-	@echo "Meridian constraints summary:"
+	@echo "Corp constraints summary:"
 	@echo "  - 60%% SaaS / 30%% on-prem / 10%% Azure"
 	@echo "  - 800 employees (60%% remote) + 120 BYOD contractors"
 	@echo "  - 3 security engineers; no network team"

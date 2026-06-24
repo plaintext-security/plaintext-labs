@@ -15,11 +15,16 @@ make demo      # normalise the sample sshd log and print the parse rate (and the
 make down
 ```
 
-The lab bundles a deliberately messy sample (`data/auth_sample.txt` — real-shaped sshd auth lines from
-the Meridian bastion, plus a CRON line and a corrupt line that *don't* fit the sshd pattern) and a
-stdlib reference normaliser (`normalize.py`) that emits ECS-style events and reports the parse rate.
-That harness is your **spec**: your job is to reproduce the same normalisation in **Vector (VRL)** — the
+The lab bundles a deliberately messy seed (`data/auth_sample.txt` — real-shaped sshd auth lines from a
+bastion host, plus a CRON line and a corrupt line that *don't* fit the sshd pattern) and a stdlib
+reference normaliser (`normalize.py`) that emits ECS-style events and reports the parse rate. That
+harness is your **spec**: your job is to reproduce the same normalisation in **Vector (VRL)** — the
 production tool — and match its output, then handle what it couldn't.
+
+The seed keeps `make demo` offline. For the real exercise, `make fetch-data` pulls genuine public
+logs — loghub `OpenSSH_2k.log` (~2k real sshd auth lines, actively brute-forced) and `Apache_2k.log`
+(a second, *different* format) — so you normalise real messy logs at volume and across two shapes. See
+`data/PROVENANCE.md`.
 
 ## Scenario
 Turn an unstructured log into clean, normalised, queryable events — *without silently losing lines.*

@@ -1,0 +1,1 @@
+../../../../plaintext-labs/automation/11-pipeline-secrets/lab.md

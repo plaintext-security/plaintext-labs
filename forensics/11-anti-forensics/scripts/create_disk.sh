@@ -11,7 +11,7 @@ echo "[*] Creating ${SIZE_MB}MB ext2 image at $IMG"
 dd if=/dev/zero of="$IMG" bs=1M count="$SIZE_MB" status=progress
 
 echo "[*] Formatting as ext2"
-mkfs.ext2 -F -L "MERIDIAN-WS04" "$IMG"
+mkfs.ext2 -F -L "BEACHHEAD-WS01" "$IMG"
 
 echo "[*] Mounting and populating"
 MNTDIR=$(mktemp -d)
@@ -19,7 +19,7 @@ mount -o loop "$IMG" "$MNTDIR"
 
 # Normal system files with coherent timestamps
 touch -t "202401150900" "$MNTDIR/readme.txt"
-echo "Meridian Financial workstation configuration" > "$MNTDIR/readme.txt"
+echo "Workstation configuration" > "$MNTDIR/readme.txt"
 
 touch -t "202402200830" "$MNTDIR/config.ini"
 echo "[network]
@@ -31,11 +31,11 @@ echo "2024-03-10 14:30:01 INFO Application started" > "$MNTDIR/app.log"
 
 # The "timestomped" binary — mtime set to 2019 to look like a system file
 # but it was actually written in March 2024 (FN attribute will reflect creation)
-cp /bin/true "$MNTDIR/svchost32.exe"
-touch -t "201906150000" "$MNTDIR/svchost32.exe"
+cp /bin/true "$MNTDIR/sihosts.exe"
+touch -t "201906150000" "$MNTDIR/sihosts.exe"
 
 # A file we'll later "delete"
-echo "attacker_c2_ip=198.51.100.42" > "$MNTDIR/notes.txt"
+echo "attacker_c2=workspacin.cloud" > "$MNTDIR/notes.txt"
 touch -t "202403151422" "$MNTDIR/notes.txt"
 
 umount "$MNTDIR"

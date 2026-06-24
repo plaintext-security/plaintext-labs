@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Financial — passive recon attack-surface map.
+"""Passive recon attack-surface map.
 
 Passive recon collects public data without directly probing the target:
   - Certificate Transparency logs (crt.sh) reveal subdomains
@@ -7,16 +7,17 @@ Passive recon collects public data without directly probing the target:
   - HTTP banner/header grabbing fingerprints the tech stack
   - SPF/MX records reveal email infrastructure and cloud providers
 
-This harness loads pre-captured recon output for meridian-financial.com
-so the demo is deterministic and offline. The same code works against
-live targets (see --live flag instructions at the bottom).
+This harness loads pre-captured recon output for example.com (the
+RFC-2606 reserved domain) so the demo is deterministic and offline.
+The same code works against live targets (see --live flag instructions
+at the bottom).
 
 > AUTHORIZATION REQUIRED — only run live recon against targets you own
 > or have explicit written permission to test. Passive recon stays
 > within scope but still creates logs on the target's DNS servers.
 
 Usage:
-    python3 recon.py          # demo mode — bundled Meridian data
+    python3 recon.py          # demo mode — bundled example.com data
     python3 recon.py --report  # also write recon-report.md
 """
 from __future__ import annotations
@@ -104,7 +105,7 @@ def demo(write_report: bool = False) -> int:
     print(f"Passive Recon — {domain}")
     print(f"Methodology: crt.sh → DNS enumeration → tech fingerprinting")
     print(f"Target scope: {domain} and all subdomains")
-    print(f"Authorization: fictional Meridian Financial estate (lab-only)")
+    print(f"Authorization: example.com (RFC-2606 reserved) demo estate / your own authorized domain in --live mode")
     print("=" * 64)
 
     # ── Step 1: Certificate Transparency ─────────────────────────────────────
@@ -119,7 +120,7 @@ def demo(write_report: bool = False) -> int:
     print(wrap("Certificate transparency is often the richest passive source. "
                "Wildcard certs expose all subdomains at once; expired certs "
                "reveal assets that were once active. The expired S3 cert "
-               "(backups.meridian-financial.com, expired 2023-08) is a flag — "
+               "(backups.example.com, expired 2023-08) is a flag — "
                "a forgotten bucket may still be public."))
 
     # ── Step 2: DNS enumeration ───────────────────────────────────────────────
@@ -190,10 +191,10 @@ def demo(write_report: bool = False) -> int:
 
   Recommended next phase (module 02 — Scanning):
     1. Active scan {top_host} (authorized only).
-    2. Check vpn.meridian-financial.com for FortiGate CVE-2024-21762.
-    3. Enumerate the S3 bucket at backups.meridian-financial.com for
-       public read/ListObject (test with: aws s3 ls s3://backups.meridian-financial.com --no-sign-request).
-    4. Verify Jira 9.4.0 (CVE-2023-22515) on jira.meridian-financial.com.
+    2. Check vpn.example.com for FortiGate CVE-2024-21762.
+    3. Enumerate the S3 bucket at backups.example.com for
+       public read/ListObject (test with: aws s3 ls s3://backups.example.com --no-sign-request).
+    4. Verify Jira/Confluence (CVE-2023-22515) on jira.example.com.
 """)
 
     if write_report:
@@ -211,7 +212,8 @@ def _write_report(domain: str, subdomains: set[str], dns: dict,
         "",
         "## Scope",
         f"Target: `{domain}` and all subdomains. Passive recon only.",
-        "Authorization: Meridian Financial lab exercise (fictional estate).",
+        "Authorization: lab exercise against example.com (RFC-2606 reserved) "
+        "or your own authorized domain in --live mode.",
         "",
         "## Asset inventory",
         "",

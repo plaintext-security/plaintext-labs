@@ -1,11 +1,11 @@
 # Module 01 — AD & Windows Security Model
-# Conceptual lab: no container needed. Data lives in data/meridian-domain.md.
+# Conceptual lab: no container needed. Data lives in data/corp-domain.md.
 .PHONY: demo
 
-demo:   ## Print the Meridian domain structure summary
-	@echo "=== Meridian Financial — Domain Structure ==="
+demo:   ## Print the Corp domain structure summary
+	@echo "=== Corp — Domain Structure ==="
 	@echo ""
-	@echo "Forest root:  MERIDIAN.LOCAL"
+	@echo "Forest root:  CORP.LOCAL"
 	@echo "DCs:          dc01 (PDC Emulator), dc02"
 	@echo ""
 	@echo "--- Organisational Units ---"
@@ -24,9 +24,9 @@ demo:   ## Print the Meridian domain structure summary
 	@echo "Backup-Operators:  svc-backup"
 	@echo ""
 	@echo "--- Kerberoastable SPNs ---"
-	@echo "svc-mssql   MSSQLSvc/db01.meridian.local:1433  (password age: 2yr)"
-	@echo "svc-backup  BackupSvc/backup01.meridian.local  (password age: 18mo)"
-	@echo "svc-web     HTTP/intranet.meridian.local        (password age: 6mo)"
+	@echo "svc-mssql   MSSQLSvc/db01.corp.local:1433  (password age: 2yr)"
+	@echo "svc-backup  BackupSvc/backup01.corp.local  (password age: 18mo)"
+	@echo "svc-web     HTTP/intranet.corp.local        (password age: 6mo)"
 	@echo ""
 	@echo "--- AS-REP Roastable (no preauth) ---"
 	@echo "svc-legacy   (password age: 3yr)"
@@ -44,4 +44,4 @@ demo:   ## Print the Meridian domain structure summary
 	@echo "HR/Computers: no AppLocker, no USB restriction"
 	@echo "Service Accounts OU: no Fine-Grained Password Policy"
 	@echo ""
-	@echo "Full spec: cat data/meridian-domain.md"
+	@echo "Full spec: cat data/corp-domain.md"

@@ -5,16 +5,25 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo: an Ubuntu 22.04 container
-with planted accounts, a `sudoers` entry, and a real-shaped SSH auth log to read.
+with planted accounts, a `sudoers` entry, and a **real public SSH brute-force log** to read.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/foundations/04-linux
-make up      # build + start the container
-make shell   # drop into the container to run the commands yourself
-make demo    # show the expected triage output, only after you've tried
-make down    # stop when done
+make fetch-data  # download the REAL loghub OpenSSH log (data/OpenSSH_2k.log)
+make up          # build + start the container (also runs fetch-data)
+make shell       # drop into the container to run the commands yourself
+make demo        # show the expected triage output, only after you've tried
+make down        # stop when done
 ```
+
+The auth log you analyze is **real**: the [loghub OpenSSH dataset](https://github.com/logpai/loghub)
+(`OpenSSH_2k.log`), a public capture of an internet-facing `sshd` under sustained credential
+brute-force — genuine attacker IPs hammering `root`/`admin`/service accounts. Because that real log is
+pure brute-force noise with *no* successful login, the demo overlays **one** clearly-labeled
+`Accepted` line from the busiest brute-forcing IP so the "success from a brute-force source =
+compromise" lesson still lands. See `data/PROVENANCE.md` for the source, citation, and exactly which
+line is synthetic.
 
 > Only run these commands against systems you own or this throwaway container. Reading the provided log
 > and the container's own files touches nothing outside the lab — but build the habit now of asking
@@ -22,7 +31,8 @@ make down    # stop when done
 
 ## Scenario
 You've been handed shell access to a small Linux server (a bastion host) after an alert fired. The auth
-log in `data/auth_sample.log` is what the system recorded. Something got in. Your job is the first job of
+log in `data/OpenSSH_2k.log` (the real loghub capture, fetched by `make fetch-data`) is what the system
+recorded. Something got in. Your job is the first job of
 every investigation: profile the box — **who's here, what can they do, what happened** — and render a
 plain-language verdict: **who got in, how, and what they can now do.** These are the same three reading
 passes from the module: accounts, permissions, logs.
@@ -44,7 +54,7 @@ keystrokes. Each pass feeds the next.
 3. [ ] **What's running.** Show the running processes ranked by CPU. (You're building the reflex —
    on a real box this is where a rogue miner or a reverse shell would stand out.)
 
-4. [ ] **What happened — read the log.** This is the heart of it. From `data/auth_sample.log`, build a
+4. [ ] **What happened — read the log.** This is the heart of it. From `data/OpenSSH_2k.log`, build a
    pipeline that produces a **ranked count of failed logins per source IP** (reach for `grep`, `awk`,
    `sort`, `uniq` — the pipeline *is* the skill). Then answer the questions the count alone won't:
    - Which IPs are clearly **brute-forcing** (many failures, many usernames)?

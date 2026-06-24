@@ -20,16 +20,16 @@
 #   region = "us-east-1"
 # }
 #
-# resource "aws_s3_bucket" "meridian_assets" {
-#   bucket = "meridian-security-assets-${var.env_name}"
+# resource "aws_s3_bucket" "security_assets" {
+#   bucket = "security-assets-${var.env_name}"
 #   tags = {
 #     Environment = var.env_name
 #     ManagedBy   = "opentofu"
 #   }
 # }
 #
-# resource "aws_s3_bucket_versioning" "meridian_assets" {
-#   bucket = aws_s3_bucket.meridian_assets.id
+# resource "aws_s3_bucket_versioning" "security_assets" {
+#   bucket = aws_s3_bucket.security_assets.id
 #   versioning_configuration {
 #     status = "Enabled"
 #   }

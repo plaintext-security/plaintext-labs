@@ -1,1 +1,1 @@
-{"EventID": 4688, "Image": "C:\\Windows\\System32\\calc.exe", "CommandLine": "calc.exe", "ParentImage": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE", "User": "MERIDIAN\\analyst01"}
+{"EventID": 4688, "Image": "C:\\Windows\\System32\\calc.exe", "CommandLine": "calc.exe", "ParentImage": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE", "User": "CORP\\analyst01"}

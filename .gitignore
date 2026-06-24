@@ -28,6 +28,7 @@ credentials
 *.vmem
 *.raw
 *.lime
+*.img
 *.E01
 *.aff4
 
@@ -46,3 +47,10 @@ venv/
 Thumbs.db
 .idea/
 .vscode/
+
+# shared dataset cache (lib/fetch.sh)
+.cache/
+
+# transient raw feed snapshots staged by `make refresh` (the committed snapshot is feeds/db.json)
+python-for-security/*/feeds/feodo.json
+python-for-security/*/feeds/urlhaus.csv

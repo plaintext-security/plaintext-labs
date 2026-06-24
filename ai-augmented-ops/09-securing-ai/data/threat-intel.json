@@ -24,7 +24,7 @@
       "type": "ip",
       "value": "10.0.14.22",
       "classification": "internal",
-      "category": "Meridian internal — Finance VLAN",
+      "category": "Corp internal — Finance VLAN",
       "confidence": "HIGH",
       "first_seen": null,
       "last_seen": null,
@@ -32,9 +32,9 @@
     }
   },
   "domains": {
-    "meridian-secure-login.net": {
+    "fake-secure-login.net": {
       "type": "domain",
-      "value": "meridian-secure-login.net",
+      "value": "fake-secure-login.net",
       "classification": "malicious",
       "category": "Phishing — credential harvesting",
       "confidence": "HIGH",

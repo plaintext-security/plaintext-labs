@@ -14,13 +14,13 @@ LEGEND:
   [!] This allows any user to install .msi files as NT AUTHORITY\SYSTEM
 
 [+] Checking service permissions
-  Name: MeridianUpdater
-  DisplayName: Meridian Updater Service
-  BinaryPath: C:\Program Files\Meridian Financial Services\MeridianUpdater.exe
-  [!] Unquoted service path — possible hijack: C:\Program.exe or C:\Program Files\Meridian.exe
+  Name: NorthwindUpdater
+  DisplayName: Northwind Updater Service
+  BinaryPath: C:\Program Files\Northwind Software\NorthwindUpdater.exe
+  [!] Unquoted service path — possible hijack: C:\Program.exe or C:\Program Files\Northwind.exe
 
 [+] Checking service binary permissions
-  MeridianUpdater (C:\Program Files\Meridian Financial Services\MeridianUpdater.exe)
+  NorthwindUpdater (C:\Program Files\Northwind Software\NorthwindUpdater.exe)
     File Permissions: Everyone [AllAccess]
     [!] User can replace/modify the service binary
 
@@ -29,7 +29,7 @@ LEGEND:
   [!] SeImpersonatePrivilege — hot potato / rogue potato exploitation possible
 
 [+] Checking scheduled tasks
-  Task: \MeridianDailyBackup
+  Task: \NorthwindDailyBackup
   Run As: SYSTEM
   Action: C:\Scripts\daily_backup.bat
   File permissions on C:\Scripts\daily_backup.bat: Everyone [AllAccess]
@@ -37,11 +37,11 @@ LEGEND:
 
 [+] Checking registry autoruns
   HKLM\Software\Microsoft\Windows\CurrentVersion\Run
-    MeridianAgent = C:\Program Files (x86)\Meridian\agent.exe
+    NorthwindAgent = C:\Program Files (x86)\Northwind\agent.exe
     File permissions: Everyone [Modify]
 
 [+] Checking DLL hijacking opportunities (writable directories in service PATH)
-  Writable path in service IMAGE_PATH: C:\Meridian\lib\
+  Writable path in service IMAGE_PATH: C:\Northwind\lib\
   [!] Potential DLL hijack in service directory
 
 [+] Checking AutoLogon credentials

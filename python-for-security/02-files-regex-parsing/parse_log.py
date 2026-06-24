@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Reference solution: parse Meridian's SSH auth log, find brute-force sources.
-Standard library only — no third-party dependencies.
+Reference solution: parse a REAL SSH auth log (loghub OpenSSH_2k.log, captured from an
+internet-facing server 'LabSZ'), find brute-force sources. Standard library only.
+
+The corpus is real, so the parser must survive real-world messiness: the "invalid user"
+variant, the standalone "message repeated N times" meta-line, and assorted non-failure
+lines. See data/PROVENANCE.txt for the source.
 """
 
 import re
@@ -11,15 +15,17 @@ from pathlib import Path
 
 LOG_FILE = Path(__file__).parent / "data" / "sshd.log"
 
-# Named-group regex for failed-password lines.
-# Matches: Nov 15 08:00:06 meridian-jump sshd[1234]: Failed password for root from 192.168.100.200 port 41234 ssh2
+# Named-group regex for failed-password lines from real sshd output. Matches both
+#   Dec 10 07:13:43 LabSZ sshd[24227]: Failed password for root from 5.36.59.76 port 42393 ssh2
+# and the invalid-user variant
+#   Dec 10 06:55:48 LabSZ sshd[24200]: Failed password for invalid user webmaster from 173.234.31.186 port 38926 ssh2
 FAILED_RE = re.compile(
     r"(?P<month>\w+)\s+(?P<day>\d+)\s+(?P<time>\d{2}:\d{2}:\d{2})\s+"
-    r"\S+\s+sshd\[\d+\]:\s+Failed password for (?P<user>\S+) "
+    r"\S+\s+sshd\[\d+\]:\s+Failed password for (?:invalid user )?(?P<user>\S+) "
     r"from (?P<ip>\d{1,3}(?:\.\d{1,3}){3}) port \d+"
 )
 
-BRUTE_THRESHOLD = 10
+BRUTE_THRESHOLD = 5
 WINDOW_SECONDS = 60
 
 

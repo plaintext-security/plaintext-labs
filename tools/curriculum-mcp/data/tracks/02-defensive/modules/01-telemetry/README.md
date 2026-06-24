@@ -1,9 +1,14 @@
 # Module 01 — Telemetry & Log Centralisation
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — stand up a central log store, ship real log data into it, and reason about which telemetry actually matters for detection; you commit a working ingest-and-query pipeline. (Secondary: Misconception Reveal — a pipeline that runs is not a pipeline that works.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *you can't detect what you don't collect; this is the data plane everything else runs on.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Detection, hunting, and response all start with data. Before you can write a single detection you

@@ -1,0 +1,5 @@
+# Fetched real Atomic Red Team artifacts (via `make fetch-data`) — never commit.
+# The curated seed events.jsonl IS committed (re-included below).
+raw/
+real_events.jsonl
+!events.jsonl

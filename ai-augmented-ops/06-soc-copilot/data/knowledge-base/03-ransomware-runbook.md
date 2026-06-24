@@ -1,39 +1,40 @@
-# Runbook — Ransomware Response
-**Document type:** Runbook | **Owner:** Security Operations | **Last reviewed:** 2025-02-20
+# LastPass Breach — Stage 2: Cloud Backup Storage Exfiltration (Nov–Dec 2022)
+**Document type:** Public post-mortem detail | **Source:** LastPass disclosures (Nov 30 & Dec 22, 2022)
 
-## When to use this runbook
-Activate when: (a) ransomware note or encrypted files observed on any endpoint, or (b) EDR
-alerts to mass file encryption behaviour.
+## Summary
+In the second incident, the threat actor **leveraged information obtained from the August 2022
+incident** to target a second LastPass employee, obtained credentials and keys, and used them to
+**access and decrypt storage volumes** within a cloud-based **backup** environment. From there the
+attacker copied customer account information and customer vault backups.
 
-## Severity: Always P1
+## How the attacker reached the cloud backup storage
+1. The attacker reused information stolen in stage 1 (source code and technical documentation).
+2. They targeted a **second employee** to obtain that employee's credentials and keys.
+3. Those credentials and keys were used to access the third-party cloud storage service holding
+   LastPass backups — an environment **separate from production**.
+4. The attacker obtained the **decryption keys needed to open the storage volumes** (dual storage
+   container decryption keys), allowing them to decrypt and copy the backup contents.
 
-## Immediate containment (first 15 minutes)
-1. **Do not power off the affected host** — volatile memory may contain the encryption key.
-   Use EDR to isolate the host at the network layer (block all inbound/outbound except IR VPN).
-2. Identify the "patient zero" host by reviewing EDR process tree for the ransomware executable.
-3. Check for lateral movement: query EDR for any SMB/RDP connections *from* the patient zero
-   host in the 4-hour window before the encryption event.
-4. Escalate to CISO immediately per the P1 escalation path.
-5. Notify Legal and Communications — do not communicate externally without approval.
+## What was exfiltrated
+- **Basic customer account information and metadata:** company names, end-user names, billing
+  addresses, email addresses, telephone numbers, and the IP addresses from which customers accessed
+  the LastPass service.
+- **A backup of customer vault data**, containing both unencrypted and encrypted fields (see document
+  04 for the encryption detail).
+- LastPass found **no evidence** that unencrypted credit card data was accessed.
 
-## Investigation
-1. Pull the ransomware binary if present; submit to internal malware sandbox.
-2. Check threat intelligence feeds for the ransom note template / file extension.
-3. Identify the initial access vector: phishing, RDP exposure, vulnerable service.
-4. Determine blast radius: which file shares / backup systems are accessible from patient zero?
+## Why "decrypt" appears in a backup breach
+A common confusion: the *vault contents* (passwords) remained AES-256 encrypted under each
+customer's master password. The keys the attacker stole were the **storage-layer** keys that
+decrypted the storage *volumes/containers* — not the per-user vault encryption. The attacker got the
+encrypted vault blobs out of storage, but still faced the customer master-password encryption on the
+secrets inside them.
 
-## Eradication and recovery
-1. Restore from clean backup. Verify backup integrity *before* wiping the host.
-2. Patch or close the initial access vector before restoring to network.
-3. Reset credentials for any account used on the affected host.
-4. Update EDR detection rules with indicators from this incident.
+## Key facts
+- Initial pivot: information from **stage 1** reused to target a **second employee**.
+- Target: cloud-based **backup** storage (not production).
+- Attacker obtained **credentials + storage decryption keys**.
+- Exfiltrated: customer account data **and** encrypted vault backups.
 
-## Do NOT
-- Do not pay the ransom without CISO and General Counsel approval and law enforcement notification.
-- Do not wipe the host before IR team has taken a forensic image.
-- Do not trust any "decryptor" provided by the threat actor without vendor validation.
-
-## ATT&CK techniques commonly observed
-- T1486 — Data Encrypted for Impact
-- T1490 — Inhibit System Recovery (shadow copy deletion)
-- T1070.001 — Indicator Removal: Clear Windows Event Logs
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

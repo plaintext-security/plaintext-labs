@@ -1,9 +1,14 @@
 # Module 09 — Detecting AD Attacks
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — write Sigma rules for Kerberoasting (4769), AS-REP roasting (4768), DCSync (4662), and pass-the-hash (4624), validate them against sample EVTX with `chainsaw`, and document the audit policy each rule needs to fire, delivering the validated detection-as-code ruleset. (Secondary: Judgment-as-Code / Gate — score the rules against a test corpus so alert-vs-hunt tiering is measured, not asserted.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *every attack in modules 03-08 left a signal; this module is about turning those signals into detections that fire before the attacker reaches the DC.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Type:** Detection-as-Code + Eval Harness &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -22,6 +27,8 @@ The practical approach for most environments: write tight Sigma rules that catch
 The tooling for offline validation — testing a Sigma rule against real EVTX data — is the essential practice. `chainsaw` (a Rust tool from WithSecure) can ingest EVTX files and apply Sigma rules natively, giving you a direct answer to "would this rule have fired on the real attack data?" The EVTX files in `data/evtx/` contain real-shaped events for each attack from modules 03-08, allowing you to validate each rule before it ever touches a live SIEM. This is detection-as-code applied to AD-specific attacks.
 
 A note on honeytokens: the most reliable detection for credential-based attacks is not an event you generate during the attack — it is a deliberate trap. A Kerberoastable service account that no legitimate service ever authenticates with (a honeytoken SPN) generates a 4769 that, by definition, must be attacker activity. No false positives, near-zero baseline noise. Similarly, a user account that is never used (a honey account) generates a 4769 or 4625 only when someone is probing. These are the highest-fidelity signals available, and they require zero complex logic — just the alert "any authentication to this account is malicious."
+
+**Coverage is not effectiveness — and a held-out corpus is how you tell them apart.** "My rule fires on the attack EVTX" is the easy, misleading half. The attack sample is the data you *wrote the rule against*; of course it fires. The hard half — the half that decides whether the rule survives contact with a real domain — is whether it stays *quiet* on the flood of benign 4769s, 4662s, and 4624s that look almost identical. The AES service ticket for the very same SPN you're watching; the `DC2$` machine account doing legitimate replication; the normal `PreAuthType=2` AS-REQ; the Kerberos file-share logon; the machine-account NTLM service auth — these are the near-misses that turn a coverage-green rule into an alert-fatigue generator, and they are exactly what a "fires on the attack" test never shows you. So the discipline this module ends on is the eval-harness move borrowed from machine learning: assemble a **held-out** corpus, *distinct from the demo set*, that pairs the attacks each rule must catch with the benign near-misses each must not fire on; score the rules into a scorecard (recall, precision, FP-rate); and wrap it in a **regression gate** that fails the build if a rule misses an attack or fires on benign. A rule with 100% recall and a 50% false-positive rate is worthless in a SOC — the gate is what stops a well-meaning "let me broaden this filter" edit from quietly regressing a tight detection into noise. You'll watch the gate go green on the tight rules and red on a deliberately too-broad copy: that contrast *is* the lesson, and it is the difference between a detection you can ship and one you only have an anecdote about.
 
 ## Learn (~4 hrs)
 
@@ -46,7 +53,11 @@ A note on honeytokens: the most reliable detection for credential-based attacks 
 - PTH signal: Event 4624 Logon Type 3 with authentication package NtLmSsp from an unexpected source.
 - Honeytoken approach: any Event 4769 for a never-used SPN = guaranteed attacker activity.
 - Chainsaw validates Sigma rules against EVTX offline — the detection-as-code test harness.
+- Coverage ≠ effectiveness: "it fired on the attack sample" is the demo set the rule was written against; effectiveness is recall on attacks **and** staying quiet on benign near-misses.
+- The held-out corpus + regression gate: score rules (recall / precision / FP-rate) on a labelled benign+attack set distinct from the demo, and fail the build if a rule misses an attack or fires on benign — so a broadened filter can't silently regress a tight rule into noise.
 
 ## AI acceleration
 
 Ask a model to draft all four Sigma rules (4769 Kerberoast, 4768 AS-REP, 4662 DCSync, 4624 PTH) from descriptions of the attack. The model is good at the YAML structure but will frequently get field names wrong (e.g., `TicketOptions` vs `TicketEncryptionType`, or confuse event IDs). Validate each field name against the ultimatewindowssecurity.com event reference before running the rule through chainsaw.
+
+Then point the model at effectiveness, not just structure: ask it to enumerate the benign events that would make each rule false-positive — the AES ticket for the same SPN, the machine-account replication, the Kerberos file-share logon — and turn each into a labelled **benign** entry in your held-out corpus. Two cautions you must own. First, keep the wall: the corpus you grade on must stay distinct from the demo set the rules were written against, or the score is the rule grading its own homework. Second, a model labelling its own test set is exactly the contamination the eval guards against — verify every label yourself against the technique it mimics, and own the metric and the gate's fail-closed direction.

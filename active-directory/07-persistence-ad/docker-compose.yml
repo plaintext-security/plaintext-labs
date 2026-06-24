@@ -3,21 +3,21 @@ services:
     build:
       context: ../02-enumeration
       dockerfile: Dockerfile.dc
-    image: plaintext/meridian-dc:latest
-    container_name: meridian-dc
+    image: plaintext/corp-dc:latest
+    container_name: corp-dc
     hostname: dc01
-    domainname: meridian.local
+    domainname: corp.local
     environment:
-      SAMBA_DOMAIN: MERIDIAN
-      SAMBA_REALM: MERIDIAN.LOCAL
-      SAMBA_ADMIN_PASSWORD: "M3rid1an@Admin!"
+      SAMBA_DOMAIN: CORP
+      SAMBA_REALM: CORP.LOCAL
+      SAMBA_ADMIN_PASSWORD: "C0rp@Admin!"
     networks:
       ad-net:
         ipv4_address: 10.10.0.10
     volumes:
       - ../02-enumeration/data:/data:ro
     healthcheck:
-      test: ["CMD", "samba-tool", "domain", "info", "dc01.meridian.local"]
+      test: ["CMD", "samba-tool", "domain", "info", "dc01.corp.local"]
       interval: 15s
       timeout: 10s
       retries: 10

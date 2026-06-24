@@ -1,0 +1,1 @@
+../../../../plaintext-labs/active-directory/12-brownfield-tiering/lab.md

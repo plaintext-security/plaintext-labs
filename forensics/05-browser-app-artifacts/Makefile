@@ -1,9 +1,26 @@
 # Module 05 — Browser & Application Artifacts lab.
-# Standard targets: up / down / reset / demo / shell
-.PHONY: up down reset demo shell
+# Standard targets: up / down / reset / demo / shell / fetch-data
+.PHONY: up down reset demo shell fetch-data
+
+# Real public dataset: Digital Corpora "Nitroba University Harassment" scenario PCAP.
+# Browser/webmail artifacts (webmail sessions, user-agents) are reconstructed from the capture.
+# Pulled from the shared dataset cache (lib/fetch.sh, source name digitalcorpora-nitroba).
+# See PROVENANCE.md for dataset details and SHA-256 placeholder.
 
 up:  ## Build and start the hindsight + sqlite3 container
 	docker compose up -d --build
+
+fetch-data:  ## Download the real Nitroba scenario PCAP into data/ (idempotent, ~60MB)
+	@mkdir -p data
+	@if [ -f data/nitroba.pcap ]; then \
+		echo "exists: data/nitroba.pcap"; \
+	else \
+		echo "fetch:  data/nitroba.pcap (~60MB)"; \
+		. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh"; \
+		fetch_file digitalcorpora-nitroba data/nitroba.pcap; \
+	fi
+	@echo "Done. Verify SHA-256 against PROVENANCE.md. The bundled data/History (Chrome SQLite)"
+	@echo "remains the offline demo seed; nitroba.pcap is the real artifact for webmail reconstruction."
 
 down:  ## Stop and remove the container
 	docker compose down
@@ -23,7 +40,7 @@ demo:  ## Extract Chrome browser artifacts from data/History and display finding
 			"SELECT datetime(last_visit_time/1000000 - 11644473600, '"'"'unixepoch'"'"') as visited_at, \
 			        url, visit_count \
 			 FROM urls \
-			 WHERE last_visit_time/1000000 - 11644473600 BETWEEN 1710464400 AND 1710466500 \
+			 WHERE last_visit_time/1000000 - 11644473600 BETWEEN 1710468000 AND 1710470100 \
 			 ORDER BY last_visit_time;"; \
 		echo; \
 		echo "-- Downloads --"; \
@@ -44,8 +61,8 @@ demo:  ## Extract Chrome browser artifacts from data/History and display finding
 			 FROM urls ORDER BY last_visit_time;"; \
 		echo; \
 		echo "=== KEY FINDINGS ==="; \
-		echo "  - Google searches for exfiltration methods and log clearing"; \
-		echo "  - Visit to mega.nz and wetransfer.com (data exfiltration risk domains)"; \
-		echo "  - Download of update_patch.exe from pastebin.com"; \
-		echo "  - Navigation to \\\\meridian-fs01\\finance\\restricted before transfers"; \
+		echo "  - Google searches for anonymous/untraceable email and IP hiding"; \
+		echo "  - Visit to willselfdestruct.com and sendanonymousemail.net (anonymizer webmail)"; \
+		echo "  - Download of anon_mailer.exe from pastebin.com"; \
+		echo "  - Gmail Sent-folder activity in the harassment window"; \
 		echo "=== Demo complete. ==="'

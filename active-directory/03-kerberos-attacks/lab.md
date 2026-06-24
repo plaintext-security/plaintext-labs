@@ -9,12 +9,12 @@
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/03-kerberos-attacks
 make up      # start Samba4 DC + impacket attacker container (~2 min first build)
-make demo    # run Kerberoast + AS-REP roast, display hashes
+make demo    # request REAL TGS-REP + AS-REP hashes from the live DC, then crack
 make shell   # interactive impacket shell
 make down    # stop when done
 ```
 
-The `data/hashes.txt` file contains pre-generated Kerberoast ticket hashes for offline cracking practice — use these if you want to skip straight to hashcat.
+`make demo` requests live `$krb5tgs$` / `$krb5asrep$` hashes from the Samba KDC — nothing is pre-baked. `data/wordlist.txt` seeds the weak service-account passwords so the live hashes crack deterministically without downloading rockyou; swap in `rockyou.txt` for the realistic run.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -22,7 +22,7 @@ The `data/hashes.txt` file contains pre-generated Kerberoast ticket hashes for o
 
 ## Scenario
 
-As `jsmith` on the Meridian Financial network, you have enumerated the domain (module 02) and identified three Kerberoastable service accounts and two AS-REP roastable accounts. Your goal is to extract their ticket hashes and crack the weakest ones offline. A cracked service account password is the next step in the chain toward Domain Admin.
+As `jsmith` on the `corp.local` network, you have enumerated the domain (module 02) and identified three Kerberoastable service accounts and two AS-REP roastable accounts. Your goal is to extract their ticket hashes from the live DC and crack the weakest ones offline. A cracked service account password is the next step in the chain toward Domain Admin.
 
 ## Do
 
@@ -32,7 +32,7 @@ As `jsmith` on the Meridian Financial network, you have enumerated the domain (m
 
 3. [ ] **AS-REP roast.** With no credential at all, request AS-REP material for accounts that don't require pre-authentication, feeding the tool a user list. Which accounts return a hash, and what prefix identifies an AS-REP hash? Why did this require no password?
 
-4. [ ] **Crack the hashes offline.** Run hashcat against the sample hashes in `data/hashes.txt` with rockyou. (Which hashcat mode matches a TGS-REP etype-23 hash? Which matches an AS-REP hash?) Which account cracks, how long did it take, and what does that say about service-account password hygiene?
+4. [ ] **Crack the hashes offline.** Run hashcat against the live hashes you just captured, using `data/wordlist.txt` (swap in `rockyou.txt` for the realistic run). (Which hashcat mode matches a TGS-REP etype-23 hash? Which matches an AS-REP hash?) Which account cracks, how long did it take, and what does that say about service-account password hygiene?
 
 5. [ ] **Understand the etype downgrade.** Re-request the roast forcing AES256 instead of RC4 and compare the hash prefixes. Find the matching hashcat mode for the AES256 TGS and explain why AES makes cracking dramatically harder. Record both etype numbers and their hashcat modes in your notes.
 
@@ -41,7 +41,7 @@ As `jsmith` on the Meridian Financial network, you have enumerated the domain (m
 ## Success criteria — you're done when
 
 - [ ] You have extracted Kerberoast hashes for all three SPNs and AS-REP hashes for both no-preauth accounts.
-- [ ] At least one hash has been cracked with hashcat (or confirmed crackable using `data/hashes.txt`).
+- [ ] At least one of the live hashes has been cracked with hashcat using `data/wordlist.txt` (or rockyou).
 - [ ] You can explain why the attack leaves no lockout events.
 - [ ] You have the ATT&CK technique IDs (T1558.003, T1558.004) and the specific Event ID that detects each.
 

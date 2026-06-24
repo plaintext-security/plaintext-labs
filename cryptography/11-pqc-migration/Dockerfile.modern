@@ -1,0 +1,17 @@
+# Module 11 — the MODERN client (OpenSSL 3.5+, capable of offering X25519MLKEM768).
+#
+# Alpine 3.22 ships OpenSSL 3.5.x with native ML-KEM. This client can negotiate
+# the hybrid group once the server offers it. Pinned for a deterministic
+# OpenSSL version.
+FROM alpine:3.22
+
+RUN apk add --no-cache \
+      openssl \
+      curl \
+      bash \
+      grep
+
+WORKDIR /lab
+COPY . /lab
+
+CMD ["sleep", "infinity"]

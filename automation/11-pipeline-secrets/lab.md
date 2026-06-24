@@ -23,8 +23,8 @@ make down       # stop when done
 ```
 
 `make up` registers an IAM OIDC identity provider for the lab's local issuer and creates
-`MeridianDeployRole`, whose **trust policy** (`data/trust-policy.json`) is scoped to exactly one
-subject (`repo:meridian/api:ref:refs/heads/main`) and audience (`sts.amazonaws.com`). The runner
+`DeployRole`, whose **trust policy** (`data/trust-policy.json`) is scoped to exactly one
+subject (`repo:acme-corp/api:ref:refs/heads/main`) and audience (`sts.amazonaws.com`). The runner
 container ships `awslocal` (a drop-in for `aws` pointed at LocalStack), `python3`, and the
 `mint_oidc_token.py` / `check_no_static_secret.py` tooling.
 
@@ -45,9 +45,10 @@ container ships `awslocal` (a drop-in for `aws` pointed at LocalStack), `python3
 
 ## Scenario
 
-Meridian Financial's `api` repo deploys to AWS from GitHub Actions. The deploy job authenticates with
-a long-lived IAM access key stored as a repo secret — and last quarter a near-identical key leaked
-through a verbose CI log at a peer company and was abused for three weeks before anyone rotated it.
+The target org's `api` repo deploys to AWS from GitHub Actions. The deploy job authenticates with
+a long-lived IAM access key stored as a repo secret — the same standing-credential shape behind the
+**Codecov (2021)** and **CircleCI (Jan 2023)** incidents, where a static token lifted from CI was
+abused before anyone rotated it.
 Security's mandate: **no long-lived cloud credential may be stored in CI.** Your job is to refactor
 the deploy pipeline from the stored static key to **OIDC federation** — the runner mints a per-run
 identity token and trades it at AWS STS for a short-lived credential — and then to **prove** the
@@ -65,7 +66,7 @@ static secret is gone and the minted credential is genuinely short-lived and sco
 ### Part 2: Build the OIDC pipeline (the AFTER)
 2. [ ] **Read what `make up` trusted.** Inspect the registered identity provider and role:
    `make shell`, then `awslocal iam list-open-id-connect-providers` and
-   `awslocal iam get-role --role-name MeridianDeployRole`. The role's trust policy
+   `awslocal iam get-role --role-name DeployRole`. The role's trust policy
    (`data/trust-policy.json`) is the security control — find the `aud` and `sub` conditions and say,
    in one sentence, *which exact workflow* is allowed to assume this role.
 
@@ -91,7 +92,7 @@ static secret is gone and the minted credential is genuinely short-lived and sco
      (`StringEquals`, no wildcard).
 
 6. [ ] **Prove the deny / the wildcard mistake.** `make check-loose` runs the *same* checker against
-   `data/trust-policy-loose.json`, whose `sub` is `repo:meridian/*:*`. Watch assertion 3 **FAIL**:
+   `data/trust-policy-loose.json`, whose `sub` is `repo:acme-corp/*:*`. Watch assertion 3 **FAIL**:
    that wildcard would let any fork or branch of the org assume the production deploy role — the OIDC
    equivalent of a wildcard IAM grant, and a documented real-world misconfiguration. In your
    write-up, explain why a passing `make oidc` with this loose policy is *worse* than the static key
@@ -150,7 +151,7 @@ credential.
 
 ## Stretch
 - **Tighten to a protected environment.** Change the trust policy `sub` to a GitHub *environment*
-  form (`repo:meridian/api:environment:production`) and explain how requiring a protected environment
+  form (`repo:acme-corp/api:environment:production`) and explain how requiring a protected environment
   (with required reviewers) adds a human gate on top of the cryptographic scoping.
 - **Add a deploy gate.** Wire `verify_pipeline.py` into `data/deploy-oidc.yml` as a job step that
   fails the build if a static key reappears or the trust policy goes wildcard — the OIDC analogue of

@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's development team is debating whether to use AES-CBC or AES-GCM for
+Corp's development team is debating whether to use AES-CBC or AES-GCM for
 encrypting customer data at rest. Before the architecture review, your job is to demonstrate
 concretely what guarantee each mode provides — including what an attacker can do to CBC that
 they cannot do to GCM — so the team makes an informed choice.
@@ -46,7 +46,7 @@ they cannot do to GCM — so the team makes an informed choice.
    differently from the CBC case, and what is that behaviour called?
 
 4. [ ] Document the difference: write two paragraphs in `primitives-analysis.md`:
-   - What happened when you tampered with the CBC ciphertext, and what this means for Meridian's data-at-rest design.
+   - What happened when you tampered with the CBC ciphertext, and what this means for Corp's data-at-rest design.
    - What happened when you tampered with the GCM ciphertext, and why this is the correct guarantee.
 
 5. [ ] Compute an HMAC of the plaintext with OpenSSL (`openssl mac … HMAC`). Then explain in
@@ -92,7 +92,7 @@ context of real-world findings.
 
 > "I demonstrated the concrete security difference between AES-CBC and AES-GCM by tampering
 > with ciphertexts — showing CBC's silent corruption failure and GCM's authentication check —
-> and wrote an architecture recommendation for Meridian's data-at-rest design."
+> and wrote an architecture recommendation for Corp's data-at-rest design."
 
 ## Stretch
 

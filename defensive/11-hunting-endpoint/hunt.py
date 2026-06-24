@@ -6,7 +6,7 @@ query them with real SQL — the same pattern as Velociraptor VQL or
 osquery, without the infrastructure overhead.
 
 Usage:
-    python3 hunt.py            # demo mode — runs the Meridian hunt
+    python3 hunt.py            # demo mode — runs the endpoint hunt
     python3 hunt.py --shell    # interactive SQL REPL
 """
 import base64
@@ -80,16 +80,16 @@ def decode_b64_command(cmdline: str) -> str | None:
 
 def demo(conn: sqlite3.Connection) -> int:
     print("=" * 62)
-    print("Meridian Financial — Endpoint Hunt")
+    print("Endpoint Hunt — WIN10-01")
     print(f"Loaded {conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]} Sysmon events")
     print("=" * 62)
 
     print("""
 Hypothesis: An attacker used a malicious Office macro to establish
-persistence via a scheduled task or registry Run key on jsmith's
-workstation (T1059.001 + T1547.001).
+persistence via a scheduled task or registry Run key on WIN10-01
+(user01's workstation) — T1059.001 + T1547.001.
 
-Source: threat-intel tip — jsmith downloaded an unusual .docm file.
+Source: threat-intel tip — user01 downloaded an unusual .docm file.
 """)
 
     # Step 1: Was a suspicious Office document opened?
@@ -224,7 +224,7 @@ Source: threat-intel tip — jsmith downloaded an unusual .docm file.
     print("""
 Hypothesis CONFIRMED. Evidence chain:
 
-  1. jsmith opened Invoice_March2024.docm (WINWORD.EXE)
+  1. user01 opened Invoice_March2024.docm (WINWORD.EXE)
   2. Macro spawned cmd.exe → powershell.exe -enc (encoded payload)
   3. PowerShell dropped stage1.exe to %TEMP%
   4. certutil.exe fetched updater.exe from 185.220.101.47
@@ -239,7 +239,7 @@ Detection idea (draft Sigma rule):
   title: Office Macro Spawns Encoded PowerShell
   condition: EventID=1 AND ParentImage ENDSWITH WINWORD.EXE|EXCEL.EXE
              AND CommandLine CONTAINS -enc
-  response: isolate host, revoke jsmith credentials, pull full memory
+  response: isolate host, revoke user01's credentials, pull full memory
 """)
     return 0
 

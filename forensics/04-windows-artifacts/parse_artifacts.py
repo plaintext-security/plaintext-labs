@@ -82,8 +82,8 @@ def main():
     events_path = os.path.join(data_dir, "security-events.jsonl")
     registry_path = os.path.join(data_dir, "ntuser-parsed.json")
 
-    print("\nMeridian Financial IR — Windows Artifact Analysis")
-    print("Host: MERIDIAN-FIN-WS01.meridian.internal")
+    print("\nWindows Artifact Analysis — beachhead workstation triage")
+    print("Host: BEACHHEAD-WS01.corp.internal")
     print("Window: 2024-03-15 02:09–02:31 UTC\n")
 
     parse_events(events_path)
@@ -93,11 +93,11 @@ def main():
     print("SUMMARY")
     print("=" * 60)
     print("  - Lateral movement from 10.99.4.22 at 02:09 UTC")
-    print("  - svc_batch_finance used for access (logon type 3 = network)")
+    print("  - svc-backup used for access (logon type 3 = network)")
     print("  - cmd.exe -> powershell.exe execution chain with encoded payload")
     print("  - Encoded PS command in Run key = persistence (ATT&CK T1547.001)")
     print("  - Log cleared at 02:31 UTC — attacker covering tracks (T1070.001)")
-    print("  - TypedPaths show navigation to \\meridian-fs01 and \\10.99.4.22\\drop$")
+    print("  - TypedPaths show navigation to \\FILESHARE-SRV01 and \\10.99.4.22\\drop$")
     print("\nNext: correlate these events in the super-timeline (Module 07)")
 
 if __name__ == "__main__":

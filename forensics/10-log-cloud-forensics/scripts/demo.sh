@@ -3,7 +3,7 @@
 set -e
 
 echo "============================================================"
-echo "  Meridian Financial — Log & Cloud Forensics Demo"
+echo "  Log & Cloud Forensics Demo (anchor: Lunar Spider intrusion)"
 echo "============================================================"
 echo ""
 
@@ -24,9 +24,9 @@ fi
 echo ""
 
 # --- Chainsaw EVTX search ---
-echo "--- Part 1b: Chainsaw account search (dev-svc01) ---"
+echo "--- Part 1b: Chainsaw account search (jsmith) ---"
 if command -v chainsaw >/dev/null 2>&1; then
-    chainsaw search --json -t "SubjectUserName: dev-svc01" "$EVTX_DIR" 2>/dev/null || true
+    chainsaw search --json -t "SubjectUserName: jsmith" "$EVTX_DIR" 2>/dev/null || true
 else
     echo "Chainsaw not found — showing synthetic search output:"
     cat /data/chainsaw_summary.txt 2>/dev/null || true

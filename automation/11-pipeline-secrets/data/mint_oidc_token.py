@@ -14,7 +14,7 @@ This script does the same thing locally so the OIDC flow is legible end-to-end:
 
 Usage:
   python mint_oidc_token.py                      # default claims (the intended pipeline)
-  python mint_oidc_token.py --sub repo:meridian/api:ref:refs/heads/feature/x
+  python mint_oidc_token.py --sub repo:acme-corp/api:ref:refs/heads/feature/x
   python mint_oidc_token.py --aud wrong-audience # to test the trust-policy scope
 
 The token is printed to stdout (the pipeline pipes it to AssumeRoleWithWebIdentity).
@@ -40,7 +40,7 @@ JWKS = os.path.join(OIDC_DIR, "jwks.json")
 #   repo:<org>/<repo>:ref:refs/heads/<branch>
 DEFAULT_ISS = "http://oidc-provider:8080"   # our local issuer (served by `make jwks`)
 DEFAULT_AUD = "sts.amazonaws.com"
-DEFAULT_SUB = "repo:meridian/api:ref:refs/heads/main"
+DEFAULT_SUB = "repo:acme-corp/api:ref:refs/heads/main"
 KID = "lab-oidc-key-1"
 
 
@@ -89,7 +89,7 @@ def mint(iss: str, aud: str, sub: str, ttl: int) -> str:
         "nbf": now,
         "exp": now + ttl,
         # GitHub-style context claims a strict trust policy could also condition on:
-        "repository": "meridian/api",
+        "repository": "acme-corp/api",
         "ref": "refs/heads/main",
         "workflow": "deploy",
     }

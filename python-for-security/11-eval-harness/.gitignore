@@ -1,0 +1,7 @@
+# Generated run outputs — the corpus + eval regenerate these; never commit them.
+results/
+.coverage
+.coverage.*
+htmlcov/
+__pycache__/
+.pytest_cache/

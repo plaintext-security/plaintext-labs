@@ -1,4 +1,4 @@
-.PHONY: up down reset demo shell
+.PHONY: up down reset demo shell refresh
 
 up:
 	docker compose up -d --build
@@ -12,5 +12,8 @@ reset:
 shell:
 	docker compose exec lab bash
 
-demo:      ## Run enrich.py against the mock API and show enriched output
+refresh:   ## Re-fetch the LIVE abuse.ch feeds via shared cache (needs MB_AUTH_KEY) into feeds/db.json
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && fetch_feed feodo-ipblocklist feeds/feodo.json && fetch_feed urlhaus-recent feeds/urlhaus.csv && docker compose run --rm -e FEODO_FILE=feeds/feodo.json -e URLHAUS_FILE=feeds/urlhaus.csv lab python feeds/fetch_feeds.py && rm -f feeds/feodo.json feeds/urlhaus.csv
+
+demo:      ## Run enrich.py against the real-feed-backed API and show enriched output
 	docker compose run --rm lab python enrich.py

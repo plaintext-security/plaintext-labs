@@ -4,18 +4,24 @@
 
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs a tiny local
-HTTP echo server (Flask) so you can read raw requests and responses with `curl` — no real site, no
-attacking anyone.
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs **two** targets:
+a tiny local HTTP echo server (Flask), where you can read raw requests/responses byte for byte, and a
+real intentionally-vulnerable app — **[OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)** —
+whose responses carry *genuine* missing security headers and real `Set-Cookie` flags to audit. No
+real-world site is attacked; both run locally.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/foundations/07-web-http
-make up      # build + start the local echo server
+make up      # build + start the echo server AND OWASP Juice Shop
 make demo    # walk GET / POST / redirect / cookie / header in one pass
-make shell   # drop into a shell with curl (server at http://echo-server:8080)
+make shell   # drop into a shell with curl
 make down    # stop when done
 ```
+
+From the lab shell (or your host): the echo server is `http://echo-server:8080` (legible teaching
+target), and Juice Shop is `http://juice-shop:3000` (`http://localhost:3000` from your host) — the real
+app to point your header audit at.
 
 ## Scenario
 You're profiling a small web app the way an analyst (or an attacker) would: by reading the exact bytes
@@ -42,10 +48,12 @@ Figure out the `curl` flags from its manual — knowing which flag does what is 
    that flag missing and the site on plain HTTP, what does Firesheep get? Then confirm: the missing
    `Secure` flag is exactly what let the cookie travel in cleartext and be copied.
 
-4. [ ] **Audit the security headers.** Check the response for `Strict-Transport-Security` (HSTS),
-   `Content-Security-Policy`, and `X-Frame-Options` (hint: `-I` shows headers only). Note which are
-   absent. Name the one header — HSTS — that, by forcing HTTPS, would have stopped the plain-HTTP
-   downgrade Firesheep relied on.
+4. [ ] **Audit the security headers — on the real app.** Run `curl -I http://juice-shop:3000/` against
+   **OWASP Juice Shop** (not just the toy echo server) and check the response for
+   `Strict-Transport-Security` (HSTS), `Content-Security-Policy`, and `X-Frame-Options` (hint: `-I` shows
+   headers only). These are *genuine* findings on a real intentionally-vulnerable app — note which are
+   absent, and inspect its `Set-Cookie` line too. Name the one header — HSTS — that, by forcing HTTPS,
+   would have stopped the plain-HTTP downgrade Firesheep relied on.
 
 5. [ ] **Tear down** the server when done (`make down`).
 
@@ -68,8 +76,8 @@ given a URL, it fetches the response, then checks for `Strict-Transport-Security
 and `X-Frame-Options`, and for any `Set-Cookie` it flags whether `Secure` and `HttpOnly` are present.
 Output a clean PASS/MISSING line per check. **AI drafts the script; you review every line** — especially
 that a missing flag is reported as missing and not silently passed — then commit it alongside `http-notes.md`.
-Run it against your lab server (expect the missing `Secure`) and against a real HTTPS site to see the
-contrast.
+Run it against **OWASP Juice Shop** (`http://juice-shop:3000` — real missing headers on a real app), the
+echo server (expect the missing `Secure`), and a real HTTPS site to see the contrast.
 
 ## AI acceleration
 Paste your real response headers into a model and ask which cookie flag is missing and what attack it

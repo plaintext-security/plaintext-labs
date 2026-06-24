@@ -1,9 +1,14 @@
 # Module 01 — Threat Model of the Endpoint
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 1 · Concept Autopsy — threat-model a representative financial-services endpoint (assets, adversary objectives, attack paths) and map existing vs. recommended mitigations to each path, delivering a prioritised hardening backlog. (Secondary: Decision / ADR — the prioritisation doubles as a defended scoping decision on which controls matter most.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *Before you harden anything, decide what you're actually defending it from.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -11,11 +16,11 @@ Every hardening checklist was written for a generic "enterprise workstation." Yo
 
 ## Objective
 
-Produce a threat model for a representative Meridian Financial endpoint — identifying the assets on the host, the realistic adversary objectives, the attack paths that reach them, and the mitigations (already present and recommended) mapped to each path.
+Produce a threat model for a representative financial-services endpoint — identifying the assets on the host, the realistic adversary objectives, the attack paths that reach them, and the mitigations (already present and recommended) mapped to each path.
 
 ## The core idea
 
-An endpoint threat model is a structured conversation about attacker economics. The host is not uniformly valuable — the threat model asks *what is on this machine that an adversary would want*, *how would they reach it from their likely entry point*, and *what is the cheapest control that closes or significantly narrows that path*. Most attackers are not targeting your specific company; they are running playbooks against the class of target you represent. The threat model's first job is to figure out which playbook.
+An endpoint threat model is a structured conversation about attacker economics. The host is not uniformly valuable — the threat model asks *what is on this machine that an adversary would want*, *how would they reach it from their likely entry point*, and *what is the cheapest control that closes or significantly narrows that path*. Most attackers are not targeting your specific company; they are running playbooks against the class of target you represent. The threat model's first job is to figure out which playbook. The **Colonial Pipeline ransomware attack (May 2021)** is the textbook reminder that the cheapest path is usually a missing endpoint/access control, not a zero-day: DarkSide got in through a single compromised password on an inactive VPN account that had no MFA — exactly the kind of weakness a host/access threat model is built to surface and prioritise *before* it is exploited.
 
 The STRIDE model (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) is a useful lens for endpoints even though it was designed for applications. A workstation can be spoofed (credential theft lets an adversary impersonate the user), tampered with (a rootkit modifies the kernel or audit logs), and elevated against (a local privilege-escalation exploit moves the adversary from user to SYSTEM). Running STRIDE systematically prevents the "we only thought about malware" failure where teams harden against commodity threats but overlook the post-exploitation phase that actually causes breach impact.
 
@@ -31,6 +36,7 @@ Mitigations follow from the asset/path analysis. A control that doesn't close or
 
 **Endpoint-specific threat landscape**
 - [MITRE ATT&CK Enterprise — Initial Access & Execution](https://attack.mitre.org/matrices/enterprise/) — the adversary playbook; focus on the Initial Access and Execution columns to understand how attackers reach and use an endpoint.
+- [The Attack on Colonial Pipeline: What We've Learned (CISA, 2023)](https://www.cisa.gov/news-events/news/attack-colonial-pipeline-what-weve-learned-what-weve-done-over-past-two-years) — the lessons-learned writeup for the breach this lab is anchored to; read it (~10 min) to see how a missing MFA control on one VPN account (ATT&CK T1078.002) cascaded into a national-impact incident.
 - [CIS Controls v8 — Implementation Group 1](https://www.cisecurity.org/controls/v8) — the "essential hygiene" baseline; read the IG1 summary (free PDF, ~10 pages) to see which controls a small team prioritises first.
 
 **Credential theft on the endpoint**
@@ -43,6 +49,7 @@ Mitigations follow from the asset/path analysis. A control that doesn't close or
 - Endpoint assets include cached credentials and access context, not just files.
 - Controls should be prioritised by how many attack paths they close, not by benchmark item number.
 - A compliance score measures implementation; the threat model determines *which* controls to implement.
+- Real anchor: Colonial Pipeline (2021) started from one MFA-less VPN account (T1078.002) — a missing access control a threat model surfaces, not a zero-day.
 
 ## AI acceleration
 

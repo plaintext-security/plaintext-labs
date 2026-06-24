@@ -1,4 +1,4 @@
-.PHONY: up down reset shell demo
+.PHONY: up down reset shell demo fetch-data
 up:
 	docker compose up -d --build
 down:
@@ -9,3 +9,13 @@ shell:
 	docker compose exec lab bash
 demo:
 	docker compose run --rm lab python3 siem.py
+
+# Fetch a real public sshd log (loghub OpenSSH_2k.log) so you can run the
+# ingest/normalize path on genuine raw auth lines, not just the curated seed.
+# See data/PROVENANCE.md. Not run in CI — you run it locally.
+fetch-data: ## Download the real loghub OpenSSH_2k.log → data/raw/OpenSSH_2k.log
+	@mkdir -p data/raw
+	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
+	fetch_file loghub-openssh data/raw/OpenSSH_2k.log
+	@echo "Done. Real sshd auth lines are in data/raw/OpenSSH_2k.log."
+	@echo "Extend normalize() in siem.py to ingest them into the events table."

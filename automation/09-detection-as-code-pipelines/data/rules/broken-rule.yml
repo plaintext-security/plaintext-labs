@@ -2,7 +2,7 @@ title: Broken Rule — Invalid Condition Syntax (Fix Me)
 id: e5f6a7b8-c9d0-1234-efab-345678901234
 status: test
 description: This rule has an intentionally broken condition for the lab exercise.
-author: Meridian Detection Engineering
+author: Detection Engineering
 date: 2024-11-15
 tags:
   - attack.execution

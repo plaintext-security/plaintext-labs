@@ -11,20 +11,26 @@ cd plaintext-labs/defensive/04-network-monitoring
 make up
 ```
 
-Run `make demo` to analyze a bundled set of synthetic Zeek logs
+Run `make demo` to analyze a small curated seed of Zeek logs
 (`data/zeek/conn.log`, `dns.log`, `http.log`) that model a real C2
 compromise — beaconing at ~300 s intervals, DGA queries, a PowerShell
-dropper download, and 8 MB of outbound exfil.
+dropper download, and 8 MB of outbound exfil. The seed lets the demo run
+fully offline.
 
-For the full real-traffic exercise: download a malicious capture from
-[Malware-Traffic-Analysis.net](https://www.malware-traffic-analysis.net/)
-(each post has a PCAP + write-up), drop it in this directory, and run:
+For the full real-traffic exercise, fetch a public malicious capture and
+rebuild the logs from it:
 
 ```bash
-# generates conn.log, dns.log, http.log etc. in this directory
-PCAP=your-capture.pcap make zeek
-python3 analyze.py .   # analyze the generated logs
+make fetch-data        # downloads a real Malware-Traffic-Analysis.net PCAP
+                       # and runs Zeek over it → conn.log, dns.log, http.log
+python3 analyze.py data/zeek   # analyze the generated logs
 ```
+
+`make fetch-data` pulls a specific dated MTA.net capture (NetSupport RAT C2),
+unzips it with the site's `infected` password, and runs `zeek -r` to produce
+the logs — see `data/PROVENANCE.md` for the exact source
+URL, the pipeline, and the write-up to check your findings against. To use a
+different capture, set `PCAP=your-capture.pcap make zeek`.
 
 ## Scenario
 Run Zeek over a real malicious PCAP and find the attack in its logs — fully self-contained, no prior

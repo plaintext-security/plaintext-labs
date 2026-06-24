@@ -1,38 +1,34 @@
-# Detection Notes — Lateral Movement
-**Document type:** Detection engineering notes | **Owner:** Detection Engineering | **Last updated:** 2025-03-01
+# LastPass Breach — What Was Encrypted vs. In Cleartext
+**Document type:** Public post-mortem detail | **Source:** LastPass disclosure (Dec 22, 2022)
 
-## Overview
-This document summarises detection rules and data sources for lateral movement techniques
-observed in Meridian's environment. Updated after each confirmed lateral movement incident.
+## The copied vault backup contained two kinds of data
+The customer vault backup the attacker copied was **not uniformly encrypted**. It was a mix:
 
-## PsExec lateral movement (T1021.002)
+- **Unencrypted fields:** website **URLs**. Because URLs were stored in the clear, the attacker can
+  see *which sites* a given customer had credentials for, even without cracking anything.
+- **Encrypted fields:** website **usernames and passwords, secure notes, and form-filled data**.
+  These were protected with **256-bit AES** encryption and can only be decrypted with the customer's
+  unique **master password**, which LastPass states it does not know or store.
 
-**What we see:** `psexec.exe` spawning from unusual parent processes (not IT management
-tools), or ADMIN$ share connections followed by remote service creation events.
+## What this means in practice
+- The secrets themselves (passwords, notes) stay protected **as long as the master password is
+  strong** and was not phished or reused elsewhere.
+- The cleartext URLs are still sensitive: they reveal a customer's account footprint and enable
+  targeted phishing against the specific services that customer uses.
+- Credit card data: LastPass found **no evidence** that unencrypted credit card data was accessed.
 
-**Detection rule:** `sigma-rule-lateral-psexec-v2.yml` (in the sigma-rules repository)
-- Log source: Windows Security Event Log, Event ID 4648 (explicit credentials used) + 7045 (service installed)
-- Key field: `ServiceName` matching `PSEXESVC` or random 8-char string
-- False positive: legitimate sysadmin use from jump hosts (`MERIDIAN-JUMP-01`, `MERIDIAN-JUMP-02`)
+## Master-password strength is the whole defense
+LastPass's encryption uses PBKDF2 key derivation (100,100 iterations for accounts created under the
+2018+ default). LastPass stated that with a strong default master password (12+ characters) it would
+take an impractical amount of time to brute-force the encryption. The corollary — and the real
+risk — is **weak or reused master passwords**, where offline cracking of the stolen encrypted vaults
+becomes feasible.
 
-**Tuning note:** Add a filter for source IPs in the jump host CIDR (`10.0.0.240/28`) to
-suppress the false-positive storm from the IT team's scheduled maintenance scripts.
+## Key facts
+- **Cleartext in the backup:** website URLs.
+- **Encrypted in the backup (AES-256, master-password-derived key):** usernames, passwords, secure
+  notes, form-fill data.
+- Defense rests on **master-password strength**; LastPass cannot decrypt vaults for the customer.
 
-## WMI remote execution (T1047)
-
-**What we see:** `WmiPrvSE.exe` spawning `cmd.exe` or `powershell.exe` with network
-connections to the host immediately preceding it.
-
-**Detection rule:** `sigma-rule-wmi-remote-exec-v1.yml`
-- Log source: Sysmon Event ID 1 (process creation), parent `WmiPrvSE.exe`
-- Filter: exclude `WmiPrvSE.exe → msiexec.exe` (Windows Update false positive)
-
-## Log retention
-- Windows Security events: 90 days in SIEM, 1 year in cold storage
-- Sysmon events: 30 days in SIEM (volume constraint), 90 days cold
-- Network flow logs: 180 days
-
-## Known gaps
-- No detection for WinRM-based lateral movement (T1021.006). Ticket: DET-2025-0041.
-- PowerShell remoting (T1021.006 variant) produces insufficient logging without
-  ScriptBlock logging enabled. Enforcement in progress; target completion: 2025-Q3.
+## Source
+- LastPass, "Notice of Recent Security Incident": https://blog.lastpass.com/posts/notice-of-recent-security-incident

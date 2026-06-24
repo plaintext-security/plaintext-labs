@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SSRF + XXE audit — Meridian Financial document portal.
+SSRF + XXE audit — document processing portal.
 
 Demonstrates:
   1. Normal use — confirm the URL fetcher works for a legitimate target
@@ -38,7 +38,7 @@ DIVIDER = "─" * 64
 FAKE_CREDS = json.dumps({
     "Code":            "Success",
     "Type":            "AWS-HMAC",
-    "AccessKeyId":     "ASIA3MERIDIANXYZ12345",
+    "AccessKeyId":     "ASIA3EXAMPLEXYZ12345",
     "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
     "Token":           "IQoJb3JpZ2luX2VjEJr//////////wEaDmFwLXNvdXRoZWFzdC0x...",
     "Expiration":      "2024-03-15T12:00:00Z",
@@ -53,8 +53,8 @@ class MetadataHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/latest/meta-data/iam/security-credentials/":
-            self._respond(200, "text/plain", b"meridian-ec2-role")
-        elif "meridian-ec2-role" in self.path:
+            self._respond(200, "text/plain", b"webapp-ec2-role")
+        elif "webapp-ec2-role" in self.path:
             self._respond(200, "application/json", FAKE_CREDS)
         elif self.path == "/latest/meta-data/instance-id":
             self._respond(200, "text/plain", b"i-0a1b2c3d4e5f67890")
@@ -93,7 +93,7 @@ def demo() -> int:
     METADATA_BASE = f"http://127.0.0.1:{METADATA_PORT}"
 
     print("=" * 64)
-    print("Meridian Financial — SSRF + XXE Audit")
+    print("SSRF + XXE Audit — document processing portal")
     print("OWASP A10/A05: CWE-918 (SSRF) + CWE-611 (XXE)")
     print("=" * 64)
 

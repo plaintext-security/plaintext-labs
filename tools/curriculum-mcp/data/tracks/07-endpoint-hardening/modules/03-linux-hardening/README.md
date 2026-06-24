@@ -1,9 +1,14 @@
 # Module 03 — Linux Hardening to CIS
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 4 · Audit→Build→Verify — scan a Linux host with Lynis and OpenSCAP, interpret the findings, apply a representative set of remediations, and rescan to prove a measurable score improvement. (Secondary: Decision / ADR — the Lynis-vs-OpenSCAP "which tool when" call and "accept with justification" exceptions are a latent benchmark/tooling decision.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *Lynis and OpenSCAP scan the host and tell you exactly what to fix — the discipline is acting on the output.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 

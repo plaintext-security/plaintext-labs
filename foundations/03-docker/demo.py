@@ -121,7 +121,7 @@ def demo_fixed_dockerfile() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Docker Lab Demo")
+    print("Docker Lab Demo")
     print("=" * 64)
     print()
     print("Covers the container lifecycle and the root-by-default security issue.")

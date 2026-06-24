@@ -11,16 +11,28 @@ cd plaintext-labs/offensive/07-web-access-control
 make up
 ```
 
-The container runs a minimal Flask app (`app/app.py`) — Meridian Financial's
-internal order portal — with two deliberate access-control bugs. No live
-network required; the audit script uses Flask's test client.
+The container runs a minimal Flask app (`app/app.py`) — the internal order
+portal — with two deliberate access-control bugs. No live network required; the
+audit script uses Flask's test client.
+
+> Want a real hosted target too? PortSwigger's free Web Security Academy lab
+> [**Insecure direct object references**](https://portswigger.net/web-security/access-control/lab-insecure-direct-object-references)
+> hands you a predictable transcript ID — tamper with it to read another user's
+> chat log and recover Carlos's password. Same IDOR primitive, a different stack.
 
 ## Scenario
 
-Meridian's dev team shipped the internal portal quickly and tested it
-"visually" — the UI hides the admin button from normal users, so it looks
-right. But the server-side checks are broken in two ways. Find them, exploit
-them, and state the fix.
+A dev team shipped the internal portal quickly and tested it "visually" — the
+UI hides the admin button from normal users, so it looks right. But the
+server-side checks are broken in two ways. Find them, exploit them, and state
+the fix.
+
+IDOR at scale is not hypothetical: in the **First American Financial 2019
+leak**, sequential document IDs in the URL exposed roughly 885 million
+mortgage and title-insurance records — bank-account numbers, wire-transfer
+details, IDs — to anyone who incremented the number in a link, with no
+authentication required. The bug you exploit below (`/api/orders/<id>` with no
+ownership check) is the exact same class, just smaller.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -84,7 +96,9 @@ the `app.py` diff between vulnerable and fixed so you can explain each change.
 ## Connects forward
 
 IDOR and privilege escalation are the top findings in web app pentests and
-bug-bounty reports. Module 08 adds server-side request forgery (SSRF) and XXE
+bug-bounty reports — and, as the First American Financial 2019 leak (~885M
+documents via sequential IDs) shows, the cause of some of the largest data
+exposures on record. Module 08 adds server-side request forgery (SSRF) and XXE
 — a different attack surface on the same trust-the-server principle.
 
 ## Marketable proof

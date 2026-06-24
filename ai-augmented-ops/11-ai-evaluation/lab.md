@@ -27,6 +27,14 @@ we know the day it stops being?* Your job is to stop trusting the vibe: build a 
 set, choose a **metric** and defend it, score the system into a **scorecard**, and wire a **CI
 regression gate** that fails the build when quality drops.
 
+> **Why this discipline exists.** In the 2017 Equifax breach, a tool was watching network traffic
+> for exactly this kind of malicious activity — but an expired certificate had silently stopped it
+> from inspecting encrypted traffic, so the exfiltration ran undetected for ~76 days until the
+> certificate was replaced and inspection resumed ([GAO-18-559, p. 11](https://www.gao.gov/assets/gao-18-559.pdf)).
+> The detector still "ran"; it just wasn't catching anything anymore, and nothing measured that it
+> had stopped being good enough. A held-out eval plus a regression gate is the discipline that
+> surfaces that silent degradation *before* it becomes the headline.
+
 > Everything runs locally against committed fixtures. No external targets, no live model, no
 > authorization needed.
 

@@ -10,7 +10,7 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cryptography/09-email-authentication
-make up        # start a local bind9 container seeded with meridian-fictional.com records
+make up        # start a local bind9 container seeded with corp-fictional.com records
 make demo      # query SPF, DKIM, DMARC; validate; show what each record does
 make shell     # drop into the dig/openssl container
 make down      # stop when done
@@ -20,8 +20,8 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's CISO has asked for an email authentication audit. You have been given
-the DNS configuration for the fictional domain `meridian-fictional.com`. Your job: query and
+Corp's CISO has asked for an email authentication audit. You have been given
+the DNS configuration for the fictional domain `corp-fictional.com`. Your job: query and
 validate all three records (SPF, DKIM, DMARC), identify any misconfigurations, and produce a
 remediation recommendation with corrected records.
 
@@ -54,7 +54,7 @@ remediation recommendation with corrected records.
    - Write the corrected DMARC record with `p=reject`, `adkim=s`, and an `rua=` address.
 
 6. [ ] **Apply the fix to the live zone and prove it (the build half).** A recommendation in a
-   report changes nothing until it's deployed — so deploy it. Edit `data/meridian-fictional.zone`:
+   report changes nothing until it's deployed — so deploy it. Edit `data/corp-fictional.zone`:
    replace the weak SPF (`~all` → `-all`) and DMARC (`p=none` → `p=reject` with `adkim=s` and an
    `rua=`) TXT records with your corrected values, and bump the SOA serial. Reload the resolver
    (`docker compose restart dns`, or `rndc reload` inside the container), then **prove the change

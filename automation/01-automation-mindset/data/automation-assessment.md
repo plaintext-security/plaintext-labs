@@ -1,4 +1,4 @@
-# Meridian Financial — Security Automation Assessment
+# SOC Automation Assessment — Task Inventory
 
 ## Framework
 
@@ -20,7 +20,7 @@
 
 ---
 
-## Meridian Task List
+## Task List
 
 Complete the table for each task. Replace the `?` placeholders with your assessment.
 

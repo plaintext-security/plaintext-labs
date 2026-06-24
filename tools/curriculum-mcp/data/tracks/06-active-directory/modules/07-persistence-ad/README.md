@@ -1,9 +1,14 @@
 # Module 07 — Persistence in AD
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — create golden (T1558.001) and silver (T1558.002) tickets and establish DCSync rights (T1003.006) against Corp, capturing the artefacts each leaves, delivering the executed persistence plus what genuinely removes it. (Secondary: Reconstruct — answer what "fully remediated" actually requires, e.g. rotating krbtgt twice, as an IR reconstruction.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *losing domain admin access once is a setback; being kicked out after a golden ticket is nearly impossible without a full domain rebuild.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -11,7 +16,7 @@ Most real-world intrusions are not discovered during the initial compromise — 
 
 ## Objective
 
-Demonstrate golden ticket creation (T1558.001), silver ticket creation (T1558.002), and DCSync persistence rights (T1003.006) against the Meridian domain; explain what artefacts each leaves and what remediation genuinely removes them.
+Demonstrate golden ticket creation (T1558.001), silver ticket creation (T1558.002), and DCSync persistence rights (T1003.006) against the Corp domain; explain what artefacts each leaves and what remediation genuinely removes them.
 
 ## The core idea
 

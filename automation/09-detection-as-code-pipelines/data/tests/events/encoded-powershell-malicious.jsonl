@@ -1,1 +1,1 @@
-{"EventID": 4688, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe -nop -w hidden -enc JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0AA==", "ParentImage": "C:\\Windows\\System32\\cmd.exe", "User": "MERIDIAN\\jsmith"}
+{"EventID": 4688, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe -nop -w hidden -enc JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0AA==", "ParentImage": "C:\\Windows\\System32\\cmd.exe", "User": "CORP\\jsmith"}

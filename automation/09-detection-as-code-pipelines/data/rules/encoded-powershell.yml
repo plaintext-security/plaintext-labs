@@ -4,7 +4,7 @@ status: test
 description: Detects execution of PowerShell with a Base64-encoded command via the -EncodedCommand flag.
 references:
   - https://attack.mitre.org/techniques/T1059/001/
-author: Meridian Detection Engineering
+author: Detection Engineering
 date: 2024-11-15
 tags:
   - attack.execution

@@ -1,9 +1,14 @@
 # Module 13 — Command & Control and Post-Exploitation
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — stand up OSS C2 (Sliver), beacon and run post-exploitation, then characterise the telemetry you generate (beacon timing, JA3) as the thing the blue team hunts. (Secondary: Build-&-Operate — the stand-up-and-operate half.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *what a real operator does after the shell: persist, collect, and control — quietly.*
+
+<!-- module-meta -->
+**Difficulty:** Advanced &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 A raw shell is fragile and loud. Real operations run over a command-and-control (C2) framework

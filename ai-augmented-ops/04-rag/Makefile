@@ -37,11 +37,11 @@ query:     ## make query Q="your question here"
 	docker compose run --rm lab sh -c 'pip install -q requests chromadb==0.5.23 2>/dev/null && python3 scripts/query.py "$(Q)"'
 
 demo:      ## Ingest the knowledge base and run the demo query
-	@echo "=== RAG Demo — Meridian Knowledge Base ==="
+	@echo "=== RAG Demo — LastPass 2022 Breach Knowledge Base ==="
 	@docker compose run --rm lab sh -c '\
 		pip install -q requests chromadb==0.5.23 2>/dev/null; \
 		echo "Step 1: Ingesting knowledge base..."; \
 		python3 scripts/ingest.py; \
 		echo; \
 		echo "Step 2: Running demo query..."; \
-		python3 scripts/query.py "What was the response procedure for the 2024 Meridian credential incident?"'
+		python3 scripts/query.py "How did the attacker access the cloud backup storage in the LastPass breach?"'

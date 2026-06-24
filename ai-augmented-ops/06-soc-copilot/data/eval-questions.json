@@ -1,0 +1,226 @@
+[
+  {
+    "id": "Q01",
+    "question": "Is 192.0.2.66 malicious?",
+    "expected_tools": [
+      { "tool": "get_threat_intel", "arg_kind": "ip", "arg_example": "192.0.2.66" }
+    ],
+    "relevant_docs": [],
+    "answer_rubric": [
+      "192.0.2.66 is classified malicious",
+      "it is the Log4Shell (CVE-2021-44228) exploit/LDAP callback and payload server",
+      "confidence is HIGH"
+    ],
+    "notes": "Pure tool-routing case: the answer lives in threat-intel, not the KB. relevant_docs is intentionally empty so recall@k is not credited for a retrieval that should not matter."
+  },
+  {
+    "id": "Q02",
+    "question": "What was the initial access vector of the first LastPass incident?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "02-credential-incident-2024.md"
+    ],
+    "answer_rubric": [
+      "a single compromised developer account",
+      "access was confined to the development environment",
+      "source code and proprietary technical information were taken",
+      "no customer data or vaults were accessed in this stage"
+    ],
+    "notes": "Pure retrieval case grounded in LastPass stage-1 disclosure (Aug 25, 2022). No tool should fire."
+  },
+  {
+    "id": "Q03",
+    "question": "Summarise the LastPass stage-2 home-computer attack vector.",
+    "expected_tools": [],
+    "relevant_docs": [
+      "05-phishing-runbook.md"
+    ],
+    "answer_rubric": [
+      "attacker targeted one of only four DevOps engineers with storage decryption-key access",
+      "compromised the engineer's personal/home computer",
+      "exploited vulnerable third-party media-server software (Plex Media Server, CVE-2020-5741) for RCE",
+      "implanted a keylogger that captured the master password after MFA",
+      "reached the engineer's corporate vault, which held the keys to the cloud backup storage"
+    ],
+    "notes": "Anchor question. Facts trace to LastPass's second-incident write-up; CVE-2020-5741 / Plex is the real vulnerable media server."
+  },
+  {
+    "id": "Q04",
+    "question": "Was the copied LastPass customer vault data encrypted?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "04-detection-notes-lateral-movement.md"
+    ],
+    "answer_rubric": [
+      "the backup was a mix: website URLs were stored in cleartext",
+      "usernames, passwords, secure notes and form-fill data were encrypted with 256-bit AES",
+      "the AES key is derived from each customer's master password (PBKDF2, 100,100 iterations default)",
+      "LastPass does not store the master password, so it cannot decrypt the vaults"
+    ],
+    "notes": "Tests the encrypted-vs-cleartext distinction — the most-confused fact in this breach."
+  },
+  {
+    "id": "Q05",
+    "question": "How did the attacker reach the LastPass cloud backup storage?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "03-ransomware-runbook.md",
+      "05-phishing-runbook.md"
+    ],
+    "answer_rubric": [
+      "reused information stolen in stage 1 to target a second employee",
+      "obtained that employee's credentials and storage decryption keys",
+      "used them to access and decrypt the cloud-based backup storage volumes",
+      "copied customer account information and encrypted vault backups"
+    ],
+    "notes": "Cross-document retrieval: the full path spans stage-2 storage detail (03) and the home-computer vector that captured the keys (05). recall@3 should hit both."
+  },
+  {
+    "id": "Q06",
+    "question": "Which two layers of decryption keys are involved in the LastPass breach, and which one did the attacker compromise?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "09-cloud-security.md"
+    ],
+    "answer_rubric": [
+      "storage-layer keys that unlock the cloud storage volumes/containers were compromised",
+      "per-customer AES-256 vault keys derived from each master password were NOT compromised",
+      "the attacker copied encrypted vault blobs they still could not directly open"
+    ],
+    "notes": "The storage-decrypted-but-vaults-not distinction — the classic summarisation error this corpus exists to catch."
+  },
+  {
+    "id": "Q07",
+    "question": "Is there an open incident for host SRV-WEB01?",
+    "expected_tools": [
+      { "tool": "search_alerts", "arg_kind": "hostname", "arg_example": "SRV-WEB01" }
+    ],
+    "relevant_docs": [],
+    "answer_rubric": [
+      "SRV-WEB01 has open CRITICAL/HIGH alerts",
+      "they concern Log4Shell (CVE-2021-44228) exploitation, outbound LDAP callback, and a dropped payload",
+      "the answer is grounded in the alert search result, not RAG priors"
+    ],
+    "notes": "Canonical tool-routing test. The question never names a tool; a missed search_alerts (answering 'no open incident' from RAG priors) is the costly recall failure the scorecard must catch."
+  },
+  {
+    "id": "Q08",
+    "question": "Summarise incident INC-2021-0211.",
+    "expected_tools": [
+      { "tool": "summarize_incident", "arg_kind": "incident_id", "arg_example": "INC-2021-0211" }
+    ],
+    "relevant_docs": [],
+    "answer_rubric": [
+      "INC-2021-0211 is the Log4Shell exploitation of SRV-WEB01 (CVE-2021-44228)",
+      "severity CRITICAL, status open",
+      "JNDI lookup triggered an outbound LDAP callback and remote class load, then a payload download",
+      "MITRE techniques T1190, T1059.004, T1105"
+    ],
+    "notes": "Explicit incident-ID routing: summarize_incident must fire on the literal INC id."
+  },
+  {
+    "id": "Q09",
+    "question": "Is 198.51.100.23 a known threat, and did it successfully exploit anything?",
+    "expected_tools": [
+      { "tool": "get_threat_intel", "arg_kind": "ip", "arg_example": "198.51.100.23" }
+    ],
+    "relevant_docs": [],
+    "answer_rubric": [
+      "198.51.100.23 is classified suspicious, not confirmed malicious",
+      "it is an internet-wide scanner mass-testing for CVE-2021-44228",
+      "scanning is not confirmed exploitation; no JNDI callback originated from internal hosts"
+    ],
+    "notes": "Tests that the answer preserves the suspicious-vs-malicious nuance from threat-intel rather than over-stating impact."
+  },
+  {
+    "id": "Q10",
+    "question": "What lessons does the LastPass breach hold for managing privileged engineers' endpoints?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "07-vulnerability-management.md"
+    ],
+    "answer_rubric": [
+      "unmanaged/personal endpoints with privileged access are critical attack surface outside corporate EDR/patching",
+      "third-party consumer software (the media server) on such a machine is part of the attack surface",
+      "treat key/secret holders as Tier 0 identities deserving the strongest endpoint controls",
+      "CISA KEV-listed vulnerabilities should be prioritised over equivalent-CVSS issues not known to be exploited"
+    ],
+    "notes": "Practitioner-analysis retrieval grounded in the vuln-management doc derived from the breach."
+  },
+  {
+    "id": "Q11",
+    "question": "On what dates did LastPass disclose the 2022 incident, and what did each disclosure add?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "10-soc-tooling.md",
+      "01-incident-response-overview.md"
+    ],
+    "answer_rubric": [
+      "August 25, 2022 — first incident: dev-environment access, source code taken, no customer data",
+      "November 30, 2022 — the two incidents were linked; attacker used stage-1 info to reach customer information in cloud storage",
+      "December 22, 2022 — full scope: customer account data and a backup of vault data (cleartext URLs + AES-256 secrets) copied"
+    ],
+    "notes": "Timeline retrieval; the disclosure dates trace directly to LastPass's public notice."
+  },
+  {
+    "id": "Q12",
+    "question": "Why did LastPass's development/production separation not prevent the customer-data breach?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "08-network-segmentation.md"
+    ],
+    "answer_rubric": [
+      "dev/prod separation did contain stage 1 (no customer vaults reached from the dev compromise)",
+      "the attacker pivoted out of band using stolen information, not by crossing a network boundary",
+      "the crossing was identity- and information-based: stage-1 source code told the attacker who to target",
+      "the cloud backup storage was reached with valid stolen credentials and keys, so no segmentation rule was violated"
+    ],
+    "notes": "Segmentation-limits retrieval; rewards the identity-pivot nuance over a naive 'segmentation failed' answer."
+  },
+  {
+    "id": "Q13",
+    "question": "What is the threat classification of 192.0.2.66, and what is our runbook for reaching the cloud backup storage that LastPass-style attackers target?",
+    "expected_tools": [
+      { "tool": "get_threat_intel", "arg_kind": "ip", "arg_example": "192.0.2.66" }
+    ],
+    "relevant_docs": [
+      "03-ransomware-runbook.md",
+      "09-cloud-security.md"
+    ],
+    "answer_rubric": [
+      "192.0.2.66 is classified malicious (Log4Shell exploit/payload server) — from the tool",
+      "stage-2 cloud-backup access used stolen credentials plus storage decryption keys — from the KB",
+      "backups are a top target because they aggregate everything and may be monitored less than production",
+      "answer must separate the tool-sourced fact from the KB-sourced facts"
+    ],
+    "notes": "CROSS-LAYER case: needs BOTH a get_threat_intel tool call (the IP) AND a retrieval hit (cloud-backup runbook). Exercises every axis at once — the case single-layer questions never catch."
+  },
+  {
+    "id": "Q14",
+    "question": "Is there an open incident on host WIN-WKS-023, and what is its severity?",
+    "expected_tools": [
+      { "tool": "search_alerts", "arg_kind": "hostname", "arg_example": "WIN-WKS-023" }
+    ],
+    "relevant_docs": [],
+    "answer_rubric": [
+      "WIN-WKS-023's only alert (ALT-2021-0006) is LOW severity and CLOSED",
+      "it was inbound Log4Shell scanning from 198.51.100.23, with no JNDI string reaching a vulnerable app",
+      "the grounded answer is 'no OPEN incident on this host', sourced from the alert search"
+    ],
+    "notes": "Negative tool-routing test: the tool must still fire, but the grounded answer is that nothing is open — distinct from never calling the tool at all."
+  },
+  {
+    "id": "Q15",
+    "question": "After the LastPass breach, what were customers with weak or reused master passwords advised to do?",
+    "expected_tools": [],
+    "relevant_docs": [
+      "06-data-loss-prevention.md"
+    ],
+    "answer_rubric": [
+      "customers with strong default master passwords (12+ chars, 100,100 PBKDF2 rounds) were told no immediate action was required",
+      "customers with shorter or reused master passwords were advised to change the passwords of sites stored in their vault",
+      "because the stolen encrypted vaults could become crackable offline; cleartext URLs also enable targeted phishing"
+    ],
+    "notes": "Customer-guidance retrieval; rewards distinguishing the strong vs weak master-password advice."
+  }
+]

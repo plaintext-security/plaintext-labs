@@ -2,6 +2,10 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+> **Lab environment: real-data rewire — validation deferred.** `data/sshd.log` is now a **real**
+> public SSH-auth corpus (loghub OpenSSH) instead of a synthesised log. `make up && make demo &&
+> make down` has **not** yet been re-run on a clean Linux runner against this change; validate
+> before marking the lab done.
 
 ## Setup
 ```bash
@@ -9,32 +13,43 @@ git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/02-files-regex-parsing
 make up        # Python 3.12 container
 make demo      # runs the reference parse_log.py and shows top offending IPs
+make fetch     # (optional, needs network) pull the full 2,000-line loghub corpus
 make shell     # interactive shell for development
 make down
 ```
 
 The container has only the standard library — no third-party parsing libraries. `data/sshd.log`
-is 500 lines of realistic SSH authentication log from the fictional **Meridian Financial** jump
-server: a mix of normal logins, failed password attempts, and a brute-force campaign from two
-addresses.
+is a **real** SSH authentication log from
+[**loghub**](https://github.com/logpai/loghub)'s `OpenSSH_2k.log` — captured from an actual
+internet-facing server ("LabSZ") and full of genuine brute-force and invalid-user campaigns from
+real source IPs (e.g. `173.234.31.186`, `5.36.59.76`). The committed file is a verbatim excerpt
+that ships as the **offline fallback**; `make fetch` pulls the full 2,000-line corpus. Provenance
+(source URL + retrieval date) is recorded in `data/PROVENANCE.txt`.
+
+Because it's real, the log has the messiness real logs have: the `Failed password for invalid
+user <name>` variant, the `message repeated N times: [...]` meta-line, reverse-DNS
+`POSSIBLE BREAK-IN ATTEMPT!` lines, and plenty of non-failure noise your regex must ignore.
 
 ## Scenario
-Meridian's jump server generated an alert: "unusual authentication volume." You have the raw
-`sshd.log`. Your task is to write a parser that extracts failed-login events by IP, identifies
-any source that crosses a brute-force threshold (≥10 failures in any 60-second window), and
-prints the top five offenders with failure counts — all with no external libraries.
+The jump server generated an alert: "unusual authentication volume." You have the raw `sshd.log`.
+Your task is to write a parser that extracts failed-login events by IP, identifies any source that
+crosses a brute-force threshold (≥5 failures in any 60-second window), and prints the top five
+offenders with failure counts — all with no external libraries.
 
-> Everything runs locally against bundled data. No authorization issues.
+> Everything runs locally against a real public corpus. No authorization issues.
 
 ## Do
-1. [ ] Read `data/sshd.log` — identify the format of a "Failed password" line. What fields are
-   present? Write down the regex pattern you'll use before writing any code.
+1. [ ] Read `data/sshd.log` — identify the format of a "Failed password" line, including the
+   `invalid user` variant. What fields are present? Note the lines your regex must *not* match
+   (the `message repeated`, `POSSIBLE BREAK-IN`, and `pam_unix` lines). Write down the pattern
+   before writing any code.
 2. [ ] Write `parse_log.py`:
    - Open `data/sshd.log` with `pathlib.Path` and iterate line by line.
-   - Compile one regex with named groups: at minimum `ip`, `user`, and `timestamp`.
+   - Compile one regex with named groups: at minimum `ip`, `user`, and `timestamp`, handling both
+     `Failed password for <user>` and `Failed password for invalid user <user>`.
    - Count failures per IP with `collections.Counter`.
    - Print the top 5 IPs and their failure counts.
-3. [ ] Extend the script to detect brute-force: flag any IP that has ≥10 failures within any
+3. [ ] Extend the script to detect brute-force: flag any IP that has ≥5 failures within any
    60-second window. (Hint: parse the timestamp into a `datetime`; use a per-IP sorted list of
    times and a sliding pointer.)
 4. [ ] Run `make demo` to compare your output with the reference solution. Do your top-5 IPs

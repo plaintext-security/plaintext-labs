@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Reference enrichment solution — queries mock threat-intel API with proper
-timeout, retry-on-429, and structured output.
+Reference enrichment solution — queries the local threat-intel API (backed by REAL
+abuse.ch feeds: Feodo Tracker + URLhaus) with proper timeout, retry-on-429, and
+structured output. The IOCs in data/iocs.txt are real malicious IPs / URLhaus sample
+ids plus known-clean public resolvers; provenance (`source`) rides along on each result.
 """
 
 import json
@@ -17,17 +19,14 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 API_BASE = os.environ.get("THREAT_API_URL", "http://localhost:8080")
 
 IP_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
-SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
-MD5_RE = re.compile(r"^[0-9a-fA-F]{32}$")
+SAMPLE_RE = re.compile(r"^\d{4,}$")  # URLhaus sample id (numeric)
 
 
 def detect_type(ioc: str) -> str:
     if IP_RE.match(ioc):
         return "ip"
-    if SHA256_RE.match(ioc):
-        return "sha256"
-    if MD5_RE.match(ioc):
-        return "md5"
+    if SAMPLE_RE.match(ioc):
+        return "sample"
     return "unknown"
 
 

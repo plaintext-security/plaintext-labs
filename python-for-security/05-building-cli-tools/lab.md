@@ -2,25 +2,32 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+> **Lab environment: real-feed rewire — validation deferred.** The sidecar threat-intel API now
+> serves real abuse.ch data (Feodo Tracker + URLhaus) from `feeds/db.json`, shared with module 04.
+> `make up && make demo && make down` has **not** yet been re-run on a clean Linux runner against
+> this change; validate before marking the lab done.
 
 ## Setup
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/05-building-cli-tools
-make up        # Python 3.12 container with typer + httpx installed; mock API running
+make up        # Python 3.12 container with typer + httpx installed; real-feed API running
 make demo      # shows ioc-check --help and a sample enrich run
+make refresh   # (optional, needs network) re-fetch the LIVE abuse.ch feeds into feeds/db.json
 make shell
 make down
 ```
 
-The mock API from module 04 runs as a sidecar. The student container has `typer`, `httpx`, and
-`rich` installed. `data/iocs.txt` is the same IOC list from module 04.
+The **real-feed threat-intel API from module 04** runs as a sidecar (abuse.ch Feodo Tracker +
+URLhaus, served locally from `feeds/db.json` with `source`/`fetched_at` provenance). The student
+container has `typer`, `httpx`, and `rich` installed. `data/iocs.txt` is the same real-IOC list
+from module 04 (real malicious C2 IPs, URLhaus sample ids, and known-clean public resolvers).
 
 ## Scenario
-The Meridian enrichment script from module 04 works, but the rest of the team can't use it
-without reading the source. Your task: wrap it into a proper CLI tool called `ioc-check` with
-`--help` output, typed arguments, two subcommands (`enrich` and `report`), and clean error
-messages. The tool should be runnable by anyone who can type `python ioc-check.py --help`.
+The enrichment script from module 04 works, but the rest of the team can't use it without reading
+the source. Your task: wrap it into a proper CLI tool called `ioc-check` with `--help` output,
+typed arguments, two subcommands (`enrich` and `report`), and clean error messages. The tool
+should be runnable by anyone who can type `python ioc-check.py --help`.
 
 ## Do
 1. [ ] From the scenario, sketch the CLI contract before writing code: which subcommands, which

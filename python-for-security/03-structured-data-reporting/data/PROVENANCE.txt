@@ -1,0 +1,6 @@
+Suricata eve.json alerts from WRCCDC-2018 PCAP, via FrankHassanabad/suricata-sample-data
+Source URL: https://raw.githubusercontent.com/FrankHassanabad/suricata-sample-data/master/samples/wrccdc-2018/alerts-only.json
+Retrieved: 2026-06-23
+Note: data/alerts.json is a small committed offline FALLBACK (8 real alert objects
+excerpted verbatim from the source above). Run `make fetch` (needs network) to
+replace it with the full real export.

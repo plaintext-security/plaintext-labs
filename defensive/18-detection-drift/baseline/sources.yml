@@ -1,0 +1,42 @@
+# Declared baseline for the corp.local telemetry estate.
+#
+# This is the "expected" half of the expected-vs-observed comparison. You tune
+# these numbers against YOUR real baseline — the values below are the seed
+# scenario's known-good state at t=0. A heartbeat interval that is too tight
+# pages on normal jitter; a volume floor that is too low never catches a
+# degraded collector. Set them deliberately, not by vibe.
+#
+# heartbeat_interval_s : the source is "overdue" if no event has arrived within
+#                        this many seconds of the check's reference time.
+# volume_floor         : the minimum acceptable event count over the sample
+#                        window. A source that is still "up" but shipping a
+#                        fraction of its baseline is degraded, not healthy.
+# decommissioned       : if true, the source is expected to be silent — do not
+#                        alarm on it (used in the reconcile step).
+
+reference_window_s: 1800          # 30-minute sample window the seed data spans
+
+sources:
+  - name: WIN10-01
+    description: Analyst workstation (Sysmon agent)
+    heartbeat_interval_s: 600     # expect an event at least every 10 min
+    volume_floor: 8               # baseline ~12/window; floor at 2/3
+    decommissioned: false
+
+  - name: FS01
+    description: Finance file server (busy collector)
+    heartbeat_interval_s: 300
+    volume_floor: 20              # baseline ~30/window; degradation tell
+    decommissioned: false
+
+  - name: DC01
+    description: Domain controller (security log forwarder)
+    heartbeat_interval_s: 600
+    volume_floor: 6
+    decommissioned: false
+
+  - name: LEGACY03
+    description: Legacy app host (scheduled for retirement)
+    heartbeat_interval_s: 900
+    volume_floor: 3
+    decommissioned: false         # flips to true during reconcile

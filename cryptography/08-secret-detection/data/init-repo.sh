@@ -9,24 +9,24 @@ mkdir -p "$REPO_DIR"
 cd "$REPO_DIR"
 
 git init
-git config user.email "dev@meridian.internal"
-git config user.name "Meridian Developer"
+git config user.email "dev@corp.internal"
+git config user.name "Corp Developer"
 
 # Commit 1: Initial application code (clean)
 mkdir -p src
 cat > src/app.py << 'EOF'
-"""Meridian Financial Payroll API"""
+"""Corp Payroll API"""
 import os
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/payroll")
-API_BASE_URL = "https://api.meridian.internal"
+API_BASE_URL = "https://api.corp.internal"
 
 def get_db_connection():
     return DATABASE_URL
 EOF
 
 cat > README.md << 'EOF'
-# Meridian Payroll API
+# Corp Payroll API
 Internal payroll calculation service.
 EOF
 
@@ -46,10 +46,10 @@ AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
 # Database (plaintext password — should use Vault)
-DATABASE_PASSWORD = "Meridian$DB!Pass2026"
+DATABASE_PASSWORD = "Corp$DB!Pass2026"
 
 # Internal API key
-INTERNAL_API_KEY = "sk-meridian-internal-12345abcdef"
+INTERNAL_API_KEY = "sk-corp-internal-12345abcdef"
 EOF
 
 git add .

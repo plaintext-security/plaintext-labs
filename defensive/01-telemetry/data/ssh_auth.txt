@@ -1,39 +1,39 @@
-Dec 10 06:55:46 meridian-fw sshd[24200]: Invalid user test from 52.80.34.196
-Dec 10 06:55:46 meridian-fw sshd[24200]: input_userauth_request: invalid user test [preauth]
-Dec 10 06:55:48 meridian-fw sshd[24200]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-Dec 10 06:55:52 meridian-fw sshd[24201]: Invalid user admin from 52.80.34.196
-Dec 10 06:55:52 meridian-fw sshd[24201]: input_userauth_request: invalid user admin [preauth]
-Dec 10 06:55:54 meridian-fw sshd[24201]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-Dec 10 06:56:01 meridian-fw sshd[24202]: Invalid user root from 52.80.34.196
-Dec 10 06:56:01 meridian-fw sshd[24202]: input_userauth_request: invalid user root [preauth]
-Dec 10 06:56:04 meridian-fw sshd[24202]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-Dec 10 06:56:10 meridian-fw sshd[24203]: Invalid user oracle from 52.80.34.196
-Dec 10 06:56:12 meridian-fw sshd[24203]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-Dec 10 06:56:20 meridian-fw sshd[24204]: Invalid user postgres from 52.80.34.196
-Dec 10 06:56:22 meridian-fw sshd[24204]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
-Dec 10 07:02:12 meridian-fw sshd[24210]: Accepted password for jsmith from 10.0.1.45 port 22 ssh2
-Dec 10 07:02:12 meridian-fw sshd[24210]: pam_unix(sshd:session): session opened for user jsmith
-Dec 10 07:14:33 meridian-fw sshd[24215]: Accepted password for mchen from 10.0.1.62 port 22 ssh2
-Dec 10 07:14:33 meridian-fw sshd[24215]: pam_unix(sshd:session): session opened for user mchen
-Dec 10 07:22:05 meridian-fw sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
-Dec 10 07:22:08 meridian-fw sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
-Dec 10 07:22:10 meridian-fw sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
-Dec 10 07:22:14 meridian-fw sshd[24221]: Failed password for root from 185.176.26.151 port 34524 ssh2
-Dec 10 07:22:17 meridian-fw sshd[24221]: Failed password for root from 185.176.26.151 port 34524 ssh2
-Dec 10 07:22:20 meridian-fw sshd[24222]: connection closed by 185.176.26.151 [preauth]
-Dec 10 08:01:14 meridian-fw sshd[24230]: Accepted publickey for deploy from 10.0.2.10 port 22 ssh2: RSA SHA256:abc123
-Dec 10 08:01:14 meridian-fw sshd[24230]: pam_unix(sshd:session): session opened for user deploy
-Dec 10 08:45:22 meridian-fw sshd[24240]: Failed password for jsmith from 185.220.101.47 port 58221 ssh2
-Dec 10 08:45:25 meridian-fw sshd[24240]: Failed password for jsmith from 185.220.101.47 port 58221 ssh2
-Dec 10 08:45:28 meridian-fw sshd[24240]: Failed password for jsmith from 185.220.101.47 port 58221 ssh2
-Dec 10 08:45:31 meridian-fw sshd[24241]: Accepted password for jsmith from 185.220.101.47 port 58225 ssh2
-Dec 10 08:45:31 meridian-fw sshd[24241]: pam_unix(sshd:session): session opened for user jsmith
-Dec 10 09:00:00 meridian-fw sshd[24250]: Disconnected from user jsmith 10.0.1.45 port 22
-Dec 10 09:00:01 meridian-fw sshd[24250]: pam_unix(sshd:session): session closed for user jsmith
-Dec 10 09:15:44 meridian-fw sshd[24260]: Invalid user backup from 91.92.249.106
-Dec 10 09:15:46 meridian-fw sshd[24260]: Received disconnect from 91.92.249.106: 11: Bye Bye [preauth]
-Dec 10 09:15:48 meridian-fw sshd[24261]: Invalid user git from 91.92.249.106
-Dec 10 09:15:50 meridian-fw sshd[24261]: Received disconnect from 91.92.249.106: 11: Bye Bye [preauth]
-Dec 10 10:30:05 meridian-fw sshd[24270]: Accepted password for mchen from 10.0.1.62 port 22 ssh2
-Dec 10 10:30:05 meridian-fw sshd[24270]: pam_unix(sshd:session): session opened for user mchen
-Dec 10 11:00:00 meridian-fw sshd[24280]: pam_unix(sshd:session): session closed for user mchen
+Dec 10 06:55:46 LabSZ sshd[24200]: Invalid user test from 52.80.34.196
+Dec 10 06:55:46 LabSZ sshd[24200]: input_userauth_request: invalid user test [preauth]
+Dec 10 06:55:48 LabSZ sshd[24200]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+Dec 10 06:55:52 LabSZ sshd[24201]: Invalid user admin from 52.80.34.196
+Dec 10 06:55:52 LabSZ sshd[24201]: input_userauth_request: invalid user admin [preauth]
+Dec 10 06:55:54 LabSZ sshd[24201]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+Dec 10 06:56:01 LabSZ sshd[24202]: Invalid user root from 52.80.34.196
+Dec 10 06:56:01 LabSZ sshd[24202]: input_userauth_request: invalid user root [preauth]
+Dec 10 06:56:04 LabSZ sshd[24202]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+Dec 10 06:56:10 LabSZ sshd[24203]: Invalid user oracle from 52.80.34.196
+Dec 10 06:56:12 LabSZ sshd[24203]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+Dec 10 06:56:20 LabSZ sshd[24204]: Invalid user postgres from 52.80.34.196
+Dec 10 06:56:22 LabSZ sshd[24204]: Received disconnect from 52.80.34.196: 11: Bye Bye [preauth]
+Dec 10 07:02:12 LabSZ sshd[24210]: Accepted password for deploy from 10.0.1.45 port 22 ssh2
+Dec 10 07:02:12 LabSZ sshd[24210]: pam_unix(sshd:session): session opened for user deploy
+Dec 10 07:14:33 LabSZ sshd[24215]: Accepted password for analyst from 10.0.1.62 port 22 ssh2
+Dec 10 07:14:33 LabSZ sshd[24215]: pam_unix(sshd:session): session opened for user analyst
+Dec 10 07:22:05 LabSZ sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
+Dec 10 07:22:08 LabSZ sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
+Dec 10 07:22:10 LabSZ sshd[24220]: Failed password for root from 185.176.26.151 port 34521 ssh2
+Dec 10 07:22:14 LabSZ sshd[24221]: Failed password for root from 185.176.26.151 port 34524 ssh2
+Dec 10 07:22:17 LabSZ sshd[24221]: Failed password for root from 185.176.26.151 port 34524 ssh2
+Dec 10 07:22:20 LabSZ sshd[24222]: connection closed by 185.176.26.151 [preauth]
+Dec 10 08:01:14 LabSZ sshd[24230]: Accepted publickey for deploy from 10.0.2.10 port 22 ssh2: RSA SHA256:abc123
+Dec 10 08:01:14 LabSZ sshd[24230]: pam_unix(sshd:session): session opened for user deploy
+Dec 10 08:45:22 LabSZ sshd[24240]: Failed password for analyst from 185.220.101.47 port 58221 ssh2
+Dec 10 08:45:25 LabSZ sshd[24240]: Failed password for analyst from 185.220.101.47 port 58221 ssh2
+Dec 10 08:45:28 LabSZ sshd[24240]: Failed password for analyst from 185.220.101.47 port 58221 ssh2
+Dec 10 08:45:31 LabSZ sshd[24241]: Accepted password for analyst from 185.220.101.47 port 58225 ssh2
+Dec 10 08:45:31 LabSZ sshd[24241]: pam_unix(sshd:session): session opened for user analyst
+Dec 10 09:00:00 LabSZ sshd[24250]: Disconnected from user analyst 10.0.1.62 port 22
+Dec 10 09:00:01 LabSZ sshd[24250]: pam_unix(sshd:session): session closed for user analyst
+Dec 10 09:15:44 LabSZ sshd[24260]: Invalid user backup from 91.92.249.106
+Dec 10 09:15:46 LabSZ sshd[24260]: Received disconnect from 91.92.249.106: 11: Bye Bye [preauth]
+Dec 10 09:15:48 LabSZ sshd[24261]: Invalid user git from 91.92.249.106
+Dec 10 09:15:50 LabSZ sshd[24261]: Received disconnect from 91.92.249.106: 11: Bye Bye [preauth]
+Dec 10 10:30:05 LabSZ sshd[24270]: Accepted password for analyst from 10.0.1.62 port 22 ssh2
+Dec 10 10:30:05 LabSZ sshd[24270]: pam_unix(sshd:session): session opened for user analyst
+Dec 10 11:00:00 LabSZ sshd[24280]: pam_unix(sshd:session): session closed for user analyst

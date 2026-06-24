@@ -3,14 +3,14 @@
 query.py — Query the ChromaDB knowledge base and generate an answer via Ollama.
 
 Usage:
-    python3 scripts/query.py "What was the response procedure for the 2024 Meridian credential incident?"
-    python3 scripts/query.py "Which detection rule covers lateral movement via PsExec?"
+    python3 scripts/query.py "How did the attacker access the cloud backup storage?"
+    python3 scripts/query.py "Was customer vault data encrypted?"
 """
 
 import os
 import sys
 
-COLLECTION_NAME = "meridian-kb"
+COLLECTION_NAME = "soc-kb"
 N_RESULTS = 4          # number of chunks to retrieve
 EMBED_MODEL = "nomic-embed-text"
 GEN_MODEL = os.environ.get("OLLAMA_MODEL", "tinyllama")
@@ -68,8 +68,9 @@ def generate(query: str, chunks: list[dict], ollama_host: str) -> str:
     context = "\n\n---\n\n".join(
         f"[Source: {c['source']}]\n{c['text']}" for c in chunks
     )
-    prompt = f"""You are a security analyst assistant for Meridian Financial. Answer the following
-question using ONLY the context provided below. If the context does not contain enough information
+    prompt = f"""You are a security analyst assistant. Answer the following
+question using ONLY the context provided below (a knowledge base of public post-mortem documents on
+the LastPass 2022 breach). If the context does not contain enough information
 to answer confidently, say "I don't have enough information in the knowledge base to answer this."
 Do not make up facts.
 

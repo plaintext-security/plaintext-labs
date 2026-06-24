@@ -13,16 +13,18 @@ make demo    # runs RITA-style beacon hunt over bundled Zeek conn.log
 make down
 ```
 
-Bundled data: `data/zeek/conn.log` — 22 synthetic connections from the Meridian
-Financial estate: 10 C2 callbacks, update-service heartbeats, CDN browsing, and a
+Bundled data: `data/zeek/conn.log` — a small curated seed of 22 connections from a
+corporate estate: 10 C2 callbacks, update-service heartbeats, CDN browsing, and a
 large exfil. The beacon scorer `beacon_hunt.py` re-implements RITA's three-component
 model (interval CV, byte consistency, connection count) without requiring the full RITA
-+ MongoDB stack.
++ MongoDB stack. To hunt over real malicious traffic instead of the seed, run
+`make fetch-data` (see `data/PROVENANCE.md`) to pull a public
+Malware-Traffic-Analysis.net capture and rebuild `conn.log` with Zeek.
 
 > **Authorization:** this lab analyzes bundled log data only — no live network.
 
 ## Scenario
-The Meridian SOC received a tip: an insider may have exfiltrated data last weekend.
+The SOC received a tip: an insider may have exfiltrated data last weekend.
 You have Zeek `conn.log` from the corporate perimeter for that window. Hunt for
 command-and-control beaconing to find the implant responsible for staging the exfil.
 

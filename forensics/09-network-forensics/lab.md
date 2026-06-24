@@ -1,4 +1,4 @@
-# Lab 09 — Network Forensics: Zeek + tshark on a Meridian Capture
+# Lab 09 — Network Forensics: Zeek + tshark on a Real Infection Capture
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
@@ -11,43 +11,74 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/forensics/09-network-forensics
-make up      # builds the Zeek + tshark container and mounts the PCAP
-make demo    # runs Zeek over capture.pcap and prints conn.log, dns.log, http.log highlights
-make shell   # drops you into the container for hands-on analysis
-make down    # stop when done
+make up         # builds the Zeek + tshark container and mounts the PCAP
+make fetch-data # downloads the REAL Redline Stealer infection PCAP (password-protected zip)
+make demo       # runs Zeek over the capture and prints conn.log, dns.log, http.log highlights
+make shell      # drops you into the container for hands-on analysis
+make down        # stop when done
 ```
 
-The container ships `zeek` and `tshark` against `data/capture.pcap` — a tiny PCAP (~250KB)
-containing a simulated Meridian Financial incident: normal HTTPS traffic, a DNS lookup for a
-suspicious domain (`update-cdn82.net`), a brief HTTP session to an unexpected IP, and a small
-binary transfer. All traffic is synthetic — no real malware, no real credentials.
+**The real artifact (preferred).** This lab analyzes a genuine malware-infection capture from
+**[Malware-Traffic-Analysis.net](https://www.malware-traffic-analysis.net/)** — a 2024-10-23
+**Redline Stealer** infection:
 
-> All data is synthetic and local. No external targets involved.
+- Exercise page: <https://www.malware-traffic-analysis.net/2024/10/23/index.html>
+- PCAP zip: <https://www.malware-traffic-analysis.net/2024/10/23/2024-10-23-Redline-Stealer-infection-traffic.pcap.zip> (~4.4 MB)
+- IOCs: <https://www.malware-traffic-analysis.net/2024/10/23/2024-10-23-IOCs-for-Redline-Stealer-infection.txt.zip>
+
+`make fetch-data` downloads the PCAP zip but **does not unzip it** — the archive is
+**password-protected** (the standard malware-traffic-analysis.net password, documented on the
+site's [About page](https://www.malware-traffic-analysis.net/about.html), is `infected`). Unzip it
+yourself before `make demo`:
+
+```bash
+cd data && unzip 2024-10-23-Redline-Stealer-infection-traffic.pcap.zip   # password: infected
+mv 2024-10-23-Redline-Stealer-infection-traffic.pcap capture.pcap
+```
+
+> The zip contains a **real malware infection capture**. Treat it as live evidence: analyze it in
+> the lab container, never replay the traffic, and only handle captures you are authorised to possess.
+
+**Offline fallback.** If you cannot reach the site, `make pcap` regenerates a tiny synthetic
+`data/capture.pcap` via `scripts/gen_pcap.py` (a DNS lookup to a suspicious domain, an HTTP binary
+transfer) so the tooling workflow still runs end to end. The synthetic capture is **not** the real
+artifact — prefer the Redline PCAP above when you can fetch it.
+
+> The synthetic fallback is local and contains no real malware. The fetched PCAP is real and is
+> analysis-only.
 
 ## Scenario
 
-Meridian's network sensor flagged a connection from `WORKSTATION-04` (the host from module 08)
-to an IP address outside its expected cloud provider ranges. You have a five-minute PCAP pulled
-from the perimeter sensor. Your task: identify what was queried, what was transferred, and
-whether the session tells a coherent story of compromise — or just looks bad.
+The affected organization's network sensor flagged traffic from `BEACHHEAD-WS01` (the host from
+module 08) to infrastructure outside its expected cloud-provider ranges. You have a PCAP pulled from
+the perimeter sensor. Your task: identify what was queried, what was transferred, and whether the
+session tells a coherent story of compromise — or just looks bad.
+
+The capture is a real **Redline Stealer** infection from Malware-Traffic-Analysis.net (2024-10-23).
+Redline is an info-stealer that beacons to its C2 and exfiltrates credentials and browser data — the
+same "stealer/loader phones home" pattern seen in the DFIR Report "Lunar Spider" case that anchors
+this track. Work the capture as if it were pulled from the beachhead host's segment.
 
 > Only examine network captures you are authorised to possess. In production, PCAP collection
 > requires organisational approval and may be subject to privacy regulations.
 
 ## Do
 
-1. [ ] **`make demo`** — read the Zeek output. Find the `dns.log` entry for `update-cdn82.net`.
-   What IP did it resolve to? Does that IP appear in `conn.log`? What is the connection duration
-   and bytes transferred?
+1. [ ] **`make demo`** — read the Zeek output. In `dns.log`, find the queries to non-corporate
+   domains. Cross-check them against the IOCs file you downloaded
+   (`2024-10-23-IOCs-for-Redline-Stealer-infection.txt`): which queried domain(s) match the
+   published C2? What IP did it resolve to? Does that IP appear in `conn.log` — what is the
+   connection duration and bytes transferred?
 
 2. [ ] **Examine the HTTP session.** From the demo output or by running `zeek -r data/capture.pcap`
-   inside `make shell`, find the `http.log` entry for the suspicious IP. What URI was requested?
-   What was the `resp_mime_type`? Does a MIME type of `application/octet-stream` on a GET request
-   to a host you queried via suspicious DNS concern you? Why?
+   inside `make shell`, find the `http.log` entries to the suspicious IP(s). What URIs were
+   requested? What `resp_mime_type` came back? A GET that returns `application/octet-stream` (or a
+   POST shipping data) to a host you reached via a suspicious DNS lookup — why does that concern
+   you in an info-stealer infection?
 
-3. [ ] **Check `files.log`** for any transferred files. What is the MD5 hash? (In this synthetic
-   scenario the binary is benign, but in a real investigation you'd submit the hash to VirusTotal.)
-   Note the hash in your findings.
+3. [ ] **Check `files.log`** for any transferred files. Note the MD5/SHA-256 hash and compare it
+   to the file hashes in the IOCs file. In a real investigation you'd submit the hash to VirusTotal —
+   do so, and record the detection ratio in your findings.
 
 4. [ ] **Use tshark to follow the HTTP stream.** From inside the shell, build a tshark command
    that reads the PCAP, filters to HTTP, and extracts just the fields you care about as columns —
@@ -103,7 +134,7 @@ output on structured security data — and know when it's right — is the diffe
 
 ## Connects forward
 
-Module 10 (Log & Cloud Forensics) continues the Meridian investigation into the endpoint event
+Module 10 (Log & Cloud Forensics) continues the investigation into the endpoint event
 logs, correlating the network session timestamp with Windows event IDs. Module 12 (Malware
 Artifacts) covers what to do with the binary you extracted from the HTTP session.
 

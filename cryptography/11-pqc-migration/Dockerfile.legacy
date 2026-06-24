@@ -1,0 +1,18 @@
+# Module 11 — the LEGACY client (older OpenSSL that knows ONLY classical groups).
+#
+# Alpine 3.18 ships OpenSSL 3.1.x, which has NO ML-KEM support. This client
+# cannot offer X25519MLKEM768 — it stands in for the old mobile app / embedded
+# device / partner integration that must keep connecting on the classical path.
+# The contrast between this client and the modern one IS the interop proof.
+FROM alpine:3.18
+
+RUN apk add --no-cache \
+      openssl \
+      curl \
+      bash \
+      grep
+
+WORKDIR /lab
+COPY . /lab
+
+CMD ["sleep", "infinity"]

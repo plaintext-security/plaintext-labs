@@ -17,10 +17,17 @@ so the mechanism is visible.
 
 ## Scenario
 
-Meridian Financial's intranet auth stub (`meridian-login`) was compiled by a
-junior dev without hardening flags. You've got the binary. Demonstrate stack
-smashing: find the offset that controls the saved instruction pointer, then
-redirect execution to a function that was never supposed to be reachable.
+An intranet auth stub (`vuln-login`) was compiled by a junior dev without
+hardening flags. You've got the binary. Demonstrate stack smashing: find the
+offset that controls the saved instruction pointer, then redirect execution to
+a function that was never supposed to be reachable.
+
+The stack-smash you build here by hand is the same primitive behind real CVEs
+like **CVE-2015-7547** ([glibc `getaddrinfo` stack-based buffer overflow](https://nvd.nist.gov/vuln/detail/CVE-2015-7547)
+— a crafted DNS response overflows a stack buffer in the `send_dg`/`send_vc`
+resolver path, remotely triggerable, CVSS 8.1). A tiny local target makes the
+mechanism legible; the CVE is where it bites in production. This lab does *not*
+reproduce CVE-2015-7547 — it teaches the primitive underneath it.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -85,9 +92,11 @@ accelerates reading assembly; the debugger is ground truth.
 
 ## Connects forward
 
-This is the primitive under every "RCE via memory corruption" CVE. Track 04
-(malware) references shellcode injection; Track 06 (Active Directory) covers
-ROP chains used in privilege escalation from kernel exploits.
+This is the primitive under every "RCE via memory corruption" CVE — the same
+stack overwrite you crafted by hand is what real bugs like CVE-2015-7547 (glibc
+`getaddrinfo`) exploit in production code. Track 04 (malware) references
+shellcode injection; Track 06 (Active Directory) covers ROP chains used in
+privilege escalation from kernel exploits.
 
 ## Marketable proof
 

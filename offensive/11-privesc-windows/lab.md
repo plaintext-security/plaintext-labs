@@ -30,9 +30,22 @@ make demo
 
 ## Scenario
 
-You've obtained a low-privilege shell as `labuser` on Meridian Financial's
-application server. Enumerate the host with winPEAS, triage the findings, and
-exploit the highest-confidence vector to reach SYSTEM.
+You've obtained a low-privilege shell as `labuser` on the application server.
+Enumerate the host with winPEAS, triage the findings, and exploit the
+highest-confidence vector to reach SYSTEM.
+
+**Real-world anchor — the CVE this stands next to.** The headline Windows
+local-to-SYSTEM CVE of recent years is **PrintNightmare (CVE-2021-34527)**, a
+Windows Print Spooler RCE/LPE that a domain user could turn into SYSTEM on
+fully-patched hosts; its sibling **CVE-2021-1675** is the original Print Spooler
+flaw (initially classed as LPE, later reclassified as RCE) that the same
+spooler-loaded-driver bug grew out of. Those CVEs are the dramatic, patch-now
+vectors. The planted vectors in this lab — **AlwaysInstallElevated**, an
+**unquoted service path** (`NorthwindUpdater`), and a **weak service-binary
+ACL** — are the boring-but-reliable misconfiguration classes that real
+engagements live on: no exploit dev, no CVE window, just configuration you can
+find with winPEAS and exploit with built-in tooling. You name the CVE; you
+exploit the misconfig.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -47,7 +60,7 @@ exploit the highest-confidence vector to reach SYSTEM.
 
 2. [ ] From the triage output, confirm the planted vectors and identify which are P0:
    - `AlwaysInstallElevated` registry keys
-   - the unquoted service path (`MeridianUpdater`)
+   - the unquoted service path (`NorthwindUpdater`)
    - a weak service-binary ACL
 
 3. [ ] Exploit **AlwaysInstallElevated** (P0 — most reliable) to get a SYSTEM shell. (What does this
@@ -104,7 +117,8 @@ admin context. Module 12 (pivoting) shows how to use that access to reach adjace
 
 ## Stretch
 
-- Research **PrintNightmare (CVE-2021-34527)**: how did it reach SYSTEM, and what
-  Windows patch closed it?
+- Research **PrintNightmare (CVE-2021-34527)** and the original **CVE-2021-1675**:
+  how did the Print Spooler reach SYSTEM, and what Windows patch closed it?
+  Contrast its reliability and noise profile with the planted misconfig vectors.
 - Run `accesschk.exe -uwcqv "labuser" *` and compare service ACL output to winPEAS
   findings. Which tool surfaces more service vectors?

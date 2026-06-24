@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial is rolling out a CIS-hardened Ubuntu 22.04 image for all new Linux application
+The organization is rolling out a CIS-hardened Ubuntu 22.04 image for all new Linux application
 servers. You have been handed the default Ubuntu 22.04 base image — no hardening applied. Your job:
 audit it with Lynis and OpenSCAP, apply a set of CIS Level 1 remediations, and demonstrate a
 measurable score improvement to the security team.
@@ -104,6 +104,6 @@ module 07 formalises.
 - Generate the OpenSCAP remediation script (`--fix-type bash --fix /tmp/fix.sh`) and review it
   before running. Which remediations does it apply correctly? Which would you not run in
   production and why?
-- Run Lynis with `--auditor "Meridian Security"` and `--log-file /tmp/lynis.log`. Parse the log
+- Run Lynis with `--auditor "Platform Security"` and `--log-file /tmp/lynis.log`. Parse the log
   file to extract only WARNING and SUGGESTION lines — this is the foundation of a Lynis-to-SIEM
   pipeline.

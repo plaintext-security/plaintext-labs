@@ -21,7 +21,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial has approved a hardening playbook for all Ubuntu 22.04 application servers.
+The organization has approved a hardening playbook for all Ubuntu 22.04 application servers.
 You are the security engineer responsible for writing it, testing it for idempotency, and
 validating that each control is actually applied. The playbook will be committed to the
 infrastructure-as-code repo and run by the CI/CD pipeline on every new host provision.

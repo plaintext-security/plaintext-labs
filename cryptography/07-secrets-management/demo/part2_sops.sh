@@ -7,10 +7,10 @@ pub=$(age-keygen -y /tmp/age-key.txt 2>/dev/null)
 
 cat > /tmp/config.yml <<'EOF'
 database:
-  host: db.meridian.internal
+  host: db.corp.internal
   username: payroll_svc
   password: super-secret-password
-api_key: sk-meridian-prod-12345
+api_key: sk-corp-prod-12345
 EOF
 
 export SOPS_AGE_KEY_FILE=/tmp/age-key.txt

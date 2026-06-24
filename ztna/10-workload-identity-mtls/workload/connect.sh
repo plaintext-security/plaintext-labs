@@ -25,7 +25,7 @@ OUT="$(printf 'GET / HTTP/1.0\r\n\r\n' | \
     -CAfile "${SVID_DIR}/bundle.0.pem" 2>&1)"
 
 echo "$OUT" | grep -E "Verify return code|hello from spiffe|subject=|depth=" || true
-if echo "$OUT" | grep -q "hello from spiffe://meridian.local/backend"; then
+if echo "$OUT" | grep -q "hello from spiffe://corp.local/backend"; then
   echo "[client] ✅ mutual TLS succeeded — both ends presented a valid SVID."
   exit 0
 fi

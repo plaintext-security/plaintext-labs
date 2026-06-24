@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian's security audit team found a code path in the payroll API that reuses a hardcoded IV
+Corp's security audit team found a code path in the payroll API that reuses a hardcoded IV
 for AES-GCM encryption. Before the developer team disputes the severity, your job is to
 demonstrate concretely — in a controlled environment — what an attacker can do with two
 ciphertexts encrypted under the same key and IV. Then implement the correct fix.

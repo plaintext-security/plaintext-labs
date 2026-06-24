@@ -12,7 +12,11 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-LOG_PATH = Path(__file__).parent / "data" / "ssh_auth.txt"
+DATA_DIR = Path(__file__).parent / "data"
+# Prefer the real loghub OpenSSH log if `make fetch-data` has pulled it;
+# otherwise fall back to the small committed seed so `make demo` works offline.
+_REAL = DATA_DIR / "OpenSSH_2k.log"
+LOG_PATH = _REAL if _REAL.exists() else DATA_DIR / "ssh_auth.txt"
 
 # ── Stage 1: Ingest — raw lines ──────────────────────────────────────────────
 
@@ -96,7 +100,8 @@ def main() -> int:
     records = [r for line in raw_lines if (r := parse_line(line))]
 
     print("=" * 62)
-    print("Meridian Financial — SSH Log Pipeline Demo")
+    print("SOC — SSH Log Pipeline Demo")
+    print(f"Source: {LOG_PATH.name}")
     print(f"Ingested {len(raw_lines)} raw lines → {len(records)} structured records")
     print("=" * 62)
 

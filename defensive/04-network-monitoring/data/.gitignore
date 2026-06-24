@@ -1,0 +1,11 @@
+# Fetched real-traffic artifacts (via `make fetch-data`) — never commit.
+# The small curated seed logs in zeek/ are committed (see zeek/.gitignore).
+*.pcap
+*.pcap.zip
+capture.pcap
+# Zeek run metadata produced alongside regenerated logs
+zeek/packet_filter.log
+zeek/loaded_scripts.log
+zeek/reporter.log
+zeek/weird.log
+zeek/*.gz

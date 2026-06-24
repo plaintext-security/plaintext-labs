@@ -1,4 +1,4 @@
-# Threat Model — Meridian Financial Endpoints
+# Threat Model — Financial-Services Org Endpoints
 
 **Author:** [Your name]
 **Date:** [YYYY-MM-DD]
@@ -32,15 +32,17 @@ For each path: entry point → technique (ATT&CK ID) → intermediate step → t
 
 | # | Entry point | Technique | Step | Target asset | STRIDE category |
 |---|------------|-----------|------|--------------|-----------------|
+| 0 | Compromised VPN account, no MFA (**Colonial Pipeline 2021**) | T1078.002 (Valid Accounts: Domain) | Remote access as the former contractor → reach the workstation | Domain foothold | Spoofing / EoP |
 | 1 | Phishing email | T1566.001 (Spearphishing Attachment) | Macro executes payload | LSASS credentials | Spoofing / EoP |
 | 2 | | | | | |
 | 3 | | | | | |
 | 4 | | | | | |
 | 5 | | | | | |
 
-*Fill in paths for: credential dumping (T1003.001), lateral movement via RDP (T1021.001),
-persistence via scheduled task (T1053.005), privilege escalation via SUID (Linux),
-payroll API tampering.*
+*Path 0 is a worked example anchored to a real breach (Colonial Pipeline, May 2021 — DarkSide got
+in via a single compromised VPN credential with no MFA on an inactive account). Fill in the rest
+for: credential dumping (T1003.001), lateral movement via RDP (T1021.001), persistence via
+scheduled task (T1053.005), privilege escalation via SUID (Linux), payroll API tampering.*
 
 ---
 

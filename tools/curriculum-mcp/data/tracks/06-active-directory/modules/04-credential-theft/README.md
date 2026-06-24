@@ -1,13 +1,18 @@
 # Module 04 — Credential Theft & Replay
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — extract NTLM hashes with `secretsdump.py`, replay them via pass-the-hash through `psexec.py`/`smbexec.py` (T1550.002), and establish the conditions that make PTH possible vs. impossible, delivering the executed attack plus its detection seam. (Secondary: Blast-Radius Trace — show how one local-admin hash reaches the whole estate and where LAPS draws the boundary.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Active Directory & Windows Security** — *a password hash is not a password, but in Windows it is often just as good.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 
-Pass-the-hash (PTH) is one of the most durable attack techniques in Windows environments because it exploits a fundamental property of the NTLM authentication protocol, not a bug in any single product. Every major Windows lateral movement campaign — from NotPetya to the SolarWinds intrusion — has relied on some form of credential theft and replay. The defence requires understanding exactly when NTLM can and cannot be used as a replay credential, and why some architectures completely remove that surface while others leave it intact by design.
+Pass-the-hash (PTH) is one of the most durable attack techniques in Windows environments because it exploits a fundamental property of the NTLM authentication protocol, not a bug in any single product. Every major Windows lateral movement campaign — from NotPetya to the SolarWinds intrusion — has relied on some form of credential theft and replay. The defence requires understanding exactly when NTLM can and cannot be used as a replay credential, and why some architectures completely remove that surface while others leave it intact by design. The most extreme shortcut to the credential store is **Zerologon** ([CVE-2020-1472](https://nvd.nist.gov/vuln/detail/CVE-2020-1472), a CVSS 10.0, CISA KEV-listed Netlogon flaw): a cryptographic weakness in MS-NRPC lets an unauthenticated attacker on the network reset a domain controller's machine-account password to empty, then DCSync every hash in the domain — turning "steal one hash" into "take the entire NTDS.dit" in minutes.
 
 ## Objective
 
@@ -32,6 +37,9 @@ The specific impacket tools: `psexec.py` authenticates via SMB using PTH, create
 - [Impacket secretsdump.py — source and usage (GitHub)](https://github.com/fortra/impacket/blob/master/examples/secretsdump.py) — read the module docstring and the argument descriptions. Understand the difference between SAM extraction, LSASS extraction, and DCSync.
 - [DCSync Attack Explained (adsecurity.org)](https://adsecurity.org/?p=1729) — the DCSync technique: using DRSUAPI replication rights to pull any credential from the DC without touching NTDS.dit on disk.
 
+**Zerologon — Netlogon auth bypass to DC takeover**
+- [CVE-2020-1472 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2020-1472) — the Netlogon elevation-of-privilege CVE (CVSS 10.0, KEV-listed). Read the summary for the MS-NRPC secure-channel weakness; this is the canonical example of an unauthenticated network attacker reaching the domain credential store directly.
+
 **LAPS and mitigation**
 - [LAPS — Local Administrator Password Solution (Microsoft Docs)](https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-overview) — what LAPS solves (shared local admin passwords) and what it does not solve (domain credential replay). Read the overview section.
 
@@ -40,6 +48,7 @@ The specific impacket tools: `psexec.py` authenticates via SMB using PTH, create
 - Pass-the-hash authenticates with the hash directly — no password needed.
 - `secretsdump.py` can extract from SAM (local), LSASS (remote, privileged), or NTDS.dit via DCSync (domain admin).
 - DCSync uses legitimate DRSUAPI replication to pull credentials from a DC — no need to touch NTDS.dit on disk.
+- Zerologon (CVE-2020-1472) abuses an MS-NRPC crypto flaw to zero a DC's machine-account password unauthenticated, then DCSync the whole domain — patch immediately; it is KEV-listed.
 - LAPS breaks shared local admin passwords; it does not prevent domain credential PTH.
 - Detection: Event 4624 (Logon Type 3) with NtLmSsp provider from an unexpected source host; Event 4776 for NTLM authentication events.
 - Mitigation: Protected Users group, Credential Guard (virtualises LSASS), SMB signing to prevent relay.

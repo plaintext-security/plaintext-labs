@@ -2,8 +2,8 @@
 # check_identity.sh — prove workload identity is issued on attestation, denied without it.
 #
 # Asserts:
-#   1. backend gets exactly spiffe://meridian.local/backend
-#   2. client  gets exactly spiffe://meridian.local/client
+#   1. backend gets exactly spiffe://corp.local/backend
+#   2. client  gets exactly spiffe://corp.local/client
 #   3. rogue (no registration entry) is REFUSED an SVID
 #
 # Run from the lab dir after `make up`:  bash check_identity.sh
@@ -22,10 +22,10 @@ fetch_id() { # $1 = service name
 echo "== Registered workloads must receive the right identity =="
 for svc in backend client; do
   id="$(fetch_id "$svc")"
-  if [ "$id" = "spiffe://meridian.local/${svc}" ]; then
+  if [ "$id" = "spiffe://corp.local/${svc}" ]; then
     ok "${svc} -> ${id}"
   else
-    bad "${svc} expected spiffe://meridian.local/${svc}, got '${id:-<none>}'"
+    bad "${svc} expected spiffe://corp.local/${svc}, got '${id:-<none>}'"
   fi
 done
 

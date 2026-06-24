@@ -1,0 +1,90 @@
+---
+# Module 13 — the rolling rollout, expressed as Ansible (the real-tool reference).
+#
+# The runnable demo drives the rollout via data/rollout.sh (deterministic and
+# CI-friendly without inter-container SSH). THIS playbook is the production-shape
+# Ansible expression of the SAME rolling-upgrade pattern the script implements,
+# and is what you adapt when you point the rhythm at a real fleet:
+#   - `serial`              -> process the fleet in batches, not all at once
+#   - `max_fail_percentage` -> HALT the rollout when a batch crosses the threshold
+#   - pre_tasks / post_tasks health hooks -> health-check BEFORE and AFTER each batch
+#   - group_vars/legacy-app.yml -> the defended relaxed-profile exception
+#
+# Run (against a real SSH-reachable fleet): ansible-playbook -i data/inventory.ini data/playbook.yml
+
+- name: Roll the hardening baseline across the fleet, ring by ring, no outage
+  hosts: "{{ ring | default('test') }}"
+  gather_facts: yes
+  become: yes
+
+  # serial = batch size; the fleet ring rolls a few hosts at a time.
+  serial: "{{ batch_size | default(2) }}"
+  # halt the whole rollout if a batch's failures cross this percentage.
+  max_fail_percentage: "{{ max_fail | default(25) }}"
+
+  pre_tasks:
+    # HEALTH GATE (before): the host must already be serving — never roll onto
+    # a host that's already down. Fails closed: a non-200/timeout aborts the batch.
+    - name: "[health BEFORE] app endpoint must be serving (200)"
+      uri:
+        url: "http://{{ ansible_host | default('127.0.0.1') }}:{{ app_port }}/health"
+        status_code: 200
+        timeout: 3
+      changed_when: false
+      tags: health
+
+  tasks:
+    - name: "[CIS-5.2.10] Disable root SSH login"
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin {{ root_ssh }}'
+      notify: Restart sshd
+      tags: ssh
+
+    - name: "[CIS-5.4.1] Ensure pam_pwquality minlen"
+      lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: '^#?minlen'
+        line: 'minlen = {{ password_minlen }}'
+        create: yes
+      tags: password
+
+    - name: "[CIS-4.1.1] Ensure auditd is installed"
+      package: { name: auditd, state: present }
+      tags: auditd
+
+    # The control that breaks the legacy app at 027. group_vars/legacy-app.yml
+    # overrides umask_value to 022 (the defended exception) for that group.
+    - name: "[CIS-5.5.5] Set default umask"
+      lineinfile:
+        path: /etc/login.defs
+        regexp: '^UMASK'
+        line: 'UMASK           {{ umask_value }}'
+      tags: umask
+
+    - name: "[CIS-3.3.7] Enable reverse-path filtering"
+      sysctl:
+        name: net.ipv4.conf.all.rp_filter
+        value: "{{ rp_filter }}"
+        sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
+        reload: no
+      tags: sysctl
+
+  post_tasks:
+    # HEALTH GATE (after): the host must be hardened AND STILL SERVING. A host
+    # that passed the benchmark but stopped serving is a FAILED roll — this is
+    # the assertion that turns "compliant" into "compliant and still working",
+    # and (with max_fail_percentage) halts the rollout before the next batch.
+    - name: "[health AFTER] app endpoint must still be serving (200) — compliant != working"
+      uri:
+        url: "http://{{ ansible_host | default('127.0.0.1') }}:{{ app_port }}/health"
+        status_code: 200
+        timeout: 3
+      changed_when: false
+      tags: health
+
+  handlers:
+    - name: Restart sshd
+      service: { name: sshd, state: restarted }
+      ignore_errors: yes

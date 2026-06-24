@@ -1,9 +1,14 @@
 # Module 03 — Linux Telemetry
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — configure Linux audit logging, query host state with osquery, and capture the execution telemetry detections rely on; you commit a working "Linux Sysmon" config and the queries that read it. (Secondary: Misconception Reveal — the container blind-spot your host telemetry quietly misses.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *servers and containers are Linux; this is how you watch them.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Cloud workloads, web servers, and containers run Linux, where default logging tells you little

@@ -1,12 +1,14 @@
-Hayabusa Triage Summary (synthetic — WORKSTATION-04 EVTX)
+Hayabusa Triage Summary (offline fallback — BEACHHEAD-WS01 EVTX)
 Generated: 2024-03-15T14:20:00Z
 Source: data/evtx/
+Note: primary artifact is the real EVTX-ATTACK-SAMPLES .evtx fetched by `make fetch-data`.
+      This summary is the offline fallback so `make demo` runs before fetch-data.
 
 Timestamp            | Level    | EventID | Rule                                         | Details
 ---------------------|----------|---------|----------------------------------------------|------------------------------------------
-2024-03-15 14:18:03  | critical | 4698    | Scheduled Task Created                       | TaskName: \MicrosoftEdgeUpdateTaskUser, Author: MFIN\dev-svc01
+2024-03-15 14:18:03  | critical | 4698    | Scheduled Task Created                       | TaskName: \MicrosoftEdgeUpdateTaskUser, Author: CORP\jsmith
 2024-03-15 14:18:45  | high     | 4688    | Suspicious Process Creation (encoded args)   | Image: C:\Windows\System32\cmd.exe, ParentImage: WINWORD.EXE
 2024-03-15 14:19:12  | high     | 4688    | PowerShell with -EncodedCommand              | CommandLine: powershell.exe -w hidden -EncodedCommand [base64...]
-2024-03-15 14:20:01  | high     | 4624    | Logon: Network (Type 3)                      | TargetUserName: dev-svc01, IpAddress: 10.0.0.50
-2024-03-15 14:21:55  | medium   | 4663    | File Created in Temp Directory               | ObjectName: C:\Users\dev-svc01\AppData\Local\Temp\svchost32.exe
+2024-03-15 14:20:01  | high     | 4624    | Logon: Network (Type 3)                      | TargetUserName: jsmith, IpAddress: 10.0.0.50
+2024-03-15 14:21:55  | medium   | 4663    | File Created in Temp Directory               | ObjectName: C:\Users\jsmith\AppData\Local\Temp\sihosts.exe
 2024-03-15 14:22:10  | low      | 4625    | Logon Failure                                | TargetUserName: Administrator, IpAddress: 10.0.0.50

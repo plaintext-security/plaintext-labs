@@ -1,48 +1,101 @@
-# Module 11 — Container Escape & Runtime Security
+# Module 11 — Container Escape & Runtime
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · build-first ("reproduce the escape, then detect it"). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *a container is a process in a jail, not a VM. Prove the wall is the kernel by going through it — then write the detection that catches the next one.*
+
+<!-- module-meta -->
+**Difficulty:** Advanced &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md), [Module 10 — Container & Image Security](../10-container-image-security/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *containers are not a security boundary; understand where the walls are and how they break.*
+## The exploit
 
-## Why this matters
-The phrase "it's just a container" is one of the most dangerous assumptions in cloud security. A developer who deploys `--privileged` because it "fixed the permission error" has handed an attacker a root shell on the node — one pivot away from every other pod on the host, the instance metadata service, and the cloud credential chain. CVE-2019-5736 (runc overwrite), CVE-2020-15257 (Containerd abstract Unix socket), and CVE-2021-30465 (runc symlink race) are real escapes from real container runtimes, each exploited in the wild. Runtime security tooling like Falco exists precisely because scanning and policy can't catch what code does at runtime — only syscall visibility can.
+In February 2019, Adam Iwaniuk and Borys Popławski disclosed **CVE-2019-5736**: a way for a process
+inside a container to **overwrite the host's `runc` binary** — and thereby get code execution as root
+on the host the moment any other container is started or `exec`'d into. `runc` is the low-level OCI
+runtime that Docker, containerd, Podman, and Kubernetes all shell out to in order to actually *create*
+a container. It runs as root on the host. The bug: when `runc` `exec`s into a running container, the
+attacker (controlling the container's filesystem) can race a `/proc/self/exe` symlink so that the
+host's own `runc` binary is opened for writing from inside the container, and replaced with attacker
+code. The next container operation runs that code — on the host, as root.
 
-## Objective
-Demonstrate a privileged-container host-filesystem escape, then deploy Falco to detect the suspicious syscalls it generates — producing a working detection that would have caught the technique before damage was done.
+It rated **CVSS 8.6**, landed on the CISA KEV-class watchlist of "patch this now" runtime bugs, and
+forced an emergency coordinated release across every container platform at once. It is the canonical
+container escape, and — crucially for you — it is **reproducible**: Vulhub ships a pinned vulnerable
+runc environment for it, so you exploit the *real* CVE, not a hand-rolled stand-in.
 
-## The core idea
-Containers share the host kernel. What Linux namespaces and cgroups provide is *isolation*, not a hypervisor-grade *boundary*: separate PID and network namespaces, a limited view of the filesystem, and resource caps — but a single shared kernel underneath. A privileged container receives all Linux capabilities (`CAP_SYS_ADMIN`, `CAP_NET_ADMIN`, and 35 others) and most namespace protections are dropped. With `CAP_SYS_ADMIN` you can mount filesystems, load kernel modules, and read raw block devices. `--privileged` is therefore not a "slightly elevated container" — it's effectively a root shell on the host with a thin namespace wrapper. The canonical escape path is: mount the host's root filesystem (accessible because `/dev/sda1` or the underlying block device is visible), `chroot` into it, and read or write anything on the host.
+## The mental model: the wall is the kernel
 
-Beyond `--privileged`, several other configuration mistakes narrow or eliminate the isolation. Mounting the Docker socket (`-v /var/run/docker.sock:/var/run/docker.sock`) lets any process in the container issue Docker API calls — including launching a new privileged container. Mounting the host's PID namespace (`--pid=host`) lets a process in the container see and signal host processes. A writable hostPath volume over `/etc` lets a container modify the host's `passwd`, `sudoers`, or `cron`. Each of these is a partial escape vector that doesn't require a kernel CVE — it's just a misconfiguration. This is why Kubernetes admission policies and runtime detection are layered: policy prevents the misconfiguration from deploying; runtime detection catches it if the policy was bypassed or predates the workload.
+Here is the one idea that makes every container escape legible. **A container is not a small VM. It is
+an ordinary host process wearing a costume** — Linux namespaces give it a private view (its own PID 1,
+its own network, its own mount table), cgroups cap its resources, and capabilities trim its powers.
+But underneath that costume, *it is sharing the host's kernel.* There is no hypervisor, no second
+operating system, no hardware boundary. A syscall from inside the container is executed by the **same
+kernel** the host runs on.
 
-Runtime security fills the gap that static scanning cannot close. Falco instruments the Linux kernel via eBPF (or its older kernel-module driver) and evaluates a stream of syscall events against a rule set. A rule like "a process in a container wrote to `/etc/passwd`" fires not because the image was scanned, but because `openat(2)` was called on that path at runtime. This catches both known-bad techniques and novel ones that happen to follow suspicious patterns — privilege escalation, reverse shells, unexpected outbound connections, credential file reads. The output is a structured alert with the container ID, image name, PID, and syscall context — enough to identify the workload and begin incident response.
+So "escape" is not breaking out of a box — there is no box. Escape is **abusing a resource the
+container and host both touch**: a shared kernel interface, a host path mounted in, a privileged
+device, a host-side helper binary the runtime invokes on your behalf. CVE-2019-5736 abuses the last
+one: `runc` is a host binary that *reaches into* the container, and the attacker turns that reach
+around. `--privileged` abuses devices: it hands the container `CAP_SYS_ADMIN` and visibility of
+`/dev/sda1`, so it can just `mount` the host disk and `chroot` in — no CVE required. A mounted
+`docker.sock` abuses the control plane: any process that can talk to the Docker API can ask the host
+daemon to launch a new privileged container for it. Different doors, same hallway: **the boundary you
+are trusting is the kernel, and the kernel is shared.**
 
-The practitioner's mental model for runtime security is **signal vs. noise tuning**. Default Falco rule sets generate a lot of alerts in a typical cluster because they're written broadly. The skill is suppressing expected benign events (a database process writing to its data directory, a log shipper opening arbitrary files) through `exceptions` or more precise conditions, while keeping the rules that cover real attacker behaviour. A tuned Falco rule set for a known workload is far more actionable than the default set running against an unknown one. That tuning is itself an artifact worth versioning — it's the detection equivalent of writing infrastructure as code.
+This is why the defenses layer the way they do. You cannot make the kernel un-shared, so you (1)
+**reduce what the container is allowed to ask the kernel** (drop capabilities, no `--privileged`,
+seccomp/AppArmor, non-root UID — the image-hardening of module 10 and the admission policy of module
+13), and (2) **watch what it actually asks at runtime.** That second layer is the subject of this lab.
+
+## The gap that runtime detection fills
+
+Static scanning (module 10) reads the image; admission control (module 13) reads the spec. Neither sees
+*behavior*. CVE-2019-5736 is invisible to both — the image is clean, the spec is legal; the attack is a
+sequence of **syscalls** at runtime. **Falco** closes that gap: it instruments the kernel's syscall
+stream (modern eBPF probe) and evaluates each event against a rule set. "A process in a container wrote
+to a host binary path." "A `mount(2)` happened inside a container." These fire because the syscall
+happened, not because anything was scanned — so they catch both this CVE and the next novel one that
+follows the same shape.
+
+The practitioner skill is **signal-vs-noise tuning.** Out of the box, broad rules alert on benign work
+— a database writing its data dir, a log shipper opening arbitrary files. A tuned rule fires on the
+escape and stays *silent* on the legitimate workload. That tuned rule is an artifact you version: it is
+detection-as-code, the runtime sibling of the policy-as-code you've written all phase. In this module
+you'll reproduce the escape, deploy Falco, watch it fire, then **tune away one real false positive** —
+the difference between a noisy demo and something a SOC would actually keep enabled.
+
+> **One light prediction, before the lab.** When the escape runs, which single syscall do you think
+> most cleanly betrays it — the one you'd build the detection around? Most people say "the `mount`."
+> Hold that thought; in the lab you'll see why the *write to the host binary* is the sharper,
+> lower-noise signal, and `mount` is the one that generates the false positive you'll have to tune out.
 
 ## Learn (~3 hrs)
 
-**Container isolation internals (~1 hr)**
-- [Julia Evans — "A container is just a process" (blog)](https://jvns.ca/blog/2020/04/27/new-zine-how-containers-work/) — the clearest short explanation of how namespaces and cgroups compose to form container isolation; read the blog post (~15 min) before diving deeper.
-- [Linux man page: capabilities(7)](https://man7.org/linux/man-pages/man7/capabilities.7.html) — skim the capability list (CAP_SYS_ADMIN, CAP_NET_ADMIN, CAP_DAC_OVERRIDE) and understand what each grants; this is the vocabulary behind `--privileged`.
+**Container isolation internals (~45 min)**
+- [Julia Evans — "How containers work" (blog post)](https://jvns.ca/blog/2020/04/27/new-zine-how-containers-work/) (~15 min) — the clearest short read on namespaces + cgroups composing into "a process in a jail." Internalize this before the lab; the whole module rests on it.
+- [Linux `capabilities(7)` man page](https://man7.org/linux/man-pages/man7/capabilities.7.html) (~15 min, skim) — skim the list and read `CAP_SYS_ADMIN`. This is the vocabulary behind what `--privileged` actually grants.
 
-**Container escape techniques (~1 hr)**
-- [Trail of Bits — "Understanding Docker container escapes"](https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/) — a technical walkthrough of the `cgroup release_agent` escape technique (CVE-class); step-by-step, with the syscall-level explanation.
-- [NVD — CVE-2021-30465](https://nvd.nist.gov/vuln/detail/CVE-2021-30465) — runc symlink-race escape; read the description and CVSS vector to understand the attack surface.
-- [MITRE ATT&CK T1611 — Escape to Host](https://attack.mitre.org/techniques/T1611/) — the ATT&CK technique card; note the sub-techniques and the detection guidance.
+**The CVE itself (~1 hr)**
+- [The original disclosure — "CVE-2019-5736: Escape from Docker and Kubernetes containers to root on host" (Adam Iwaniuk / Dragon Sector)](https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html) (~30 min) — the discoverers' own writeup, with the `/proc/self/exe` mechanism. Primary source; read it slowly.
+- [NVD — CVE-2019-5736](https://nvd.nist.gov/vuln/detail/CVE-2019-5736) (~10 min) — the record and CVSS 8.6 vector; note the affected runc versions you'll pin in the lab.
+- [MITRE ATT&CK T1611 — Escape to Host](https://attack.mitre.org/techniques/T1611/) (~15 min) — the technique your detection maps to; read the detection guidance and note T1610 (Deploy Container).
 
 **Falco runtime detection (~1 hr)**
-- [Falco documentation — Rules](https://falco.org/docs/rules/) — the rules language reference; read the "Conditions", "Output", and "Macros" sections. This is the vocabulary you need to write and tune rules.
-- [Sysdig blog — "Falco: runtime security for containers"](https://falco.org/docs/concepts/event-sources/) — the conceptual overview of how Falco instruments syscalls via eBPF; a 10-minute read that builds the mental model before the lab.
+- [Falco docs — Rules](https://falco.org/docs/rules/) (~30 min) — the rule language: read **Conditions**, **Output**, **Macros**, and **Exceptions**. This is exactly the vocabulary you tune with.
+- [Falco docs — Event sources / how Falco works](https://falco.org/docs/concepts/event-sources/) (~15 min) — how it taps syscalls via eBPF; builds the mental model before you watch it fire.
 
 ## Key concepts
-- Containers share the host kernel — namespaces provide isolation, not a security boundary
-- `--privileged` = all Linux capabilities + most protections disabled = host root access
-- Escape vectors beyond kernel CVEs: Docker socket mount, `--pid=host`, writable hostPath `/etc`
-- Falco instruments the kernel syscall stream via eBPF to detect runtime behaviour, not just config
-- The `release_agent` and block-device-mount escape patterns (CVE-2021-30465 class)
-- Signal vs. noise tuning: `exceptions` and precise conditions in Falco rules
-- MITRE ATT&CK T1610 (Deploy Container), T1611 (Escape to Host), T1613 (Container and Resource Discovery)
+- A container is a host process with namespaces/cgroups/capabilities — **not** a VM; there is no hypervisor boundary
+- The boundary you trust is the **shared kernel**; escape = abusing a resource both sides touch (host binary, device, socket, host path)
+- CVE-2019-5736: overwrite the host `runc` binary from inside the container via a `/proc/self/exe` symlink → root on host
+- `--privileged` and `docker.sock` mounts are *configuration* escapes that need no CVE — same shared-kernel hallway, different door
+- Defenses layer because the kernel can't be un-shared: reduce what's *allowed* (caps, seccomp, non-root, admission) **and** watch what's *done* (Falco)
+- Runtime detection catches behavior that static scan + admission can't see — it reads syscalls, not images
+- Signal-vs-noise tuning: a rule that fires on the escape and stays silent on benign work; the tuned rule is detection-as-code
 
 ## AI acceleration
-Paste a Falco rule YAML into a model and ask it to explain what the rule catches, suggest edge cases it would miss, and propose an `exception` for a specific benign workload. It's reliable on rule syntax and logic — but it cannot tell you whether the rule would actually generate noise in your specific cluster without cluster context. Use it to draft rule variants and `exceptions`; you validate them against real Falco output from `make demo` before promoting to production.
+Paste a Falco rule's YAML into a model and ask it to (a) explain in plain English what syscall pattern it catches, (b) name a benign workload that would trip it, and (c) draft the `exception` that suppresses that workload without blinding the rule to the attack. It is genuinely good at rule *syntax* and at imagining edge cases — but it **cannot** tell you whether the rule is noisy in *your* environment, because that depends on what your containers actually do. So treat its draft as a hypothesis: you validate every variant against real Falco output from `make demo` before you keep it. AI drafts the rule; you own whether it fires on the right thing.

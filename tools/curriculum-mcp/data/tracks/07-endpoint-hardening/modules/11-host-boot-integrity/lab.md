@@ -1,0 +1,1 @@
+../../../../plaintext-labs/endpoint-hardening/11-host-boot-integrity/lab.md

@@ -17,21 +17,21 @@ reset:
 demo:
 	@echo "=== Module 09 — Email Authentication Demo ==="
 	@echo ""
-	@echo "--- Querying SPF record for meridian-fictional.com ---"
+	@echo "--- Querying SPF record for corp-fictional.com ---"
 	docker compose exec dns bash -c '\
-		dig @127.0.0.1 TXT meridian-fictional.com +short 2>/dev/null | grep spf || \
+		dig @127.0.0.1 TXT corp-fictional.com +short 2>/dev/null | grep spf || \
 		echo "SPF: v=spf1 ip4:203.0.113.10 ip4:203.0.113.20 include:sendgrid.net ~all"'
 	@echo ""
 	@echo "  FINDING: ~all (softfail) should be -all (hardfail)"
 	@echo ""
-	@echo "--- Querying DKIM record (selector: meridian2024) ---"
+	@echo "--- Querying DKIM record (selector: corp2024) ---"
 	docker compose exec dns bash -c '\
-		dig @127.0.0.1 TXT meridian2024._domainkey.meridian-fictional.com +short 2>/dev/null | head -3 || \
+		dig @127.0.0.1 TXT corp2024._domainkey.corp-fictional.com +short 2>/dev/null | head -3 || \
 		echo "DKIM: v=DKIM1; k=rsa; p=MIIBIjAN..."'
 	@echo ""
 	@echo "--- Querying DMARC record ---"
 	docker compose exec dns bash -c '\
-		dig @127.0.0.1 TXT _dmarc.meridian-fictional.com +short 2>/dev/null || \
+		dig @127.0.0.1 TXT _dmarc.corp-fictional.com +short 2>/dev/null || \
 		echo "DMARC: v=DMARC1; p=none; adkim=r; aspf=r; pct=100"'
 	@echo ""
 	@echo "  FINDINGS:"

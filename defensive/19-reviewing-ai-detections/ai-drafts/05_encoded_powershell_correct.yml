@@ -1,0 +1,26 @@
+title: PowerShell Encoded Command (AI draft — control)
+id: a5555555-0000-4000-8000-000000000005
+status: experimental
+description: >
+  AI-drafted rule that is actually CORRECT — the control. Right field
+  (`CommandLine`), right modifier (`contains`), real ATT&CK tag (T1059.001),
+  correct logsource. It fires on the encoded-PowerShell malicious events in the
+  corpus and stays quiet on the benign ones. Its job in the lab is to make you
+  prove you can tell a good draft from a bad one (and not flag a false positive
+  in your own review).
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains:
+      - ' -enc '
+      - ' -encodedcommand '
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001

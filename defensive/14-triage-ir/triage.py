@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Meridian Financial — Incident triage and IR walkthrough.
+"""Incident triage and IR walkthrough.
 
-This harness presents the Meridian INC-2024-0315-001 incident pack and
+This harness presents the INC-2024-0315-001 incident pack and
 walks through the NIST SP 800-61 lifecycle:
   1. Detection & Analysis  — triage to a true/false-positive verdict
   2. Containment           — minimum action to stop active harm
@@ -43,7 +43,7 @@ def print_section(title: str) -> None:
 
 def demo(pack: dict) -> int:
     print("=" * 64)
-    print("Meridian Financial — Incident Triage")
+    print("Incident Triage — NIST SP 800-61 walkthrough")
     print(f"Incident: {pack['incident_id']}  |  {pack['title']}")
     print("=" * 64)
 

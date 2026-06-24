@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial is deploying mutual TLS (mTLS) between its internal microservices. Your
+Corp is deploying mutual TLS (mTLS) between its internal microservices. Your
 job: stand up a private CA with `step-ca`, issue service certificates, verify the chain, and
 demonstrate certificate revocation — the complete PKI lifecycle for an mTLS programme.
 

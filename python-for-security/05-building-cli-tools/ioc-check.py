@@ -18,23 +18,20 @@ from rich.table import Table
 
 __version__ = "0.1.0"
 
-app = typer.Typer(help="IOC enrichment CLI for Meridian Security.")
+app = typer.Typer(help="IOC enrichment CLI backed by real abuse.ch threat-intel feeds.")
 console = Console()
 
 API_BASE = os.environ.get("THREAT_API_URL", "http://localhost:8080")
 
 IP_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
-SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
-MD5_RE = re.compile(r"^[0-9a-fA-F]{32}$")
+SAMPLE_RE = re.compile(r"^\d{4,}$")  # URLhaus sample id (numeric)
 
 
 def _detect_type(ioc: str) -> str:
     if IP_RE.match(ioc):
         return "ip"
-    if SHA256_RE.match(ioc):
-        return "sha256"
-    if MD5_RE.match(ioc):
-        return "md5"
+    if SAMPLE_RE.match(ioc):
+        return "sample"
     return "unknown"
 
 

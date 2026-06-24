@@ -1,106 +1,125 @@
 # Module 15 — Cloud Logging & Detection
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · breach-driven, predict-what-fires ("the logs existed; predict the signal, then write the detection"). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *detection is not a logging problem; it's an attention problem. The log was always there.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4.5–6.5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 14 — Cloud Attack Techniques](../14-cloud-attack-techniques/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *the attacker's footprint is in the API log; the defender's job is to find it before it becomes news.*
+## The case
 
-## Why this matters
-Cloud environments are comprehensively logged by default in ways on-premises infrastructure never
-was — every IAM call, every S3 access, every console login is a signed, tamper-evident record. The
-troubling implication is that your ability to detect attacks is proportional to your ability to
-actually use those logs. Most organisations have GuardDuty enabled but haven't looked at a raw
-CloudTrail file. When an incident happens and GuardDuty is quiet, you need to know what to search.
-This module gives you both: the native detectors and the open-tool skills to operate when they
-don't cover a technique.
+In both of the breaches that bookend this track, **the log existed the whole time.** Capital One's
+attacker assumed a role and listed every bucket — and it was [in CloudTrail](https://www.justice.gov/usao-wdwa/press-release/file/1188626/download);
+an outsider, not the company, reported the breach. In the [LastPass 2022 incidents](https://blog.lastpass.com/posts/2022/12/notice-of-recent-security-incident),
+an attacker used keys stolen from a senior engineer to reach S3 and a DynamoDB store and walk out with
+encrypted customer vaults plus configuration — and the activity ran against logged AWS APIs. Neither
+breach was a *logging* failure. The telemetry was generated, signed, and retained. **Nobody was
+watching the stream it landed in.**
 
-## Objective
-Write a Sigma rule for a CloudTrail privilege-escalation sequence (CreateUser → AttachUserPolicy),
-run it against a bundled set of real-shaped events using a Python matcher, reproduce the same
-finding using GuardDuty's event model, and articulate when native detectors are sufficient versus
-when open tooling adds coverage.
+That is the uncomfortable truth this module turns on: cloud is comprehensively logged by default in a
+way on-prem never was, and that abundance creates a false sense of safety. A detection is a hypothesis
+about attacker behaviour scored against a stream that is **99.99% benign** — and the hard part is never
+the true positive. It's making the rule quiet enough that a human will still read its alerts a month
+from now. So before you read on:
 
-## The core idea
-The cloud logging surface splits cleanly into two planes, and you must understand both. The
-**management events** plane (CloudTrail's default) captures every API call that changes or reads
-the configuration of a resource: CreateUser, AssumeRole, RunInstances, PutBucketPolicy. This is
-the control plane in log form — everything an attacker does to reconfigure or escalate inside your
-environment produces a management event. The **data events** plane captures the actual reads and
-writes against data: S3 GetObject, DynamoDB GetItem, Lambda invocations. Data events cost money to
-log and generate enormous volume, so most organisations log them only for sensitive buckets. The
-first thing to check in any cloud incident is which data events were enabled — if S3 object-level
-logging wasn't on, you can't tell which objects an attacker exfiltrated.
+> **Of the techniques you detonated in module 14, which one shows up *loud and clear* in CloudTrail by
+> default — and which is *nearly invisible*?**
 
-Native cloud detectors — AWS GuardDuty, Microsoft Defender for Cloud, GCP Security Command Center
-— are trained on the same control-plane logs and apply pre-built ML models and rule libraries that
-a platform team would take months to write from scratch. Their strength is low-friction coverage:
-you click enable and immediately get detections for the most common attack patterns. Their weakness
-is opacity and lag: GuardDuty's rules are a black box, the technique coverage lags the ATT&CK
-Cloud matrix, and when an attacker uses a novel technique or stays below the ML model's thresholds,
-you get silence. The practitioner position is not "native or open" — it is "native as the baseline,
-open tooling for the gaps."
+## Your job
 
-Sigma rules are the lingua franca for detection-as-code in the cloud logging space. A Sigma rule
-for a CloudTrail sequence is a YAML document that specifies the `logsource`, the `detection` logic
-(field matches, conditions, and crucially for sequences — the `followed by` syntax with a time
-window), and the `falsepositives` you've thought through. The value is portability: a Sigma rule
-can be compiled to Splunk SPL, Elastic KQL, Panther Python, or evaluated directly — without being
-rewritten. The challenge is that CloudTrail's event structure is nested (the interesting fields live
-inside `requestParameters` and `userIdentity`, not at the top level), and naive rules generate
-alert fatigue because they match on a single event without the sequence context.
+By the end of this module you'll take the telemetry from module 14, **predict which attacker actions
+the default log even captured**, then **write a Sigma rule** for the one worth detecting and **tune it
+against benign activity** until it fires on the attack and *not* on the noise. You'll reproduce the same
+finding in a native detector's event model (GuardDuty / Defender / SCC) and rule on where native
+coverage is enough and where you must fill the gap. The deliverable is detection-as-code with an
+explicit false-positive analysis — the artifact a cloud detection engineer is actually paid for.
 
-The detection engineering discipline this module drills is **sequence logic with context**. A
-single `CreateUser` call is benign a hundred times a day. A `CreateUser` followed by
-`AttachUserPolicy` with `AdministratorAccess` within five minutes from a non-corporate IP is almost
-never legitimate — but you need both events, the policy name, the IP, and the time window to write
-a rule that fires precisely. This is the analytical pattern behind most of the high-fidelity cloud
-detections: not a single event, but a sequence with qualifying conditions. Getting that logic right
-— and encoding it reproducibly in a Sigma rule rather than in someone's head — is the job.
+## Call it before you read on
+
+Don't scroll. Commit to these — being wrong is the teaching event, and you'll grade yourself in the lab.
+
+> **Q1.** In module 14 the attacker assumed a role (T1078.004), created an admin user (T1098), *and*
+> bulk-downloaded objects from S3 (T1530 — the LastPass exfil move). **By default, which of those is
+> NOT in CloudTrail at all?**
+>
+> **Q2.** You write a rule: alert on any `CreateUser`. It fires perfectly on the attack. Why is it a
+> *bad* detection — what happens to it in week two?
+>
+> **Q3.** A single `GetObject` is benign a thousand times a day. So is `AssumeRole`. How do you turn
+> "individually-benign events" into a high-fidelity detection without drowning in false positives?
+
+## What fires, revealed
+
+Hold your answers against these.
+
+**Q1 — the data plane is dark by default.** CloudTrail splits into two planes, and the split is the
+single most important gotcha in cloud detection. **Management events** — `AssumeRole`, `CreateUser`,
+`AttachUserPolicy`, `PutBucketPolicy`, `RunInstances` — are the control plane in log form, and they are
+logged *for free, by default*. **Data events** — `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`,
+`lambda:Invoke` — are the actual reads and writes against your data, and they are **off by default**,
+cost money, and generate enormous volume, so most orgs log them only on a few sensitive buckets. So the
+answer to Q1 is **T1530, the bulk download** — the exact move that exfiltrated LastPass's vaults is, in
+a default account, *invisible*. The first question in any cloud incident is "were S3 data events enabled
+for this bucket?" — and the honest, common answer is *no, so we cannot tell which objects left.* The
+attacker's loudest action (the one that did the damage) is the one your default log is silent on.
+
+**Q2 — the false-positive economics is the whole craft.** A rule that fires on every `CreateUser` is
+correct on the attack and *useless* in production, because legitimate automation creates users all day.
+By week two it's muted, ignored, or routed to a folder no one opens — and a muted rule is a non-existent
+rule that *feels* like coverage. **A detection isn't scored on whether it catches the attack; it's scored
+on its signal-to-noise on a 99.99%-benign stream.** Precision is the product. This is why "we have
+GuardDuty enabled" is not the same as "we detect": coverage you don't tune is alert fatigue with a
+dashboard.
+
+**Q3 — sequence and qualifying context turn benign atoms into a signal.** The fix for Q2 is to stop
+detecting single events and start detecting *behaviour*. `CreateUser` alone is noise; `CreateUser`
+**followed by** `AttachUserPolicy` attaching `AdministratorAccess` **within five minutes** **from an IP
+that isn't your CI range** is almost never legitimate — and that compound is precise. This is Sigma's
+job: a YAML detection that names the `logsource`, the field matches (the interesting fields are *nested*,
+in `requestParameters` and `userIdentity` — not top-level), the temporal `condition`, and — the part
+beginners skip — the `falsepositives` you've reasoned through. Native detectors (GuardDuty, Defender for
+Cloud, GCP SCC) ship pre-built versions of exactly this logic over the same control-plane logs; their
+strength is one-click coverage of common patterns, their weakness is opacity and lag behind the ATT&CK
+Cloud matrix. The practitioner posture is not "native or open" — it's **native as the baseline, Sigma
+for the gap, and every rule tuned against benign traffic before it's trusted.**
+
+In the lab you'll do exactly this against the module-14 telemetry: confirm the data-plane blind spot,
+write and tune one Sigma rule, and reproduce the finding in a native detector's model.
 
 ## Learn (~3.5 hrs)
 
-**CloudTrail and AWS logging architecture (~1 hr)**
-- [AWS CloudTrail Concepts](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html)
-  — read the "How CloudTrail works" and "Management events vs. data events" sections; this is the
-  primary source on what gets logged, what doesn't, and the cost model. Skip the regional trail
-  setup detail for now.
-- [CloudTrail event record fields reference](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html)
-  — bookmark this; every detection rule you write will reference `eventSource`, `eventName`,
-  `userIdentity.type`, `sourceIPAddress`, and `requestParameters`. One field at a time.
+*Richer than a foundations module — detection engineering is a craft. Read the case first, then the mechanism.*
 
-**GuardDuty and native cloud detectors (~1 hr)**
-- [AWS GuardDuty finding types](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-active.html)
-  — skim the IAM and S3 sections to understand which techniques GuardDuty covers natively and at
-  what confidence level. The `UnauthorizedAccess:IAMUser/TorIPCaller` finding is in this lab's seed
-  data.
-- [Microsoft Defender for Cloud: overview of security alerts](https://learn.microsoft.com/en-us/azure/defender-for-cloud/alerts-overview)
-  — 15 minutes on the Azure equivalent; note the structural similarity to GuardDuty (finding type,
-  severity, affected resource, evidence fields). The mental model is transferable across clouds.
+**The logging surface and its blind spot (~1 hr)**
+- [AWS — CloudTrail concepts: management vs. data events](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html) (~30 min) — the primary source. Read "Management events vs. data events"; this is *why* T1530 is dark by default. The cost/volume model is the reason, not an accident.
+- [AWS — CloudTrail record contents reference](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html) (~20 min, bookmark) — every rule references `eventName`, `eventSource`, `userIdentity.type`, `sourceIPAddress`, `requestParameters`. Learn where the interesting fields are nested.
 
-**Sigma rules for cloud logs (~1.5 hrs)**
-- [Sigma rule specification — detection logic](https://sigmahq.io/docs/basics/rules.html) — read
-  the "Detection" section specifically; the `followed by` temporal correlation syntax is what makes
-  sequence rules possible. (~30 min)
-- [SigmaHQ CloudTrail rule collection](https://github.com/SigmaHQ/sigma/tree/master/rules/cloud/aws)
-  — browse five to ten actual rules from this repo; notice how the `logsource` is set, how
-  `requestParameters` fields are referenced with dot notation, and how `falsepositives` are
-  documented. Don't just read them — mentally run each one against a CloudTrail event and ask: what
-  fields would have to match for this to fire? (~1 hr)
+**Native detectors as the baseline (~1 hr)**
+- [AWS — GuardDuty finding types](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-active.html) (~30 min, skim) — read the IAM and S3 sections: which techniques native coverage catches and at what confidence. Note what it *doesn't* cover.
+- [Microsoft — Defender for Cloud security alerts](https://learn.microsoft.com/en-us/azure/defender-for-cloud/alerts-overview) (~20 min) — the Azure equivalent; note the structural parity (finding type, severity, evidence) so the model transfers across clouds.
+
+**Sigma — detection-as-code for the gap (~1.5 hrs)**
+- [Sigma — rule structure & detection logic](https://sigmahq.io/docs/basics/rules.html) (~30 min) — read the Detection section and `condition`/temporal correlation. This is the format your judgment ships in.
+- [SigmaHQ — CloudTrail rule collection](https://github.com/SigmaHQ/sigma/tree/master/rules/cloud/aws) (~1 hr) — read 8–10 real rules. For each, mentally run it against a CloudTrail event: what must match to fire, and what benign thing might *also* match? Study how the good rules document `falsepositives`.
 
 ## Key concepts
-- Management events vs. data events: what logs by default, what costs extra, what's missing in a
-  default CloudTrail config
-- GuardDuty / Defender for Cloud / GCP SCC as the coverage baseline; open tooling for the gaps
-- Sigma rule structure for CloudTrail: `logsource`, `detection`, `condition`, `falsepositives`
-- Sequence detection: why single-event rules generate alert fatigue and how the `followed by` syntax
-  fixes it
-- The CreateUser → AttachUserPolicy escalation sequence as a canonical T1098 signature
+- Management events (default, free) vs. data events (off by default, costly) — and that T1530/S3 exfil is invisible without data events on
+- A detection is a hypothesis scored on a 99.99%-benign stream; **precision, not recall, is the product**
+- A rule that fires correctly but noisily is muted by week two — a muted rule is no coverage at all
+- Sequence + qualifying context (`CreateUser` → `AttachUserPolicy(AdministratorAccess)` in 5 min from a non-CI IP) turns benign atoms into a signal
+- Sigma structure: `logsource`, nested-field `detection`, temporal `condition`, and a reasoned `falsepositives` block
+- Native detector as baseline, Sigma for the gap — and **every rule tuned against benign traffic before trust**
 
 ## AI acceleration
-Ask a model to draft a Sigma rule for a CloudTrail sequence you describe in plain English. Models
-know the Sigma syntax and the common CloudTrail field names, and a first draft saves thirty minutes
-of scaffolding. The review work is yours: check that the `logsource` product/service matches the
-CloudTrail Sigma pipeline, that the field references use the correct nested notation, and that the
-`falsepositives` section reflects what your organisation's legitimate automation does. Run the rule
-against the bundled events with the lab's `detect.py` before trusting it — a rule that doesn't fire
-on the data it's designed to catch is not a rule.
+Hand a model a plain-English detection ("alert when a role is assumed from an unexpected region, then a
+bucket policy is changed") and it will draft a passable Sigma rule in seconds — it knows the syntax and
+the common field names. That's the cheap 80%. The expensive, owned 20% is the part the model can't do
+for you: it doesn't know *your* benign baseline, so its `falsepositives` block is generic and its rule
+is almost always too broad. Run its draft against the lab's benign events; watch it false-fire; then
+tighten it and write the FP analysis from what you saw. The judgment-as-code here is the tuned rule plus
+the explicit "what this must NOT fire on" — that's yours to own, not the model's to guess.

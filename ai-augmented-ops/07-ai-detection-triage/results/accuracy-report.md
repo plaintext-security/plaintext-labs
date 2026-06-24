@@ -1,5 +1,5 @@
 # Alert Triage Accuracy Report
-## Meridian Financial — AI Triage Validation
+## Log4Shell exploitation wave (CVE-2021-44228) — AI Triage Validation
 
 **Date:** <!-- fill in -->
 **Model:** <!-- e.g. tinyllama -->
@@ -65,6 +65,6 @@
 
 ## Recommendation
 
-<!-- One paragraph: is the pipeline accurate enough to use for Meridian's alert queue?
+<!-- One paragraph: is the pipeline accurate enough to use for this alert queue?
      What accuracy threshold would you require before deploying to production?
      Cite the recall rate on CRITICAL alerts as the key metric. -->

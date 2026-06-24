@@ -1,0 +1,10 @@
+---
+# Module 13 — the full baseline profile applied to every host by default.
+# These are the Module-06 five controls expressed as the per-host target state
+# the rollout converges each host to. The legacy-app group overrides UMASK below.
+profile_name: "full-baseline"
+root_ssh: "no"        # CIS-5.2.10
+umask_value: "027"    # CIS-5.5.5  <- this is the control that breaks the legacy app
+rp_filter: "1"        # CIS-3.3.7
+password_minlen: 14   # CIS-5.4.1
+auditd_enabled: "yes" # CIS-4.1.1

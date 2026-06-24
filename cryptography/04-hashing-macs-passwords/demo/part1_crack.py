@@ -12,7 +12,7 @@ with open("data/passwords.txt") as f:
 # Simulate hashes from a breached database
 targets = {
     hashlib.sha256(b"password123").hexdigest(): "target-1",
-    hashlib.sha256(b"meridian2024").hexdigest(): "target-2",
+    hashlib.sha256(b"corp2024").hexdigest(): "target-2",
     hashlib.sha256(b"Tr0ub4dor&3").hexdigest(): "target-3",
 }
 

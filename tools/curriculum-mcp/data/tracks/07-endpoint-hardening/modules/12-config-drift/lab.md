@@ -1,0 +1,1 @@
+../../../../plaintext-labs/endpoint-hardening/12-config-drift/lab.md

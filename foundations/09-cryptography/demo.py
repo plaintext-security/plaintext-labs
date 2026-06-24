@@ -24,8 +24,8 @@ import tempfile
 from pathlib import Path
 
 DIVIDER = "─" * 64
-PASSPHRASE = "MeridianLab2024!"
-MESSAGE = "Meridian Financial Q4 revenue: $2.1B"
+PASSPHRASE = "CryptoLab2024!"
+MESSAGE = "Acme Corp Q4 revenue: $2.1B"
 
 
 def section(title: str) -> None:
@@ -284,7 +284,7 @@ def demo_bit_flip() -> None:
 
 def main() -> None:
     print("=" * 64)
-    print("Meridian Financial — Cryptography Lab Demo")
+    print("Cryptography Lab Demo")
     print("=" * 64)
     print()
     print("Exercises each primitive once so the guarantee is concrete.")

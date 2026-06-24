@@ -24,6 +24,22 @@ cryptography, PKI, secrets management, and email authentication — and how to a
 | 09 | [Email Authentication](modules/09-email-authentication/README.md) | SPF, DKIM, and DMARC in practice | `dig`, `openssl` |
 | 10 | [Auditing Applied-Crypto Failures](modules/10-auditing-crypto-failures/README.md) | Spotting the real-world mistakes | `testssl.sh` |
 
+## Phases & projects
+
+The ten modules run in three phases; each ends in a **project** that integrates its modules (a phase
+is the substantial, standalone unit — a single module is a few hours).
+
+- **Phase 1 · Primitives in your hands** (01–04) — **Project:** a small, tested crypto toolkit that
+  exercises each primitive correctly — AEAD encrypt/decrypt, a key exchange, an HMAC, and password
+  hashing with argon2 — plus a written note on the misuse each one invites (ECB, nonce reuse, fast
+  hashes for passwords).
+- **Phase 2 · TLS & PKI** (05–06) — **Project:** run a private CA with `step-ca`, issue and chain a
+  certificate, stand up a TLS service, then scan it with `testssl.sh` and explain every handshake
+  step and cipher decision the scan reports.
+- **Phase 3 · Secrets & applied audit** (07–10) — **Project:** the track capstone — audit a small
+  system's full crypto posture (TLS config, cert hygiene, secrets handling, SPF/DKIM/DMARC), hunt for
+  leaked credentials, fix each finding, and re-test — delivering the before/after audit report.
+
 ## Prerequisites
 Complete Track 00 — Foundations (module 09 — Cryptography Basics).
 
@@ -31,6 +47,22 @@ Complete Track 00 — Foundations (module 09 — Cryptography Basics).
 Audit a small system's crypto posture: TLS configuration, certificate hygiene, secrets
 handling, and SPF/DKIM/DMARC — then fix each finding and re-test. **Deliverable:** the audit
 report with before/after evidence.
+
+The starter scaffold and acceptance checks live in
+[`plaintext-labs/cryptography/capstone/`](https://github.com/plaintext-security/plaintext-labs/tree/main/cryptography/capstone).
+
+### Capstone rubric
+
+Audit the **whole crypto posture**, fix each finding, and **re-test to prove the fix**.
+**Proficient is the bar to ship.**
+
+| Dimension | Developing | Proficient | Exemplary |
+|---|---|---|---|
+| **TLS configuration** | Ran `testssl.sh`, didn't interpret | Weak protocols/ciphers identified and explained, with the standard each violates | Re-tested after the fix; cites RFC 8446 / current NIST guidance for each decision |
+| **Certificate hygiene** | Checked expiry only | Chain, key strength, SAN, and revocation reviewed against RFC 5280 | Issuance/renewal automated (step-ca/ACME); short-lived certs or rotation demonstrated |
+| **Secrets handling** | Found a secret, no remediation | Leaked/poorly-stored secrets found and moved to proper storage (Vault/SOPS) | History scrubbed, rotation done, detection wired to prevent recurrence |
+| **Email auth** | Checked one of SPF/DKIM/DMARC | SPF, DKIM, and DMARC all assessed with the policy gaps named | Recommends an enforce-mode rollout path with the risk of each step |
+| **Audit report** | Findings without before/after | Each finding has evidence, a fix, and a re-test proving it | Severity-ranked, tool output attached, no "trust me" — every claim has a test behind it |
 
 ## AI & automation
 Crypto is where confident-but-wrong AI advice is dangerous — models suggest broken modes

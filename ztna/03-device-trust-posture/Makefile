@@ -26,11 +26,11 @@ demo:  ## Register a node, show device list, demonstrate access control
 	@echo "  Lab 03 — Device Trust Demo: headscale + WireGuard"
 	@echo "============================================================"
 	@echo ""
-	@echo "--- Step 1: Create a headscale user (namespace) for Meridian ---"
-	docker compose exec headscale headscale users create meridian 2>/dev/null || true
+	@echo "--- Step 1: Create a headscale user (namespace) for Corp ---"
+	docker compose exec headscale headscale users create corp 2>/dev/null || true
 	@echo ""
 	@echo "--- Step 2: Create a pre-authentication key ---"
-	@AUTHKEY=$$(docker compose exec -T headscale headscale preauthkeys create --user meridian --reusable --expiration 1h | tail -1 | tr -d '[:space:]'); \
+	@AUTHKEY=$$(docker compose exec -T headscale headscale preauthkeys create --user corp --reusable --expiration 1h | tail -1 | tr -d '[:space:]'); \
 	echo "Pre-auth key: $$AUTHKEY"; \
 	echo ""; \
 	echo "--- Step 3: List registered nodes (before registration) ---"; \
@@ -45,7 +45,7 @@ demo:  ## Register a node, show device list, demonstrate access control
 	docker compose exec headscale headscale nodes list
 	@echo ""
 	@echo "--- Step 6: Show device posture policy ---"
-	@echo "Open data/device-posture-policy.json to see the Meridian posture requirements."
+	@echo "Open data/device-posture-policy.json to see the Corp posture requirements."
 	@echo "Open data/headscale-acl.yaml to see the ACL that enforces device tags."
 	@echo ""
 	@echo "============================================================"

@@ -1,0 +1,11 @@
+# Fetched real-traffic artifacts (via `make fetch-data`) — never commit.
+# The small curated seed eve.json IS committed so `make demo` runs offline;
+# `make fetch-data` overwrites it in place with output from a real PCAP.
+*.pcap
+*.pcap.zip
+capture.pcap
+# Other Suricata run output produced alongside eve.json
+fast.log
+stats.log
+suricata.log
+*.json.*

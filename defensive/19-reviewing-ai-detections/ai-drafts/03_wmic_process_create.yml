@@ -1,0 +1,24 @@
+title: WMIC Remote Process Creation (AI draft)
+id: a3333333-0000-4000-8000-000000000003
+status: experimental
+description: >
+  AI-drafted rule meant to catch lateral movement via `wmic process call create`.
+  PLANTED BUG: a FABRICATED ATT&CK tag. `attack.t1047.002` does not exist — T1047
+  (Windows Management Instrumentation) has no `.002` sub-technique. The tag looks
+  plausible and survives a casual read; only resolving it against the primary
+  source (attack.mitre.org / a local ATT&CK ID list) catches the hallucination.
+  The detection logic itself is correct.
+references:
+  - https://attack.mitre.org/techniques/T1047/
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\WMIC.exe'
+    CommandLine|contains: 'process call create'
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1047.002

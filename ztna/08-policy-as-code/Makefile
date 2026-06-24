@@ -27,33 +27,33 @@ demo:      ## Run all policy scenarios — allow and deny cases for both policie
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/analyst-read.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.allow"
+	  "data.corp.access.allow"
 	@echo ""
 	@echo "-- Case B: analyst WRITE (expect: allow=false, deny=true) --"
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/analyst-write.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.allow"
+	  "data.corp.access.allow"
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/analyst-write.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.deny"
+	  "data.corp.access.deny"
 	@echo ""
 	@echo "-- Case C: admin WRITE (expect: allow=true) --"
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/admin-write.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.allow"
+	  "data.corp.access.allow"
 	@echo ""
 	@echo "-- Case D: service_account WRITE (expect: allow=false, deny=true) --"
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/service-account-write.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.allow"
+	  "data.corp.access.allow"
 	docker compose run --rm lab opa eval \
 	  --input /lab/data/inputs/service-account-write.json \
 	  --data /lab/data/policies/data-access.rego \
-	  "data.meridian.access.deny"
+	  "data.corp.access.deny"
 	@echo ""
 	@echo "========================================================"
 	@echo "  SCENARIO 2: Kubernetes Admission — no root pods"

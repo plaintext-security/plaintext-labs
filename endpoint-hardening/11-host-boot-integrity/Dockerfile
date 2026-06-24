@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # A small "application" tree the lab watches — a binary, a config, and a web root.
 # Kept legible so a planted change is obvious in the AIDE report.
 RUN mkdir -p /srv/app/bin /srv/app/etc /srv/app/www /etc/cron.d \
-    && printf '#!/bin/sh\necho "meridian-app v1.0"\n' > /srv/app/bin/meridian \
-    && chmod 0755 /srv/app/bin/meridian \
+    && printf '#!/bin/sh\necho "webapp v1.0"\n' > /srv/app/bin/webapp \
+    && chmod 0755 /srv/app/bin/webapp \
     && printf 'listen=8080\nlog_level=info\n' > /srv/app/etc/app.conf \
-    && printf '<h1>Meridian</h1>\n' > /srv/app/www/index.html \
+    && printf '<h1>webapp</h1>\n' > /srv/app/www/index.html \
     && chmod 0644 /srv/app/etc/app.conf /srv/app/www/index.html
 
 WORKDIR /lab

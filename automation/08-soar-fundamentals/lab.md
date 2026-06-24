@@ -28,9 +28,14 @@ loaded into n8n on startup — inspect it at `http://localhost:5678`.
 > wired to your firewall.
 
 ## Scenario
-A SIEM is configured to fire a webhook at your playbook whenever a HIGH alert triggers. The playbook
-must: receive the alert → enrich the source IP via threat intel → decide → create a ticket carrying
-the verdict and a *recommended* action → log a notification. **A live analyst reviews the ticket; the
+A SIEM is configured to fire a webhook at your playbook whenever a HIGH alert triggers. The cautionary
+backdrop is the **2013 Target breach**: the deployed FireEye and Symantec tooling *did* flag the
+intrusion, but the alert that mattered was buried in the volume and the manual toil of triage and went
+un-actioned (see the U.S. Senate Commerce Committee's *"Kill Chain" Analysis of the 2013 Target Data
+Breach*). SOAR attacks that toil directly. The playbook must: receive the alert → enrich the source IP
+via threat intel → decide → create a ticket carrying the verdict and a *recommended* action → log a
+notification. (The demo's "malicious" source IP, `185.220.101.1`, is a real Tor exit node — confirm it
+yourself in [`check.torproject.org/torbulkexitlist`](https://check.torproject.org/torbulkexitlist).) **A live analyst reviews the ticket; the
 playbook does not take containment actions automatically** — that's the gate you're committing to (see
 *The core idea*: reversible steps auto-run, the irreversible block waits for a human).
 

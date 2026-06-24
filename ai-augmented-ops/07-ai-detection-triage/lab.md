@@ -19,13 +19,31 @@ the model's classifications alongside the ground-truth labels from `data/ground-
 Full 50-alert batch: `make triage`.
 
 ## Scenario
-The overnight shift generated 50 alerts. The morning analyst has 90 minutes before the
-stand-up. The triage classifier pre-classifies all 50 and presents only the HIGH/CRITICAL ones
-for immediate review. Your job: build the classifier's **eval** — score it against the held-out
-ground-truth labels, read the confusion matrix to find where it misfires, and tune the prompt to
-reduce false negatives (missed critical alerts) without flooding the queue.
+The overnight shift generated 50 alerts during a **Log4Shell exploitation wave** — the
+[CVE-2021-44228](https://nvd.nist.gov/vuln/detail/cve-2021-44228) Apache Log4j2 JNDI RCE (CVSS 10.0,
+disclosed December 2021), the bug that had SOCs worldwide pulling all-nighters as mass internet
+scanning turned into hands-on-keyboard intrusions. The corpus is shaped from that wave: a handful of
+alerts carry the canonical `${jndi:ldap://...}` exploit-string against public-facing app servers (and an
+obfuscated `${${lower:j}ndi:...}` filter-evasion variant), and the rest are the realistic post-exploit
+mix that follows initial access — lateral movement (PsExec), credential dumping (DCSync, Mimikatz), C2
+(Tor), ransomware, and the usual flood of benign operational noise.
+
+The morning analyst has 90 minutes before the stand-up. The triage classifier pre-classifies all 50 and
+presents only the HIGH/CRITICAL ones for immediate review. Your job: build the classifier's **eval** —
+score it against the held-out ground-truth labels, read the confusion matrix to find where it misfires
+(does it catch the Log4Shell T1190 exploit alerts?), and tune the prompt to reduce false negatives
+(missed critical alerts) without flooding the queue.
 
 > Everything runs locally. No external targets, no authorization needed.
+
+**What this lab is — and isn't (read this).** The 50 alerts are **synthetic but realistically shaped**
+from a real exploitation wave — the JNDI strings, ATT&CK techniques, and process lineages mirror what a
+SOC actually saw during Log4Shell, but no live SIEM, EDR, or vulnerable Log4j2 instance is running here.
+The ground-truth `severity`/`technique` labels are **human analyst judgment** (the answer key you score
+the model against), not the verdict of a detection engine — reasonable analysts could disagree on a few,
+and that's the point of owning the labels. You're evaluating a *classifier's* judgment against a
+*human's*, not reproducing the CVE. (To actually fire Log4Shell against a vulnerable target, that's a
+Vulhub `CVE-2021-44228` lab, not this one.)
 
 ## Do
 
@@ -112,3 +130,14 @@ for retrieval and end-to-end answer quality.
 - Add a "confidence-weighted routing" step: for alerts where the model's structured output
   includes `"confidence": "LOW"`, send them to a separate human-review queue regardless of
   the predicted severity.
+
+## References & further reading
+- **NVD — CVE-2021-44228 (Log4Shell):** <https://nvd.nist.gov/vuln/detail/cve-2021-44228> — the
+  Apache Log4j2 JNDI RCE record (CVSS 10.0). Read the description and references for the exploit-string
+  mechanics the T1190 alerts in this corpus are shaped from.
+- **CISA advisory AA21-356A:** <https://www.cisa.gov/news-events/cybersecurity-advisories/aa21-356a> —
+  the joint guidance on the Log4j vulnerabilities; skim the IOC and mitigation sections for what
+  defenders actually hunted for during the wave.
+- **MITRE ATT&CK T1190 — Exploit Public-Facing Application:**
+  <https://attack.mitre.org/techniques/T1190/> — the technique the Log4Shell initial-access alerts map
+  to; the rest of the corpus uses the techniques cited in `data/ground-truth.json`.

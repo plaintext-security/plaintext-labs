@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's internal audit team has requested a CIS compliance baseline for all Linux
+The organization's internal audit team has requested a CIS compliance baseline for all Linux
 application servers before the external PCI audit next quarter. You have been handed a server
 image that has had no hardening applied. Your job: run the full audit cycle — baseline scan,
 fix one finding, rescan — and produce structured evidence that the audit team can include in

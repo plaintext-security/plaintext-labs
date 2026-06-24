@@ -17,7 +17,7 @@ the native binaries used in the LOLBin chain. A benign stage-2 payload lives in
 
 ## Scenario
 
-You have a shell on a Meridian Financial server. The endpoint has an EDR that
+You have a shell on the target server. The endpoint has an EDR that
 blocks known-malicious binaries but allows native tools. Accomplish your
 objectives — download a payload, execute it, and persist — using only the
 system's own trusted binaries.

@@ -1,9 +1,14 @@
 # Module 09 — Building an MCP Server
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — build a `fastmcp` MCP server exposing one tool, `enrich_ip(ip) -> dict`, backed by the module-04 threat-intel API, that speaks the MCP tool protocol and returns LLM-parseable results. (Secondary: Red-team-the-AI — treat every tool argument as untrusted and watch the prompt-injection / untrusted-arg boundary the capstone depends on.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Python for Security** — *if you can describe a security operation as a function, you can hand it to an LLM.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner &nbsp;·&nbsp; **Estimated time:** ~3–4 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 The Model Context Protocol (MCP) is the emerging standard for giving LLMs access to tools and
@@ -14,7 +19,7 @@ the enrichment function you've already written.
 
 ## Objective
 Build a `fastmcp` MCP server that exposes one tool — `enrich_ip(ip: str) -> dict` — backed by
-the local mock threat-intel API from module 04. The server should start, respond to the MCP tool
+the local threat-intel API from module 04 (real abuse.ch feeds: Feodo Tracker + URLhaus). The server should start, respond to the MCP tool
 protocol, and return enriched results in a format an LLM client can parse.
 
 ## The core idea

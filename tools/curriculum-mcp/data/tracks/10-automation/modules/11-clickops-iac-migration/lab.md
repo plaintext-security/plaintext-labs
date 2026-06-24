@@ -1,0 +1,1 @@
+../../../../plaintext-labs/automation/11-clickops-iac-migration/lab.md

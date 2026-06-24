@@ -1,0 +1,3 @@
+# Real attack artifact fetched on demand from the shared cache (Atomic Red Team
+# T1053.003) — staged by `make fetch`, never committed.
+data/atomic/

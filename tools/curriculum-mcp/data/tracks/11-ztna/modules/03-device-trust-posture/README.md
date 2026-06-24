@@ -1,98 +1,115 @@
 # Module 03 — Device Trust & Posture
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — stand up a working device-identity mesh, enroll a device, and prove access is bound to that device; the deliverable is the running, reviewed system, not an essay. [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
-**Zero Trust Network Access** — *identity tells you who is asking; device posture tells you whether to believe the device they're asking from.*
+**Zero Trust Network Access** — *identity tells you who is asking; device trust binds the answer to a known, healthy machine — so a stolen credential alone is not enough.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 02 — Identity as the Control Plane](../02-identity-control-plane/README.md)
+{ .module-meta }
 
 ## Why this matters
 
-A stolen credential on a healthy, EDR-enrolled, fully-patched corporate laptop is a serious incident.
-The same credential on an unmanaged contractor BYOD device running outdated software, with no
-endpoint visibility, is potentially catastrophic — and a model that only verifies identity cannot
-tell the difference. Device trust is the second pillar of ZT after identity, and it is the pillar
-most organizations handle worst. Getting it right requires a reliable, tamper-resistant signal about
-device posture, and a policy engine that factors that signal into every access decision.
+In August 2022, an attacker compromised the **personal home computer of a senior LastPass DevOps
+engineer** — one of only four people with decryption access to the company's vault backups. The
+entry point was not LastPass's network. It was a **Plex Media Server the engineer ran at home**, left
+unpatched against a vulnerability (CVE-2020-5741) that Plex had fixed *two years earlier*. The
+attacker landed on the machine, installed a keylogger, and captured the engineer's master password —
+**after** the engineer had already passed MFA. With that credential, between September 8 and 22 the
+attacker reached LastPass's **AWS S3 backups** and exfiltrated encrypted customer vault data. The
+unauthorized access ran for 79 days before AWS GuardDuty flagged it.
 
-## Objective
-
-Deploy headscale (the self-hosted Tailscale coordination server) in Docker, register a device node,
-and demonstrate that only enrolled and registered devices can reach the protected service — then map
-the fictional Meridian device posture policy to the controls Tailscale ACLs and Cloudflare Access
-would enforce in production.
+Read the failure precisely, because it is the case for this entire module: **identity verification
+worked, and it was not enough.** The right human, the right credential, even MFA — all satisfied. What
+was never asked was *"is the device this is coming from one we trust?"* An unmanaged home machine,
+outside any patch policy or endpoint visibility, was allowed to become the trusted launch point into
+cloud backups. A stolen credential on a healthy, enrolled, fully-patched corporate laptop is a serious
+incident; the **same credential on an unmanaged, compromised personal box is the LastPass breach.** A
+model that only verifies identity cannot tell those two apart. Device trust is the second pillar of
+Zero Trust after identity, and it is the pillar most organizations handle worst.
 
 ## The core idea
 
-The fundamental challenge of device trust is proving a device's identity in a way that is hard to
-fake. The old model used VLAN membership and IP address — if the request came from the corporate
-/20, the device was "trusted." IP addresses are trivially spoofed and, in any case, say nothing
-about the device's actual security posture. The modern approach uses **cryptographic device
-identity**: a private key generated on the device (ideally in a TPM or Secure Enclave, so it cannot
-be exported), whose corresponding certificate or public key is registered with a management plane.
-Tailscale/WireGuard is the clearest concrete example of this approach: each device generates a
-WireGuard keypair, registers the public key with the coordination server (headscale), and all
-subsequent traffic is authenticated by that keypair. A device that doesn't have the registered
-private key cannot participate in the mesh — IP address doesn't help you.
+Device trust has two halves, and they answer two different questions. **Is this the device I think it
+is? (identity)** and **is this device in a state I'm willing to trust? (posture).** This module builds
+the first half end-to-end and is honest about why the second half stays mostly conceptual in a
+self-hosted lab.
 
-WireGuard is the protocol that makes Tailscale's device mesh practical. Unlike OpenVPN or
-IPSec/IKEv2, WireGuard's cryptographic model is fixed (Noise protocol framework, ChaCha20-Poly1305,
-Curve25519 for key exchange) — there are no algorithm negotiation handshakes to exploit and no
-legacy cipher suites to misconfigure. Every peer is identified by their 256-bit public key. The
-coordination server (Tailscale or headscale) distributes public keys to peers so they can establish
-direct encrypted tunnels; it is the configuration plane, not the data plane. Once keys are
-exchanged, traffic flows peer-to-peer with no central chokepoint, and access control is expressed
-as ACLs on the coordination server that determine which registered devices can reach which others.
+**Device identity is cryptographic, not network-positional.** The old model trusted a device by where
+it sat — if the request came from the corporate `/20`, it was "inside" and therefore trusted. IPs are
+trivially spoofed and say nothing about the machine. The modern answer is a **private key generated on
+the device** (ideally in a TPM or Secure Enclave so it can't be exported) whose public half is
+registered with a coordination plane. **WireGuard/Tailscale is the clearest concrete instance:** each
+device generates a WireGuard keypair, registers the public key, and *every* packet thereafter is
+authenticated by that key. WireGuard's crypto is fixed by design (Noise framework, ChaCha20-Poly1305,
+Curve25519) — no algorithm negotiation to downgrade, no legacy cipher suites to misconfigure; a peer
+is *only* a 256-bit public key. The coordination server you'll run, **headscale** (the self-hosted
+Tailscale control server), is the configuration plane: it distributes public keys and enforces ACLs.
+It is **not** the data plane — once keys are exchanged, traffic flows peer-to-peer. The load-bearing
+consequence for the lab: a machine without the registered private key **cannot join the mesh**, so an
+unenrolled device is denied by construction, not by a rule someone remembered to write. That is the
+thing you'll prove.
 
-Cryptographic identity is necessary but not sufficient for strong device trust. **Posture** is the
-second component: even if a device's identity is genuine, its security state matters. A
-legitimately enrolled corporate laptop that hasn't received OS patches in 60 days or whose EDR
-agent has been disabled presents real risk. Cloudflare Access and Tailscale's ACL system both
-support posture-based access decisions: Cloudflare's device posture checks query CrowdStrike's
-Zero Trust Assessment score, OS version, disk encryption status, and more, and can gate access to
-specific applications on passing a minimum posture threshold. Tailscale's `tagOwner` and group-based
-ACLs can restrict which registered devices can reach which services, effectively segmenting "managed
-corporate laptop" from "contractor BYOD" even within the same WireGuard mesh. The `data/device-
-posture-policy.json` in this lab shows what such a policy looks like in structured form.
+**The one judgment that makes this good ZT, not just a VPN: default-deny on the ACL.** A WireGuard
+mesh that lets every enrolled device reach everything is just a flatter network with better crypto —
+you've moved the perimeter, not removed it. Zero Trust requires that the ACL *start* from deny and
+only allow the specific tag-to-service edges the architecture needs (`tag:corp-managed` can reach
+`tag:target`; an untagged or contractor device cannot). The failure mode to watch for — and the thing
+AI-generated ACLs reliably get wrong — is an **implicit default-allow**: a policy that looks correct,
+passes syntax, and quietly grants everything it didn't explicitly deny. You verify against it the only
+honest way: by confirming an *unenrolled* device is refused, not merely that an enrolled one succeeds.
 
-FIDO2 and passkeys deserve a specific mention here because they address a different but related
-problem: proving human presence at the device during authentication, using cryptographic hardware
-that is bound to the specific authenticator (a YubiKey, an Apple Secure Enclave, a Windows Hello
-TPM). A FIDO2 assertion proves that the right credential is present on the right device, with the
-private key never leaving the hardware boundary. This is complementary to WireGuard-style device
-identity: WireGuard proves the device, FIDO2 proves the user on that device. Together they
-implement the "verify both the user and the device" principle from NIST 800-207 Tenet 3. Since
-FIDO2 hardware is physical, the lab covers it in prose; the interactive demo is at WebAuthn.io.
+**Posture is the second half, and self-hosting can't fully prove it — so we say so.** Even a genuinely
+identified device can be *unhealthy*: 60 days behind on patches, EDR disabled, disk unencrypted — the
+LastPass home machine, exactly. Production ZT gates on this: Cloudflare Access queries a CrowdStrike
+Zero Trust Assessment score, OS version, and disk-encryption state before issuing access; Tailscale's
+tag/group ACLs segment "managed corporate" from "contractor BYOD" inside one mesh. But those signals
+come from a managed-endpoint stack (MDM, EDR) you cannot stand up for free in a container. So this
+module is honest about the seam: you'll **build and prove device *identity***, and treat device
+*posture* as **assessed from a structured policy** (`device-posture-policy.json`) mapped to the
+controls a production deployment enforces — labelled as assessed, never as demonstrated. Closing that
+seam with a real posture signal is what production EDR/MDM buys you; naming it is the practitioner's
+job. (**FIDO2/passkeys** are the human-layer complement — a hardware-bound assertion proving *the user
+is present at this device*, private key never leaving the authenticator. WireGuard proves the device;
+FIDO2 proves the user on it; together they are NIST 800-207 Tenet 3. Because FIDO2 hardware is
+physical, the lab exercises it via the browser at WebAuthn.io and reasons about it in prose.)
 
 ## Learn (~4 hrs)
 
 **WireGuard and mesh networking (~1.5 hrs)**
-- [WireGuard conceptual overview](https://www.wireguard.com/papers/wireguard.pdf) — the original academic paper by Donenfeld; read sections 1–3 (introduction, cryptographic model, protocol). Dense but short; it explains why WireGuard's fixed crypto model is a security advantage over IPSec.
-- [Tailscale — How Tailscale Works](https://tailscale.com/blog/how-tailscale-works) — a clear, concrete explanation of the coordination server / data plane separation, NAT traversal, and the ACL model. Read this to understand what headscale is doing.
+- [WireGuard whitepaper](https://www.wireguard.com/papers/wireguard.pdf) (~40 min) — Donenfeld's original paper; read sections 1–3 (introduction, crypto model, protocol). Short but dense — it explains *why* WireGuard's fixed crypto model is a security advantage over IPSec/IKEv2 rather than a limitation.
+- [Tailscale — How Tailscale Works](https://tailscale.com/blog/how-tailscale-works) (~30 min) — the clearest explanation of the coordination-server / data-plane split, NAT traversal, and the ACL model. Read it to understand exactly what headscale is doing in the lab.
 
-**headscale (self-hosted coordination server) (~30 min)**
-- [headscale documentation](https://headscale.net/stable/) — the self-hosted Tailscale coordination server used in the lab. Read the "Getting started" and "ACLs" sections; the rest is operational reference.
+**headscale — the self-hosted control server (~30 min)**
+- [headscale documentation](https://headscale.net/stable/) (~30 min) — the control server the lab runs. Read "Getting started" and the ACL section; the rest is operational reference for later.
 
 **Device posture and ZT (~1 hr)**
-- [Cloudflare Zero Trust — Device Posture](https://developers.cloudflare.com/cloudflare-one/reusable-components/posture-checks/) — Cloudflare's documentation on posture checks: how they query CrowdStrike, Intune, SentinelOne, and OS-level signals. This is what "posture-gated application access" looks like in a production product.
-- [Tailscale ACL syntax reference](https://tailscale.com/docs/features/access-control/acls) — how to express "only devices tagged corp-managed can reach service X" in Tailscale's HuJSON policy. Directly applicable to the lab scenario.
+- [Cloudflare Zero Trust — Device posture checks](https://developers.cloudflare.com/cloudflare-one/reusable-components/posture-checks/) (~30 min) — how a production product queries CrowdStrike, Intune, and OS-level signals to gate application access. This is what the lab's `device-posture-policy.json` stands in for, and what you cannot self-host for free.
+- [Tailscale — Access controls (ACLs)](https://tailscale.com/kb/1018/acls) (~30 min) — how to express "only devices tagged `corp-managed` can reach service X" in HuJSON. Directly applicable; read it before you extend the lab's ACL.
 
 **FIDO2 and passkeys (~1 hr)**
-- [WebAuthn.io](https://webauthn.io/) — browser-based FIDO2/WebAuthn demo; register and authenticate without hardware, in your browser. Run through it to understand the challenge-response flow before reading the spec.
-- [FIDO Alliance — How FIDO Authentication Works](https://fidoalliance.org/passkeys/) — the foundational explainer. Read to understand authenticator binding, user verification, and why the private key never leaves the device.
+- [WebAuthn.io](https://webauthn.io/) (~20 min) — browser-based FIDO2/WebAuthn demo; register and authenticate with your built-in authenticator, no hardware needed. Run it to feel the challenge-response flow before the spec.
+- [FIDO Alliance — Passkeys](https://fidoalliance.org/passkeys/) (~40 min) — the foundational explainer: authenticator binding, user verification, and why the private key never leaves the device. Read it for the "FIDO2 proves the user on the device" half of Tenet 3.
 
 ## Key concepts
 
-- Cryptographic device identity: WireGuard public key as device identity (vs. IP-based trust)
-- Coordination server vs. data plane: headscale distributes keys; WireGuard tunnels carry traffic
-- Device posture: patch level, EDR enrollment, disk encryption — factors in the access decision
-- Posture-gated access: minimum posture score required before token is issued or route allowed
-- FIDO2/passkeys: user presence + hardware-bound credential as the human-layer complement to device identity
-- Blast radius of a compromised device with vs. without device posture controls
+- **Identity ≠ enough.** LastPass-2022: right user, right credential, MFA passed — and an unmanaged compromised device still became the trusted launch point into cloud backups.
+- **Cryptographic device identity** — the WireGuard public key *is* the device's identity (vs. spoofable IP/VLAN trust); no registered private key, no membership in the mesh.
+- **Control plane vs. data plane** — headscale distributes keys and enforces ACLs; WireGuard tunnels carry traffic peer-to-peer, no central chokepoint.
+- **Default-deny ACL is the ZT judgment** — an enrolled-can-reach-everything mesh is just a flatter VPN; the win is the tag-to-service allow-list, and the trap is the implicit default-allow.
+- **Posture is assessed, not demonstrated, when self-hosted** — patch level / EDR / disk encryption come from EDR/MDM you can't run for free; the lab maps a structured policy to production controls and labels it honestly.
+- **FIDO2/passkeys** — user-presence + hardware-bound credential; WireGuard proves the device, FIDO2 proves the user on it (NIST 800-207 Tenet 3).
 
 ## AI acceleration
 
-Ask a model to generate headscale ACL policies and Tailscale HuJSON configs from a description of
-your access requirements — it handles the syntax well. **Your review job** is to verify the policy
-actually does what you intend: a policy with an implicit default-allow is the opposite of ZT,
-regardless of how syntactically correct it looks. Test by confirming that an *unregistered* device
-or an *untagged* device cannot reach the service, not just that a registered one can.
+A model will generate headscale/Tailscale ACL HuJSON from a plain-English description of your access
+requirements, and it handles the syntax well — this is genuinely fast. The posture holds: **AI authors
+→ you review every line → you own it**, and here the review has one concrete shape. An ACL that *looks*
+correct can carry an **implicit default-allow** — the exact opposite of Zero Trust, and the single
+failure a syntax check will never catch. So your review job is not "does it parse" but "does an
+*unenrolled* or *untagged* device get refused." Prove it the only honest way: construct a `curl` from a
+container with no registered keypair and confirm it cannot reach the protected service. If a device you
+never tagged can still reach it, the ACL has a hole — and the model's confident, valid-looking output
+was wrong. You direct it; you own the deny.

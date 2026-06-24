@@ -1,0 +1,19 @@
+timestamp,phase,action,actor
+2024-03-15T13:47:00Z,Preparation,Phishing email received by developer,Attacker
+2024-03-15T13:51:00Z,Detection & Analysis,JS attachment opened; update.msi executed; scheduled task created,Attacker
+2024-03-15T14:18:00Z,Detection & Analysis,SIEM alert fired Event ID 4698,SIEM
+2024-03-15T14:35:00Z,Detection & Analysis,CloudTrail reconnaissance begins,Attacker
+2024-03-15T14:38:00Z,Detection & Analysis,Backdoor IAM user created (svc-backup),Attacker
+2024-03-15T15:52:00Z,Detection & Analysis,Production role assumed via backdoor account,Attacker
+2024-03-15T16:18:00Z,Detection & Analysis,Alert escalated to IR team lead,SOC Supervisor
+2024-03-15T16:22:00Z,Detection & Analysis,Incident declared; live response initiated,IR Lead
+2024-03-15T16:34:00Z,Containment,BEACHHEAD-WS01 isolated from network,IR Lead
+2024-03-15T17:10:00Z,Containment,Fleet hunt cleared 47 endpoints,IR Team
+2024-03-15T17:30:00Z,Containment,Disk image and memory capture initiated,IR Team
+2024-03-15T18:15:00Z,Eradication,Developer account password and MFA reset,IR Team
+2024-03-15T18:30:00Z,Eradication,Scheduled task removed,IR Team
+2024-03-15T18:45:00Z,Eradication,Malicious binary and staging file removed,IR Team
+2024-03-15T19:00:00Z,Eradication,C2 domain blocked at perimeter,IR Team
+2024-03-15T20:00:00Z,Recovery,BEACHHEAD-WS01 reimaged from baseline,IT Operations
+2024-03-15T20:30:00Z,Recovery,Developer account restored with verified MFA,IT Operations
+2024-03-15T21:22:00Z,Recovery,System returned to production,IT Operations

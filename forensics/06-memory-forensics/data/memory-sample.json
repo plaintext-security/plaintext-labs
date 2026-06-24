@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "source": "MERIDIAN-FIN-WS01 \u2014 memory image captured 2024-03-15T02:35:00Z via avml",
+    "source": "BEACHHEAD-WS01 \u2014 memory image captured 2024-03-15T02:35:00Z via avml",
     "os": "Windows 10 Enterprise 22H2 (build 19045)",
     "volatility_version": "2.5.0",
     "note": "Pre-processed output for lab use. To run Volatility3 yourself, acquire a training image from https://github.com/stuxnet999/MemLabs and run: vol -f memory.img windows.pslist"

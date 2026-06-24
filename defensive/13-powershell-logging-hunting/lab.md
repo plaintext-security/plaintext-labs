@@ -9,18 +9,26 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/defensive/13-powershell-logging-hunting
-make up        # build + start the container (PowerShell 7 + the hunt harness)
-make demo      # worked hunt: flag the malicious script blocks in the bundled 4104 log
-make shell     # drop into a PowerShell prompt to hunt interactively
-make down      # stop it
+make up         # build + start the container (PowerShell 7 + the hunt harness)
+make demo       # worked hunt: flag the malicious script blocks in the bundled 4104 log
+make fetch-data # OPTIONAL: pull a REAL 4104 EVTX and hunt that instead (see below)
+make shell      # drop into a PowerShell prompt to hunt interactively
+make down       # stop it
 ```
 
 The container bundles `hunt.ps1` (a small, legible hunt harness) and `data/scriptblock-4104.json` — nine
-real-shaped **Event ID 4104** records exported from the fictional **Meridian Financial** estate. Five are
-malicious (the cradles, encoding, AMSI tamper, and obfuscation from Offensive Module 15); the rest are
+real-shaped **Event ID 4104** records from neutral placeholder hosts (`FIN-WKSTN-07`, `FIN-DC-01`). Five
+are malicious (the cradles, encoding, AMSI tamper, and obfuscation from Offensive Module 15); the rest are
 routine administration, including one borderline download that you must *not* over-flag.
 
-> Everything runs locally against bundled data you own. No external targets, no authorisation needed.
+**Hunt the real thing.** `make fetch-data` clones
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) and converts a genuine
+4104 capture — `Other/emotet/exec_emotet_ps_4104.evtx`, a real **Emotet** PowerShell download cradle in
+script-block logs — into `data/scriptblock-4104.json`, so the same `hunt.ps1` runs over **a real Windows
+PowerShell log**, not a stand-in. See `data/PROVENANCE.md` for the sample, license
+(GPL-3.0), and the convert pipeline.
+
+> Everything runs locally against bundled / fetched data you own. No external targets, no authorisation needed.
 
 ## Scenario
 A finance workstation (`FIN-WKSTN-07`) ran something that tripped an analyst's instinct. You have the

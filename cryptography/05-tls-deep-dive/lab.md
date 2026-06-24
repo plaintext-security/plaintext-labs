@@ -21,7 +21,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's external security assessment found their internal API gateway is running
+Corp's external security assessment found their internal API gateway is running
 nginx with TLS 1.0 enabled and several weak cipher suites. You have been asked to: reproduce
 the assessment findings, understand each one, apply the Mozilla "modern" TLS profile, and
 rescan to confirm the findings are resolved.

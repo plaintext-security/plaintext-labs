@@ -11,20 +11,26 @@ cd plaintext-labs/defensive/05-intrusion-detection
 make up
 ```
 
-Run `make demo` to parse a bundled `data/eve.json` — 9 realistic Suricata
-alerts covering Cobalt Strike beaconing, AsyncRAT C2 checkin, a PowerShell
-dropper download, DGA DNS queries, and a large outbound data transfer. The
-demo outputs a severity summary, top signatures, involved hosts, and a
-custom rule template.
+Run `make demo` to parse a small curated seed `data/eve.json` — 9 realistic
+Suricata alerts covering Cobalt Strike beaconing, AsyncRAT C2 checkin, a
+PowerShell dropper download, DGA DNS queries, and a large outbound data
+transfer. The seed lets the demo run fully offline. The demo outputs a
+severity summary, top signatures, involved hosts, and a custom rule template.
 
-For a real malicious PCAP from
-[Malware-Traffic-Analysis.net](https://www.malware-traffic-analysis.net/):
+For the full real-traffic exercise, fetch a public malicious capture and run
+Suricata over it:
 
 ```bash
-# Generates eve.json in this directory using the ET Open ruleset
-PCAP=your-capture.pcap make suricata
-python3 parse_alerts.py eve.json
+make fetch-data        # downloads a real Malware-Traffic-Analysis.net PCAP and
+                       # runs Suricata (ET Open ruleset) over it → data/eve.json
+python3 parse_alerts.py data/eve.json
 ```
+
+`make fetch-data` pulls a specific dated MTA.net capture (NetSupport RAT C2),
+unzips it with the site's `infected` password, and runs `suricata -r` with the
+Emerging Threats Open ruleset — see `data/PROVENANCE.md`
+for the exact source URL, the pipeline, and the write-up to check your alerts
+against. To use a different capture, set `PCAP=your-capture.pcap make suricata`.
 
 ## Scenario
 Run an IDS over a real malicious capture, read the alerts, and confirm them against the known-bad
