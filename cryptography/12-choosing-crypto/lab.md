@@ -34,7 +34,7 @@ repo) rather than inventing a skeleton.
 
 ## Scenario
 
-You are the security engineer bootstrapping **"Meridian Notes"**, a new multi-tenant note-taking
+You are the security engineer bootstrapping **"Corp Notes"**, a new multi-tenant note-taking
 backend the team is building greenfield. The constraints are real:
 
 - **Platform:** Runs as Linux containers on modern x86-64 servers (AES-NI present). A small slice of

@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial is migrating its internal code-signing infrastructure from RSA-2048 to
+Corp is migrating its internal code-signing infrastructure from RSA-2048 to
 ECDSA P-256. Before the cutover, your job is to: generate both keypair types, sign a test
 artefact with each, verify the signatures, measure the performance difference, and confirm
 the new ECDH key exchange produces identical shared secrets on both sides.
@@ -95,7 +95,7 @@ much clearer.
 
 > "I generated RSA and EC keypairs, benchmarked their performance, performed an X25519 ECDH key
 > exchange to produce a verified shared secret, and documented the forward secrecy properties
-> for Meridian's code-signing migration."
+> for Corp's code-signing migration."
 
 ## Stretch
 

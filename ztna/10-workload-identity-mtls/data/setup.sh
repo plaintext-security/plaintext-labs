@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Bootstrap: runs once after the SPIRE server is healthy.
-#   1. Generate a node join token (the agent's identity = spiffe://meridian.local/agent/node)
+#   1. Generate a node join token (the agent's identity = spiffe://corp.local/agent/node)
 #   2. Create registration entries mapping Docker-label selectors -> SPIFFE IDs
 #      for the two workloads we DO trust (backend, client).
 #   3. Deliberately register NOTHING for "rogue" — that's the deny proof in the lab.
 set -euo pipefail
 
 SOCK="/tmp/spire-server/private/api.sock"
-NODE_ID="spiffe://meridian.local/agent/node"
+NODE_ID="spiffe://corp.local/agent/node"
 SHARED="/opt/spire/shared"
 mkdir -p "$SHARED"
 
@@ -23,11 +23,11 @@ echo "==> Join token written for the agent."
 
 create_entry() {
   local name="$1"
-  echo "==> Registering spiffe://meridian.local/${name}  (selector docker:label:com.meridian.svc:${name})"
+  echo "==> Registering spiffe://corp.local/${name}  (selector docker:label:com.corp.svc:${name})"
   spire-server entry create -socketPath "$SOCK" \
     -parentID "$NODE_ID" \
-    -spiffeID "spiffe://meridian.local/${name}" \
-    -selector "docker:label:com.meridian.svc:${name}" \
+    -spiffeID "spiffe://corp.local/${name}" \
+    -selector "docker:label:com.corp.svc:${name}" \
     -x509SVIDTTL 300 || true
 }
 

@@ -1,8 +1,8 @@
 {
-  "realm": "meridian",
+  "realm": "corp",
   "enabled": true,
-  "displayName": "Meridian Financial",
-  "displayNameHtml": "<strong>Meridian Financial</strong>",
+  "displayName": "Corp",
+  "displayNameHtml": "<strong>Corp</strong>",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
@@ -34,7 +34,7 @@
     {
       "username": "analyst",
       "enabled": true,
-      "email": "analyst@meridian.local",
+      "email": "analyst@corp.local",
       "firstName": "Sam",
       "lastName": "Analyst",
       "credentials": [
@@ -49,7 +49,7 @@
     {
       "username": "admin",
       "enabled": true,
-      "email": "admin@meridian.local",
+      "email": "admin@corp.local",
       "firstName": "Alex",
       "lastName": "Admin",
       "credentials": [
@@ -64,10 +64,10 @@
   ],
   "clients": [
     {
-      "clientId": "meridian-app",
+      "clientId": "corp-app",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "meridian-app-secret",
+      "secret": "corp-app-secret",
       "redirectUris": ["http://localhost:3000/*"],
       "webOrigins": ["http://localhost:3000"],
       "publicClient": false,
@@ -82,10 +82,10 @@
       }
     },
     {
-      "clientId": "meridian-api",
+      "clientId": "corp-api",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "meridian-api-secret",
+      "secret": "corp-api-secret",
       "publicClient": false,
       "directAccessGrantsEnabled": false,
       "standardFlowEnabled": false,

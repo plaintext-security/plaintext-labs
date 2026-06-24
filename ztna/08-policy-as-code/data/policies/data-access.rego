@@ -2,12 +2,12 @@
 # Evaluates whether a user may perform an action on a data resource.
 # Input shape:
 #   input.user.role    — string: "analyst" | "admin" | "service_account" | "auditor"
-#   input.user.email   — string: e.g. "jdoe@meridian.com"
+#   input.user.email   — string: e.g. "jdoe@corp.com"
 #   input.action       — string: "read" | "write"
 #   input.resource     — string: resource path, e.g. "/api/v1/records"
 #
-# Evaluation query: data.meridian.access.allow
-package meridian.access
+# Evaluation query: data.corp.access.allow
+package corp.access
 
 import rego.v1
 

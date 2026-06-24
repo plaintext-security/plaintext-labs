@@ -21,19 +21,19 @@ demo:
 		vault status 2>/dev/null | grep -E "(Sealed|Version|HA Enabled)"; \
 		echo ""; \
 		echo "== Storing database credential =="; \
-		vault kv put secret/meridian/payroll/db \
+		vault kv put secret/corp/payroll/db \
 		  username=payroll_svc password=initial-db-password 2>/dev/null; \
 		echo ""; \
 		echo "== Reading credential =="; \
-		vault kv get secret/meridian/payroll/db; \
+		vault kv get secret/corp/payroll/db; \
 		echo ""; \
 		echo "== Rotating credential =="; \
-		vault kv put secret/meridian/payroll/db \
+		vault kv put secret/corp/payroll/db \
 		  username=payroll_svc password=rotated-db-password-v2 2>/dev/null; \
-		vault kv get -field=password secret/meridian/payroll/db; \
+		vault kv get -field=password secret/corp/payroll/db; \
 		echo ""; \
 		echo "== Version history =="; \
-		vault kv metadata get secret/meridian/payroll/db | grep current_version'
+		vault kv metadata get secret/corp/payroll/db | grep current_version'
 	@echo ""
 	@echo "--- Part 2: SOPS — encrypt a YAML config file ---"
 	docker compose exec lab bash /lab/demo/part2_sops.sh

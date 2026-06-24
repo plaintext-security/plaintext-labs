@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's payroll API has been hardcoding its database password in `config.yml`
+Corp's payroll API has been hardcoding its database password in `config.yml`
 and committing it to git. Your job: migrate the credential to Vault, demonstrate the full
 lifecycle (store, retrieve, rotate, audit), and use SOPS to encrypt the remaining
 configuration values that must stay in git.
@@ -57,7 +57,7 @@ configuration values that must stay in git.
 
 ## Deliverables
 
-`secrets-analysis.md` — your Vault vs SOPS comparison and the Meridian migration recommendation.
+`secrets-analysis.md` — your Vault vs SOPS comparison and the Corp migration recommendation.
 Commit it.
 
 ## Automate & own it
@@ -71,7 +71,7 @@ correctly and the old value is preserved in version history.
 ## AI acceleration
 
 Ask an AI: "Write a Vault policy HCL that allows the payroll service to read
-`secret/meridian/payroll/db` but not write or delete it, and deny access to all other paths."
+`secret/corp/payroll/db` but not write or delete it, and deny access to all other paths."
 Apply the policy in Vault and verify with a token that has only this policy — can it read?
 Can it write? Check the Vault policy documentation to confirm the capability list is correct.
 

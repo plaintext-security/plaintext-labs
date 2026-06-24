@@ -4,15 +4,15 @@ set -e
 
 export STEPPATH=/home/step/.step
 
-echo "=== Initializing Meridian Financial Private CA ==="
+echo "=== Initializing Corp Private CA ==="
 echo ""
 
 # Initialize the CA (non-interactive)
 step ca init \
-  --name "Meridian Financial Internal CA" \
-  --dns "localhost,ca.meridian.internal" \
+  --name "Corp Internal CA" \
+  --dns "localhost,ca.corp.internal" \
   --address ":8443" \
-  --provisioner "admin@meridian.internal" \
+  --provisioner "admin@corp.internal" \
   --password-file /dev/null \
   --no-db 2>/dev/null || true
 
@@ -28,12 +28,12 @@ echo "CA running (PID $CA_PID)"
 echo ""
 
 # Issue a leaf certificate
-echo "=== Issuing leaf certificate for meridian.internal ==="
+echo "=== Issuing leaf certificate for corp.internal ==="
 step ca certificate \
-  meridian.internal \
+  corp.internal \
   /tmp/leaf.crt \
   /tmp/leaf.key \
-  --provisioner "admin@meridian.internal" \
+  --provisioner "admin@corp.internal" \
   --provisioner-password-file /dev/null \
   --not-after 24h \
   --ca-url https://localhost:8443 \

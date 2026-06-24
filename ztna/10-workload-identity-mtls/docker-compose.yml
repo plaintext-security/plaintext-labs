@@ -60,7 +60,7 @@ services:
     depends_on:
       - spire-agent
     labels:
-      com.meridian.svc: "backend"   # the selector the registration entry keys on
+      com.corp.svc: "backend"   # the selector the registration entry keys on
     entrypoint: ["bash", "/opt/spire/workload/backend.sh"]
     volumes:
       - ./workload:/opt/spire/workload:ro
@@ -72,7 +72,7 @@ services:
     depends_on:
       - spire-agent
     labels:
-      com.meridian.svc: "client"
+      com.corp.svc: "client"
     entrypoint: ["bash", "/opt/spire/workload/client.sh"]
     volumes:
       - ./workload:/opt/spire/workload:ro
@@ -86,7 +86,7 @@ services:
     hostname: rogue
     profiles: ["deny"]
     labels:
-      com.meridian.svc: "rogue"
+      com.corp.svc: "rogue"
     entrypoint: ["sleep", "infinity"]
     volumes:
       - ./workload:/opt/spire/workload:ro

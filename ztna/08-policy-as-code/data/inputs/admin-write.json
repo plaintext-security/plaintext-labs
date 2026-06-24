@@ -1,7 +1,7 @@
 {
   "user": {
     "role": "admin",
-    "email": "secadmin@meridian.com",
+    "email": "secadmin@corp.com",
     "sub": "auth0|user_admin_001"
   },
   "action": "write",

@@ -1,7 +1,7 @@
 {
   "_comment": "Representative Cloudflare Access application policy JSON. For Lab 05 analysis. Not a real deployment artifact.",
-  "name": "Meridian Lab App",
-  "domain": "meridian-lab.example.com",
+  "name": "Corp Lab App",
+  "domain": "corp-lab.example.com",
   "type": "self_hosted",
   "session_duration": "24h",
   "auto_redirect_to_identity": false,
@@ -14,7 +14,7 @@
       "include": [
         {
           "email": {
-            "email": "analyst@meridian.com"
+            "email": "analyst@corp.com"
           }
         }
       ],
@@ -29,13 +29,13 @@
       "include": [
         {
           "email_domain": {
-            "domain": "meridian.com"
+            "domain": "corp.com"
           }
         }
       ],
       "require": [],
       "exclude": [],
-      "_note": "Improved: allows any @meridian.com email. Still no posture requirement. Lab step 6: change from specific email to domain."
+      "_note": "Improved: allows any @corp.com email. Still no posture requirement. Lab step 6: change from specific email to domain."
     },
     {
       "name": "corp-email-with-warp",
@@ -44,7 +44,7 @@
       "include": [
         {
           "email_domain": {
-            "domain": "meridian.com"
+            "domain": "corp.com"
           }
         }
       ],
@@ -67,7 +67,7 @@
       "include": [
         {
           "email_domain": {
-            "domain": "meridian.com"
+            "domain": "corp.com"
           }
         }
       ],

@@ -1,4 +1,4 @@
-# Meridian Financial — headscale ACL policy (fictional, for Lab 03 analysis)
+# Corp — headscale ACL policy (fictional, for Lab 03 analysis)
 # HuJSON format as used by headscale/Tailscale ACL engine.
 # This policy implements the "corp-managed" device tier from device-posture-policy.json.
 #
@@ -43,7 +43,7 @@ dns:
   nameservers:
     - 1.1.1.1
   domains:
-    - meridian.local
+    - corp.local
   magic_dns: true
 
 # SSH access policy (headscale SSH feature, optional).

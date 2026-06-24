@@ -1,4 +1,4 @@
-# Meridian Financial — Current Access Architecture
+# Corp — Current Access Architecture
 
 *Fictional scenario for Lab 01. Do not use for any purpose outside this curriculum.*
 

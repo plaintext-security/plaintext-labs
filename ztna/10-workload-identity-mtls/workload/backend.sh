@@ -21,7 +21,7 @@ spire-agent api fetch x509 -socketPath "$SOCK" 2>/dev/null | grep -i "SPIFFE ID"
 # trust bundle. A peer with no SVID (unregistered) cannot complete the handshake.
 echo "[backend] starting mTLS server on :8443 (client SVID required) ..."
 while true; do
-  printf 'HTTP/1.0 200 OK\r\n\r\nhello from spiffe://meridian.local/backend\r\n' | \
+  printf 'HTTP/1.0 200 OK\r\n\r\nhello from spiffe://corp.local/backend\r\n' | \
   openssl s_server -accept 8443 -quiet \
     -cert   "${SVID_DIR}/svid.0.pem" \
     -key    "${SVID_DIR}/svid.0.key" \

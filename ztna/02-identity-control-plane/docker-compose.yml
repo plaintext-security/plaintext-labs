@@ -1,7 +1,7 @@
 # Module 02 — Identity as the Control Plane
-# Keycloak 24.x with the Meridian realm pre-loaded from data/meridian-realm.json.
+# Keycloak 24.x with the Corp realm pre-loaded from data/corp-realm.json.
 # Access the admin console at http://localhost:8080/admin (admin / admin).
-# The Meridian realm is at http://localhost:8080/realms/meridian.
+# The Corp realm is at http://localhost:8080/realms/corp.
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.5
@@ -12,11 +12,11 @@ services:
       - start-dev
       - --import-realm
     volumes:
-      - ./data/meridian-realm.json:/opt/keycloak/data/import/meridian-realm.json:ro
+      - ./data/corp-realm.json:/opt/keycloak/data/import/corp-realm.json:ro
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/meridian || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/corp || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15

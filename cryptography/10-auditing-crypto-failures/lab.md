@@ -20,7 +20,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial has engaged you for a crypto posture audit of three internal services:
+Corp has engaged you for a crypto posture audit of three internal services:
 a legacy payment gateway (TLS 1.0, weak ciphers), a modernised API (TLS 1.2, mixed ciphers),
 and the new microservice endpoint (TLS 1.3, strong config). Your deliverable: a structured
 audit report mapping each finding to an OWASP failure category, a severity rating in context,

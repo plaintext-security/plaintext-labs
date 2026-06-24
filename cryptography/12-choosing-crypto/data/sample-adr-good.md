@@ -8,7 +8,7 @@
 
 ## Context
 
-Meridian Notes encrypts note bodies at rest before they hit the datastore. The
+Corp Notes encrypts note bodies at rest before they hit the datastore. The
 primary path runs as Linux containers on modern x86-64 servers (AES-NI present);
 a small slice of traffic terminates on older ARM edge devices without AES
 hardware acceleration. We need one AEAD for the at-rest envelope. No FIPS-140

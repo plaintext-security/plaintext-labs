@@ -10,7 +10,7 @@
 
 ## Context
 
-Meridian Notes authenticates users with passwords, so we need a password hashing
+Corp Notes authenticates users with passwords, so we need a password hashing
 KDF.
 
 ## Options

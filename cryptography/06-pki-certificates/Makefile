@@ -15,7 +15,7 @@ reset:
 demo:
 	@echo "=== Module 06 — PKI & Certificate Management Demo ==="
 	@echo ""
-	@echo "--- Initialising Meridian Private CA and issuing a leaf certificate ---"
+	@echo "--- Initialising Corp Private CA and issuing a leaf certificate ---"
 	docker compose exec lab bash /lab/data/init-ca.sh
 	@echo ""
 	@echo "--- Leaf certificate fields (SAN, validity, basicConstraints) ---"

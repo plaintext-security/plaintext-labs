@@ -1,7 +1,7 @@
 {
-  "_comment": "Meridian Financial — fictional device posture policy. Maps to Cloudflare Access posture checks and Tailscale ACL tags. For Lab 03 analysis only.",
-  "policy_name": "meridian-device-posture-v1",
-  "organization": "Meridian Financial",
+  "_comment": "Corp — fictional device posture policy. Maps to Cloudflare Access posture checks and Tailscale ACL tags. For Lab 03 analysis only.",
+  "policy_name": "corp-device-posture-v1",
+  "organization": "Corp",
   "effective_date": "2025-01-01",
   "tiers": {
     "corp-managed": {

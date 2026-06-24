@@ -1,16 +1,16 @@
 # data-access_test.rego
 # OPA unit tests for data-access.rego.
 # Run with: opa test ./data/policies/
-package meridian.access_test
+package corp.access_test
 
-import data.meridian.access
+import data.corp.access
 import rego.v1
 
 # ── Allow cases ───────────────────────────────────────────────────────────────
 
 test_analyst_read_allowed if {
     access.allow with input as {
-        "user": {"role": "analyst", "email": "jdoe@meridian.com"},
+        "user": {"role": "analyst", "email": "jdoe@corp.com"},
         "action": "read",
         "resource": "/api/v1/records"
     }
@@ -18,7 +18,7 @@ test_analyst_read_allowed if {
 
 test_admin_write_allowed if {
     access.allow with input as {
-        "user": {"role": "admin", "email": "admin@meridian.com"},
+        "user": {"role": "admin", "email": "admin@corp.com"},
         "action": "write",
         "resource": "/api/v1/records"
     }
@@ -26,7 +26,7 @@ test_admin_write_allowed if {
 
 test_service_account_read_allowed if {
     access.allow with input as {
-        "user": {"role": "service_account", "email": "svc-reports@meridian.com"},
+        "user": {"role": "service_account", "email": "svc-reports@corp.com"},
         "action": "read",
         "resource": "/api/v1/reports"
     }
@@ -36,7 +36,7 @@ test_service_account_read_allowed if {
 
 test_analyst_write_denied if {
     access.deny with input as {
-        "user": {"role": "analyst", "email": "jdoe@meridian.com"},
+        "user": {"role": "analyst", "email": "jdoe@corp.com"},
         "action": "write",
         "resource": "/api/v1/records"
     }
@@ -44,7 +44,7 @@ test_analyst_write_denied if {
 
 test_service_account_write_denied if {
     access.deny with input as {
-        "user": {"role": "service_account", "email": "svc-reports@meridian.com"},
+        "user": {"role": "service_account", "email": "svc-reports@corp.com"},
         "action": "write",
         "resource": "/api/v1/reports"
     }
@@ -55,7 +55,7 @@ test_service_account_write_denied if {
 #
 # test_auditor_read_allowed if {
 #     access.allow with input as {
-#         "user": {"role": "auditor", "email": "auditor@meridian.com"},
+#         "user": {"role": "auditor", "email": "auditor@corp.com"},
 #         "action": "read",
 #         "resource": "/api/v1/records"
 #     }
@@ -63,7 +63,7 @@ test_service_account_write_denied if {
 #
 # test_auditor_export_denied if {
 #     access.deny with input as {
-#         "user": {"role": "auditor", "email": "auditor@meridian.com"},
+#         "user": {"role": "auditor", "email": "auditor@corp.com"},
 #         "action": "read",
 #         "resource": "/export"
 #     }

@@ -14,9 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir dnspython==2.7.0
 
-# Configure local bind9 with meridian-fictional.com zone
+# Configure local bind9 with corp-fictional.com zone
 COPY data/named.conf /etc/bind/named.conf.local
-COPY data/meridian-fictional.zone /etc/bind/meridian-fictional.zone
+COPY data/corp-fictional.zone /etc/bind/corp-fictional.zone
 
 WORKDIR /lab
 COPY . /lab

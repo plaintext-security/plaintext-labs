@@ -1,16 +1,16 @@
-# Email Authentication DNS Records — meridian-fictional.com
+# Email Authentication DNS Records — corp-fictional.com
 # These are SAMPLE records for the lab exercise.
-# The domain meridian-fictional.com does not exist and these are for educational use.
+# The domain corp-fictional.com does not exist and these are for educational use.
 
 # SPF record (intentionally uses ~all softfail — finding to fix)
-meridian-fictional.com. TXT "v=spf1 ip4:203.0.113.10 ip4:203.0.113.20 include:sendgrid.net ~all"
+corp-fictional.com. TXT "v=spf1 ip4:203.0.113.10 ip4:203.0.113.20 include:sendgrid.net ~all"
 
-# DKIM record (selector: meridian2024)
+# DKIM record (selector: corp2024)
 # This is a sample RSA-2048 public key — not a real key
-meridian2024._domainkey.meridian-fictional.com. TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLF29amygykEMmYz0+Kcj3bKBp29Nk1iatJ3LgBcjMbFBqPbzE8L+gsDqNlTp11GqJqDN5Z+xOHDe5TwQrDPFa2j5GzGQTBxlvwFWzOd8dV9tF/TKJ2sHMFLhB0D8QIDAQAB"
+corp2024._domainkey.corp-fictional.com. TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLF29amygykEMmYz0+Kcj3bKBp29Nk1iatJ3LgBcjMbFBqPbzE8L+gsDqNlTp11GqJqDN5Z+xOHDe5TwQrDPFa2j5GzGQTBxlvwFWzOd8dV9tF/TKJ2sHMFLhB0D8QIDAQAB"
 
 # DMARC record (intentionally p=none — finding to fix)
-_dmarc.meridian-fictional.com. TXT "v=DMARC1; p=none; adkim=r; aspf=r; pct=100"
+_dmarc.corp-fictional.com. TXT "v=DMARC1; p=none; adkim=r; aspf=r; pct=100"
 
 # -----------------------------------------------------------------------
 # FINDINGS TO IDENTIFY:
@@ -21,11 +21,11 @@ _dmarc.meridian-fictional.com. TXT "v=DMARC1; p=none; adkim=r; aspf=r; pct=100"
 #    Fix: change to p=quarantine or p=reject after monitoring
 #
 # 3. DMARC is missing rua= (aggregate report address) — MEDIUM finding
-#    Fix: add rua=mailto:dmarc-reports@meridian-fictional.com
+#    Fix: add rua=mailto:dmarc-reports@corp-fictional.com
 #
 # 4. DMARC adkim=r (relaxed alignment) — LOW finding
 #    Stricter: adkim=s (strict alignment)
 #
 # CORRECTED RECORDS (for the deliverable):
 # SPF:   "v=spf1 ip4:203.0.113.10 ip4:203.0.113.20 include:sendgrid.net -all"
-# DMARC: "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc-reports@meridian-fictional.com; pct=100"
+# DMARC: "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc-reports@corp-fictional.com; pct=100"

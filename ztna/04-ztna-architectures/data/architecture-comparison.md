@@ -1,6 +1,6 @@
 # ZTNA Architecture Patterns — Structured Comparison
 
-*Seed material for Lab 04. Fictional scenario for Meridian Financial.*
+*Seed material for Lab 04. Fictional scenario for Corp.*
 
 ---
 
@@ -41,7 +41,7 @@ VPN client (Cisco AnyConnect, GlobalProtect, etc.). No device certificate requir
 If a credential is stolen and a VPN session is established: full access to all 4096 IPs in the
 /20 for the session duration. No application-level segmentation. Lateral movement is unconstrained
 within the network segment. Session persists indefinitely with split-tunnel AnyConnect (no idle
-timeout by default at Meridian).
+timeout by default at Corp).
 
 ### Strengths
 

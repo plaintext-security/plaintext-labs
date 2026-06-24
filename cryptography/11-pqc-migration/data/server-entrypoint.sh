@@ -13,7 +13,7 @@ if [ ! -f "$CERTDIR/server.crt" ]; then
     -keyout "$CERTDIR/server.key" \
     -out "$CERTDIR/server.crt" \
     -days 365 \
-    -subj "/CN=pqc-server/O=Meridian/C=US" \
+    -subj "/CN=pqc-server/O=Example Corp/C=US" \
     -addext "subjectAltName=DNS:pqc-server,DNS:server,DNS:localhost" \
     2>/dev/null
   echo "[entrypoint] cert key type: RSA-2048 (the brownfield baseline)"
