@@ -1,4 +1,4 @@
-# Techniques the Meridian SOC has decided it must cover (one ATT&CK ID per line).
+# Techniques the SOC has decided it must cover (one ATT&CK ID per line).
 # The coverage report flags any of these your rule set does NOT detect — your blind spots.
 T1059.001   # PowerShell
 T1547.001   # Registry Run Key persistence

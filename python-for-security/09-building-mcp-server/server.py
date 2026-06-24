@@ -12,16 +12,16 @@ import fastmcp
 API_BASE = os.environ.get("THREAT_API_URL", "http://localhost:8080")
 IP_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
 
-mcp = fastmcp.FastMCP("meridian-security")
+mcp = fastmcp.FastMCP("ioc-enrichment")
 
 
 @mcp.tool
 def enrich_ip(ip: str) -> dict:
-    """Enrich an IP address with threat-intel data from the Meridian API.
+    """Enrich an IP address with real threat-intel data (abuse.ch Feodo Tracker + URLhaus).
 
-    Returns a dict with verdict, abuse_score, asn, country, and reports.
+    Returns a dict with verdict, asn, country, malware family, and provenance (source).
     Returns {"error": "invalid IP format"} for non-IP input.
-    Returns {"verdict": "unknown"} if the IP is not in the database.
+    Returns {"verdict": "unknown"} if the IP is not in the feed snapshot.
     """
     if not IP_RE.match(ip):
         return {"error": "invalid IP format"}

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-parse_cloudtrail.py — parses synthetic AWS CloudTrail JSON events for the Meridian Financial lab.
+parse_cloudtrail.py — parses bundled AWS CloudTrail JSON events for the log/cloud forensics lab.
+The CloudTrail set is modelled on the public Lunar Spider cloud TTPs (neutral naming).
 
 Usage: python3 parse_cloudtrail.py <cloudtrail_directory>
 
@@ -51,7 +52,7 @@ def parse_events(directory):
 
 def summarise(events):
     print("=" * 70)
-    print("  Meridian Financial — CloudTrail Event Timeline")
+    print("  CloudTrail Event Timeline (modelled on Lunar Spider cloud TTPs)")
     print("=" * 70)
     print()
 

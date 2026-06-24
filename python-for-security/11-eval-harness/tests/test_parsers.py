@@ -38,8 +38,9 @@ def test_regressed_parser_misses_slow_and_low():
     verdicts = parser_regressed.classify(str(CORPUS))
     assert verdicts.get("198.51.100.7", "benign") == "benign", \
         "regression should UNDER-detect 198.51.100.7"
-    # ...but it still catches the fast burst, which is why unit tests/demo pass.
-    assert verdicts.get("203.0.113.10") == "attack"
+    # ...but it still catches the real fast burst (loghub 103.99.0.122), which is why
+    # unit tests/demo pass and the regression slips through code review.
+    assert verdicts.get("103.99.0.122") == "attack"
 
 
 def test_neither_parser_crashes_on_malformed_input(tmp_path):

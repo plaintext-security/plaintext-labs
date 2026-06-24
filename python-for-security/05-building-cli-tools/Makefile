@@ -1,4 +1,4 @@
-.PHONY: up down reset demo shell
+.PHONY: up down reset demo shell refresh
 
 up:
 	docker compose up -d --build
@@ -11,6 +11,9 @@ reset:
 
 shell:
 	docker compose exec lab bash
+
+refresh:   ## Re-fetch the LIVE abuse.ch feeds (Feodo Tracker + URLhaus) into feeds/db.json
+	docker compose run --rm lab python feeds/fetch_feeds.py
 
 demo:      ## Show ioc-check --help and a sample enrich run
 	docker compose run --rm lab sh -c '\

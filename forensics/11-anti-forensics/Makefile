@@ -1,4 +1,23 @@
-.PHONY: up down reset demo shell create-image
+.PHONY: up down reset demo shell create-image fetch-data
+
+# Real timestomp artifact from the public EVTX-ATTACK-SAMPLES corpus (by sbousseaden).
+# See PROVENANCE.md for dataset details, exact URLs, and SHA-256 placeholders.
+EVTX_BASE := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master
+EVTX_FILES := \
+	Defense%20Evasion/sysmon_2_11_evasion_timestomp_MACE.evtx
+
+fetch-data:  ## Download the real timestomp EVTX sample into data/ (idempotent)
+	@mkdir -p data
+	@for f in $(EVTX_FILES); do \
+		out="data/$$(basename $$f)"; \
+		if [ -f "$$out" ]; then \
+			echo "exists: $$out"; \
+		else \
+			echo "fetch:  $$out"; \
+			curl -fsSL "$(EVTX_BASE)/$$f" -o "$$out"; \
+		fi; \
+	done
+	@echo "Done. Verify SHA-256 against PROVENANCE.md, then run 'make demo'."
 
 up:
 	docker compose up -d --build

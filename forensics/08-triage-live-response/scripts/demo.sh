@@ -6,8 +6,9 @@
 set -e
 
 echo "============================================================"
-echo "  Meridian Financial — Live Response Demo"
+echo "  BEACHHEAD-WS01 — Live Response Demo"
 echo "  Simulated VQL artifact collection"
+echo "  (modeled on the DFIR Report 'Lunar Spider' intrusion)"
 echo "============================================================"
 echo ""
 
@@ -46,8 +47,8 @@ echo ""
 
 echo "============================================================"
 echo "  FINDINGS SUMMARY"
-echo "  - PID 3847 'svchost32.exe' has PPID=3201 (bash) — anomalous parent"
+echo "  - PID 3847 'sihosts.exe' has PPID=3201 (bash) — anomalous parent"
 echo "  - PID 3847 has outbound TCP to 198.51.100.42:4444 (ESTABLISHED)"
 echo "  - /tmp/.s (0 bytes, hidden name) written 90s ago"
-echo "  Action: escalate WORKSTATION-04 to full imaging queue."
+echo "  Action: escalate BEACHHEAD-WS01 to full imaging queue."
 echo "============================================================"

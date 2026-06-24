@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Reference web scraper — link extraction + regex path discovery.
+
+Target: OWASP Juice Shop (a real, intentionally-vulnerable modern web app),
+running as the `target` container on port 3000. Juice Shop is a single-page
+Angular app, so most navigation is JS-driven and few real routes appear as
+plain <a href> anchors — the regex path-discovery pass is what surfaces the
+real endpoints (e.g. /ftp, robots.txt-referenced paths, JS-bundle routes).
 """
 
 import json
@@ -12,7 +18,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 
-START_URL = "http://target:5000/"
+START_URL = "http://target:3000/"
 OUTPUT = Path(__file__).parent / "output" / "linkmap.json"
 MAX_DEPTH = 3
 PATH_RE = re.compile(r'(?<!["\w])/[\w/.-]+')

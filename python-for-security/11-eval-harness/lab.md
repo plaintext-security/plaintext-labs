@@ -2,11 +2,11 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
-> **Lab environment: to be built & validated.** The `plaintext-labs/python-for-security/11-eval-harness/`
-> directory (`docker-compose.yml`, `Makefile`, the labelled corpus under `data/`, and the
-> `make up`/`demo`/`down` targets) is not yet built. This `lab.md` is the authored instruction set;
-> the runnable environment must be created and `make up && make demo && make down` proven green on a
-> clean Linux runner before this lab counts as done.
+> **Lab environment: real-data rewire — validation deferred.** The labelled corpus is now anchored
+> in **real** loghub OpenSSH attack traffic (see below) rather than a wholly synthetic log. The env
+> (`docker-compose.yml`, `Makefile`, `eval.py`, the corpus + answer key under `data/`) is in place;
+> `make up && make demo && make down` has **not** yet been re-run on a clean Linux runner against
+> this change — validate before marking the lab done.
 
 ## Setup
 ```bash
@@ -23,12 +23,18 @@ make down
 detection tool over a committed labelled corpus, so the whole lab is offline and reproducible (CI
 included). Pure stdlib.
 
-`data/auth-corpus.jsonl` is a labelled corpus of ~40 SSH-auth log lines — real brute-force attempts,
-benign noise, and deliberate **near-misses** (the `cron` job that mistypes its password twice a night;
-the truncated/Unicode-mangled line; the slow-and-low spray that never trips a per-minute threshold) —
-each tagged `attack` or `benign` in `data/auth-labels.json`. `scripts/parser_good.py` is a tuned
-version of the Module-02 brute-force flagger; `scripts/parser_regressed.py` is the same tool with a
-weakened rule that silently under-detects.
+`data/auth-corpus.jsonl` is a labelled corpus of SSH-auth log lines whose **attack backbone is real**:
+the fast brute force from `103.99.0.122` and the invalid-user dictionary sweep from `5.188.10.180` are
+verbatim lines from [**loghub**](https://github.com/logpai/loghub)'s `OpenSSH_2k.log` — a real
+internet-facing server's auth log — including the genuine `5.36.59.76` `message repeated 5 times:`
+meta-line. Layered on top, on the same real `LabSZ` host format, are the deliberate **near-misses**
+the real capture doesn't isolate cleanly (the `cron` job that mistypes its password twice a night; the
+truncated/Unicode-mangled line; the slow-and-low spray that never trips a per-minute threshold). Every
+line carries a `src` field marking it `loghub OpenSSH_2k.log` vs. `crafted ...`, and each source IP is
+tagged `attack` or `benign` in `data/auth-labels.json` with a `reason` you can audit — **you own the
+labels**. `scripts/parser_good.py` is a tuned version of the Module-02 brute-force flagger;
+`scripts/parser_regressed.py` is the same tool with a weakened rule that silently under-detects the
+slow-and-low case (recall regression).
 
 ## Scenario
 Your Module-02 log parser flags SSH brute-force offenders, and Module 10's tests prove the code does

@@ -16,10 +16,34 @@ make demo      # run the worked hashing + chain-of-custody example
 No container is required for this module: `sha256sum`, `md5sum`, and `dc3dd` are used directly.
 If `dc3dd` is not installed on your host, the Makefile will run it via Docker.
 
-> Everything runs against files you own in `data/`. No external targets, no authorization needed.
+**Real evidence (primary artifact).** This lab is anchored to the **Digital Corpora M57-Patents**
+scenario — the first four weeks (Nov 13–Dec 12 2009) of the fictional-but-real-public M57 Patents
+company, an outsourced patent-search firm whose investigations include data exfiltration and illegal
+activity. It is a genuine, citable public forensic corpus (Garfinkel et al.; digitalcorpora.org).
+Run `make fetch-data` to download a real M57 USB image into `data/` and hash *that* — the
+chain-of-custody discipline below is identical whether the bytes are real or synthetic.
+
+- Dataset root: <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/>
+- USB images: <https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/usb/>
+
+The bundled `data/evidence-sample.txt` / `data/evidence-sample.bin` remain only as a tiny offline
+**fallback** so the worked `make demo` runs with no network. See `PROVENANCE.md` in this directory.
+
+> Fetching and hash validation are **deferred to runner-validation** — `make fetch-data` is wired
+> but not yet executed here.
+
+> Everything runs against files you own in `data/` (or the freely licensed M57 corpus). No external
+> targets, no authorization needed.
 
 ## Scenario
-A Meridian Financial security analyst has flagged two files recovered from a suspicious USB drive found on a finance floor workstation. Before any analysis begins, the IR lead hands you the task: **establish integrity and start the chain of custody.** The files are `data/evidence-sample.txt` and `data/evidence-sample.bin`. Your job is to hash them, document the results, and prove they haven't been altered before passing them to the next examiner.
+The affected organization's security analyst has flagged files recovered from a suspicious USB drive
+found on a finance-floor workstation (`BEACHHEAD-WS01`). This mirrors the real **Lunar Spider**
+intrusion documented by The DFIR Report, where a single click on a malicious `Form_W-9.js` led to a
+near-two-month compromise and Rclone exfiltration. Before any analysis begins, the IR lead hands you
+the task: **establish integrity and start the chain of custody.** The files are
+`data/evidence-sample.txt` and `data/evidence-sample.bin` (or the M57 image you fetched). Your job is
+to hash them, document the results, and prove they haven't been altered before passing them to the
+next examiner.
 
 > Only examine evidence you are authorised to handle. In a real investigation, evidence must be handled according to your organization's evidence-handling policy and applicable law.
 

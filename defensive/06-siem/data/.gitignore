@@ -1,0 +1,5 @@
+# Fetched real raw logs (via `make fetch-data`) — never commit.
+# The curated normalized seed events.json IS committed (re-included below).
+raw/
+*.log
+!events.json

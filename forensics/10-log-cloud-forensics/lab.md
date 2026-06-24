@@ -11,24 +11,34 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/forensics/10-log-cloud-forensics
-make up      # builds container with hayabusa, chainsaw, and python
-make demo    # runs hayabusa + chainsaw over evtx/, then parses cloudtrail/
-make shell   # interactive shell for investigation
-make down    # stop when done
+make up         # builds container with hayabusa, chainsaw, and python
+make fetch-data # download the real EVTX-ATTACK-SAMPLES .evtx files into data/evtx/
+make demo       # runs hayabusa + chainsaw over evtx/, then parses cloudtrail/
+make shell      # interactive shell for investigation
+make down       # stop when done
 ```
 
 The lab ships two datasets:
-- `data/evtx/` — synthetic Windows EVTX files covering a Meridian Financial endpoint compromise (account logon, scheduled task creation, PowerShell execution).
-- `data/cloudtrail/` — synthetic AWS CloudTrail JSON events showing the attacker's API activity after the developer IAM key was extracted from the compromised workstation.
+- `data/evtx/` — the Windows half. The **primary artifact is real**: `make fetch-data` pulls
+  Windows `.evtx` from the public
+  [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) corpus (by sbousseaden)
+  covering scheduled-task creation, PowerShell execution, and network logon. The synthetic
+  `evtx_triage_summary.txt` / `chainsaw_summary.txt` are kept only as an offline fallback so
+  `make demo` runs before `fetch-data`. See `PROVENANCE.md`.
+- `data/cloudtrail/cloudtrail.json` — a small bundled AWS CloudTrail set **modelled on the public
+  Lunar Spider cloud TTPs** (neutral naming): API activity after the developer IAM key was
+  extracted from the compromised workstation.
 
-> All data is synthetic. Do not use real incident data in shared lab environments.
+> The CloudTrail set is bundled and synthetic; the EVTX are real public research samples. Do not
+> use real incident data in shared lab environments.
 
 ## Scenario
 
-The endpoint triage (module 08) confirmed `WORKSTATION-04` was compromised. DFIR pulled the
-Windows Event Logs off the host before imaging. Simultaneously, the Cloud Security team noticed
-unusual IAM activity in Meridian's AWS account starting 40 minutes after the workstation alert —
-the timeline suggests the attacker extracted the developer's AWS credentials from the machine and
+This module is anchored to the **Lunar Spider** intrusion (The DFIR Report, 2025). The endpoint
+triage (module 08) confirmed `BEACHHEAD-WS01` was compromised. DFIR pulled the Windows Event Logs
+off the host before imaging. Simultaneously, the Cloud Security team noticed unusual IAM activity
+in the affected organization's AWS account starting 40 minutes after the workstation alert — the
+timeline suggests the attacker extracted the developer's AWS credentials from the machine and
 pivoted to the cloud environment.
 
 Your task: triage the EVTX files to build a timeline of endpoint activity, then parse the
@@ -45,14 +55,16 @@ CloudTrail events to reconstruct the attacker's cloud pivot.
    What Event ID is it? What does that Event ID typically indicate? (Hint: Event ID 4698 is
    scheduled task creation; 4624 is successful logon; 4688 is process creation.)
 
-2. [ ] **Run Chainsaw** inside `make shell` to search for activity from the compromised account:
+2. [ ] **Run Chainsaw** inside `make shell` to search the real `.evtx` for execution / logon activity:
    ```bash
-   chainsaw search --json -t "SubjectUserName: dev-svc01" /data/evtx/
+   chainsaw search --json -t "SubjectUserName: jsmith" /data/evtx/
    ```
-   How many events reference this account? What are the earliest and latest timestamps?
+   How many events match? What are the earliest and latest timestamps? (Against the real
+   EVTX-ATTACK-SAMPLES files, search by Event ID — `--event-id 4688` / `4624` — to find what ran
+   and who authenticated.)
 
 3. [ ] **Build a mini-timeline:** list the top five events in chronological order with their
-   Event IDs and brief descriptions. This is the endpoint portion of the Meridian timeline.
+   Event IDs and brief descriptions. This is the endpoint portion of the intrusion timeline.
 
 **Part 2 — CloudTrail Analysis**
 

@@ -1,5 +1,5 @@
-## Meridian Financial — baseline auditd rules
-## Deploy: auditctl -R /etc/audit/rules.d/meridian.rules
+## Baseline auditd rules — host execution + sensitive-file visibility
+## Deploy: auditctl -R /etc/audit/rules.d/audit.rules
 
 # Capture all process executions
 -a always,exit -F arch=b64 -S execve -k execve_watch

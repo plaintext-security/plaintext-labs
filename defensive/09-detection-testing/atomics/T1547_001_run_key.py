@@ -1,8 +1,13 @@
 """Atomic T1547.001 — Registry Run Key Persistence (Linux cron equivalent).
 
-On Windows this creates a Run key. On Linux we simulate by writing a crontab
-entry (same persistence mechanism, different OS primitive). The event record
-uses the Sigma field names so the rule still matches.
+This is a synthetic *emulator* that mirrors a real Atomic Red Team test:
+  Atomic Red Team T1547.001 — "Boot or Logon Autostart Execution: Registry Run Keys"
+  https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1547.001 (MIT)
+The genuine ART tests write a CurrentVersion\\Run value on Windows. On Linux we
+stand in with a crontab entry (same persistence intent, different OS primitive), but
+the event record below carries the Windows-style Run-key fields (TargetObject,
+Details) so the Sigma rule matches. To validate against the real technique, run the
+ART atomic on your own Windows lab host (see lab.md).
 """
 import subprocess
 import time
@@ -22,7 +27,7 @@ def run():
         "Image": "/usr/bin/crontab",
         "CommandLine": cmdline,
         "ParentImage": "/bin/bash",
-        "User": "jsmith",
+        "User": "auser",
         "TargetObject": r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\UpdateCheck",
         "Details": "/tmp/.update_check",
         "technique": "T1547.001",

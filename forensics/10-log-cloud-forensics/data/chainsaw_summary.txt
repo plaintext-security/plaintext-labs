@@ -1,27 +1,27 @@
-Chainsaw Search Results — SubjectUserName: dev-svc01
+Chainsaw Search Results — SubjectUserName: jsmith
 Source: data/evtx/
 
 Found 4 matching events:
 
 [1] 2024-03-15T14:18:03  EventID=4698  Channel=Security
-    SubjectUserName: dev-svc01
+    SubjectUserName: jsmith
     TaskName: \MicrosoftEdgeUpdateTaskUser
-    TaskContent: <Task><Actions><Exec><Command>C:\Users\dev-svc01\AppData\Local\Temp\svchost32.exe</Command></Exec></Actions></Task>
+    TaskContent: <Task><Actions><Exec><Command>C:\Users\jsmith\AppData\Local\Temp\sihosts.exe</Command></Exec></Actions></Task>
 
 [2] 2024-03-15T14:19:12  EventID=4688  Channel=Security
-    SubjectUserName: dev-svc01
+    SubjectUserName: jsmith
     NewProcessName: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
     ParentProcessName: C:\Windows\System32\cmd.exe
-    CommandLine: powershell.exe -windowstyle hidden -EncodedCommand cwB2AGMAaABvAHMAdAAzADIALgBlAHgAZQA=
+    CommandLine: powershell.exe -windowstyle hidden -EncodedCommand cwBpAGgAbwBzAHQAcwAuAGUAeABlAA==
 
 [3] 2024-03-15T14:20:01  EventID=4624  Channel=Security
-    SubjectUserName: dev-svc01
+    SubjectUserName: jsmith
     LogonType: 3
     IpAddress: 10.0.0.50
     AuthenticationPackageName: NTLM
 
 [4] 2024-03-15T14:21:55  EventID=4663  Channel=Security
-    SubjectUserName: dev-svc01
-    ObjectName: C:\Users\dev-svc01\AppData\Local\Temp\svchost32.exe
+    SubjectUserName: jsmith
+    ObjectName: C:\Users\jsmith\AppData\Local\Temp\sihosts.exe
     AccessMask: 0x2 (WriteData)
     ProcessName: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe

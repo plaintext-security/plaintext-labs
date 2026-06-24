@@ -1,32 +1,11 @@
 services:
+  # Real intentionally-vulnerable target: Apache Solr 8.11.0, the Vulhub
+  # Log4Shell (CVE-2021-44228) reference image. Exposes 8983 (HTTP / Solr
+  # admin, real Jetty/Solr banners) and 5005 (JDWP debug). Genuine service,
+  # genuine banners — not a hand-rolled echo server.
+  # https://github.com/vulhub/vulhub/tree/master/log4j/CVE-2021-44228
   target:
-    image: python:3.12.9-slim
-    command: >
-      python3 -c "
-      import socket, threading, time
-      banners = {22: b'SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.6\r\n',
-                 80: b'HTTP/1.1 200 OK\r\nServer: nginx/1.25.3\r\nContent-Length: 0\r\n\r\n',
-                 443: b'',
-                 8080: b'HTTP/1.1 200 OK\r\nServer: Apache/2.4.58\r\n\r\n'}
-      def handle(conn, banner):
-          try:
-              if banner: conn.sendall(banner)
-              conn.recv(1024)
-          except: pass
-          finally: conn.close()
-      def serve(port, banner):
-          s = socket.socket()
-          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-          s.bind(('0.0.0.0', port))
-          s.listen(10)
-          while True:
-              conn, _ = s.accept()
-              threading.Thread(target=handle, args=(conn, banner), daemon=True).start()
-      for port, banner in banners.items():
-          threading.Thread(target=serve, args=(port, banner), daemon=True).start()
-      print('Echo server listening on 22,80,443,8080', flush=True)
-      while True: time.sleep(1)
-      "
+    image: vulhub/solr:8.11.0
     networks:
       - lab-net
 
@@ -39,5 +18,10 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    network_mode: "host"
+    networks:
+      - lab-net
     command: sleep infinity
+
+networks:
+  lab-net:
+    driver: bridge

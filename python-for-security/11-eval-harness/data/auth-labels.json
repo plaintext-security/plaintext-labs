@@ -1,18 +1,19 @@
 {
   "_README": "Ground truth for the eval harness. The unit of judgment is the SOURCE IP: the brute-force parser emits a per-IP verdict (attack | benign), so the labels are keyed by IP. YOU own these labels — they were authored by hand against what each line actually represents, NOT by the tool under test. Each entry carries a `reason` so a reviewer can audit the call. This corpus is HELD OUT: it is not the Module-02 sample log the parser was tuned against.",
+  "_provenance": "The attack backbone is REAL: the 103.99.0.122 burst and the 5.188.10.180 invalid-user sweep are verbatim lines from loghub OpenSSH_2k.log (a real internet-facing SSH server, https://github.com/logpai/loghub). The slow-and-low spray, the benign near-misses, and the malformed-input lines are CRAFTED on the same real LabSZ host format to exercise the recall/precision/robustness edges the real capture happens not to isolate cleanly — each is tagged in the corpus `src` field. You still own every label.",
   "unit": "source_ip",
   "verdicts": {
-    "203.0.113.10": {
+    "103.99.0.122": {
       "label": "attack",
-      "reason": "Classic fast brute force: 12 failed passwords across 5 usernames in ~33s. Trips any sane per-minute threshold; both parsers should catch this."
+      "reason": "REAL fast brute force from loghub: 12 failed passwords across many usernames in ~34s (09:11:21-09:11:55). Trips any sane per-minute threshold; both the good and regressed parsers should catch this."
     },
-    "192.0.2.55": {
+    "5.188.10.180": {
       "label": "attack",
-      "reason": "Invalid-user dictionary sweep: 11 failures in ~27s ('Failed password for invalid user ...'). A parser whose regex only matches 'Failed password for <user>' and not the 'invalid user' variant will MISS this — a near-miss against the regex, not the threshold."
+      "reason": "REAL invalid-user dictionary sweep from loghub: 11 'Failed password for invalid user ...' events in ~33s. A parser whose regex only matches 'Failed password for <user>' and not the 'invalid user' variant will MISS this — a near-miss against the regex, not the threshold."
     },
     "198.51.100.7": {
       "label": "attack",
-      "reason": "SLOW-AND-LOW spray: 12 failures spaced ~95s apart over ~17 minutes, so it NEVER reaches 10 failures inside any 60s window. The strict per-minute rule alone is blind to it; catching it needs a longer-window / total-volume rule. This is the load-bearing recall case the regressed parser drops."
+      "reason": "CRAFTED slow-and-low spray: 12 failures spaced ~95s apart over ~17 minutes, so it NEVER reaches the burst threshold inside any 60s window. The strict per-minute rule alone is blind to it; catching it needs a longer-window / total-volume rule. This is the load-bearing recall case the regressed parser drops."
     },
     "10.0.5.20": {
       "label": "benign",
@@ -43,5 +44,5 @@
       "reason": "MALFORMED near-miss: the word 'password' contains a Cyrillic homoglyph ('pаssword'), so it is NOT a genuine 'Failed password' event. A single line anyway. The parser must neither crash on it nor flag the IP."
     }
   },
-  "_unlabelled_note": "Lines whose source IP is not in `verdicts` (truncated 192.0.2.x line, the empty line, the garbage line, CRON session lines) carry no IP-keyed verdict and are excluded from scoring — they exist to prove the parser does not CRASH on malformed input. See tests/test_robustness.py."
+  "_unlabelled_note": "Lines whose source IP is not in `verdicts` carry no IP-keyed verdict and are excluded from scoring — they exist to prove the parser does not CRASH on malformed input. This includes the truncated 192.0.2 line, the empty line, the garbage line, the CRON session line, and the real 5.36.59.76 'message repeated 5 times:' meta-line (the regex must NOT match the bracketed text inside it). See tests/test_robustness.py."
 }

@@ -2,7 +2,7 @@
 """
 create_ext2_img.py — creates a minimal ext2 disk image for the anti-forensics lab.
 
-Builds a 2MB ext2 image with a timestomped file (svchost32.exe with mtime=2019)
+Builds a 2MB ext2 image with a timestomped file (sihosts.exe with mtime=2019)
 and a deleted file (notes.txt). Runs inside the Docker container which has
 mkfs.ext2 and debugfs available.
 
@@ -36,7 +36,7 @@ run(f"dd if=/dev/zero of={IMG} bs=1M count=2 status=none")
 print(f"Created {IMG}")
 
 # Format as ext2
-run(f"mkfs.ext2 -F -L MERIDIAN-WS04 -m 0 {IMG}")
+run(f"mkfs.ext2 -F -L BEACHHEAD-WS01 -m 0 {IMG}")
 print("Formatted as ext2")
 
 # Populate using debugfs (no mount needed — works without root)
@@ -44,11 +44,11 @@ mktdir = tempfile.mkdtemp()
 
 # Create file contents
 files = {
-    "readme.txt": ("202401150900", "Meridian Financial workstation configuration\n"),
+    "readme.txt": ("202401150900", "Workstation configuration\n"),
     "config.ini": ("202402200830", "[network]\ndns=10.0.0.1\nproxy=none\n"),
     "app.log": ("202403101430", "2024-03-10 14:30:01 INFO Application started\n"),
-    "svchost32.exe": ("201906150000", "\x7fELF\x02\x01" + "\x00" * 58),  # ELF magic
-    "notes.txt": ("202403151422", "attacker_c2_ip=198.51.100.42\n"),
+    "sihosts.exe": ("201906150000", "\x7fELF\x02\x01" + "\x00" * 58),  # ELF magic
+    "notes.txt": ("202403151422", "attacker_c2=workspacin.cloud\n"),
 }
 
 # Write temp files

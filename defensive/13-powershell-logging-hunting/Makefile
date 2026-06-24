@@ -1,6 +1,6 @@
 # Defensive Module 13 — PowerShell Logging & Hunting lab.
 # Standard targets every reference lab provides: up / down / reset / demo [/ shell].
-.PHONY: up down reset shell demo hunt
+.PHONY: up down reset shell demo hunt fetch-data
 
 up:        ## Build and start the lab container
 	docker compose up -d --build
@@ -19,3 +19,15 @@ demo:      ## Worked hunt: flag the malicious script blocks in the bundled 4104 
 
 hunt:      ## make hunt FILE=mylog.json — run the hunt against your own 4104 export
 	docker compose run --rm lab pwsh -NoProfile -File /lab/hunt.ps1 -Path $(FILE)
+
+# Fetch a real 4104 EVTX and rebuild data/scriptblock-4104.json from it (see data/PROVENANCE.md).
+# NOT run in CI — you run it locally. Requires git + python-evtx (pip install python-evtx).
+EVTX_REPO ?= https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES
+EVTX_SAMPLE ?= Other/emotet/exec_emotet_ps_4104.evtx
+fetch-data: ## Clone EVTX-ATTACK-SAMPLES and convert a real 4104 capture → data/scriptblock-4104.json
+	@echo "Cloning $(EVTX_REPO) (shallow) ..."
+	rm -rf data/EVTX-ATTACK-SAMPLES
+	git clone --depth 1 "$(EVTX_REPO)" data/EVTX-ATTACK-SAMPLES
+	pip install --quiet python-evtx
+	python3 convert_evtx.py "data/EVTX-ATTACK-SAMPLES/$(EVTX_SAMPLE)" data/scriptblock-4104.json
+	@echo "Done. data/scriptblock-4104.json now holds REAL 4104 records — hunt with: make demo"

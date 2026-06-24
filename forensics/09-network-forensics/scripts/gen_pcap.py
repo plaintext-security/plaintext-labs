@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-gen_pcap.py — generates a tiny synthetic PCAP for the Meridian network forensics lab.
+gen_pcap.py — OFFLINE FALLBACK generator of a tiny synthetic PCAP for the network
+forensics lab. The PREFERRED artifact is the real Redline Stealer infection capture
+fetched via `make fetch-data` (Malware-Traffic-Analysis.net, 2024-10-23). Use this
+generator only when you cannot reach that site — it reproduces the analysis workflow
+(suspicious DNS lookup + HTTP binary transfer) without any real malware.
 
 Produces capture.pcap containing:
   - Normal HTTPS traffic (simulated TLS ClientHello to 93.184.216.34 / example.com)
-  - A DNS query for update-cdn82.net resolving to 198.51.100.42
+  - A DNS query for workspacin.cloud resolving to 198.51.100.42
   - A brief HTTP GET /update.bin to 198.51.100.42:80
   - A small binary payload in the HTTP response
 
@@ -29,12 +33,12 @@ seq = 1000
 def eth(src="aa:bb:cc:dd:ee:01", dst="aa:bb:cc:dd:ee:02"):
     return Ether(src=src, dst=dst)
 
-# --- DNS query for update-cdn82.net ---
+# --- DNS query for workspacin.cloud ---
 dns_query = (
     eth() /
     IP(src=CLIENT, dst=DNS_SRV) /
     UDP(sport=54321, dport=53) /
-    DNS(rd=1, qd=DNSQR(qname="update-cdn82.net"))
+    DNS(rd=1, qd=DNSQR(qname="workspacin.cloud"))
 )
 pkts.append(dns_query)
 
@@ -43,8 +47,8 @@ dns_response = (
     IP(src=DNS_SRV, dst=CLIENT) /
     UDP(sport=53, dport=54321) /
     DNS(qr=1, aa=1, rd=1, ra=1,
-        qd=DNSQR(qname="update-cdn82.net"),
-        an=DNSRR(rrname="update-cdn82.net", ttl=300, rdata=C2_SRV))
+        qd=DNSQR(qname="workspacin.cloud"),
+        an=DNSRR(rrname="workspacin.cloud", ttl=300, rdata=C2_SRV))
 )
 pkts.append(dns_response)
 
@@ -87,7 +91,7 @@ http_ack = eth() / IP(src=CLIENT, dst=C2_SRV) / TCP(sport=54500, dport=80, flags
 
 http_req = (
     b"GET /update.bin HTTP/1.1\r\n"
-    b"Host: update-cdn82.net\r\n"
+    b"Host: workspacin.cloud\r\n"
     b"User-Agent: Mozilla/5.0\r\n"
     b"Connection: close\r\n\r\n"
 )

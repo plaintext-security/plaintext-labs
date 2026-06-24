@@ -8,26 +8,37 @@
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/defensive/11-hunting-endpoint
-make up      # builds the Python hunt harness
-make demo    # runs hypothesis-driven hunt over bundled Sysmon events
+make up         # builds the Python hunt harness
+make demo       # runs hypothesis-driven hunt over the bundled Sysmon events
+make fetch-data # OPTIONAL: pull a REAL Sysmon EVTX and hunt that instead (see below)
 make down
 ```
 
-Bundled data: `data/sysmon_events.json` — 21 synthetic Sysmon events
-from jsmith's workstation: a complete phishing-to-persistence attack
+Bundled seed: `data/sysmon_events.json` — 21 Sysmon events from host
+`WIN10-01` (user `user01`): a complete phishing-to-persistence attack
 chain (Office macro → PowerShell → certutil dropper → scheduled task +
-Run key) mixed with normal baseline activity. The hunt harness
-`hunt.py` loads events into in-memory SQLite so you write real SQL
-queries — the same skill as Velociraptor VQL or osquery, without the
-infrastructure.
+Run key) mixed with normal baseline activity, so `make demo` runs fully
+offline. The hunt harness `hunt.py` loads events into in-memory SQLite so
+you write real SQL queries — the same skill as Velociraptor VQL or
+osquery, without the infrastructure.
 
-> **Authorization:** this lab queries bundled endpoint telemetry only —
-> no live system access required.
+**Hunt the real thing.** `make fetch-data` clones
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
+and converts a genuine Sysmon capture —
+`Execution/exec_persist_rundll32_mshta_scheduledtask_sysmon_1_3_11.evtx`
+(real EID 1/3/11 events from a `rundll32`/`mshta` scheduled-task
+persistence chain) — into `data/sysmon_events.json`, so the same `hunt.py`
+runs over **a real Windows event log**, not a stand-in. See
+`data/PROVENANCE.md` for the sample, license (GPL-3.0),
+and the convert pipeline.
+
+> **Authorization:** this lab queries bundled / fetched endpoint telemetry
+> only — no live system access required.
 
 ## Scenario
-The Meridian Financial threat-intel team flagged jsmith's workstation:
-she downloaded an unusual `.docm` file on March 15. Form a
-hypothesis, hunt the Sysmon telemetry, and confirm or refute it.
+Threat-intel flagged `WIN10-01`: `user01` downloaded an unusual `.docm`
+file on March 15. Form a hypothesis, hunt the Sysmon telemetry, and
+confirm or refute it.
 
 ## Do
 

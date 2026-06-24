@@ -111,7 +111,8 @@ def print_osquery_section() -> None:
 
 def main() -> int:
     print("=" * 62)
-    print("Meridian Financial — Linux Telemetry Demo")
+    print("SOC — Linux Telemetry Demo")
+    print(f"Source: {AUDIT_LOG.name}")
     print("=" * 62)
     print()
 

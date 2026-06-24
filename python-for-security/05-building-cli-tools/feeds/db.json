@@ -1,0 +1,31 @@
+{
+  "fetched_at": "2026-06-24T03:10:00+00:00",
+  "_note": "OFFLINE FALLBACK SNAPSHOT of real abuse.ch feeds (Feodo Tracker + URLhaus). Refresh with `python feeds/fetch_feeds.py`. Every record carries `source` for provenance. These are REAL malicious IOCs reported to abuse.ch, not synthetic.",
+  "sources": [
+    "https://feodotracker.abuse.ch/downloads/ipblocklist.json",
+    "https://urlhaus.abuse.ch/downloads/csv_recent/"
+  ],
+  "ips": {
+    "162.243.103.246": {"ip": "162.243.103.246", "verdict": "malicious", "asn": "AS14061 DIGITALOCEAN-ASN", "country": "US", "malware": "Emotet", "port": 8080, "first_seen": "2022-06-04 21:24:53", "source": "abuse.ch Feodo Tracker", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "50.16.16.211": {"ip": "50.16.16.211", "verdict": "malicious", "asn": "AS14618 AMAZON-AES", "country": "US", "malware": "QakBot", "port": 443, "first_seen": "2025-12-30 13:56:31", "source": "abuse.ch Feodo Tracker", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "34.204.119.63": {"ip": "34.204.119.63", "verdict": "malicious", "asn": "AS14618 AMAZON-AES", "country": "US", "malware": "QakBot", "port": 443, "first_seen": "2026-01-13 21:41:15", "source": "abuse.ch Feodo Tracker", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "178.62.3.223": {"ip": "178.62.3.223", "verdict": "malicious", "asn": "AS14061 DIGITALOCEAN-ASN", "country": "GB", "malware": "QakBot", "port": 443, "first_seen": "2026-02-17 05:41:23", "source": "abuse.ch Feodo Tracker", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "27.133.154.218": {"ip": "27.133.154.218", "verdict": "malicious", "asn": "AS9370 SAKURA-B SAKURA Internet Inc.", "country": "JP", "malware": "QakBot", "port": 443, "first_seen": "2026-03-04 14:28:39", "source": "abuse.ch Feodo Tracker", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "125.41.226.75": {"ip": "125.41.226.75", "verdict": "malicious", "asn": "unknown", "country": "??", "malware": "32-bit,elf,mips,Mozi", "first_seen": "2026-06-24 03:08:15", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875127/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "110.37.109.18": {"ip": "110.37.109.18", "verdict": "malicious", "asn": "unknown", "country": "??", "malware": "mirai", "first_seen": "2026-06-24 03:02:23", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875126/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "110.38.221.182": {"ip": "110.38.221.182", "verdict": "malicious", "asn": "unknown", "country": "??", "malware": "32-bit,elf,mips,Mozi", "first_seen": "2026-06-24 03:00:15", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875125/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "27.207.187.1": {"ip": "27.207.187.1", "verdict": "malicious", "asn": "unknown", "country": "??", "malware": "Mozi", "first_seen": "2026-06-24 02:42:07", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875124/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "110.38.223.172": {"ip": "110.38.223.172", "verdict": "malicious", "asn": "unknown", "country": "??", "malware": "Mozi", "first_seen": "2026-06-24 02:17:08", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875122/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "8.8.8.8": {"ip": "8.8.8.8", "verdict": "clean", "asn": "AS15169 Google", "country": "US", "malware": null, "source": "well-known public resolver", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "1.1.1.1": {"ip": "1.1.1.1", "verdict": "clean", "asn": "AS13335 Cloudflare", "country": "AU", "malware": null, "source": "well-known public resolver", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "9.9.9.9": {"ip": "9.9.9.9", "verdict": "clean", "asn": "AS19281 Quad9", "country": "CH", "malware": null, "source": "well-known public resolver", "fetched_at": "2026-06-24T03:10:00+00:00"}
+  },
+  "samples": {
+    "3875127": {"id": "3875127", "verdict": "malicious", "threat": "malware_download", "tags": "32-bit,elf,mips,Mozi", "url_status": "online", "first_seen": "2026-06-24 03:08:15", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875127/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "3875126": {"id": "3875126", "verdict": "malicious", "threat": "malware_download", "tags": "mirai", "url_status": "online", "first_seen": "2026-06-24 03:02:23", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875126/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "3875125": {"id": "3875125", "verdict": "malicious", "threat": "malware_download", "tags": "32-bit,elf,mips,Mozi", "url_status": "online", "first_seen": "2026-06-24 03:00:15", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875125/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "3875124": {"id": "3875124", "verdict": "malicious", "threat": "malware_download", "tags": "Mozi", "url_status": "online", "first_seen": "2026-06-24 02:42:07", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875124/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "3875122": {"id": "3875122", "verdict": "malicious", "threat": "malware_download", "tags": "Mozi", "url_status": "online", "first_seen": "2026-06-24 02:17:08", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875122/", "fetched_at": "2026-06-24T03:10:00+00:00"},
+    "3875123": {"id": "3875123", "verdict": "malicious", "threat": "malware_download", "tags": "Mozi", "url_status": "online", "first_seen": "2026-06-24 02:17:08", "source": "abuse.ch URLhaus", "urlhaus_link": "https://urlhaus.abuse.ch/url/3875123/", "fetched_at": "2026-06-24T03:10:00+00:00"}
+  }
+}

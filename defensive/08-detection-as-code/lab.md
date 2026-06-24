@@ -18,17 +18,22 @@ make down      # stop it when you're done
 
 The container bundles `sigma-cli` (the real converter) and a small **teaching matcher**
 (`detect.py`) so a rule can fire offline, with no SIEM to stand up. Sample telemetry lives in
-`data/events.jsonl` — six real-shaped Windows process-creation events from the fictional
-**Meridian Financial** estate, one of which is malicious. The worked example is in `examples/`.
+`data/events.jsonl` — six real-shaped Windows process-creation events (a curated seed), one of which
+is malicious. The worked example is in `examples/`.
+
+For a **genuine** encoded-PowerShell artifact rather than a hand-built one, `make fetch-data` pulls a
+real, published encoded-command test from **Atomic Red Team T1059.001** and converts it to the
+`events.jsonl` shape `detect.py` consumes — so you fire your rule at a real attacker-tooling event.
+See `data/PROVENANCE.md`.
 
 > Everything runs locally against bundled data you own. No external targets, no authorization
 > needed for this one.
 
 ## Scenario
-A Meridian analyst flags that Word spawned PowerShell on a finance workstation. You'll write a
-portable detection for the technique behind it — **encoded PowerShell (ATT&CK T1059.001)** — prove
-it fires on the real event, and reason about where it would false-positive. Then you'll do it as
-code: the rule in git, converted to a SIEM query, linted in CI.
+An analyst flags that Word spawned PowerShell on a finance workstation. You'll write a portable
+detection for the technique behind it — **encoded PowerShell (ATT&CK T1059.001)** — prove it fires on
+the real event, and reason about where it would false-positive. Then you'll do it as code: the rule in
+git, converted to a SIEM query, linted in CI.
 
 ## Do
 1. [ ] `make demo` and read the output: the example rule converts to a Splunk query *and* matches

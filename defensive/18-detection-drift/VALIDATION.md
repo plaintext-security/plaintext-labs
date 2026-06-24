@@ -25,10 +25,10 @@ the bundled fixtures (the Docker layer only adds the interpreter + PyYAML):
   exit `0`.
 - **t=30 OBSERVED** — detects three drifts and exits non-zero (swallowed by `|| true`
   in the demo so the target still succeeds):
-  - `MER-FS01` → `DRIFT: DEGRADED (volume 3 < floor 20)` — the volume tell a binary
+  - `FS01` → `DRIFT: DEGRADED (volume 3 < floor 20)` — the volume tell a binary
     up/down check would miss.
-  - `MER-DC01` → `DRIFT: DEAD (no events)` — the source that stopped logging.
-  - `MER-LEGACY03` → `DRIFT: DEAD` — becomes "expected silence" only after the
+  - `DC01` → `DRIFT: DEAD (no events)` — the source that stopped logging.
+  - `LEGACY03` → `DRIFT: DEAD` — becomes "expected silence" only after the
     learner sets `decommissioned: true` in the reconcile step.
   - Rule recall regresses `1.00 → 0.00` — the field-rename (CommandLine →
     ProcessCommandLine) that rots a rule which still parses and runs.

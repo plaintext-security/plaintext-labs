@@ -5,9 +5,9 @@
       "userIdentity": {
         "type": "IAMUser",
         "principalId": "AIDA123456EXAMPLE",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
         "accountId": "123456789012",
-        "userName": "dev-svc01"
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:35:02Z",
       "eventSource": "sts.amazonaws.com",
@@ -18,15 +18,15 @@
       "responseElements": {
         "userId": "AIDA123456EXAMPLE",
         "account": "123456789012",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith"
       }
     },
     {
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:35:18Z",
       "eventSource": "iam.amazonaws.com",
@@ -40,8 +40,8 @@
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:35:31Z",
       "eventSource": "iam.amazonaws.com",
@@ -55,35 +55,35 @@
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:36:05Z",
       "eventSource": "iam.amazonaws.com",
       "eventName": "ListAttachedUserPolicies",
       "awsRegion": "us-east-1",
       "sourceIPAddress": "198.51.100.42",
-      "requestParameters": {"userName": "dev-svc01"},
+      "requestParameters": {"userName": "jsmith"},
       "responseElements": null
     },
     {
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:38:12Z",
       "eventSource": "iam.amazonaws.com",
       "eventName": "CreateUser",
       "awsRegion": "us-east-1",
       "sourceIPAddress": "198.51.100.42",
-      "requestParameters": {"userName": "svc-backup-restore"},
+      "requestParameters": {"userName": "svc-backup"},
       "responseElements": {
         "user": {
-          "userName": "svc-backup-restore",
+          "userName": "svc-backup",
           "userId": "AIDA999BACKDOOR",
-          "arn": "arn:aws:iam::123456789012:user/svc-backup-restore",
+          "arn": "arn:aws:iam::123456789012:user/svc-backup",
           "createDate": "2024-03-15T14:38:12Z"
         }
       }
@@ -92,8 +92,8 @@
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:38:45Z",
       "eventSource": "iam.amazonaws.com",
@@ -101,7 +101,7 @@
       "awsRegion": "us-east-1",
       "sourceIPAddress": "198.51.100.42",
       "requestParameters": {
-        "userName": "svc-backup-restore",
+        "userName": "svc-backup",
         "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
       },
       "responseElements": null
@@ -110,18 +110,18 @@
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/dev-svc01",
-        "userName": "dev-svc01"
+        "arn": "arn:aws:iam::123456789012:user/jsmith",
+        "userName": "jsmith"
       },
       "eventTime": "2024-03-15T14:39:02Z",
       "eventSource": "iam.amazonaws.com",
       "eventName": "CreateAccessKey",
       "awsRegion": "us-east-1",
       "sourceIPAddress": "198.51.100.42",
-      "requestParameters": {"userName": "svc-backup-restore"},
+      "requestParameters": {"userName": "svc-backup"},
       "responseElements": {
         "accessKey": {
-          "userName": "svc-backup-restore",
+          "userName": "svc-backup",
           "accessKeyId": "AKIA999NEWKEY0001",
           "status": "Active",
           "createDate": "2024-03-15T14:39:02Z"
@@ -132,8 +132,8 @@
       "eventVersion": "1.08",
       "userIdentity": {
         "type": "IAMUser",
-        "arn": "arn:aws:iam::123456789012:user/svc-backup-restore",
-        "userName": "svc-backup-restore"
+        "arn": "arn:aws:iam::123456789012:user/svc-backup",
+        "userName": "svc-backup"
       },
       "eventTime": "2024-03-15T14:52:17Z",
       "eventSource": "sts.amazonaws.com",
@@ -141,7 +141,7 @@
       "awsRegion": "us-east-1",
       "sourceIPAddress": "198.51.100.42",
       "requestParameters": {
-        "roleArn": "arn:aws:iam::123456789012:role/MeridianProdDeploy",
+        "roleArn": "arn:aws:iam::123456789012:role/prod-deploy",
         "roleSessionName": "backup-session-1"
       },
       "responseElements": {

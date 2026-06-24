@@ -1,26 +1,26 @@
 datetime,timestamp_desc,source,source_long,message,display_name
-2024-03-15T01:45:00Z,Last Visited Time,WEBHIST,Chrome History,https://outlook.office.com/mail/ (Inbox - Meridian Financial) [visit count: 8],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T01:52:00Z,Last Visited Time,WEBHIST,Chrome History,https://meridian-intranet.internal/hr/policies (HR Policies) [visit count: 3],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:00:01Z,Content Modification Time,FILE,NTFS $MFT,C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - type: Executable,MERIDIAN-FIN-WS01/$MFT
-2024-03-15T02:00:01Z,Creation Time,FILE,NTFS $MFT,"C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - CREATED [$FN: 2024-03-15T02:00:01Z, $SI: 2019-06-18T11:22:44Z]",MERIDIAN-FIN-WS01/$MFT
-2024-03-15T02:05:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=how+to+exfiltrate+files+undetected [SEARCH TERM: how to exfiltrate files undetected],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:06:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=smb+share+anonymous+upload+windows [SEARCH TERM: smb share anonymous upload windows],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:08:00Z,Last Visited Time,WEBHIST,Chrome History,https://mega.nz/#!upload (MEGA Cloud Storage) [visit count: 2],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:09:10Z,Download Started,WEBHIST,Chrome Downloads,Downloaded: update_patch.exe from https://pastebin.com/raw/Xk7mN3qP (184832 bytes),MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:09:55Z,Event Recorded,EVT,Windows Security Event Log,[4625] FAILED LOGON - Account: Administrator - Source: 10.99.4.22 - Status: 0xc000006d (wrong password),MERIDIAN-FIN-WS01/Security.evtx
-2024-03-15T02:10:44Z,Event Recorded,EVT,Windows Security Event Log,[4624] LOGON SUCCESS - Account: svc_batch_finance - Logon Type: 3 (Network) - Source IP: 10.99.4.22,MERIDIAN-FIN-WS01/Security.evtx
-2024-03-15T02:11:02Z,Event Recorded,EVT,Windows Security Event Log,[4688] PROCESS CREATED - cmd.exe - Parent: svcupd.exe (PID 1640) - CMD: cmd.exe /c powershell -enc JABjAD0A...,MERIDIAN-FIN-WS01/Security.evtx
-2024-03-15T02:11:03Z,Event Recorded,EVT,Windows Security Event Log,[4688] PROCESS CREATED - powershell.exe - Parent: cmd.exe (PID 2856) - CMD: powershell -enc JABjAD0A...,MERIDIAN-FIN-WS01/Security.evtx
-2024-03-15T02:11:04Z,Event Recorded,NETCONN,Network Connection,TCP ESTABLISHED: powershell.exe (PID 6893) -> 10.99.4.22:443 [C2 connection],MERIDIAN-FIN-WS01/Memory
-2024-03-15T02:11:08Z,Access Time,FILE,NTFS $MFT,C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - EXECUTED (Prefetch: SVCUPD.EXE-ABCD1234.pf),MERIDIAN-FIN-WS01/Prefetch
-2024-03-15T02:11:10Z,Registry Value Modified,REG,Windows Registry,NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Run: BackupHelper = powershell.exe -WindowStyle Hidden -enc JABjAD0A...,MERIDIAN-FIN-WS01/NTUSER.DAT
-2024-03-15T02:12:44Z,Event Recorded,NETCONN,Network Connection,TCP ESTABLISHED: notepad.exe (PID 3124) -> 10.99.4.22:4444 [INJECTION — notepad has no network use],MERIDIAN-FIN-WS01/Memory
-2024-03-15T02:15:00Z,Access Time,FILE,Web Server Log,GET /finance/restricted/Q1_2024_payroll.xlsx - 200 OK - User: svc_batch_finance - Client: 10.10.1.15,MERIDIAN-FS01/access.log
-2024-03-15T02:15:44Z,Registry Value Modified,REG,Windows Registry,NTUSER.DAT\Explorer\RecentDocs\MRU_0 = Q1_2024_payroll.xlsx,MERIDIAN-FIN-WS01/NTUSER.DAT
-2024-03-15T02:17:30Z,Access Time,FILE,Web Server Log,GET /finance/restricted/board_minutes_confidential.docx - 200 OK - User: svc_batch_finance,MERIDIAN-FS01/access.log
-2024-03-15T02:20:00Z,Event Recorded,EVT,System Event Log,[7045] SERVICE INSTALLED - svcupd - Path: C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe,MERIDIAN-FIN-WS01/System.evtx
-2024-03-15T02:28:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=clear+windows+event+log+powershell [SEARCH TERM: clear windows event log powershell],MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:31:00Z,Access Time,FILE,Web Server Log,GET /finance/restricted/ - 200 OK [Directory listing — final access before log clear],MERIDIAN-FS01/access.log
-2024-03-15T02:31:15Z,Event Recorded,EVT,Windows Security Event Log,[1102] SECURITY LOG CLEARED - Account: svc_batch_finance@MERIDIAN - LogonID: 0x3f7a22,MERIDIAN-FIN-WS01/Security.evtx
-2024-03-15T02:32:00Z,Last Visited Time,WEBHIST,Chrome History,https://outlook.office.com/mail/ (Inbox - cover activity),MERIDIAN-FIN-WS01/Chrome/History
-2024-03-15T02:35:00Z,Event Recorded,MEMORY,Memory Acquisition,avml: memory image captured by IR analyst (MERIDIAN-FIN-WS01 — 16GB physical RAM),MERIDIAN-FIN-WS01/memory.img
+2024-03-15T01:45:00Z,Last Visited Time,WEBHIST,Chrome History,https://outlook.office.com/mail/ (Inbox - corp webmail) [visit count: 8],BEACHHEAD-WS01/Chrome/History
+2024-03-15T01:52:00Z,Last Visited Time,WEBHIST,Chrome History,https://intranet.corp.internal/hr/policies (HR Policies) [visit count: 3],BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:00:01Z,Content Modification Time,FILE,NTFS $MFT,C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - type: Executable,BEACHHEAD-WS01/$MFT
+2024-03-15T02:00:01Z,Creation Time,FILE,NTFS $MFT,"C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - CREATED [$FN: 2024-03-15T02:00:01Z, $SI: 2019-06-18T11:22:44Z]",BEACHHEAD-WS01/$MFT
+2024-03-15T02:05:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=how+to+exfiltrate+files+undetected [SEARCH TERM: how to exfiltrate files undetected],BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:06:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=smb+share+anonymous+upload+windows [SEARCH TERM: smb share anonymous upload windows],BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:08:00Z,Last Visited Time,WEBHIST,Chrome History,https://mega.nz/#!upload (MEGA Cloud Storage) [visit count: 2],BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:09:10Z,Download Started,WEBHIST,Chrome Downloads,Downloaded: update_patch.exe from https://pastebin.com/raw/Xk7mN3qP (184832 bytes),BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:09:55Z,Event Recorded,EVT,Windows Security Event Log,[4625] FAILED LOGON - Account: Administrator - Source: 10.99.4.22 - Status: 0xc000006d (wrong password),BEACHHEAD-WS01/Security.evtx
+2024-03-15T02:10:44Z,Event Recorded,EVT,Windows Security Event Log,[4624] LOGON SUCCESS - Account: jsmith - Logon Type: 3 (Network) - Source IP: 10.99.4.22,BEACHHEAD-WS01/Security.evtx
+2024-03-15T02:11:02Z,Event Recorded,EVT,Windows Security Event Log,[4688] PROCESS CREATED - cmd.exe - Parent: svcupd.exe (PID 1640) - CMD: cmd.exe /c powershell -enc JABjAD0A...,BEACHHEAD-WS01/Security.evtx
+2024-03-15T02:11:03Z,Event Recorded,EVT,Windows Security Event Log,[4688] PROCESS CREATED - powershell.exe - Parent: cmd.exe (PID 2856) - CMD: powershell -enc JABjAD0A...,BEACHHEAD-WS01/Security.evtx
+2024-03-15T02:11:04Z,Event Recorded,NETCONN,Network Connection,TCP ESTABLISHED: powershell.exe (PID 6893) -> 10.99.4.22:443 [C2 connection],BEACHHEAD-WS01/Memory
+2024-03-15T02:11:08Z,Access Time,FILE,NTFS $MFT,C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe - EXECUTED (Prefetch: SVCUPD.EXE-ABCD1234.pf),BEACHHEAD-WS01/Prefetch
+2024-03-15T02:11:10Z,Registry Value Modified,REG,Windows Registry,NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Run: BackupHelper = powershell.exe -WindowStyle Hidden -enc JABjAD0A...,BEACHHEAD-WS01/NTUSER.DAT
+2024-03-15T02:12:44Z,Event Recorded,NETCONN,Network Connection,TCP ESTABLISHED: notepad.exe (PID 3124) -> 10.99.4.22:4444 [INJECTION — notepad has no network use],BEACHHEAD-WS01/Memory
+2024-03-15T02:15:00Z,Access Time,FILE,Web Server Log,GET /finance/restricted/Q1_2024_payroll.xlsx - 200 OK - User: jsmith - Client: 10.10.1.15,FILESHARE-SRV01/access.log
+2024-03-15T02:15:44Z,Registry Value Modified,REG,Windows Registry,NTUSER.DAT\Explorer\RecentDocs\MRU_0 = Q1_2024_payroll.xlsx,BEACHHEAD-WS01/NTUSER.DAT
+2024-03-15T02:17:30Z,Access Time,FILE,Web Server Log,GET /finance/restricted/board_minutes_confidential.docx - 200 OK - User: jsmith,FILESHARE-SRV01/access.log
+2024-03-15T02:20:00Z,Event Recorded,EVT,System Event Log,[7045] SERVICE INSTALLED - svcupd - Path: C:\ProgramData\Microsoft\WindowsDefender\Update\svcupd.exe,BEACHHEAD-WS01/System.evtx
+2024-03-15T02:28:00Z,Last Visited Time,WEBHIST,Chrome History,https://www.google.com/search?q=clear+windows+event+log+powershell [SEARCH TERM: clear windows event log powershell],BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:31:00Z,Access Time,FILE,Web Server Log,GET /finance/restricted/ - 200 OK [Directory listing — final access before log clear],FILESHARE-SRV01/access.log
+2024-03-15T02:31:15Z,Event Recorded,EVT,Windows Security Event Log,[1102] SECURITY LOG CLEARED - Account: jsmith@CORP - LogonID: 0x3f7a22,BEACHHEAD-WS01/Security.evtx
+2024-03-15T02:32:00Z,Last Visited Time,WEBHIST,Chrome History,https://outlook.office.com/mail/ (Inbox - cover activity),BEACHHEAD-WS01/Chrome/History
+2024-03-15T02:35:00Z,Event Recorded,MEMORY,Memory Acquisition,avml: memory image captured by IR analyst (BEACHHEAD-WS01 — 16GB physical RAM),BEACHHEAD-WS01/memory.img

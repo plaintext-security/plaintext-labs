@@ -2,16 +2,8 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
-!!! warning "Lab environment status — to be built & validated (Phase 2)"
-    The Docker environment for this lab is **not yet built or validated**. The `plaintext-labs/defensive/19-reviewing-ai-detections/`
-    directory currently holds this `lab.md` and the build spec below; the `docker-compose.yml`, `Makefile`,
-    seed data (the flawed AI-drafted artifacts + the labelled corpus), and `demo` target are **Phase 2 work**.
-    Until `make up && make demo && make down` is green on a clean Linux runner, treat the commands below as the
-    intended shape, not a tested path. (No `.ci-demo` marker is added until then — see the honor-system note in
-    the repo's `CLAUDE.md`.)
-
 ## Setup
-This will be a **reference lab** — a one-command environment in the companion
+This is a **reference lab** — a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. Planned shape:
 
 ```bash
@@ -40,7 +32,7 @@ Planned contents:
 > Everything runs locally against bundled artifacts you own. No external targets, no authorization needed.
 
 ## Scenario
-Meridian's SOC has started using an AI assistant to draft detections and triage tickets at volume — and
+The SOC has started using an AI assistant to draft detections and triage tickets at volume — and
 the backlog cleared overnight, which made everyone happy and nobody suspicious. Your lead, uneasy, hands
 you the last batch the assistant produced and asks for a proper review *before* any of it goes live or any
 of those tickets stay closed. Find what's wrong, prove it, fix it, and write the policy that decides what

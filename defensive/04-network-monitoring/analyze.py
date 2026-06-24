@@ -129,7 +129,7 @@ def detect_large_outbound(conn_records: list[dict], threshold: int = 1_000_000) 
 
 def main() -> int:
     print("=" * 62)
-    print("Meridian Financial — Zeek Log Analysis")
+    print("SOC — Zeek Log Analysis")
     print(f"Reading logs from: {ZEEK_DIR}")
     print("=" * 62)
 

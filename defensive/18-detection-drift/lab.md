@@ -2,15 +2,8 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
-!!! warning "Lab environment status — to be built & validated (Phase 2)"
-    The Docker environment for this lab is **not yet built or validated**. The `plaintext-labs/defensive/18-detection-drift/`
-    directory currently holds this `lab.md` and the build spec below; the `docker-compose.yml`, `Makefile`,
-    seed data, and `demo` target are **Phase 2 work**. Until `make up && make demo && make down` is green on a
-    clean Linux runner, treat the commands below as the intended shape, not a tested path. (No `.ci-demo`
-    marker is added until then — see the honor-system note in the repo's `CLAUDE.md`.)
-
 ## Setup
-This will be a **reference lab** — a one-command environment in the companion
+This is a **reference lab** — a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. Planned shape:
 
 ```bash
@@ -36,7 +29,7 @@ Planned contents:
 > Everything runs locally against bundled data you own. No external targets, no authorization needed.
 
 ## Scenario
-Meridian Financial's SOC stood up its detection stack last quarter and signed off as "fully covered."
+A corporate SOC stood up its detection stack last quarter and signed off as "fully covered."
 It is now a month later. Overnight, three things happened that nobody noticed: a workstation's agent
 cert expired and it stopped logging, a busy server's collector started choking and now ships a tenth of
 its events, and a Windows update renamed a field that one of your best rules depends on. Every dashboard

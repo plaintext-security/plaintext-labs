@@ -1,5 +1,5 @@
 {
-  "name": "Plaintext \u2014 Meridian detection coverage",
+  "name": "Plaintext \u2014 SOC detection coverage",
   "domain": "enterprise-attack",
   "versions": {
     "layer": "4.5",

@@ -1,4 +1,4 @@
-# Declared baseline for Meridian's telemetry estate.
+# Declared baseline for the corp.local telemetry estate.
 #
 # This is the "expected" half of the expected-vs-observed comparison. You tune
 # these numbers against YOUR real baseline — the values below are the seed
@@ -17,25 +17,25 @@
 reference_window_s: 1800          # 30-minute sample window the seed data spans
 
 sources:
-  - name: MER-WK21
+  - name: WIN10-01
     description: Analyst workstation (Sysmon agent)
     heartbeat_interval_s: 600     # expect an event at least every 10 min
     volume_floor: 8               # baseline ~12/window; floor at 2/3
     decommissioned: false
 
-  - name: MER-FS01
+  - name: FS01
     description: Finance file server (busy collector)
     heartbeat_interval_s: 300
     volume_floor: 20              # baseline ~30/window; degradation tell
     decommissioned: false
 
-  - name: MER-DC01
+  - name: DC01
     description: Domain controller (security log forwarder)
     heartbeat_interval_s: 600
     volume_floor: 6
     decommissioned: false
 
-  - name: MER-LEGACY03
+  - name: LEGACY03
     description: Legacy app host (scheduled for retirement)
     heartbeat_interval_s: 900
     volume_floor: 3

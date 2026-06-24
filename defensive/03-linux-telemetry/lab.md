@@ -11,12 +11,19 @@ cd plaintext-labs/defensive/03-linux-telemetry
 make up
 ```
 
-This builds a Ubuntu 22.04 container with osquery 5.12.1 installed. A bundled
-`data/audit.log` (realistic synthetic events including a privilege-escalation
+This builds a Ubuntu 22.04 container with osquery 5.12.1 installed. A small bundled
+`data/audit_events.txt` (a real-format auditd capture including a privilege-escalation
 sequence) and `data/audit.rules` are pre-loaded. Run `make demo` to see the
 audit-log parser flag suspicious executions and osquery answer live host-state
 questions from inside the container. Use `make shell` to drop into a shell and
 run your own `osqueryi` queries.
+
+**Get real telemetry.** Run `make fetch-data` to pull the genuine loghub
+`Linux_2k.log` (2000 lines of a real Linux syslog, host `combo`) for comparison.
+And the honest way to make *auditd* talk: deploy `data/audit.rules` on a host you
+own and run an Atomic Red Team test (e.g. **T1136.001 — Create Account**) to
+generate real execution records, then analyze your own capture. Source URLs,
+license, and the exact ART steps are in `data/PROVENANCE.md`.
 
 ## Scenario
 Turn a Linux host into a sensor and capture the telemetry from a real (simulated) attacker action.

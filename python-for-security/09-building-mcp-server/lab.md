@@ -2,27 +2,34 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+> **Lab environment: real-feed rewire — validation deferred.** The backing threat-intel API now
+> serves real abuse.ch data (Feodo Tracker + URLhaus) from `feeds/db.json`, shared with module 04.
+> `make up && make demo && make down` has **not** yet been re-run on a clean Linux runner against
+> this change; validate before marking the lab done.
 
 ## Setup
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/09-building-mcp-server
-make up        # starts mock threat-intel API + MCP server container
-make demo      # starts the server and makes a test tool call via the MCP client
+make up        # starts the real-feed threat-intel API + MCP server container
+make demo      # starts the server and makes test tool calls via the MCP client
+make refresh   # (optional, needs network) re-fetch the LIVE abuse.ch feeds into feeds/db.json
 make shell
 make down
 ```
 
-Two containers: the **mock threat-intel API** (reused from module 04) and the **MCP server
-container** with `fastmcp`, `httpx`, and `python-dotenv` installed. `make demo` starts the
-server and uses a small Python MCP client (`test_call.py`) to invoke the `enrich_ip` tool and
-print the result — no LLM host required.
+Two containers: the **real-feed threat-intel API** (reused from module 04 — abuse.ch Feodo
+Tracker + URLhaus, served locally from `feeds/db.json` with `source`/`fetched_at` provenance) and
+the **MCP server container** with `fastmcp`, `httpx`, and `python-dotenv` installed. `make demo`
+starts the server and uses a small Python MCP client (`test_call.py`) to invoke the `enrich_ip`
+tool against real malicious C2 IPs and print the result — no LLM host required.
 
 ## Scenario
-Meridian's security team wants to expose the IOC enrichment function to Claude so analysts can
-ask "Is this IP malicious?" in a chat window and get an enriched answer immediately. Your task:
-build an MCP server that exposes `enrich_ip` as a tool, backed by the mock API. The server must
-validate input, handle API errors gracefully, and return a structured result the LLM can parse.
+Your security team wants to expose the IOC enrichment function to Claude so analysts can ask "Is
+this IP malicious?" in a chat window and get an enriched answer immediately — answered from real
+abuse.ch threat intel. Your task: build an MCP server that exposes `enrich_ip` as a tool, backed
+by the API. The server must validate input, handle API errors gracefully, and return a structured
+result the LLM can parse.
 
 ## Do
 1. [ ] `make demo` — watch the test client call the reference `server.py` and print the enriched
@@ -30,11 +37,11 @@ validate input, handle API errors gracefully, and return a structured result the
 2. [ ] Write `server.py` using `fastmcp`:
    ```python
    import fastmcp, httpx, os, re
-   mcp = fastmcp.FastMCP("meridian-security")
+   mcp = fastmcp.FastMCP("ioc-enrichment")
 
    @mcp.tool
    def enrich_ip(ip: str) -> dict:
-       """Enrich an IP address with threat-intel data from the Meridian API."""
+       """Enrich an IP address with real threat-intel data (abuse.ch Feodo Tracker + URLhaus)."""
        ...
    ```
    - Validate `ip` matches `r"^\d{1,3}(\.\d{1,3}){3}$"` before calling the API; return
@@ -46,8 +53,8 @@ validate input, handle API errors gracefully, and return a structured result the
    returns valid JSON.
 4. [ ] Test the validation: call with `{"ip": "not-an-ip"}` — confirm it returns the error dict
    without raising an exception.
-5. [ ] Test the 404 case: call with `{"ip": "1.2.3.4"}` (mock API returns 404 for this IP) —
-   confirm `{"verdict": "unknown"}` is returned.
+5. [ ] Test the 404 case: call with `{"ip": "192.0.2.200"}` (not in the feed snapshot — the API
+   returns 404 for this IP) — confirm `{"verdict": "unknown"}` is returned.
 
 ## Success criteria — you're done when
 - [ ] `server.py` starts without error.
@@ -60,11 +67,11 @@ validate input, handle API errors gracefully, and return a structured result the
 `server.py` + `test_call.py` (the client used to verify). Commit both.
 
 ## Automate & own it
-**Required.** Add a second tool: `enrich_hash(hash_value: str) -> dict` that validates the
-input (must be 32 or 64 hex chars) and queries the mock VT hash endpoint. Have a model draft
-the tool; review the input validation regex — does it reject a 63-character string? A 64-char
-string with a non-hex character? Write two test calls in `test_call.py` that catch those edge
-cases. Commit the extended server.
+**Required.** Add a second tool: `enrich_sample(sample_id: str) -> dict` that validates the
+input (a numeric URLhaus sample id) and queries the `/api/v3/hash/<sample_id>` endpoint, returning
+the real URLhaus verdict, threat tags, and `urlhaus_link`. Have a model draft the tool; review the
+input validation — does it reject a non-numeric id? An empty string? Write two test calls in
+`test_call.py` that catch those edge cases. Commit the extended server.
 
 ## AI acceleration
 Ask a model to add docstrings to both tools — `fastmcp` uses the docstring as the tool

@@ -1,0 +1,4 @@
+# Fetched by `make fetch-data` — not committed. The small committed seed
+# (sysmon_events.json) stays in the repo.
+EVTX-ATTACK-SAMPLES/
+real_sysmon_events.json

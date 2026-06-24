@@ -11,11 +11,18 @@ cd plaintext-labs/defensive/01-telemetry
 make up
 ```
 
-This drops you into a Python container with `pipeline.py` and a bundled
-sshd log sample (`data/ssh_auth.txt`, loghub-format). Run `make demo` to
+This drops you into a Python container with `pipeline.py` and a small bundled
+sshd log seed (`data/ssh_auth.txt`, loghub-format). Run `make demo` to
 walk all three pipeline stages: raw ingest → structured records (NL-JSON)
 → four analyst queries → gap analysis. The lab's `pipeline.py` is the
 starting point for your own ingest script.
+
+**Use the real dataset.** Run `make fetch-data` to pull the genuine loghub
+`OpenSSH_2k.log` — 2000 lines of a real `sshd` auth log (host `LabSZ`) full of
+live internet brute-force traffic. Once fetched, `pipeline.py` analyzes the real
+log automatically (it falls back to the committed seed when the log is absent, so
+`make demo` still runs offline). Provenance, source URL, and citation are in
+`data/PROVENANCE.md`.
 
 For the full Elasticsearch + Kibana path described in step 3, spin those
 up separately and point them at the NL-JSON the script writes to

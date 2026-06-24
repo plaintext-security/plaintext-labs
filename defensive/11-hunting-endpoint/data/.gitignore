@@ -1,0 +1,6 @@
+# Ignore the cloned EVTX-ATTACK-SAMPLES repo and any raw .evtx fetched by `make fetch-data`.
+EVTX-ATTACK-SAMPLES/
+*.evtx
+
+# Re-include the committed seed — curated data, not a generated artifact.
+!sysmon_events.json

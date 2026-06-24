@@ -1,6 +1,6 @@
 # Module 08 — Detection-as-Code lab.
 # Standard targets every reference lab provides: up / down / reset / demo.
-.PHONY: up down reset demo shell convert detect
+.PHONY: up down reset demo shell convert detect fetch-data
 
 up:        ## Build and start the lab container
 	docker compose up -d --build
@@ -29,4 +29,16 @@ convert:   ## make convert RULE=detection.yml — convert your rule to SPL
 
 detect:    ## make detect RULE=detection.yml — run your rule against the sample data
 	docker compose run --rm lab python detect.py $(RULE) data/events.jsonl
+
+# --- Real attacker-tooling event (deferred; not run in CI) ----------------
+# Pull a genuine encoded-PowerShell test from Atomic Red Team T1059.001 and convert
+# it into the events.jsonl shape detect.py consumes. See data/PROVENANCE.md.
+ART_T1059_001_URL ?= https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/T1059.001/T1059.001.yaml
+fetch-data: ## Download the real ART T1059.001 atomics and convert → data/real_events.jsonl
+	@mkdir -p data/raw
+	@echo "Downloading $(ART_T1059_001_URL) ..."
+	curl -fL -o data/raw/T1059.001.yaml "$(ART_T1059_001_URL)"
+	docker compose run --rm lab python convert_atomic.py data/raw/T1059.001.yaml data/real_events.jsonl
+	@echo "Done. Real encoded-PowerShell event(s) in data/real_events.jsonl."
+	@echo "Fire your rule at them:  make detect RULE=detection.yml  (point detect.py at data/real_events.jsonl)"
 

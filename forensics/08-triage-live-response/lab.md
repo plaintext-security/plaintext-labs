@@ -26,13 +26,21 @@ files), and prints the results to stdout without any GUI interaction required.
 
 ## Scenario
 
-Meridian Financial's SIEM fired a high-severity alert: a PowerShell-like interpreter process
-spawned under the developer account `mfin\dev-svc01` on `WORKSTATION-04`. Your task is to
+The affected organization's SIEM fired a high-severity alert: a suspicious interpreter process
+spawned under the user account `CORP\jsmith` on `BEACHHEAD-WS01`. Your task is to
 determine whether the activity is isolated to that one host or whether the attacker has moved
 laterally to other systems. You have thirty minutes before the on-call manager needs a scope
 estimate.
 
-The lab simulates Meridian's environment as a single enrolled endpoint. Run the same triage
+This scenario is modeled on a real intrusion — **The DFIR Report's "From a Single Click: How
+Lunar Spider Enabled a Near Two-Month Intrusion"** (2025-09-29), where a malicious JavaScript file
+disguised as a tax form (`Form_W-9*.js`) led to an MSI that dropped the **Latrodectus** loader,
+followed by Brute Ratel C4 / Cobalt Strike beacons and, two months later, Rclone exfiltration
+(renamed `sihosts.exe`). The triage question in that case was exactly this one: is the beachhead
+host isolated, or has the actor already spread? See
+<https://thedfirreport.com/2025/09/29/from-a-single-click-how-lunar-spider-enabled-a-near-two-month-intrusion/>.
+
+The lab simulates the environment as a single enrolled endpoint. Run the same triage
 workflow a real responder would execute against the full fleet.
 
 > Only examine evidence you are authorised to handle. In a real engagement, Velociraptor
@@ -60,7 +68,13 @@ workflow a real responder would execute against the full fleet.
    for full imaging" or "low confidence, monitor"? Write a one-paragraph triage note that a
    non-technical manager could read, citing each artifact finding.
 
-5. [ ] **Explore the GUI** (optional but recommended): open `http://localhost:8889` in your
+5. [ ] **Cross-reference a real artifact.** The demo data is synthetic, but the *shape* of a real
+   triage artifact is worth seeing. Pull a genuine process/persistence event sample from
+   [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) (e.g. a
+   `Persistence/` or `Execution/` EVTX), or run `make fetch-data` to download one, and note how a
+   real Windows event log encodes the same parent/child and image-path signals you flagged above.
+
+6. [ ] **Explore the GUI** (optional but recommended): open `http://localhost:8889` in your
    browser (credentials in `make up` output) and find the enrolled client. Browse the
    "Collected Artifacts" for the demo run — see how the server stores results for later analysis.
 
@@ -103,8 +117,8 @@ skill the job pays for.
 ## Connects forward
 
 Module 09 (Network Forensics) picks up the network connection you identified here and reconstructs
-the session from a PCAP. Module 13 (IR Process) uses the triage note format as the input to the
-NIST containment decision.
+the session from a real infection PCAP. Module 13 (IR Process) uses the triage note format as the
+input to the NIST containment decision.
 
 ## Marketable proof
 

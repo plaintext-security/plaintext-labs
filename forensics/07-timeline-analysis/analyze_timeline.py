@@ -49,7 +49,7 @@ def main():
     data_dir = os.path.join(os.path.dirname(__file__), "data")
     timeline_path = os.path.join(data_dir, "timeline.csv")
 
-    print("\nMeridian Financial IR — Super-Timeline Analysis")
+    print("\nIR — Super-Timeline Analysis (BEACHHEAD-WS01)")
     print("Incident Window: 2024-03-15 02:00:00 – 02:35:00 UTC\n")
 
     events = load_timeline(timeline_path)
@@ -90,12 +90,12 @@ def main():
   02:05 — Browser searches for exfiltration methods (attacker using browser during intrusion)
   02:09 — Failed logon attempt from 10.99.4.22 against Administrator account
   02:09 — update_patch.exe downloaded from pastebin.com (second-stage payload)
-  02:10 — Successful network logon as svc_batch_finance from 10.99.4.22
+  02:10 — Successful network logon as jsmith from 10.99.4.22
   02:11 — Execution chain: svcupd.exe -> cmd.exe -> powershell.exe -enc [reverse shell]
   02:11 — C2 connection established: powershell.exe -> 10.99.4.22:443
   02:11 — Persistence installed: Registry Run key with encoded PowerShell dropper (T1547.001)
   02:12 — notepad.exe injected with PE payload; outbound connection to 10.99.4.22:4444 (T1055)
-  02:15 — File access begins on \\\\meridian-fs01\\finance\\restricted (Q1_2024_payroll.xlsx)
+  02:15 — File access begins on \\\\FILESHARE-SRV01\\finance\\restricted (Q1_2024_payroll.xlsx)
   02:17 — Additional restricted files accessed (board_minutes_confidential.docx)
   02:20 — Service installed for persistence: svcupd as Windows service (T1543.003)
   02:28 — Browser search for log clearing techniques

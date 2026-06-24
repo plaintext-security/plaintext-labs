@@ -24,7 +24,7 @@ The exploit **target** is a Vulhub environment pulled on demand (`make target-up
 committed, because it's a known-vulnerable image you stand up only inside the lab.
 
 ## Scenario
-You run detection engineering for Meridian Financial. Every week new entries land on CISA's KEV
+You run detection engineering for a financial-services SOC. Every week new entries land on CISA's KEV
 catalog — confirmed exploited in the wild. Your job: take a *current* KEV entry that you can actually
 stand up, exploit it the way an attacker would, and ship the detection that catches it. You exploit it
 precisely so you can prove your detection fires on the real attack traffic and stays quiet on the rest.

@@ -2,39 +2,49 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
+> **Lab environment: real-target rewire — validation deferred.** The scan target is now a real
+> intentionally-vulnerable image (Apache Solr 8.11.0, the Vulhub Log4Shell / CVE-2021-44228
+> reference) instead of a toy echo server. `make up && make demo && make down` has **not** yet been
+> re-run on a clean Linux runner; validate before marking the lab done.
 
 ## Setup
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/06-network-programming
-make up        # starts the TCP echo server + student container
+make up        # starts the Solr target + student container
 make demo      # runs the reference scanner + banner grabber + sniffer
 make shell     # interactive shell in student container
 make down
 ```
 
-Two containers: a **TCP echo server** (`target`) that listens on ports 22, 80, 443, and 8080
-with simple banners; and the **student container** with `scapy` and standard library only.
-Everything runs on the compose network — no external hosts involved.
+Two containers: a **real intentionally-vulnerable target** (`target`) — Apache Solr 8.11.0, the
+[Vulhub Log4Shell / CVE-2021-44228 reference image](https://github.com/vulhub/vulhub/tree/master/log4j/CVE-2021-44228),
+which serves a genuine HTTP/Jetty admin interface on port **8983** and a JDWP debug listener on
+port **5005**; and the **student container** with `scapy` and standard library only. Both share a
+user-defined bridge network (`lab-net`), so the student container reaches the target by hostname
+`target`. No external hosts involved.
 
 > **Authorization note:** Only scan and probe the `target` container in this lab. Never run
 > these tools against systems you don't own or lack written permission to test.
 
 ## Scenario
-You're building a lightweight scanner for Meridian's internal asset validation pipeline — not
-to replace `nmap`, but to understand what a scanner does so you can configure and interpret one
-intelligently. You'll write a port scanner, grab banners from open ports, and capture a small
-packet trace with `scapy` to verify the TCP handshake is what you think it is.
+You're building a lightweight scanner for internal asset validation — not to replace `nmap`, but
+to understand what a scanner does so you can configure and interpret one intelligently. You'll
+point it at a real service (a vulnerable Apache Solr instance), write a port scanner, grab banners
+from open ports, and capture a small packet trace with `scapy` to verify the TCP handshake is what
+you think it is.
 
 ## Do
 1. [ ] Write `scanner.py` that:
-   - Accepts `--host` and `--ports` arguments (e.g., `--ports 22,80,443,8080`).
+   - Accepts `--host` and `--ports` arguments (e.g., `--ports 8983,5005,9999`).
    - Uses `socket.connect_ex()` to check each port; `settimeout(1.0)`.
    - Prints a table: port, status (OPEN/CLOSED), and banner (if open).
    - For OPEN ports, grabs the banner by `recv(1024)`; handles services that don't send until
-     you probe by sending `b"HEAD / HTTP/1.0\r\n\r\n"` for port 80.
-2. [ ] Run `python scanner.py --host target --ports 22,80,443,8080,9999`. Port 9999 is not
-   listening — confirm it shows CLOSED and does not hang.
+     you probe by sending `b"HEAD / HTTP/1.0\r\n\r\n"` for the HTTP port. (Solr's admin HTTP
+     listens on **8983**, not 80 — probe that port to draw out the Jetty/Solr banner.)
+2. [ ] Run `python scanner.py --host target --ports 8983,5005,9999`. Port **8983** is the Solr
+   HTTP admin (OPEN), **5005** is the JDWP debug listener (OPEN if exposed by the image), and
+   **9999** is not listening — confirm 9999 shows CLOSED and does not hang.
 3. [ ] Write `sniffer.py` using `scapy.sniff()`:
    - Capture 20 packets on the compose network interface while your scanner runs.
    - For each captured TCP packet, print: src IP, dst IP, src port, dst port, TCP flags.
@@ -45,7 +55,8 @@ packet trace with `scapy` to verify the TCP handshake is what you think it is.
 5. [ ] **Prove it with a test you wrote (the ownership half).** Don't stop at "the counts make
    sense." Write `test_scanner.py` that imports your scan function and asserts its verdicts against
    the fixed `target` port set:
-   - Scanning `target` returns **OPEN** for 22, 80, 443, 8080 and **CLOSED** for 9999 — assert each.
+   - Scanning `target` returns **OPEN** for 8983 (and 5005, if the image exposes JDWP) and
+     **CLOSED** for 9999 — assert each.
    - The scan **does not hang** on the closed port (a bounded `settimeout` means the test returns
      promptly).
    - If `scapy` capture runs in your environment, add a check that `rdpcap("output/scan.pcap")`
@@ -59,12 +70,14 @@ packet trace with `scapy` to verify the TCP handshake is what you think it is.
 6. [ ] Run `make demo` and compare your output with the reference.
 
 ## Success criteria — you're done when
-- [ ] `scanner.py` correctly identifies all four open ports and the one closed port, with banners.
+- [ ] `scanner.py` correctly identifies the open Solr port(s) (8983, and 5005 if exposed) and the
+  closed port (9999), with a banner for the HTTP port.
 - [ ] `scanner.py` does not hang on a closed or filtered port.
 - [ ] `output/scan.pcap` exists and is readable by `rdpcap()`.
 - [ ] The SYN/SYN-ACK/RST counts in step 4 make sense given what you scanned.
-- [ ] `test_scanner.py` asserts OPEN for 22/80/443/8080 and CLOSED for 9999 (plus, where `scapy`
-  capture is available, ≥1 SYN-ACK and ≥1 RST), and passes under `python -m pytest test_scanner.py`.
+- [ ] `test_scanner.py` asserts OPEN for 8983 (and 5005 if exposed) and CLOSED for 9999 (plus,
+  where `scapy` capture is available, ≥1 SYN-ACK and ≥1 RST), and passes under
+  `python -m pytest test_scanner.py`.
 
 ## Deliverables
 `scanner.py` + `sniffer.py` + `test_scanner.py`. Commit all three. Add `output/` to `.gitignore`.

@@ -13,4 +13,4 @@ shell:
 	docker compose exec lab bash
 
 demo:      ## Run reference scanner + banner grabber against the target container
-	docker compose run --rm lab python scanner.py --host target --ports 22,80,443,8080,9999
+	docker compose run --rm lab python scanner.py --host target --ports 8983,5005,9999

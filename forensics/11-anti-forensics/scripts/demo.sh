@@ -1,11 +1,11 @@
 #!/bin/sh
-# demo.sh — demonstrates anti-forensics detection on the Meridian disk image.
+# demo.sh — demonstrates anti-forensics detection on the lab disk image.
 set -e
 
 IMG=/data/disk.img
 
 echo "============================================================"
-echo "  Meridian Financial — Anti-Forensics Detection Demo"
+echo "  Anti-Forensics Detection Demo (anchor: Lunar Spider)"
 echo "  Image: $IMG"
 echo "============================================================"
 echo ""
@@ -32,14 +32,14 @@ echo "--- All entries including deleted (fls -ra) ---"
 fls -r -a "$IMG" 2>&1
 echo ""
 
-echo "--- Inode detail for svchost32.exe ---"
-# Find the inode for svchost32.exe
-INODE=$(fls -r "$IMG" 2>/dev/null | grep -i "svchost32" | grep -oE '[0-9]+:' | head -1 | tr -d ':')
+echo "--- Inode detail for sihosts.exe ---"
+# Find the inode for sihosts.exe (renamed rclone, per the Lunar Spider exfil chain)
+INODE=$(fls -r "$IMG" 2>/dev/null | grep -i "sihosts" | grep -oE '[0-9]+:' | head -1 | tr -d ':')
 if [ -n "$INODE" ]; then
     echo "Inode: $INODE"
     istat "$IMG" "$INODE" 2>&1
 else
-    echo "(svchost32.exe not found in listing — check fls output above)"
+    echo "(sihosts.exe not found in listing — check fls output above)"
 fi
 echo ""
 
@@ -49,10 +49,14 @@ echo ""
 
 echo "============================================================"
 echo "  KEY FINDINGS:"
-echo "  - svchost32.exe: mtime set to 2019 via touch"
+echo "  - sihosts.exe: mtime set to 2019 via touch"
 echo "  - All other files have 2024 timestamps consistent with"
 echo "    workstation deployment date"
 echo "  - notes.txt deleted from directory — may be recoverable"
 echo "    via icat on unallocated inode"
 echo "  Action: Document timestamp discrepancy; attempt icat recovery."
+echo ""
+echo "  Real artifact: the timestomp EVTX sample fetched by"
+echo "  'make fetch-data' (Sysmon EID 2, file-creation-time modified)"
+echo "  shows the same technique (T1070.006) in a real Windows log."
 echo "============================================================"

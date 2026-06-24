@@ -16,19 +16,32 @@ make shell     # drop in to work interactively
 make down      # stop when done
 ```
 
-**About the memory image:** Full Windows memory images are gigabytes in size — too large to commit.
-This lab ships `data/memory-sample.json` — pre-processed Volatility3 output (pslist, netscan,
-cmdline, malfind) from a synthetic Meridian incident scenario. The demo analyzes this output directly.
+**The real artifact — MemLabs Lab 1 "Beginner's Luck":** the primary memory image for this lab is a
+**real Windows memory dump** from the public [MemLabs](https://github.com/stuxnet999/MemLabs) CTF
+challenge set (by stuxnet999), analyzable end-to-end with Volatility3. Use **Lab 1 "Beginner's
+Luck"** — its folder is
+[`MemLabs/tree/master/MemLabs Lab Setup`](https://github.com/stuxnet999/MemLabs/tree/master/MemLabs%20Lab%20Setup);
+the per-lab README in the repo links the (Google-Drive-hosted, ~1GB) image. Follow that README to
+fetch it — do **not** trust any direct Drive URL printed elsewhere. `make fetch-data` prints these
+instructions. Once you have the image:
+1. Place it at `data/memory.img` (not committed — it is large and gitignored).
+2. Run `make analyze IMAGE=data/memory.img` to run Volatility3 plugins against the real dump.
 
-**To run Volatility3 against a real memory image yourself:**
-1. Acquire a training image from [MemLabs](https://github.com/stuxnet999/MemLabs) (free, ~1GB, publicly licensed for learning).
-2. Place it in `data/memory.img` (not committed — add to `.gitignore`).
-3. Run `make analyze IMAGE=data/memory.img` to run Volatility3 plugins against it.
+**Offline demo seed:** full memory images are gigabytes — too large to commit — so the demo also
+ships `data/memory-sample.json`, pre-processed Volatility3 output (pslist, netscan, cmdline,
+malfind) modelled on the Lunar Spider intrusion (see `../ANCHOR.md`) with neutral naming. `make
+demo` analyzes this output directly so the lab runs before you fetch the real image.
 
-> Only analyze memory images you have explicit authorization to examine.
+> Only analyze memory images you have explicit authorization to examine. MemLabs images are
+> published for training/CTF use.
 
 ## Scenario
-The Meridian IR team captured a memory image from `MERIDIAN-FIN-WS01` before shutdown (collected using `avml` per Module 02 procedures). The image has been processed through Volatility3; the plugin output is in `data/memory-sample.json`. Your task is to analyze the process list, network connections, command lines, and injection findings to answer: **What malware ran? How did it persist in memory? What network connections did it make?**
+Work the **MemLabs Lab 1 "Beginner's Luck"** real memory dump as the primary image (fetch per the
+MemLabs repo README). The offline seed (`data/memory-sample.json`) mirrors the technique chain of the
+**Lunar Spider** intrusion (`../ANCHOR.md`): a memory image was captured from `BEACHHEAD-WS01` before
+shutdown (collected with `avml` per Module 02). Your task is the same against either image — analyze
+the process list, network connections, command lines, and injection findings to answer: **What ran?
+How did it persist in memory? What network connections did it make?**
 
 > Only analyze memory images you are authorised to examine. A memory image contains everything running on the system at capture time, including sensitive data.
 

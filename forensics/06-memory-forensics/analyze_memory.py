@@ -112,8 +112,8 @@ def main():
     data_dir = os.path.join(os.path.dirname(__file__), "data")
     sample_path = os.path.join(data_dir, "memory-sample.json")
 
-    print("\nMeridian Financial IR — Memory Forensics Analysis")
-    print("Host: MERIDIAN-FIN-WS01.meridian.internal")
+    print("\nIR — Memory Forensics Analysis")
+    print("Host: BEACHHEAD-WS01.corp.internal")
     print("Image captured: 2024-03-15T02:35:00Z\n")
 
     data = load_sample(sample_path)

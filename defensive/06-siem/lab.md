@@ -13,21 +13,27 @@ make demo    # ingests multi-source events, runs 6 correlation rules, prints ale
 make down
 ```
 
-Bundled data: `data/events.json` — 18 normalized events from four
-sources (Sysmon, Zeek, Suricata, sshd) covering two simultaneous
-incidents: an Office-macro phishing compromise on WS-JSMITH and an
-SSH brute-force success on SRV-01. The `siem.py` harness implements
-the four core SIEM operations — ingest/normalize, correlate, alert,
-query — using SQLite so you write real SQL rules without a
-multi-GB Elasticsearch cluster.
+Bundled data: `data/events.json` — a curated, normalized seed of 18
+events from four sources (Sysmon, Zeek, Suricata, sshd) covering two
+simultaneous incidents: an Office-macro phishing compromise on
+WIN10-01 and an SSH brute-force success on SRV-01. The `siem.py`
+harness implements the four core SIEM operations — ingest/normalize,
+correlate, alert, query — using SQLite so you write real SQL rules
+without a multi-GB Elasticsearch cluster.
+
+The seed lets `make demo` run **fully offline**. To exercise the
+ingest/normalize path on **real raw logs**, `make fetch-data` pulls a
+public sshd capture (loghub `OpenSSH_2k.log`, ~2k real auth lines with
+genuine brute-force traffic) for you to normalize into the same schema
+— see `data/PROVENANCE.md`.
 
 > **Authorization:** this lab analyzes bundled log data only — no
 > live network or host access.
 
 ## Scenario
-The Meridian SOC has one pane: a terminal. Ingest the morning's
-multi-source telemetry, run your correlation rules, and triage the
-resulting alerts by severity before stand-up.
+The SOC has one pane: a terminal. Ingest the morning's multi-source
+telemetry, run your correlation rules, and triage the resulting alerts
+by severity before stand-up.
 
 ## Do
 

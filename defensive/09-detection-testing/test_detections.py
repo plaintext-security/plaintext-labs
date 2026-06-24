@@ -94,7 +94,7 @@ def main() -> int:
     atomics = sorted(ATOMICS_DIR.glob("*.py"))
 
     print("=" * 62)
-    print("Meridian Financial — Detection Test Loop")
+    print("SOC — Detection Test Loop")
     print(f"Rules: {len(rules)}   Atomics: {len(atomics)}")
     print("=" * 62)
 

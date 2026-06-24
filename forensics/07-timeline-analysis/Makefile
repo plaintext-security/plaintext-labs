@@ -1,9 +1,24 @@
 # Module 07 — Timeline Analysis lab.
-# Standard targets: up / down / reset / demo / shell
-.PHONY: up down reset demo shell l2t
+# Standard targets: up / down / reset / demo / shell / l2t / fetch-data
+.PHONY: up down reset demo shell l2t fetch-data
+
+# Real Windows .evtx from the public EVTX-ATTACK-SAMPLES corpus (by sbousseaden) — an execution
+# chain (cmd/svchost reverse shell, Sysmon EID 1) that plaso parses natively into the timeline.
+# See PROVENANCE.md for dataset details, exact URL, and SHA-256 placeholder.
+EVTX_URL := https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/raw/master/Execution/revshell_cmd_svchost_sysmon_1.evtx
 
 up:  ## Build and start the plaso container
 	docker compose up -d --build
+
+fetch-data:  ## Download a real EVTX-ATTACK-SAMPLES .evtx into data/artifacts/ (idempotent)
+	@mkdir -p data/artifacts
+	@if [ -f data/artifacts/revshell_cmd_svchost_sysmon_1.evtx ]; then \
+		echo "exists: data/artifacts/revshell_cmd_svchost_sysmon_1.evtx"; \
+	else \
+		echo "fetch:  data/artifacts/revshell_cmd_svchost_sysmon_1.evtx"; \
+		curl -fsSL "$(EVTX_URL)" -o data/artifacts/revshell_cmd_svchost_sysmon_1.evtx; \
+	fi
+	@echo "Done. Verify SHA-256 against PROVENANCE.md, then run 'make l2t' to timeline the real .evtx."
 
 down:  ## Stop and remove the container
 	docker compose down

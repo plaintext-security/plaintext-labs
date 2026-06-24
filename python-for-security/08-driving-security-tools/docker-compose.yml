@@ -7,7 +7,9 @@ services:
 
   vt-api:
     build: ./mock-vt
-    image: plaintext/mock-vt:1.0
+    image: plaintext/real-vt:1.0
+    volumes:
+      - ./feeds:/feeds:ro
     ports:
       - "8081:8081"
 

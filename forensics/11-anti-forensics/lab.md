@@ -11,26 +11,34 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/forensics/11-anti-forensics
-make up      # builds the Sleuth Kit container with the synthetic disk image
-make demo    # runs fls + istat over disk.img and shows the timestamp discrepancy
-make shell   # interactive shell for investigation
-make down    # stop when done
+make up         # builds the Sleuth Kit container with the disk image
+make fetch-data # download the real timestomp EVTX sample into data/
+make demo       # runs fls + istat over disk.img and shows the timestamp discrepancy
+make shell      # interactive shell for investigation
+make down       # stop when done
 ```
 
-The lab ships `data/disk.img` — a small FAT32/ext2 hybrid image (under 2MB) containing:
+The lab ships `data/disk.img` — a small ext2 image (under 2MB) containing:
 - A directory of "normal" files with coherent timestamps.
-- A timestomped file: SI timestamps set to 2019, FN timestamps from 2024 — the attacker's
+- A timestomped file (`sihosts.exe`): mtime set to 2019, creation in 2024 — the attacker's
   manipulation left traces.
 - A deleted file recoverable in unallocated space.
 
-> All data is synthetic. No real incident artifacts are included.
+It also wires a **real** timestomp artifact: `make fetch-data` pulls
+`Defense Evasion/sysmon_2_11_evasion_timestomp_MACE.evtx` from the public
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) corpus (by sbousseaden) —
+a real Sysmon **EID 2** event (file-creation-time modified, ATT&CK T1070.006). See `PROVENANCE.md`.
+
+> The disk image is synthetic; the EVTX sample is a real public research artifact.
 
 ## Scenario
 
-The disk image was pulled from `WORKSTATION-04` during full acquisition (module 02 workflow).
-The timeline (module 07) showed a suspicious gap: a file appears in the MFT but its timestamp
-predates the workstation's deployment date. The attacker used a timestomper to make a dropped
-binary look like a system file. Your task: prove the manipulation using NTFS attribute analysis.
+This module is anchored to the **Lunar Spider** intrusion (The DFIR Report, 2025). The disk image
+was pulled from `BEACHHEAD-WS01` during full acquisition (module 02 workflow). The timeline (module
+07) showed a suspicious gap: a file appears in the MFT but its timestamp predates the workstation's
+deployment date. The attacker used a timestomper to make a dropped binary (`sihosts.exe`, a renamed
+exfil tool) look like a system file. Your task: prove the manipulation using filesystem and NTFS
+attribute analysis.
 
 > Only examine evidence you are authorised to handle. Forensic imaging of production systems
 > requires prior approval and chain-of-custody documentation.
@@ -69,7 +77,17 @@ binary look like a system file. Your task: prove the manipulation using NTFS att
    Review the detection logic and identify one way the script could miss a sophisticated
    timestomper (e.g., if FN is also modified).
 
-6. [ ] **Document the anti-forensics finding** in one paragraph: the file name, the SI timestamps,
+6. [ ] **Cross-check against a real timestomp log.** After `make fetch-data`, triage the real
+   `data/sysmon_2_11_evasion_timestomp_MACE.evtx` (Sysmon **EID 2** — file-creation-time changed):
+   ```bash
+   chainsaw search --event-id 2 data/sysmon_2_11_evasion_timestomp_MACE.evtx
+   ```
+   Note how Sysmon records the *previous* and *new* creation times in one event — the same
+   manipulation you proved on disk (T1070.006), but caught in the live log. Which is the stronger
+   evidence, the on-disk SI/FN divergence or the Sysmon EID 2 record? Why might you have one but
+   not the other?
+
+7. [ ] **Document the anti-forensics finding** in one paragraph: the file name, the SI timestamps,
    the FN timestamps, the delta, and your conclusion about whether this represents manipulation.
    Reference the `istat` attribute names (not just "Modified timestamp").
 

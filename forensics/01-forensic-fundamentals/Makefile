@@ -1,7 +1,22 @@
 # Module 01 — Forensic Fundamentals & Evidence Handling lab.
 # No container required; dc3dd runs on the host or via Docker fallback.
 # Standard targets: demo / clean
-.PHONY: demo clean up down reset shell
+.PHONY: demo clean up down reset shell fetch-data
+
+# --- Real evidence: Digital Corpora M57-Patents -------------------------------
+# Downloads a real, freely licensed M57 USB image into data/ (idempotent).
+# See PROVENANCE.md. Not executed in-repo — deferred to runner-validation.
+M57_USB_URL := https://downloads.digitalcorpora.org/corpora/scenarios/2009-m57-patents/usb/
+fetch-data:  ## Download a real M57-Patents USB image into data/ (idempotent)
+	@mkdir -p data
+	@if [ -f data/m57-usb.aff ] || [ -f data/m57-usb.E01 ] || [ -f data/m57-usb.raw ]; then \
+		echo "M57 image already present in data/ — skipping download."; \
+	else \
+		echo "Fetching the smallest M57 USB image from $(M57_USB_URL)"; \
+		echo "(Pick a specific file from the index above; example:"; \
+		echo "  curl -fL -o data/m57-usb.aff $(M57_USB_URL)<image-name>.aff )"; \
+		echo "Then run 'make demo' and hash data/m57-usb.* as your primary evidence."; \
+	fi
 
 # --- Worked example -------------------------------------------------------
 demo:  ## Hash evidence files, image with dc3dd, and show chain-of-custody output
