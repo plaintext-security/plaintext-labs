@@ -1,8 +1,13 @@
 # Module 13 — PowerShell Logging & Hunting
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 5 · Detonate & Detect — enable PowerShell's logging channels (script-block, module, transcription), then hunt real Event ID 4104 records to separate malicious script blocks from routine administration; you commit a detection that distinguishes the cradles from the false-positive admin calls. (Secondary: Misconception Reveal — internal-vs-external usage is what decides whether the hunt is usable.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 **Defensive Operations** — *the most-abused tool on Windows is also the most observable — if you turned the logging on.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 PowerShell is the attacker's favourite Windows execution vector (Module 15 is the offensive side), and

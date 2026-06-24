@@ -1,0 +1,1 @@
+../../../../plaintext-labs/ztna/10-vpn-ztna-migration/lab.md

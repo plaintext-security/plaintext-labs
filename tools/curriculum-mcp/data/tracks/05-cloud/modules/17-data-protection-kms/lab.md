@@ -1,0 +1,1 @@
+../../../../plaintext-labs/cloud/17-data-protection-kms/lab.md

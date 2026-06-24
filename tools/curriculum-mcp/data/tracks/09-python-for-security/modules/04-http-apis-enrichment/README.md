@@ -1,9 +1,14 @@
 # Module 04 — HTTP & APIs for Enrichment
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — build an `httpx` IOC-enrichment client that handles the error paths (timeouts, 429 retry/backoff, rate limits) and prove it with a `test_enrich.py` pinning the 429-retry and the malicious/clean/404 verdicts. (Secondary: Tool-Build — the enrichment function later modules wrap into a CLI and an MCP server.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Python for Security** — *every IOC you can't explain is a ticket you can't close; APIs give you the context.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner &nbsp;·&nbsp; **Estimated time:** ~3.5–4.5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 A bare IP address tells you nothing. An IP address with its ASN, abuse-report count, country,
@@ -13,9 +18,11 @@ transforms a raw alert into something actionable. Every SOC analyst does this by
 senior engineer automates it.
 
 ## Objective
-Use `httpx` to query a local mock threat-intel API; enrich a list of IOCs (IPs and hashes) from
-`data/iocs.txt`; handle errors, timeouts, and rate-limiting correctly; and output enriched
-results.
+Use `httpx` to query a local threat-intel API — backed by **real abuse.ch feeds** (Feodo Tracker
++ URLhaus); enrich a list of IOCs (IPs and hashes) from `data/iocs.txt`; handle errors, timeouts, and rate-limiting correctly; output enriched results —
+and **prove it with a test you wrote**: a `test_enrich.py` that asserts the `429`-retry succeeds
+and the malicious/clean/404 verdicts are correct. Building the enrichment client and committing a
+test that pins its behaviour are equal halves.
 
 ## The core idea
 The HTTP layer is simple; the error handling is not. A script that queries an API and prints the
@@ -56,7 +63,7 @@ one that skips a few IOCs and finishes.
 - [tenacity — retry library for Python](https://tenacity.readthedocs.io/en/latest/) — a clean declarative way to add retries; understand the `retry`, `wait`, and `stop` parameters.
 
 **Threat intel API context (~30 min)**
-- [VirusTotal API v3 — Getting Started](https://docs.virustotal.com/reference/overview) — skim the authentication and rate-limiting sections to understand the real API shape; the lab uses a local mock, but the real shape is what you'll hit in the field.
+- [VirusTotal API v3 — Getting Started](https://docs.virustotal.com/reference/overview) — skim the authentication and rate-limiting sections to understand the real API shape; the lab's local API mirrors this shape but serves real abuse.ch threat intel, and the real VT shape is what you'll hit in the field.
 
 ## Key concepts
 - `httpx.Client` with session-level headers and timeouts — never per-call headers for auth
@@ -64,9 +71,10 @@ one that skips a few IOCs and finishes.
 - `429` + `Retry-After`: sleep and retry; exponential backoff for other 5xx errors
 - Loading API keys from environment variables only — never from source files
 - Enrichment as a pipeline: iterate IOCs, query, handle error, accumulate, write results
+- Verify by test, not by eye: a learner-written `test_enrich.py` that asserts the retry and the verdicts — the ownership half, not a diff against `make demo`
 
 ## AI acceleration
 A model writes the API query loop quickly. The hidden bugs are in the error cases: test it
-against a mock API that returns `429`, `503`, and `404` in sequence. Does the model's code retry
+against the local API that returns `429`, `503`, and `404` in sequence. Does the model's code retry
 the 429? Does it give up gracefully on repeated 503? Does it skip the 404 or crash? Those three
 lines of test coverage are the difference between a script and a tool.

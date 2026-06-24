@@ -1,12 +1,19 @@
 # Module 04 — Windows Artifacts
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — reconstruct attacker activity on a Windows host from EVTX-ATTACK-SAMPLES logs with `chainsaw` and registry-hive parsing, surfacing the authentication and execution events that show what ran. (Secondary: Tool-Build — grow the hive-parsing step into a reusable registry parser.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *Windows leaves a detailed record of everything that ran — if you know where to look.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Windows is the dominant enterprise endpoint, and it is extraordinarily artifact-rich. Every program that runs leaves traces across event logs, the registry, prefetch files, the shellbag, and the timeline. An attacker who compromises a Windows host is operating in a recording studio: they may wipe the most obvious logs, but they can rarely erase all traces across all artifact sources simultaneously. The forensic investigator who knows all the sources — and which ones survive each anti-forensics technique — has a decisive advantage. This module maps the terrain.
+
+The fastest way to internalize what those traces actually look like is to read real ones. **[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)** — Samir Bousseaden's widely-used public corpus — is a library of genuine Windows event-log (`.evtx`) files captured while real attack techniques were executed, filed by MITRE ATT&CK ID. It is the de-facto reference set the detection-engineering community tests Sigma rules against, precisely because the events are authentic rather than hand-crafted. Open the credential-access or lateral-movement samples and you see the exact 4624/4688/4769 records this module describes, in the messy form they take on a compromised host — not a clean textbook example. The lab bundles a small slice of this corpus.
 
 ## Objective
 Parse Windows Security event logs with `chainsaw` to surface authentication and execution events; extract key forensic data from a registry hive with Python's `python-registry`; and explain which artifacts survive common anti-forensics techniques like log clearing and prefetch deletion.
@@ -45,6 +52,7 @@ Windows is designed for accountability — it was built for enterprise environme
 - Execution artifacts: prefetch (ran, when, how many times), Shimcache (metadata even without prefetch), Amcache (SHA1 of binary).
 - Artifacts cross-corroborate: clearing one source usually leaves evidence in another.
 - Anti-forensics moves (log clearing, prefetch deletion) are themselves recorded somewhere else.
+- EVTX-ATTACK-SAMPLES is the public corpus of real, ATT&CK-tagged Windows event logs to practice against — authentic events, not hand-crafted ones.
 
 ## AI acceleration
 AI excels at explaining unfamiliar Event IDs ("what does Event 4769 with failure code 0x12 mean?") and drafting registry parsing scripts from a description of the key structure. Where it falls short: it cannot read your EVTX or hive files, and it will invent specific event details. Use it to draft the parsing logic and to interpret output you've already collected — then verify every finding against the raw event data.

@@ -1,9 +1,14 @@
 # Module 07 — Compliance Scoring & Auditing
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 8 · Judgment-as-Code / Gate — run OpenSCAP and Lynis against an un-hardened container, remediate a set of 3–5 high-severity findings, and re-score after each so the compliance delta becomes the evidence, encoding the audit-remediate-verify cycle as a repeatable gate. (Secondary: Drift / Steady-State — continuous-compliance and score-drift alerting extend the gate into ongoing monitoring.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *A compliance score you run once is a photograph; a score you run on a schedule is a vital sign.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -11,7 +16,7 @@ Every compliance framework — PCI-DSS, HIPAA, SOC 2, ISO 27001 — requires evi
 
 ## Objective
 
-Run OpenSCAP and Lynis against a deliberately un-hardened container, apply one targeted fix, and demonstrate a measurable before/after delta — practicing the audit-remediate-verify cycle that is the operational heartbeat of a compliance programme.
+Run OpenSCAP and Lynis against a deliberately un-hardened container, remediate a **set of 3–5 high-severity findings**, and re-score after each so you watch the compliance delta climb — practicing the audit-remediate-verify cycle that is the operational heartbeat of a compliance programme. For a *scoring* module the point is the substantive delta, not a single rule moving: remediating the set and proving the score rises are equal halves.
 
 ## The core idea
 
@@ -39,6 +44,7 @@ Continuous compliance — running scans on a schedule and alerting on score drif
 ## Key concepts
 
 - Compliance scoring measures whether specific controls are applied; it is not a security oracle.
+- The delta is the deliverable: remediate a *set* (3–5) of high-severity findings and re-score after each so the score climbs measurably — a one-rule move under-sells a scoring programme.
 - Before/after scoring is the evidence chain: structured output, timestamped, version-controlled.
 - Exception management: every open finding needs either a remediation or a documented risk acceptance.
 - Continuous compliance = scheduled scans + score-drift alerting = compliance as an operational practice.

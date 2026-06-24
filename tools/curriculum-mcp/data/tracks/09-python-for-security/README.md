@@ -25,6 +25,22 @@ direct and review the ones AI writes.
 | 09 | [Building an MCP Server](modules/09-building-mcp-server/README.md) | Exposing a tool to an LLM | `fastmcp` |
 | 10 | [Packaging, Testing & Owning AI Code](modules/10-packaging-testing/README.md) | Reviewing, testing, and shipping | `pytest`, `ruff` |
 
+## Phases & projects
+
+The ten modules run in three phases; each ends in a **project** that integrates its modules (a phase
+is the substantial, standalone unit — a single module is a few hours). Each project carries the
+"AI authors → you review → you own it" habit into committed, tested code.
+
+- **Phase 1 · Parse & report** (01–03) — **Project:** a log-analysis script with a clean toolchain
+  that parses a real log with regex, reshapes it through structured data, and emits a readable
+  JSON/CSV plus a `rich` console report — with tests on the parsing.
+- **Phase 2 · Talk to the network & the world** (04–07) — **Project:** an IOC enrichment CLI (with
+  `typer`/`argparse`) that queries threat-intel APIs, plus a small network or scraping tool — error
+  handling, rate limits, and responsible use built in.
+- **Phase 3 · Tooling, MCP & shipping** (08–10) — **Project:** the track capstone — wrap a security
+  tool (VirusTotal/MISP) and expose it to an LLM as an MCP server, then package it with `pytest`/`ruff`
+  and a README — delivering the tool, its tests, and a write-up of what AI wrote vs. what you changed.
+
 ## Prerequisites
 Complete Track 00 — Foundations (module 10 — Scripting & Automation).
 
@@ -32,6 +48,24 @@ Complete Track 00 — Foundations (module 10 — Scripting & Automation).
 Build a small but genuinely useful security tool — for example, an IOC enrichment CLI or an
 MCP server that exposes a tool to an LLM — with tests and a README. **Deliverable:** the
 tool, its tests, and a short write-up of what you had AI write and what you changed.
+
+The starter scaffold and acceptance checks live in
+[`plaintext-labs/python-for-security/capstone/`](https://github.com/plaintext-security/plaintext-labs/tree/main/python-for-security/capstone).
+
+### Capstone rubric
+
+It must be a **genuinely useful tool you own** — tested, documented, reviewed line by line, and
+**fed real data, not synthetic stand-ins** (a free threat feed like abuse.ch URLhaus/Feodo, a
+public log/PCAP corpus, or a real CVE record). **Proficient is the bar to ship.**
+
+| Dimension | Developing | Proficient | Exemplary |
+|---|---|---|---|
+| **Usefulness** | A toy that re-implements a one-liner | Solves a real security task (enrichment, parsing, an MCP tool) you'd actually reach for | Fills a real gap; handles a workflow start to finish |
+| **Code quality** | Monolithic script; no error handling | Structured, handles malformed input, passes `ruff`; has a `--help` | Idiomatic, typed, packaged installable; clean separation of concerns |
+| **Tests** | None, or they only test the happy path | `pytest` covering core logic *and* edge/malformed input | Meaningful coverage incl. failure modes; tests run in CI |
+| **Robustness** | Crashes on bad input or API errors | Fails gracefully; rate-limits/retries where it talks to APIs | Handles secrets safely (env, not hardcoded); no injection of unvalidated input |
+| **Real data** | Toy/synthetic inputs the tool invents | **Required:** consumes a real feed or dataset (e.g. abuse.ch URLhaus/Feodo, a public log/PCAP corpus, a real CVE/NVD record), with provenance noted | Wires the tool to a live feed with a cached offline fallback so it runs with no network |
+| **Ownership of AI code** | Pasted AI output unread | Write-up names what AI generated and what you changed and why | Demonstrates a caught bug/risk in the generated code that you fixed and explained |
 
 ## AI & automation
 This is the track where "AI authors → you review → you own it" becomes a daily habit. A

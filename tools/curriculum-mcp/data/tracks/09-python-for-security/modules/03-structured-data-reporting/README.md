@@ -1,9 +1,14 @@
 # Module 03 — Structured Data & Reporting
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — build a JSON→CSV→`rich` reporting pipeline that filters and deduplicates a set of security alert records (dedup-by-fingerprint) and renders a formatted terminal table. (Secondary: Build-&-Operate — a reusable reporting pattern you run over real alert data.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Python for Security** — *get the data into shape, then make it readable by a human and a machine.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner &nbsp;·&nbsp; **Estimated time:** ~3–4 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Security alerts almost always arrive as JSON — from SIEMs, from APIs, from tool output. The

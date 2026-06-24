@@ -1,13 +1,18 @@
 # Module 08 — Patch & Vulnerability Management
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 8 · Judgment-as-Code / Gate — inventory installed packages with osquery, scan with grype for CVEs, and turn a triage model (CVSS × KEV × reachability × fix) into a prioritised remediation list — the production vuln-management workflow encoded as repeatable judgment. (Secondary: Audit→Build→Verify — the osquery inventory → CVE-match step is itself an audit feeding the triage.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *Hardening reduces the attack surface of the software you need; patch management eliminates the vulnerabilities in it.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 
-Unpatched vulnerabilities in known-exploited software are the leading cause of breaches. The CISA Known Exploited Vulnerabilities catalogue lists hundreds of CVEs that adversaries are actively exploiting — the vast majority of which had patches available before they appeared in incident reports. Vulnerability management is the operational discipline that closes this gap: knowing what software is installed, which CVEs apply to it, and in what order to patch based on actual exploitation evidence rather than CVSS scores alone.
+Unpatched vulnerabilities in known-exploited software are the leading cause of breaches. The 2017 Equifax breach — 145.5 million people's records — traced back to a single web server running a version of Apache Struts with a known, *patched* vulnerability ([CVE-2017-5638](https://nvd.nist.gov/vuln/detail/CVE-2017-5638), CVSS 9.8 critical). The fix shipped in March 2017; attackers exploited the unpatched server in May, and Equifax didn't detect the intrusion until late July (US GAO, GAO-18-559). The CISA Known Exploited Vulnerabilities catalogue lists hundreds of CVEs that adversaries are actively exploiting — the vast majority of which had patches available before they appeared in incident reports. Vulnerability management is the operational discipline that closes this gap: knowing what software is installed, which CVEs apply to it, and in what order to patch based on actual exploitation evidence rather than CVSS scores alone.
 
 ## Objective
 
@@ -39,6 +44,9 @@ Patch management and vulnerability scanning are often separated in organisations
 **Patch management at scale**
 - [NIST SP 800-40 r4 — Guide to Enterprise Patch Management Planning](https://csrc.nist.gov/pubs/sp/800/40/r4/final) — Sections 1–3; the framework for building a patch management programme with SLAs.
 
+**What an unpatched window costs**
+- [Data Protection: Actions Taken by Equifax... (US GAO, GAO-18-559)](https://www.gao.gov/products/gao-18-559) — read the Highlights and "Attackers Exploited Vulnerabilities" section; the gap between a March patch and a May exploitation is the entire case for patch SLAs, told in one breach.
+
 ## Key concepts
 
 - CVSS base score alone is insufficient; prioritise by KEV membership (active exploitation), patch availability, and service exposure.
@@ -46,6 +54,7 @@ Patch management and vulnerability scanning are often separated in organisations
 - An SBOM (Software Bill of Materials) from Syft feeds grype without requiring a running host scan.
 - Vulnerability management SLAs: Critical/KEV ≤ 7 days; High ≤ 30 days; Medium ≤ 90 days (CISA guidance baseline).
 - Track closure rates — a finding that stays open 90 days past SLA is a governance issue.
+- Equifax 2017 (CVE-2017-5638): a patch existed in March; the unpatched window was exploited in May — the SLA *is* the control.
 
 ## AI acceleration
 

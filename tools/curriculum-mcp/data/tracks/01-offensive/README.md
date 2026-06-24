@@ -60,6 +60,22 @@ exploitation, privilege escalation, and lateral movement — and deliver a profe
 report: findings, evidence, business impact, and prioritised remediation. **Deliverable:**
 the report is the artifact, not the shell.
 
+The starter scaffold and acceptance checks live in
+[`plaintext-labs/offensive/capstone/`](https://github.com/plaintext-security/plaintext-labs/tree/main/offensive/capstone).
+
+### Capstone rubric
+
+Graders score the **report**, not the number of shells. **Proficient is the bar to ship.**
+
+| Dimension | Developing | Proficient | Exemplary |
+|---|---|---|---|
+| **Methodology & scope** | Ad-hoc; no clear phases; scope unstated | Recon → exploit → privesc → lateral movement documented as phases, all in stated scope | Maps each action to MITRE ATT&CK and PTES, with timestamps that form an attack timeline |
+| **Findings quality** | Findings asserted without proof, or copied from a scanner | Each finding has CVE/CWE, reproducible steps, and evidence (output/screenshot), validated by hand | Every finding rated by real business impact, with a working PoC a defender can replay |
+| **Exploitation** | Used a one-click exploit without understanding it | Gained access and escalated; can explain *why* each exploit worked | Chained a multi-step path (foothold → DA/root) and noted detection opportunities at each step |
+| **Remediation** | Generic advice ("patch everything") | Specific, prioritised fix per finding | Fixes are testable and mapped to root cause, not just the symptom |
+| **Report craft** | Disorganised; a defender couldn't act on it | Clear exec summary + technical detail; reproducible | Reads like a professional deliverable: severity-ranked, evidence-linked, remediation a team can ticket |
+| **Authorization & safety** | Out-of-scope actions, or no scope note | Every action provably in scope; authorization stated | Demonstrates restraint — destructive steps avoided or explicitly authorised and contained |
+
 ## AI & automation
 AI drafts; you verify and own it. Models accelerate recon synthesis, payload and wordlist
 generation, and turning findings into a readable report — but every vulnerability is

@@ -24,6 +24,22 @@ attack the AI systems you just built.
 | 08 | [SOAR + AI](modules/08-soar-ai/README.md) | Automated response with a human in the loop | `Shuffle` |
 | 09 | [Securing the AI You Run](modules/09-securing-ai/README.md) | Prompt injection, data exfil, MCP/RAG hardening | — |
 | 10 | [Attacking AI Systems](modules/10-attacking-ai/README.md) | Red-teaming LLM/MCP/RAG applications | `garak`, `promptfoo` |
+| 11 | [AI Evaluation & Observability](modules/11-ai-evaluation/README.md) | Held-out evals, regression gates, observability — eval gates, not vibes | `pytest`, `promptfoo` |
+
+## Phases & projects
+
+The ten modules run in three phases; each ends in a **project** that integrates its modules (a phase
+is the substantial, standalone unit — a single module is a few hours).
+
+- **Phase 1 · Run & ground models** (01–04) — **Project:** a local-model setup (Ollama/llama.cpp)
+  with a reviewable prompt library and a working RAG pipeline that grounds answers in your own
+  security notes — proving when local suffices and when a frontier model earns the call.
+- **Phase 2 · Build the copilot** (05–08) — **Project:** an MCP server exposing one real security
+  tool, wired to the RAG corpus into a SoC copilot that triages at volume, plus a SOAR + AI playbook
+  that drafts a response and waits for human approval.
+- **Phase 3 · Secure & attack the AI** (09–10) — **Project:** the track capstone — red-team the
+  copilot you built: demonstrate a prompt-injection or data-exfil weakness with `garak`/`promptfoo`,
+  then harden against it — delivering the copilot, the attack, and the fix.
 
 ## Prerequisites
 Complete Track 00 — Foundations; Track 09 — Python is strongly recommended.
@@ -35,6 +51,22 @@ Complete Track 00 — Foundations; Track 09 — Python is strongly recommended.
 Build a small SoC copilot — an MCP server exposing one real tool, grounded in a RAG corpus
 of your own notes — then red-team it: demonstrate a prompt-injection or data-exfil weakness
 and harden against it. **Deliverable:** the copilot, the attack, and the fix.
+
+The starter scaffold and acceptance checks live in
+[`plaintext-labs/ai-augmented-ops/capstone/`](https://github.com/plaintext-security/plaintext-labs/tree/main/ai-augmented-ops/capstone).
+
+### Capstone rubric
+
+You **build the copilot, break it, then fix it** — and the fix must hold against the attack you
+showed. **Proficient is the bar to ship.**
+
+| Dimension | Developing | Proficient | Exemplary |
+|---|---|---|---|
+| **The copilot** | Bare LLM call, no grounding or tools | MCP server exposing one real tool, grounded in a RAG corpus of your notes | Genuinely useful for a SOC task; retrieval is relevant and tools are scoped |
+| **The attack** | Theoretical, not demonstrated | A working prompt-injection or data-exfil exploit shown against your own system | Mapped to OWASP LLM Top 10 / MITRE ATLAS; shows real impact (tool misuse or data leak) |
+| **The fix** | Generic advice, not applied | A concrete hardening that defeats the demonstrated attack | Re-tested: the same attack now fails; defence-in-depth (input + tool-scoping + output checks) |
+| **Tool & data scoping** | Tools/over-broad access unbounded | Tools and retrieval scoped to least privilege | Untrusted content can't reach privileged tools; the trust boundary is explicit |
+| **Write-up** | Disconnected pieces | Build → attack → fix told as one coherent story | Honest about residual risk and what the model can still be tricked into |
 
 ## AI & automation
 This track *is* the AI thesis made explicit, and it closes the loop the whole curriculum

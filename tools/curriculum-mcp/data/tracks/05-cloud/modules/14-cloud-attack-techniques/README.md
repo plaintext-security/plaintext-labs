@@ -1,101 +1,118 @@
 # Module 14 — Cloud Attack Techniques
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · breach-driven, predict-the-blast-radius / detonate (purple-team — pure attack, no fix half by design). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *a cloud attack is not an exploit; it's a login. The adversary uses your services exactly as designed — your only edge is the trail those API calls leave.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 02 — Cloud Identity & IAM](../02-cloud-identity-iam/README.md) · [Module 03 — IAM Attack Paths](../03-iam-attack-paths/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *you can't defend what you haven't attacked: simulate adversary techniques safely, in your own environment.*
+## The case
 
-## Why this matters
-Every GuardDuty finding, every CloudTrail anomaly alert, and every incident response playbook you'll
-ever write was born from someone first answering the question: what does this attack actually look
-like in the logs? The defensive half of cloud security is built on top of the offensive half — and
-the practitioners who can articulate exactly what `AssumeRole` chaining, S3 mass-download, or IAM
-user creation looks like from the attacker's perspective are the ones who write detection rules that
-don't miss. This module gives you that fluency.
+On 25 August 2022, LastPass disclosed that an attacker had stolen source code from its development
+environment. That sounded contained. It wasn't. Months later — in the
+[December 2022 update](https://blog.lastpass.com/posts/notice-of-recent-security-incident) and the more
+detailed [March 2023 post-mortem](https://blog.lastpass.com/posts/security-incident-update-recommended-actions) —
+LastPass revealed a **second** intrusion that reused what was taken in the first. The attacker
+compromised the **home computer of one of four senior DevOps engineers** who held the keys to LastPass's
+backups, planted a keylogger (via an unpatched [CVE-2020-5741](https://nvd.nist.gov/vuln/detail/CVE-2020-5741)
+in Plex), and captured the engineer's master password. With it they opened that engineer's corporate
+vault and lifted the **decryption keys for the production backups** — which lived in **Amazon S3 and
+DynamoDB.** Between 20 August and 16 September 2022 they used valid credentials and **assumed IAM roles**
+to read those backups and **exfiltrate customer vault data** to storage they controlled.
 
-## Objective
-Simulate three MITRE ATT&CK Cloud techniques (T1078.004 — Valid Cloud Accounts, T1530 — Data from
-Cloud Storage, T1537 — Transfer Data to Cloud Account) against a local AWS environment, capture the
-CloudTrail-shaped API calls each technique generates, and articulate exactly which log fields
-distinguish attacker behaviour from normal operations.
+There was no zero-day in AWS. Every step — the login, the `AssumeRole`, the `GetObject`, the copy to an
+external account — was a **signed, authorized API call**. LastPass's own
+[Wikipedia-summarized timeline](https://en.wikipedia.org/wiki/2022_LastPass_data_breach) notes the
+behaviour was eventually caught by **GuardDuty alerts** on anomalous IAM role use — meaning the signal was
+*there*, in CloudTrail, the whole time. This is the identity-first cloud playbook that
+[Scattered Spider / LUCR-3](https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud)
+runs at scale and that [CISA documented in AA23-320A](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a):
+no malware, no scripts — just the victim's own tools, used as designed.
 
-## The core idea
-Cloud attacks are almost entirely API attacks. Unlike traditional post-exploitation — where an
-adversary moves laterally by dropping binaries, modifying the registry, or pivoting through network
-segments — cloud attacks are sequences of signed API calls made with stolen or escalated credentials.
-The attacker's footprint is in the control plane: CloudTrail, the GCP Audit Log, the Azure Activity
-Log. Understanding that the "malware" is a signed API call, not a binary, reframes both the attack
-and the detection.
+So the question this module turns on is not "how do I break in." You already have the credentials. It's:
 
-The two dominant simulation tools reflect this. **Pacu** (Rhino Security Labs) is an AWS
-exploitation framework built on the same mental model as Metasploit, except every module is a call to
-the AWS API. It chains techniques — enumerate IAM, find an over-privileged role, assume it, then use
-the new session to enumerate what the original credentials couldn't reach. The attack narrative is
-linear and module-driven. **Stratus Red Team** (DataDog) takes a different approach: it codifies
-individual ATT&CK techniques as atomic actions — each one stands alone, generates a specific set of
-API calls, and can be detonated and cleaned up independently. It is built for detection engineers
-who want the precise log signature of a single technique, not a full attack chain. Both belong in
-the toolkit; Pacu for chain reasoning, Stratus for detection validation.
+> **You're going to run the three moves LastPass's attacker ran — log in with valid creds, pull the data,
+> stage it elsewhere. Of those three, which one screams in CloudTrail, and which is nearly silent?**
 
-The critical safety discipline is simulation containment. Stratus Red Team's `--localstack` support
-and Pacu against a LocalStack environment let you generate realistic CloudTrail-shaped events without
-touching a real account. When you do work against a real AWS account (your own, deliberately
-misconfigured test account), the blast radius controls are: dedicated test account, no production
-resources, all findings torn down after the exercise. This is the same constraint red-team
-engagements put in their rules of engagement — except here you set it yourself.
+## Your job
 
-MITRE ATT&CK for Cloud is the vocabulary. The techniques in this module (T1078.004, T1530, T1537)
-map to a compressed version of the cloud kill chain: the attacker already has credentials (initial
-access is module 02–03's territory), they use those credentials to pull data from storage, and they
-stage that data for exfiltration to an attacker-controlled location. Each technique has a distinct
-log signature, and the gap between "normal S3 activity" and "T1530 mass download" lives in the
-combination of user identity, request rate, absence of the normal application's user-agent, and the
-breadth of objects accessed — not in any single field. That's the analytical challenge this lab
-forces you to confront.
+This is a **purple-team** module: you'll **detonate** real ATT&CK-for-Cloud techniques in a safe range
+and **capture the telemetry each one generates** — the raw signal a defender needs. By the end you'll
+have fired, at minimum, **T1078.004 (Valid Cloud Accounts)**, **T1530 (Data from Cloud Storage)**, and
+**T1537 (Transfer Data to Cloud Account)** with Stratus Red Team and Pacu, mapped each to its technique
+ID, and produced an annotated **detonation log + ATT&CK mapping + captured CloudTrail events.** That
+telemetry is not the end of the story — it is the literal *input* to module 15 (write the detection) and
+module 16 (reconstruct the incident). You are manufacturing the attack so the defender across the hall
+has something real to catch.
+
+## The loudness question — think before the lab
+
+Don't skip this. Rank the three techniques by how loud each is in CloudTrail *before* you detonate
+them — being wrong is the teaching event, and the lab will grade your ranking.
+
+> **The mental model:** every technique here is a `signed API call`, and a *management-plane* call (one
+> that changes the account — `AssumeRole`, `PutBucketReplication`) is recorded by CloudTrail **by
+> default**. A *data-plane* call (one that just touches an object — `GetObject`) is **not logged unless
+> you turned on S3 data events**, which most accounts don't. That single distinction — management plane
+> logged by default, data plane silent by default — decides which of LastPass's three moves left the
+> loudest trail and which the attacker could run almost invisibly. (T1078.004's `AssumeRole`: loud,
+> always recorded. T1530's mass `GetObject`: *silent* unless data events are on — this is the gap.
+> T1537's `PutBucketReplication`: loud, and the destination-account ID is right there in the event.)
+
+You'll confirm or correct that ranking against real captured events in the lab. The point isn't trivia:
+**the technique that's hardest to detect is the one the defender most needs you to have detonated**, so
+they can prove their detection works (or discover it can't fire because the log was never collected).
+
+## ATT&CK for Cloud is the shared vocabulary
+
+The reason you map each detonation to a technique ID is that **module 15 and 16 speak the same
+language.** A detonation log that says "I ran some S3 commands" is useless to a detection engineer; one
+that says "T1530, eventName `GetObject`, 47 calls in 30s, assumed-role identity, non-app user-agent" is a
+detection spec. The three techniques are a compressed cloud kill chain — **access → collect → stage** —
+and the analytical edge in each is never one field. T1530 isn't "a `GetObject` happened" (those happen
+constantly); it's the *combination*: which identity, what rate, which user-agent, how broad the object
+spread. Capturing that combination cleanly is the whole job of this module.
 
 ## Learn (~3 hrs)
 
-**MITRE ATT&CK for Cloud (~1 hr)**
-- [ATT&CK Cloud Matrix](https://attack.mitre.org/matrices/enterprise/cloud/) — spend time on the
-  Initial Access, Credential Access, and Exfiltration columns. Each technique card shows real
-  procedure examples; the examples column is where you learn what the API calls actually look like
-  in practice.
-- [T1078.004 — Valid Accounts: Cloud Accounts](https://attack.mitre.org/techniques/T1078/004/) —
-  the primary entry point for cloud attacks; read the detection guidance section carefully, it lists
-  the exact log sources and fields.
-- [T1530 — Data from Cloud Storage](https://attack.mitre.org/techniques/T1530/) — S3/GCS/Blob mass
-  download; note the contrast between control-plane and data-plane logging requirements.
-- [T1537 — Transfer Data to Cloud Account](https://attack.mitre.org/techniques/T1537/) — adversary
-  stages data in their own bucket; the detection is the S3 replication/sync call with an external
-  destination.
+*Richer than a foundations module — this is the purple-team craft, and the tool docs are genuinely the
+best public reference for what each attack looks like in the logs. Read the case first.*
 
-**Stratus Red Team (~1 hr)**
-- [Stratus Red Team documentation](https://stratus-red-team.cloud/attack-techniques/list/) — browse
-  the AWS technique list; each entry has the detonation method, the exact API calls it fires, and
-  example CloudTrail events. This is the best cloud-attack log reference on the public internet.
-- [Stratus Red Team GitHub README](https://github.com/DataDog/stratus-red-team) — quick-start and
-  the LocalStack integration; skim the `--endpoint-url` workflow before the lab.
+**ATT&CK for Cloud — the technique cards (~1 hr)**
+- [ATT&CK Cloud Matrix](https://attack.mitre.org/matrices/enterprise/cloud/) (~20 min) — orient on Initial Access, Credential Access, Collection, Exfiltration. The *Procedure Examples* column is where you see the real API calls.
+- [T1078.004 — Valid Accounts: Cloud Accounts](https://attack.mitre.org/techniques/T1078/004/) (~15 min) — read the **Detection** section: it names the exact log sources. This is LastPass's entry move.
+- [T1530 — Data from Cloud Storage](https://attack.mitre.org/techniques/T1530/) (~10 min) — note *why* this is hard to see: the control-plane-vs-data-plane logging gap is called out here.
+- [T1537 — Transfer Data to Cloud Account](https://attack.mitre.org/techniques/T1537/) (~10 min) — the exfil-to-external-account move; the destination account is the tell.
 
-**Pacu (~1 hr)**
-- [Pacu GitHub wiki — Getting Started](https://github.com/RhinoSecurityLabs/pacu/wiki/)
-  — module layout and the `run`, `exec`, and `search` commands; the module naming convention mirrors
-  ATT&CK technique IDs.
-- [Rhino Security Labs: "Pacu the AWS Exploitation Framework"](https://rhinosecuritylabs.com/aws/pacu-open-source-aws-exploitation-framework/)
-  — the original framing post; useful for understanding what problem Pacu was designed to solve vs.
-  manual CLI enumeration. (~10 min read.)
+**The detonation tools (~1 hr)**
+- [Stratus Red Team — attack technique list](https://stratus-red-team.cloud/attack-techniques/list/) (~25 min) — browse the AWS techniques; each card gives the detonation, the exact API calls fired, **and a sample CloudTrail event**. Best public cloud-attack log reference there is.
+- [Stratus Red Team — GitHub README](https://github.com/DataDog/stratus-red-team) (~15 min, skim) — quick-start and the endpoint/`--localstack`-style workflow you'll use in the lab.
+- [Pacu — Getting Started wiki](https://github.com/RhinoSecurityLabs/pacu/wiki) (~20 min) — the `run`/`search`/`exec` model; Pacu is for *chain* reasoning (enumerate → find over-priv role → assume → re-enumerate), Stratus for *atomic* detonation.
+
+**The adversary, for real (~30 min)**
+- [Permiso — LUCR-3: Scattered Spider Getting SaaS-y in the Cloud](https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud) (~20 min) — the definitive identity-first cloud-TTP writeup; read how they use *your* tools, not malware.
+- [CISA AA23-320A — Scattered Spider](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a) (~10 min, skim) — the federal advisory; corroborates the vishing → valid-accounts → cloud-data pattern.
 
 ## Key concepts
-- Cloud attacks are API attacks: the attack surface is the control plane, not the filesystem
-- T1078.004 / T1530 / T1537 as a compressed cloud kill chain: access → collect → stage
+- A cloud attack is a sequence of **signed, authorized API calls**, not an exploit — the adversary logs in and uses services as designed
+- **Detonation = purple-teaming:** you generate real adversary telemetry in a safe range so the defender has something true to detect
+- Management-plane calls (`AssumeRole`, `PutBucketReplication`) are logged by CloudTrail **by default**; data-plane calls (`GetObject`) are **silent unless S3 data events are enabled** — this is *the* detection gap
+- T1078.004 / T1530 / T1537 = the compressed cloud kill chain: **access → collect → stage**
+- The attack signal is a *combination* of fields (identity · rate · user-agent · object breadth), never a single one — that combination is the detection spec you hand module 15
 - Pacu for attack-chain reasoning; Stratus Red Team for atomic, detection-focused technique detonation
-- Simulation containment: LocalStack, dedicated test accounts, blast radius controls
-- The log fields that distinguish attacker from normal operator: userIdentity, userAgent, eventTime
-  density, requestParameters breadth
 
 ## AI acceleration
-Feed a Pacu session output or a set of CloudTrail events to a model and ask it to identify the
-ATT&CK techniques and flag the highest-risk API calls. Models are good at pattern-matching known
-technique signatures against event fields — but they will hallucinate specific CloudTrail field names
-and can miss the *combination* logic (event A followed by event B from the same identity within a
-window). Use the model output as a triage pass, then validate each identified technique against the
-ATT&CK technique card's detection guidance. You own the final mapping.
+Feed a model the Pacu session output or a batch of captured CloudTrail events and ask it to identify the
+ATT&CK techniques and rank the highest-signal calls. It's a strong first-pass classifier on known
+technique signatures — but it makes two errors this module trains you to catch: it **hallucinates
+CloudTrail field names** that aren't in the real event, and it misses **combination logic** (event A then
+event B from the same identity inside a window) because it scores fields independently. Worse for a
+detection engineer, it will happily call a *data-plane* event "detected" without noticing the log was
+never collected. Use it to triage; validate every claimed field against the *actual* captured event and
+every technique against its ATT&CK card. You own the final mapping — module 15 builds detections on top
+of it, so a hallucinated field becomes a detection that never fires.

@@ -1,9 +1,14 @@
 # Module 13 — Incident Response Process
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 1 · Concept Autopsy — dissect the incident response against the four phases of NIST SP 800-61, naming the gaps and successes, and produce a structured post-incident analysis a security manager or auditor could act on. (Secondary: Decision/ADR — frame the containment-timing call as a recorded decision.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *the investigation without a process is just a fire drill — the process is what turns technical findings into organisational decisions.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~3–5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -14,9 +19,19 @@ decisions, or what "eradication" means in their environment — is a technician,
 NIST SP 800-61 is the process skeleton that most IR programs in regulated industries are built
 on; knowing it means knowing how to operate in any of them.
 
+To see the framework against a real incident rather than an abstraction, read a published case from
+**[The DFIR Report](https://thedfirreport.com/)** — a freely available library of 85+ detailed
+real-intrusion writeups, each reconstructed end-to-end and mapped to MITRE ATT&CK. Take their
+[IcedID-to-Quantum-ransomware case](https://thedfirreport.com/2023/04/03/malicious-iso-file-leads-to-domain-wide-ransomware/):
+the ~78-hour window from a malicious-ISO click to domain-wide encryption is a forced study in the
+NIST phases — where Detection *could* have fired earlier, where Containment didn't happen, and what
+a complete Eradication would have had to rotate. Mapping a real case like this onto Preparation /
+Detection & Analysis / Containment-Eradication-Recovery / Post-Incident is exactly the lab exercise,
+and these reports are the realistic raw material for it.
+
 ## Objective
 
-Map the Meridian Financial incident to the four phases of NIST SP 800-61, identify gaps and
+Map the incident to the four phases of NIST SP 800-61, identify gaps and
 successes in the simulated response, and produce a structured post-incident analysis that a
 security manager or auditor could use.
 
@@ -43,8 +58,8 @@ removing the backdoor is the obvious step; equally important are: rotating all c
 that touched the compromised host or used by the compromised account, revoking and reissuing
 any secrets or certificates the host had access to, auditing all systems the compromised account
 could reach, and confirming that the initial access vector is closed. An eradication that misses
-the AWS access key that was exfiltrated and used to create a backdoor IAM user — as in the
-Meridian case — is not eradication. It's cleanup theater.
+the AWS access key that was exfiltrated and used to create a backdoor IAM user — as in this
+case — is not eradication. It's cleanup theater.
 
 **Post-Incident Activity** is where institutional learning happens, and most teams do it
 badly or not at all. A post-incident review that is only a timeline ("what happened") instead
@@ -64,6 +79,7 @@ remediation roadmap more than any checklist.
 - [SANS — The Incident Handler's Handbook (PDF)](https://www.sans.org/white-papers/33901/) — a free practitioner walkthrough of the NIST phases with real-world colour on where responses go wrong. Read sections 2 and 3 for the triage and containment decision frameworks.
 
 **Post-incident analysis (~0.5 hrs)**
+- [The DFIR Report — "Malicious ISO File Leads to Domain Wide Ransomware"](https://thedfirreport.com/2023/04/03/malicious-iso-file-leads-to-domain-wide-ransomware/) — a complete real intrusion (initial access through domain-wide ransomware in ~78 hrs). Read it once, then re-read mapping each section to a NIST 800-61 phase and asking "where could detection or containment have broken this chain?" — that is the post-incident analysis the lab asks you to produce.
 
 ## Key concepts
 - NIST SP 800-61 phases: Preparation → Detection & Analysis → Containment/Eradication/Recovery → Post-Incident
@@ -72,6 +88,7 @@ remediation roadmap more than any checklist.
 - Post-incident review quality: causal analysis ("why did controls fail?") beats timeline ("what happened?")
 - Evidence tracking: chain of custody, decision log, and notification record are non-optional in regulated industries
 - The "lessons learned" artifact is an organisational deliverable, not an optional appendix
+- The DFIR Report's public case library is realistic raw material for mapping a real incident onto the NIST 800-61 phases
 
 ## AI acceleration
 

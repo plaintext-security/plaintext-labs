@@ -1,9 +1,14 @@
 # Module 03 — Vulnerability Identification
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — build `vuln_assess.py` to walk a service/version through CVE→CWE→CVSS→KEV→PoC and emit a prioritised `vuln-assessment.md`. (Secondary: Decision/ADR — defend the P1-vs-P2 ranking against real-world exploitability, not just CVSS.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *from "this host runs X 1.2.3" to "here's the known way in, and how urgent it is."*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 A service version is only interesting if you know its weaknesses. This module connects

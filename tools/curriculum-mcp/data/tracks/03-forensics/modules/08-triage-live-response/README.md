@@ -1,9 +1,14 @@
 # Module 08 — Triage & Live Response
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — stand up a Velociraptor server and endpoint agent in Docker and operate it to collect processes, connections, and recently modified files via VQL, interpreting the output against the running investigation. (Secondary: Tool-Build — package the VQL into a reusable triage artifact pack.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *get the right data off the right hosts in minutes, before the attacker cleans up or the machine reboots.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -14,11 +19,19 @@ simultaneously and pull back structured data without touching disk images is an 
 Velociraptor is the tool that makes this real — it ships as a single binary, runs a built-in query
 language against live host state, and scales to enterprises of tens of thousands of endpoints.
 
+Why the speed matters is visible in any fast intrusion writeup. In The DFIR Report's
+[ransomware case](https://thedfirreport.com/2023/04/03/malicious-iso-file-leads-to-domain-wide-ransomware/),
+attackers dropped multiple Cobalt Strike beacons and installed three different remote-access tools
+(Atera, Splashtop, AnyDesk) across the domain within roughly 78 hours of initial access. A responder
+who can only image one host at a time would still be acquiring the first machine while the attacker
+finishes. Live response is how you answer "how many hosts is this on, and which ones?" before the
+ransomware fires — the exact triage question this module is about.
+
 ## Objective
 
 Deploy a Velociraptor server and endpoint agent in a local Docker environment, collect running
 processes, active network connections, and recently modified files via VQL, and interpret the
-output in the context of the Meridian Financial investigation.
+output in the context of the running investigation.
 
 ## The core idea
 
@@ -45,7 +58,7 @@ and drown in data for weeks. VQL artifacts let you ask crisp questions — persi
 scheduled tasks, suspicious parent-child process relationships — and stop when you have enough to
 triage, not when you've collected everything.
 
-In the Meridian investigation, the compromised developer account triggered alerts on one endpoint,
+In this investigation, the compromised developer account triggered alerts on one endpoint,
 but the IR team needs to know whether the attacker moved laterally. Live response can answer that
 question across fifty hosts in ten minutes; disk imaging those fifty hosts would take two days. The
 answers shape every subsequent step: which hosts go into the imaging queue, which users get password
@@ -62,6 +75,7 @@ resets, and whether the incident is still active.
 
 **Triage decision-making (~0.5 hrs)**
 - [SANS FOR508 Triage Cheat Sheet (PDF)](https://www.sans.org/posters/hunt-evil/) — free one-page poster: the baseline of "what normal looks like" on a Windows endpoint. Use it as the checklist when reviewing Velociraptor output; anything outside the norm is a priority.
+- [The DFIR Report — "Malicious ISO File Leads to Domain Wide Ransomware"](https://thedfirreport.com/2023/04/03/malicious-iso-file-leads-to-domain-wide-ransomware/) — a real fast-moving intrusion (multiple beacons, three RATs, domain-wide in ~78 hrs). Skim the "Lateral Movement" and "Persistence" sections (~15 min) to see exactly the host-spread that live-response triage has to scope under time pressure.
 
 ## Key concepts
 - Live response collects volatile state (processes, connections, open files) read-only via kernel APIs
@@ -69,6 +83,7 @@ resets, and whether the incident is still active.
 - Triage ≠ imaging — collect enough to scope, then image only in-scope hosts
 - Hunt vs. query: a hunt pushes the same artifact to all enrolled endpoints simultaneously
 - Collection priority: running processes → network connections → persistence mechanisms → recent file writes
+- Real intrusions spread across the domain in hours (DFIR Report: multiple beacons + 3 RATs in ~78 hrs) — fleet-wide triage beats one-host-at-a-time imaging
 
 ## AI acceleration
 

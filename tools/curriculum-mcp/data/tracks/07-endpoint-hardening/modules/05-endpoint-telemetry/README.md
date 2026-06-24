@@ -1,9 +1,14 @@
 # Module 05 — Endpoint Telemetry & EDR
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — stand up osquery endpoint telemetry and author security-focused queries against processes, connections, users, and scheduled tasks, delivering a detection query for a specific attack behaviour grounded in the telemetry schema. (Secondary: Detonate & Detect — each query maps to an ATT&CK technique it is meant to surface.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **[Track 07 — Endpoint & Host Hardening]** — *Hardening reduces the attack surface; telemetry tells you when an attacker found the part you missed.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -19,7 +24,7 @@ osquery treats the operating system as a relational database. Every aspect of sy
 
 The telemetry architecture has two modes. Interactive queries (via `osqueryi`) are the analyst's tool — you connect to the daemon and run ad-hoc queries to investigate a specific host or hypothesis. Scheduled queries (in `osquery.conf` or via osquery's `packs` system) run continuously and log results to a file or a centralized logging service. The scheduled query output is what feeds a SIEM or detection pipeline; the interactive mode is what you use when you're on a host and need to understand its state quickly. Both modes share the same SQL interface.
 
-Wazuh extends the telemetry model from query-based polling to real-time event streaming. The Wazuh agent collects system logs, audit events (via `auditd`), file integrity monitoring (FIM) events, and osquery results, then forwards them to the Wazuh manager for alerting and correlation. The combined osquery + Wazuh stack covers both the "what is the state right now" query use case and the "alert me when something changes" real-time use case. For Meridian Financial's endpoint programme, this means every process creation, privileged command, and configuration change is visible and searchable in near-real-time.
+Wazuh extends the telemetry model from query-based polling to real-time event streaming. The Wazuh agent collects system logs, audit events (via `auditd`), file integrity monitoring (FIM) events, and osquery results, then forwards them to the Wazuh manager for alerting and correlation. The combined osquery + Wazuh stack covers both the "what is the state right now" query use case and the "alert me when something changes" real-time use case. For an endpoint-monitoring programme, this means every process creation, privileged command, and configuration change is visible and searchable in near-real-time.
 
 The practitioner discipline in endpoint telemetry is knowing which tables matter for security and which queries produce signal without excessive noise. Process creation queries (`SELECT pid, name, path, cmdline, parent FROM processes`) are universally useful — they reveal what is running and what spawned it. Network connection queries (`SELECT pid, local_address, remote_address, remote_port FROM process_open_sockets`) catch C2 beaconing. Crontab queries (`SELECT command, path FROM cron_tabs`) catch persistence mechanisms. SUID binary queries (`SELECT path, permissions FROM file WHERE ... permissions LIKE '%s%'`) catch the privesc paths module 09 addresses. Each query maps to a specific adversary technique.
 
@@ -35,6 +40,9 @@ The practitioner discipline in endpoint telemetry is knowing which tables matter
 
 **EDR concepts**
 - [What is an EDR? (CrowdStrike explainer)](https://www.crowdstrike.com/en-us/cybersecurity-101/endpoint-security/endpoint-detection-and-response-edr/) — industry context for what commercial EDRs do that osquery alone doesn't; understand the gap before the stretch section.
+
+**Generating real telemetry to hunt**
+- [Atomic Red Team — T1053.003 (Scheduled Task/Job: Cron)](https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1053.003/T1053.003.md) — Red Canary's open, ATT&CK-mapped test library; this is the exact technique the lab detonates so your osquery hunt surfaces a real persistence artifact. Skim the test definitions (~10 min) to see how a documented technique maps to the `crontab` and `processes` tables.
 
 ## Key concepts
 

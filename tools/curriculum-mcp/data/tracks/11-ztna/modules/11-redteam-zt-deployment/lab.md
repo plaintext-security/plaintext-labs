@@ -1,0 +1,1 @@
+../../../../plaintext-labs/ztna/11-redteam-zt-deployment/lab.md

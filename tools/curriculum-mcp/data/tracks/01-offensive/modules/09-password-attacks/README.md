@@ -1,9 +1,14 @@
 # Module 09 — Password & Credential Attacks
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 2 · Misconception Reveal — crack real hashes hands-on to reveal that encryption isn't hashing and security is cost-per-guess (fast vs slow KDF), and that reuse, not cracking, is the real vector. (Secondary: Tool-Build — the cracking/attack-mode workflow you keep.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *credentials are the keys; cracking and capturing them is how access spreads.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Most breaches don't "hack in" — they log in. Once you have a foothold, dumped password
@@ -22,7 +27,11 @@ module turns on one asymmetry: a **hash** is a one-way fingerprint of a password
 to **how expensive each guess is.** Fast hashes (MD5, NTLM) fall at billions of guesses per second on a
 GPU — a dumped database is effectively plaintext within hours. Slow KDFs (bcrypt, argon2) are *designed*
 to make each guess thousands of times costlier, so the same dump is infeasible. That single fact is why
-one leaked database is a shrug and an identical one elsewhere is a catastrophe.
+one leaked database is a shrug and an identical one elsewhere is a catastrophe. The canonical lesson is
+the **[2012 LinkedIn breach](https://en.wikipedia.org/wiki/2012_LinkedIn_hack)**: ~6.5 million password
+hashes (with ~100 million more surfacing in 2016) stored *unsalted*, which let crackers reverse them
+en masse with off-the-shelf rainbow tables — the textbook case of why a missing salt plus a fast hash
+turns a leak into instant plaintext.
 
 The "attack modes" are just progressively smarter guessing: dictionary (known passwords) → rules
 (mutate them — `Password` → `P@ssw0rd!`) → mask (known structure) → brute force (last resort). And the
@@ -48,7 +57,7 @@ attack. Confirm the hash type and mode yourself; cracking is expensive to get wr
 
 ## Key concepts
 - Hashing vs encryption (callback to Foundations crypto)
-- Hash types (MD5, NTLM, bcrypt) and why some crack in seconds
+- Hash types (MD5, NTLM, bcrypt) and why some crack in seconds — and why unsalted fast hashes (the 2012 LinkedIn breach) fall to rainbow tables
 - Attack modes: dictionary, rules, mask, brute force
 - Credential spraying and reuse (the real-world entry vector)
 - Defenses: strong KDFs, salting, length, MFA

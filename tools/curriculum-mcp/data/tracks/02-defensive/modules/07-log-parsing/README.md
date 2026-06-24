@@ -1,9 +1,14 @@
 # Module 07 — Log Parsing & Normalisation
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — parse a real, messy log into structured fields and normalise it to a common schema (ECS), handling the malformed lines; you commit a reusable parser and its parse-rate verification. (Secondary: Build-&-Operate — the parser is a piece of the data plane that has to keep working.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *raw logs are chaos; a common schema is what makes detection scale.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Every source logs differently — Apache, sshd, Sysmon, and a firewall each describe a "source IP" in

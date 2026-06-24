@@ -1,9 +1,14 @@
 # Module 10 — Log & Cloud Forensics
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — reconstruct the attack chain from the paper trail when the disk is gone: triage EVTX with Hayabusa and Chainsaw, then parse AWS CloudTrail to find the API-call sequence that preceded the account compromise. (Secondary: Tool-Build — make the CloudTrail parser an explicit reusable tool.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *investigate from the paper trail when the disk is gone, the instance is terminated, and the only artifact is what the platform logged.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 
@@ -15,9 +20,17 @@ in a cloud incident. The practitioner who can reconstruct an attacker's actions 
 evidence — without ever touching the compromised system — is the one who can actually close cloud
 investigations.
 
+On the Windows side, the public reference for what attacker activity looks like *in the logs* is
+**[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)** — Samir Bousseaden's
+corpus of real `.evtx` files captured while live attack techniques ran, filed by MITRE ATT&CK ID.
+It's the de-facto test set the detection community runs Sigma rules against, which makes it the
+ideal input for tools like Hayabusa and Chainsaw: point them at the `T1078` (Valid Accounts) or
+`T1053` (Scheduled Task) samples and you see the real events those rules are written to catch,
+not synthetic stand-ins. The lab leans on a slice of exactly this corpus.
+
 ## Objective
 
-Use Hayabusa to rapidly triage Windows Event Log (EVTX) files from the Meridian investigation,
+Use Hayabusa to rapidly triage Windows Event Log (EVTX) files from the investigation,
 use Chainsaw for a complementary pass, and parse a set of simulated AWS CloudTrail events with a
 Python script to identify the sequence of API calls that preceded the developer account compromise.
 
@@ -63,7 +76,7 @@ needs them. This is the planning decision that makes or breaks a cloud investiga
 **Hayabusa and Chainsaw (~1.5 hrs)**
 - [Hayabusa GitHub — README](https://github.com/Yamato-Security/hayabusa) — start here: the installation, rule sources, and output modes. Run `hayabusa --help` to see the full option surface; focus on the `csv-timeline` and `json-timeline` output modes.
 - [Chainsaw GitHub — README and documentation](https://github.com/WithSecureLabs/chainsaw) — covers Chainsaw's own grammar (`chainsaw search`) and Sigma integration (`chainsaw hunt`). The "Usage" section shows how to search for specific account activity.
-- [EVTX Attack Samples (GitHub)](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) — a large repository of real Windows attack event logs, categorised by ATT&CK technique. Browse the `T1078` (Valid Accounts) and `T1053` (Scheduled Task) samples — these are the techniques active in the Meridian scenario.
+- [EVTX Attack Samples (GitHub)](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) — a large repository of real Windows attack event logs, categorised by ATT&CK technique. Browse the `T1078` (Valid Accounts) and `T1053` (Scheduled Task) samples — these are the techniques active in this scenario.
 
 **AWS CloudTrail forensics (~1 hr)**
 - [AWS CloudTrail — Log Event Reference](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-events.html) — the field definitions: `userIdentity`, `eventSource`, `eventName`, `sourceIPAddress`, `requestParameters`. These are the fields you parse in the lab.
@@ -79,6 +92,7 @@ needs them. This is the planning decision that makes or breaks a cloud investiga
 - CloudTrail records API calls: `userIdentity`, `eventName`, `sourceIPAddress`, `requestParameters` are the key investigation fields
 - Cloud forensics: trace compromised credentials forward through the event sequence to find lateral movement and persistence API calls
 - Log availability is a planning decision: CloudTrail data events and VPC Flow Logs must be enabled before they're needed
+- EVTX-ATTACK-SAMPLES is the public ATT&CK-tagged corpus of real Windows event logs to run Hayabusa/Chainsaw against — authentic events, not synthetic ones
 
 ## AI acceleration
 

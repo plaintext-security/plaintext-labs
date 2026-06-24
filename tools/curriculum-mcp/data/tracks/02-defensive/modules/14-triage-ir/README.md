@@ -1,15 +1,24 @@
 # Module 14 — Alert Triage & Incident Response
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — triage a real alert through a structured process and run a lab incident end to end (NIST lifecycle) in a case-management platform; you commit a documented verdict that reconstructs what happened and why. (Secondary: Decision/ADR — the verdict memo is the defend-your-call discipline.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *an alert is a question; triage and IR are how you answer it without panic.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
-Detections fire; now what? A SOC lives or dies on a repeatable process: triage the alert (real or
-noise?), and when it's real, run a disciplined incident response — contain, eradicate, recover,
-learn — without missing steps under pressure. The NIST lifecycle is the backbone, and TheHive gives
-you a free, real case-management platform to run it in.
+Detections fire; now what? In the 2013 Target breach, the FireEye malware-detection system *did its
+job* — it fired urgent alerts as the attackers installed exfiltration malware — but Target's security
+team neither acted on the alarms nor let the tool auto-delete the malware, and 40 million payment cards
+and 70 million customer records walked out the door anyway (US Senate Commerce "Kill Chain" staff
+report, 2014). A detection is worthless if no one triages it. A SOC lives or dies on a repeatable
+process: triage the alert (real or noise?), and when it's real, run a disciplined incident response —
+contain, eradicate, recover, learn — without missing steps under pressure. The NIST lifecycle is the
+backbone, and TheHive gives you a free, real case-management platform to run it in.
 
 ## Objective
 Triage a real alert through a structured process, and run a lab incident end to end (NIST lifecycle)
@@ -46,12 +55,16 @@ and own the call.
 **The method**
 - [NIST SP 800-61r2 — Computer Security Incident Handling Guide](https://csrc.nist.gov/pubs/sp/800/61/r2/final) — the IR lifecycle; read the phases (prep, detection/analysis, containment/eradication/recovery, post-incident).
 
+**The cautionary tale**
+- [A "Kill Chain" Analysis of the 2013 Target Data Breach (US Senate Commerce staff report, PDF)](https://www.commerce.senate.gov/wp-content/uploads/media/doc/2014%200325%20Target%20Kill%20Chain%20Analysis.pdf) — ~15 pp; read the Executive Summary and Section A. Detection fired and was ignored — the canonical example of why triage discipline matters as much as detection coverage.
+
 ## Key concepts
 - Triage: alert → true/false positive → severity
 - The NIST IR lifecycle (and SANS PICERL)
 - Cases, observables, and timelines
 - Containment vs eradication vs recovery
 - The post-incident review (where the learning is)
+- The Target 2013 lesson: an un-triaged alert is the same as no alert
 
 ## AI acceleration
 A model drafts incident timelines and summaries from your notes fast — a real time-saver under

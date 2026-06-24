@@ -1,84 +1,137 @@
 # Module 08 — CI/CD Pipeline Security
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · breach-driven, predict-the-injection-point → harden ("the pipeline was the attack surface"). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *the build pipeline is the highest-trust path you own — and SolarWinds proved it's the least-watched one.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 07 — Secrets Management](../07-secrets-management/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *the build pipeline is the highest-trust path in your environment — and frequently the least scrutinised.*
+## The case
 
-## Why this matters
-A compromised CI/CD pipeline has production access by design. When an attacker can modify a GitHub
-Actions workflow or inject into a build step, they don't need to exploit your application — the
-build system will package and deploy their payload for them. Supply-chain attacks (SolarWinds,
-3CX, XZ Utils) all share this pattern: the compromise happened in the build, not the runtime.
+In December 2020, [FireEye disclosed](https://cloud.google.com/blog/topics/threat-intelligence/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor/)
+that an attacker had been inside thousands of networks for most of a year — and that the front door was a
+routine software update. SolarWinds' Orion network-management platform shipped a signed update containing
+a backdoor the industry came to call **SUNBURST.** Roughly **18,000 organisations installed it**, including
+US federal agencies; the [SEC's later enforcement order](https://www.sec.gov/files/litigation/admin/2023/34-98908.pdf)
+and CISA's [Emergency Directive 21-01](https://www.cisa.gov/news-events/directives/ed-21-01-mitigate-solarwinds-orion-code-compromise)
+make the scope a matter of public record.
 
-## Objective
-Scan a sample repository for secrets with `gitleaks`, scan a container image with `trivy` for
-known CVEs, review a GitHub Actions workflow for pipeline misconfigurations, and build a hardened
-CI workflow that gates on all three checks.
+The detail that makes this *the* canonical pipeline breach is *where* the malware went in. The attacker did
+**not** commit malicious code to SolarWinds' source repository — that would have shown up in review. They
+compromised the **build system** and injected the backdoor *during compilation*, after the trusted source
+had been checked out and before the trusted certificate signed the output. The result was a backdoored
+binary carrying SolarWinds' **own legitimate code-signing signature** — valid, trusted, auto-installed.
 
-## The core idea
+So before you read on, this module turns on one question — the same one you'll ask of every pipeline you
+ever review:
 
-CI/CD security lives at the intersection of three concerns that practitioners usually treat
-separately: secrets hygiene (are credentials in the pipeline?), supply chain (are the dependencies
-and images you build from safe?), and pipeline configuration (does the workflow itself have
-excessive permissions or injection points?). The supply-chain attack playbook connects all three:
-plant a secret in the pipeline, compromise a dependency or base image, leverage a misconfigured
-workflow to execute arbitrary code in the build environment with production credentials attached.
+> **In the path from a developer's commit to a signed, deployed artifact, where does the attacker inject —
+> and which step would have caught them?**
 
-The container image surface is where `trivy` earns its place in a pipeline. Every base image
-carries OS packages, and those packages accumulate CVEs over time. `python:3.8`, `node:14`, and
-`ubuntu:20.04` are all past end-of-life, carrying dozens of known exploitable vulnerabilities —
-yet they are still common in enterprise Dockerfiles because nobody ever updated the `FROM` line.
-A `trivy image` scan against a registry tag before deployment costs seconds and catches this
-pattern cold. The policy decision is the hard part: which CVE severities block the deploy, and
-which are accepted-risk because a fix isn't available yet? That policy is a `trivy.yaml` or an
-OPA/Rego policy file, not an afterthought.
+## Your job
 
-The GitHub Actions misconfiguration surface is distinct and underappreciated. Every `${{
-github.event.head_commit.message }}` passed unsanitised to a `run:` step is an injection point.
-Every workflow with `permissions: write-all` is a blast-radius amplifier. Every `actions/checkout`
-on a forked PR with `pull_request_target` is a classic "pwn-requests" pattern that has bitten
-major open-source projects repeatedly. The CIS GitHub Actions benchmark and the StepSecurity
-hardener are the tooling; understanding the threat model — untrusted input + shell execution =
-code injection — is the mental model. MITRE ATT&CK for CI/CD (ATLAS and the DevSecOps community's
-ATT&CK extension) maps these to technique families, but the practitioner summary is simple: treat
-the YAML like application code, because it runs in your most privileged environment.
+By the end of this module you'll **predict the injection point** in a real pipeline, then *harden it where
+the prediction lands.* You'll run the find-half (gitleaks for secrets, trivy for image CVEs, generate an
+SBOM) over a sample pipeline, then do the build-half this module is really about: **write the hardened
+GitHub Actions workflow** — pinned action SHAs, least-privilege OIDC tokens instead of long-lived secrets,
+and **build provenance/attestation** so the artifact carries proof of *how* it was built, not just *who*
+signed it. That hardened workflow is the deliverable, and it's a real artifact: it mirrors the
+supply-chain hardening this very curriculum's repos shipped as task **T23** (pinning every Actions `uses:`
+to a commit SHA + Dependabot).
 
-One operational note on `gitleaks` vs. `trufflehog`: they cover the same problem space with
-different trade-offs. `trufflehog` verifies credentials live (makes API calls); `gitleaks` is
-faster, fully offline, and config-file-driven (you can add custom patterns in a TOML file). For CI
-gates, `gitleaks` is the standard choice — fast, no network dependency, predictable exit codes.
-`trufflehog` belongs in an incident response or a deep scan where live-verification matters.
+## Call it before you read on
+
+Don't scroll. Mark the path below at the point you think SUNBURST went in — and name the one control that
+would have caught it there. Being wrong is the teaching event.
+
+```
+[dev commits] → [source repo / review] → [BUILD: compile, package] → [SIGN with cert] → [publish/deploy]
+```
+
+> **Q1.** At which arrow did the attacker inject the backdoor — and why does the popular guess ("they
+> snuck bad code into the repo") miss?
+>
+> **Q2.** Orion's update was **signed with SolarWinds' real certificate** and the signature verified
+> perfectly. What did that signature actually prove — and what did it *not* prove?
+>
+> **Q3.** Name one control that, present in the pipeline, would have made the injected build *fail to
+> verify* downstream even though it was correctly signed.
+
+## The injection point, revealed
+
+Hold your answers against these.
+
+**Q1 — the injection was in the build, between two things everyone trusted.** Most people guess the source
+repo, because that's where we're trained to look — code review, branch protection, signed commits all
+guard *that* arrow. SUNBURST walked past all of it by going in *after* checkout and *before* signing: the
+attacker's tooling watched for Orion's build and swapped in the backdoored source during compilation, so
+the artifact that came out the other side never matched anything a reviewer had seen. **The pipeline's
+own most-privileged, least-watched stage — the build — was the attack surface.** This is the move that
+separates someone who *audits* a pipeline from someone who *recites* "shift left": the dangerous gap isn't
+the code, it's the **distance between trusted source and trusted signature**, and nothing in a normal
+pipeline was watching that distance.
+
+**Q2 — signing proves WHO built it, not WHAT they built.** This is the mental model to keep for the rest
+of your career. A code-signing certificate is an identity claim: "an artifact bearing this signature came
+from the holder of this key." SolarWinds held the key; the build server had legitimate access to use it;
+the signature was genuine. What the signature could *not* attest is that the bytes it signed corresponded
+to the reviewed source — because the signing step trusts whatever the build step hands it. **Signing
+authenticates the signer; it says nothing about the integrity of the build process that produced the
+input.** Every downstream check that "verified the signature and trusted the binary" was answering the
+wrong question. The missing link SUNBURST exposed is **build provenance** — a tamper-evident statement of
+*how, from what source, by which builder* an artifact came to be. Trust the build, not just the signature.
+
+**Q3 — provenance/attestation as the gate is the control that breaks the chain.** This is what
+[SLSA](https://slsa.dev/spec/v1.0/about) (Supply-chain Levels for Software Artifacts) was built to answer.
+If the pipeline emits a signed **provenance attestation** — produced by the build platform itself,
+recording the source commit, the builder identity, and the materials — then a consumer can demand "show me
+provenance from a hardened builder, tied to *this* commit" *before* installing. A backdoor injected at the
+build step either can't produce matching provenance (the builder wasn't the trusted one, the source digest
+doesn't match) or the tampering is detectable in the attestation. The signature alone passes; **the
+attestation is the gate that fails the SolarWinds build.** That, plus pinning every dependency and action
+to an immutable digest (so a re-pointed tag can't quietly change what runs) and minting **OIDC tokens**
+instead of long-lived secrets (so a compromised build can't exfiltrate a standing credential), is the
+hardened pipeline — and it's exactly the shape of T23's Actions-hardening work in this repo.
 
 ## Learn (~4 hrs)
 
-**Container supply chain (~1.5 hrs)**
-- [trivy documentation — vulnerability scanning](https://aquasecurity.github.io/trivy/latest/docs/scanner/vulnerability/) — how trivy scans images, the SBOM it generates, the database it queries (Aqua's Trivy DB + NVD), and how to configure severity thresholds. Read the "Container Image" and "Filtering" sections.
-- [Docker Official Images — security and currency](https://docs.docker.com/docker-hub/image-library/trusted-content/) — why pinning a specific digest (`FROM python:3.12-slim@sha256:...`) is more secure than a tag, which is mutable.
+*Richer than a foundations module: the pipeline is the integration point for everything you've built, so
+it curates the supply-chain spine in depth. Read the case above first.*
 
-**gitleaks (~1 hr)**
-- [gitleaks — gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) — the README covers scan modes (detect, protect, git), the `.gitleaks.toml` config format for custom rules, and the CI integration pattern. Read all sections.
-- [MITRE ATT&CK T1552.004 — Private Keys](https://attack.mitre.org/techniques/T1552/004/) — the technique gitleaks catches most often in practice.
+**The breach, from primary sources (~1 hr)**
+- [Mandiant/FireEye — "Highly Evasive Attacker Leverages SolarWinds Supply Chain" (SUNBURST writeup)](https://cloud.google.com/blog/topics/threat-intelligence/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor/) (~30 min) — the discovering researcher's technical anatomy of the backdoor and the build-time injection. Read for *where* and *how* it went in.
+- [CISA — Emergency Directive 21-01 (Mitigate SolarWinds Orion Code Compromise)](https://www.cisa.gov/news-events/directives/ed-21-01-mitigate-solarwinds-orion-code-compromise) (~15 min, skim) — the federal response; orient on scope and the "trusted update" framing.
+- [SEC — Litigation Release: SolarWinds Corporation and Timothy G. Brown](https://www.sec.gov/enforcement-litigation/litigation-releases/lr-25887) (~15 min, skim) — the primary regulatory record of the alleged build-environment and disclosure failures (the SEC's first cyber-disclosure fraud charges against a company and its CISO).
 
-**GitHub Actions security (~1.5 hrs)**
-- [GitHub — Security hardening for GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use) — the authoritative GitHub guide: expression injection, `pull_request_target`, OIDC tokens, minimal permissions. Read the entire page.
-- [StepSecurity — GitHub Actions hardening](https://app.stepsecurity.io/) — the free tool that audits a workflow YAML and suggests hardening. Useful for calibration even if you apply the fixes manually.
+**The fix — provenance, pinning, OIDC (~2 hrs)**
+- [SLSA v1.0 — "About" and the provenance model](https://slsa.dev/spec/v1.0/about) (~30 min) — the framework that names the missing link: build provenance levels. Read "About" and the provenance concept; that's the WHAT-not-WHO model made concrete.
+- [GitHub — Security hardening for GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use) (~40 min) — the authoritative guide: expression injection, minimal `permissions`, pinning actions to SHAs, OIDC. Read the whole page; it's the checklist your hardened workflow satisfies.
+- [GitHub — about artifact attestations / build provenance](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds) (~20 min) — how Actions emits a signed provenance attestation you can verify before deploy.
+- [trivy — vulnerability scanning + SBOM](https://aquasecurity.github.io/trivy/latest/docs/scanner/vulnerability/) (~20 min) — how trivy scans an image and emits a CycloneDX SBOM; read "Container Image" and SBOM sections.
+
+**Secrets & injection in the pipeline (~1 hr)**
+- [gitleaks — gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) (~20 min) — `detect` vs `protect`, the `.gitleaks.toml` custom-rule format, the CI gate pattern.
+- [MITRE ATT&CK T1195.002 — Compromise Software Supply Chain](https://attack.mitre.org/techniques/T1195/002/) (~15 min) — the technique SUNBURST instantiates; pair it with T1552 (unsecured credentials) for the secrets surface.
 
 ## Key concepts
-- Image vulnerability scanning: OS packages + application dependencies, SBOM generation
-- CVE severity policy: which severities block deploy, which are accepted-risk
-- gitleaks: offline credential detection, custom rule patterns, CI integration
-- GitHub Actions injection: `${{ }}` in `run:` steps, untrusted input sources
-- `pull_request_target`: elevated permissions on forked PRs — the "pwn-requests" pattern
-- OIDC tokens in CI: eliminating long-lived cloud credentials from pipeline configuration
-- MITRE ATT&CK T1195 (Supply Chain Compromise), T1552 (Unsecured Credentials)
+- The build step — between trusted source and trusted signature — is the highest-trust, least-watched stage; that distance is the attack surface (SUNBURST went in *there*, not in the repo)
+- **Signing proves WHO built it, not WHAT they built** — a valid signature on a backdoored binary; build provenance/attestation is the missing link
+- SLSA provenance as a *gate*: demand a signed attestation tying the artifact to its source + builder before deploy — it fails the SolarWinds build even though the signature passes
+- Pin every action/dependency to an immutable digest (SHA), not a mutable tag — a re-pointed tag silently changes what runs (this repo's T23)
+- Least-privilege pipeline auth: short-lived **OIDC** tokens over long-lived secrets, minimal per-job `permissions:`, sanitised `${{ }}` expressions (no expression injection)
+- The find-half (gitleaks, trivy, SBOM) is necessary but not sufficient — it scans inputs; provenance attests the *process*
 
 ## AI acceleration
-GitHub Actions YAML is an excellent target for AI-assisted review: paste a workflow file and ask
-the model to find injection points, excessive permissions, and non-pinned action references. The
-model is good at this pattern-matching. What it misses: subtle logic in multi-job dependencies
-where a compromised step can pass data to a later privileged step. For image scanning policy,
-the model can draft a `trivy.yaml` ignore file for accepted-risk CVEs — you must verify that each
-accepted CVE has a documented rationale and that it is not exploitable given your specific threat
-model (a CVE in a library your application never calls is different from one in a library on the
-hot path).
+GitHub Actions YAML is an excellent AI-review target: paste a workflow and ask the model to flag injection
+points, excessive `permissions`, and unpinned `uses:` references — it pattern-matches these well, and it
+will draft a hardened rewrite fast. Two things it reliably gets wrong, and they're exactly this module's
+lesson. First, it treats a green signature/scan as "secure" and rarely volunteers **provenance** — because
+"who signed it" is the question everyone trains on; you must direct it to add attestation as the gate.
+Second, it misses **multi-job data-flow injection** where a compromised early step passes tainted data to a
+later privileged one. Have the model draft; you own the verdict — confirm the hardened workflow actually
+*fails the SolarWinds-shaped build*, not just passes the linters.

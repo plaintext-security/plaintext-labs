@@ -1,9 +1,14 @@
 # Module 12 — Pivoting & Lateral Movement
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 3 · Blast-Radius Trace — pivot from one foothold to an unreachable internal network and move laterally to a second target via the segmentation ladder (port-forward → SOCKS → tunnel), then argue for the segmentation each pivot defeated. (Secondary: Misconception Reveal — every pivot beats a boundary someone drew.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *one foothold is rarely the goal; this is how access spreads through a network.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Real targets are segmented: the host you compromise can usually reach internal systems you

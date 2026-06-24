@@ -1,9 +1,14 @@
 # Module 02 — Scanning & Enumeration
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 2 · Misconception Reveal — predict what an open port "means," then prove a port number is a hypothesis not an answer by enumerating live hosts, versions, and a real attack path. (Secondary: Detonate & Detect — your scan is the T1595 telemetry the blue team sees.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *turn a list of hosts into a map of services, versions, and ways in.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Once you know what exists, you need to know what it's running. Scanning and enumeration turn
@@ -27,7 +32,10 @@ The thing to internalise: **a port number is a hypothesis, not an answer.** 443 
 it means "something is listening here" — version detection and the Nmap Scripting Engine turn that
 guess into ground truth (and NSE quietly does a lot of the enumeration that finds the actual way in).
 The SYN-vs-connect choice everyone frets over is really one knob on a single dial: stealth vs. speed
-vs. reliability — the same packets, a different footprint.
+vs. reliability — the same packets, a different footprint. The practitioner translation for anyone
+who has read firewall or NSM logs: your scan *is* the rows the blue team is staring at — one source
+IP touching a fan of ports in a tight window — so the way you read your own Nmap output is the
+mirror image of how a defender reads the connection log it generates.
 
 The judgment, and the bridge to the other side of the house: **scanning is the loudest thing you'll
 do.** It is exactly the T1595 telemetry the defensive track's NSM and IDS modules exist to catch — so

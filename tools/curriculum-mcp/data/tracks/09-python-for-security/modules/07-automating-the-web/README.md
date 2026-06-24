@@ -1,9 +1,14 @@
 # Module 07 — Automating the Web
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — build an `httpx` + `beautifulsoup4` scraper that extracts links, finds hidden endpoints, and follows redirect chains against a bounded local target, proven by a `test_scraper.py` that pins endpoint discovery, the off-host scope guard, and 404 resilience. Only scrape hosts you own or are permitted to test. (Secondary: Build-&-Operate — scope and session handling that keeps the crawl safe at scale.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Python for Security** — *an unprotected endpoint is only hidden if nobody looks; a scraper looks.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner &nbsp;·&nbsp; **Estimated time:** ~3–4 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Web scraping is a reconnaissance skill, a data-collection skill, and an automation skill in one.
@@ -14,8 +19,11 @@ API. The same techniques apply to both, and the line between "responsible automa
 
 ## Objective
 Use `httpx` and `beautifulsoup4` to scrape a local web application: extract all links, identify
-hidden or unlisted endpoints, and follow a redirect chain — all within a clearly bounded local
-target, never against external hosts without permission.
+hidden or unlisted endpoints, and follow a redirect chain — and **prove it with a test you wrote**:
+a `test_scraper.py` that asserts the hidden endpoint is discovered, the off-host guard holds, and a
+404 doesn't crash the crawl. Building the scraper and committing a test that pins those behaviours
+are equal halves — all within a clearly bounded local target, never against external hosts without
+permission.
 
 ## The core idea
 HTTP is a text protocol. A web scraper is a program that sends HTTP requests and parses the text
@@ -61,6 +69,7 @@ yourself — no external targets, ever.
 - Extracting links from HTML vs. extracting paths from raw text (regex on `response.text`)
 - Following redirect chains with `httpx` (by default it follows; `follow_redirects=False` to inspect)
 - Responsible automation: User-Agent, `robots.txt`, rate-limiting, scope limitation
+- Verify by test, not by eye: a learner-written `test_scraper.py` that asserts hidden-endpoint discovery, the off-host guard, and 404 resilience — the ownership half, not a diff against `make demo`
 
 ## AI acceleration
 A model will write the scraper quickly. The missing piece is usually the scope: the model will

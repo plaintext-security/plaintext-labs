@@ -1,15 +1,25 @@
 # Module 06 — SIEM Fundamentals
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — stand up an open-source SIEM (Wazuh), ingest real security telemetry, and build a correlation rule plus a dashboard that surface an attack; you commit the running SIEM config, rule, and dashboard. (Secondary: Detonate & Detect — test every rule against data where you already know the answer.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *where all your telemetry meets: search, correlate, alert.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Telemetry scattered across hosts and sensors is useless until it's centralised, correlated, and
-alertable. A SIEM is the analyst's workbench — it ingests everything (modules 01–05), lets you search
-and pivot across sources, correlates events into alerts, and drives the SOC workflow. Wazuh gives you
-a complete open-source SIEM/XDR to learn on for free.
+alertable. In the 2017 Equifax breach, attackers sat in the network slowly extracting data for **76
+days** before anyone noticed — they queried 51 databases and exfiltrated in small increments
+specifically to stay under the radar (US GAO, GAO-18-559). The telemetry to catch that almost
+certainly existed; what was missing was the centralised correlation and alerting that turns scattered,
+low-value events into one high-value "this is exfiltration" alert. A SIEM is the analyst's workbench —
+it ingests everything (modules 01–05), lets you search and pivot across sources, correlates events
+into alerts, and drives the SOC workflow. Wazuh gives you a complete open-source SIEM/XDR to learn on
+for free.
 
 ## Objective
 Stand up an open-source SIEM, ingest real security telemetry, and build a correlation rule and a
@@ -43,6 +53,7 @@ you already know the answer before it earns a place in the pipeline.
 
 **What to surface**
 - [MITRE ATT&CK](https://attack.mitre.org/) — the behaviours your correlation rules should turn into alerts.
+- [Data Protection: Actions Taken by Equifax... (US GAO, GAO-18-559)](https://www.gao.gov/products/gao-18-559) — read the Highlights page and "Attackers Exploited Vulnerabilities" section; the 76-day undetected exfiltration is the case for correlation and alerting, not just log storage.
 
 ## Key concepts
 - Ingest → parse → index → search → alert
@@ -50,6 +61,7 @@ you already know the answer before it earns a place in the pipeline.
 - Dashboards and the analyst workflow
 - SIEM rules/decoders (Wazuh) vs raw queries (Elastic)
 - Alert fatigue and why tuning matters
+- Equifax 2017: 76 days of slow exfiltration that correlation should have surfaced
 
 ## AI acceleration
 A model writes SIEM queries and correlation logic fast — and a generated rule with subtly wrong logic

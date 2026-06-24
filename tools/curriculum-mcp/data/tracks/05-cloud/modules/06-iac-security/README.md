@@ -1,81 +1,122 @@
 # Module 06 — Infrastructure-as-Code Security
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · build-first, judgment-as-code ("encode your verdict as a gate"). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *the misconfig that becomes a breach ships first as a line of Terraform. Catch it in the diff, then make the catch permanent.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 01 — Shared Responsibility](../01-cloud-fundamentals/README.md) · [Module 05 — Posture Auditing](../05-posture-auditing/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *scan the blueprint before the building goes up.*
+## Where the breaches actually start
 
-## Why this matters
-Terraform, CloudFormation, and Pulumi templates are exactly as dangerous as the infrastructure they
-describe — and they live in git, reviewed by people who are reviewing *logic*, not security posture.
-A misconfiguration that would take days to find in a running account takes seconds to catch in a
-template, and costs nothing to fix before `terraform apply`.
+You spent module 01 ruling on Capital One and module 05 finding live misconfigurations in a running
+account. Here is the uncomfortable through-line: **the unencrypted bucket, the `0.0.0.0/0` security
+group, the `*` IAM policy, the public RDS** — the exact configurations behind the 2017 wave of public-S3
+leaks (Accenture, Verizon/Nice, Booz Allen) and the over-broad role that fed Capital One — almost never
+start life in a console. They start as a line of Terraform, get reviewed by someone reading *logic* not
+*posture*, and ship. By the time module 05's scanner finds them, they have been live for months.
 
-## Objective
-Scan a directory of intentionally misconfigured Terraform templates with `checkov`, `tfsec`, and
-`trivy config`, compare what each tool surfaces, and integrate a scanner into a sample CI workflow.
+This module moves the catch left, to the diff. The same property that makes infrastructure-as-code
+auditable makes it **scannable before a single resource exists**: a static analyzer parses the HCL,
+builds the resource graph, and matches it against a rule library — `checkov`'s `CKV_AWS_*` checks,
+`tfsec`/`trivy`'s built-ins — each mapped back to a CIS control. A misconfiguration that takes days to
+find in production takes milliseconds to flag in a pull request, and costs nothing to fix before
+`terraform apply`. That is shift-left in the most literal sense.
 
-## The core idea
+But the scan is not the lesson. **The lesson is what you do with the verdict.** A finding you fix by hand
+regresses the next time someone copies the module. The whole point of this track — render judgment, then
+make it un-recurrable — lands hardest here, because IaC is the one place where your verdict can become a
+*mechanical gate that blocks the merge*. That gate is the deliverable.
 
-Infrastructure-as-code is, among other things, a security forcing function: the configuration that
-used to live in a console — ephemeral, undocumented, un-reviewed — is now a file that goes through
-a pull request. That's the opportunity. The same thing that makes IaC auditable makes it scannable:
-static analysis tools can read a Terraform directory and flag misconfigurations before any resource
-is created. The shift from "find it in the running account" to "block it at PR merge" is
-**shift-left security** in the most literal sense.
+## The mental model: a scanner is a fast junior reviewer with no context
 
-The practical anatomy of an IaC security check is simple: the scanner parses the HCL (or YAML, or
-JSON), builds an internal representation of the resource graph, and applies a library of rules —
-"is `block_public_acls` set to `true` on this S3 resource?" "does any security group ingress rule
-have CIDR `0.0.0.0/0`?" The rules map to CIS benchmarks, MITRE ATT&CK, and the tool's own built-in
-library, so you get traceability from a finding back to a published standard. The output is a
-graded findings list, plus a suggested fix, before the resource ever exists in the cloud.
+Hold this picture, because the rest of the module is its consequences. **A scanner is a brilliant,
+tireless junior reviewer who has memorized every known-bad pattern and understands none of your
+intentions.** It will catch `encrypted = false` and `cidr_blocks = ["0.0.0.0/0"]` every time, instantly,
+across ten thousand files. It will *never* tell you that the open security group on port 443 is the one
+your public load balancer actually needs, or that the open one on 5432 is a database you just exposed to
+the internet — because both are the same pattern, and the difference is a *decision* the scanner can't
+see. It cannot read intent, business context, or the blast radius two resources away.
 
-Three tools matter here because they each cover different ground. `checkov` (Bridgecrew/Palo Alto)
-is policy-as-code with the largest built-in check library and custom check support in Python.
-`tfsec` (Aqua) emphasises depth on Terraform specifically, with very human-readable output and
-opinionated defaults tuned for common enterprise patterns. `trivy config` (Aqua) is the same
-container scanner you already know, extended to Terraform, CloudFormation, Helm, and Kubernetes
-manifests — the value is one tool in your pipeline that covers both images and IaC. In practice,
-you pick one for CI gating and optionally run all three in a weekly policy review; they overlap
-substantially but not perfectly.
+So the scanner splits the world cleanly into two halves, and your job is different in each:
 
-The place most teams get this wrong is the suppression pattern. Every tool lets you add a comment
-or an annotation to silence a finding on a specific resource. This is legitimate — a security group
-rule in a public-facing DMZ load balancer *should* accept traffic from the internet. The
-anti-pattern is suppressing by check ID across the whole codebase, or leaving suppressions with no
-rationale. The review discipline is: every suppression must have an inline comment stating *why* the
-control doesn't apply to this resource and who approved it. That comment is the audit trail.
+- **The known-bad pattern** — unencrypted storage, wildcard IAM, public ingress on a sensitive port,
+  logging disabled. Here the scanner is right and you just fix it. The skill is throughput, not judgment.
+- **The bad *decision* the scanner misses** — an open SG that is genuinely intended (a true
+  false-positive you must *suppress correctly*, with a rationale, not silence), versus an open SG that is
+  a real exposure; a hardcoded secret sitting in a variable default; an IAM policy that's technically
+  valid HCL but composes into privilege escalation. Logic and context live here, and **this is where you
+  add value the tool can't.**
+
+The discipline that ties it together is the **suppression**. Every tool lets you silence a finding with
+an inline comment (`# checkov:skip=CKV_AWS_260: <reason>`). Suppressing a *true* false-positive — the
+intended public-HTTPS rule — is a legitimate, senior move; it is you over-ruling the junior with a
+documented reason. Suppressing by check-ID across the whole codebase, or with no rationale, is how the
+junior gets ignored entirely and the bad decision ships anyway. **A suppression is an audit trail, not a
+mute button.** Getting that distinction right is the judgment skill this module grades.
+
+## Predict it before you scan (one prompt — then build)
+
+This module is build-first; there's only one thing worth calling in advance, and it's the thing that
+makes the mental model concrete. Open the lab's `data/terraform/` and, before running anything:
+
+> **Look at `main.tf`, `s3.tf`, `sg.tf`, `iam.tf`, and `rds.tf`. Which lines will a scanner FAIL — and
+> which genuinely dangerous lines will it MISS?** Write two lists.
+
+Most people get the first list roughly right (it's the visibly-wrong patterns). The second list is the
+teaching event: the scanner will likely *miss* the `password = "changeme-before-deploy"` literal in
+`rds.tf` (a secret in plain HCL is a different tool's job — `gitleaks`/`trufflehog`, module 07), it has no
+way to know the port-443 `0.0.0.0/0` is *intended* while the port-5432 one is a catastrophe, and it
+flags the `iam:PassRole` wildcard as a pattern without understanding it *composes into admin* (module
+02's lesson). If your "miss" list is shorter than your "fail" list, you've just felt why the gate needs a
+human verdict wrapped around it.
 
 ## Learn (~4 hrs)
 
-**Terraform security fundamentals (~1 hr)**
-- [Terraform Registry — AWS provider security resources](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) — browse the `aws_s3_bucket`, `aws_security_group`, and `aws_iam_policy` docs and note every attribute that has a security implication. This is the vocabulary the scanners use.
-- [tfsec documentation](https://aquasecurity.github.io/tfsec/latest/) — read the "Getting Started" and browse the built-in AWS checks to understand what each rule actually tests. 30 minutes here pays dividends when you triage findings.
+*Build-first and tool-heavy: read enough to triage findings and write a real gate, then go to the lab.*
 
-**checkov (~1 hr)**
-- [checkov documentation — Bridgecrew/checkov](https://www.checkov.io/1.Welcome/What%20is%20Checkov.html) — the overview and the "Run Checkov" section. Understand the check ID format (CKV_AWS_*), the output options, and how to write a custom check.
-- [checkov GitHub — bridgecrewio/checkov](https://github.com/bridgecrewio/checkov) — the built-in check library in `checkov/terraform/checks/resource/aws/` is the fastest way to understand what it is looking for.
+**The scanners and their rule libraries (~1.5 hrs)**
+- [Checkov — docs: "What is Checkov" + "Run Checkov"](https://www.checkov.io/1.Welcome/What%20is%20Checkov.html) (~30 min) — the overview, the `CKV_AWS_*` check-ID format, and output modes. The built-in library in [`checkov/checkov/terraform/checks/resource/aws/`](https://github.com/bridgecrewio/checkov/tree/main/checkov/terraform/checks/resource/aws) is the fastest way to see *exactly what field a check tests* — read two of them (e.g. the S3 encryption and the security-group checks) so a finding stops being a black box.
+- [tfsec — getting started + AWS checks](https://aquasecurity.github.io/tfsec/latest/) (~30 min) — Terraform-specific depth and very readable output; browse the AWS check list and notice the overlap (and gaps) versus Checkov.
+- [Trivy — misconfiguration scanning](https://aquasecurity.github.io/trivy/latest/docs/scanner/misconfiguration/) (~30 min) — `trivy config` over Terraform/CloudFormation/Helm/K8s: one scanner that also covers the images from module 10. Note where its findings differ from the other two.
 
-**trivy config and supply chain (~1 hr)**
-- [trivy documentation — misconfiguration scanning](https://aquasecurity.github.io/trivy/latest/docs/scanner/misconfiguration/) — how `trivy config` works, supported formats (Terraform, CloudFormation, Helm, Kubernetes), and how to add custom policies.
+**Writing the gate — the actual deliverable (~1.5 hrs)**
+- [Checkov — CLI command reference (exit codes, `--soft-fail-on`, `--check`/`--skip-check`)](https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html) (~30 min) — read precisely how Checkov sets its **exit code** and how `--soft-fail-on` / `--hard-fail-on` choose which severities block. The gate lives or dies on this.
+- [`bridgecrewio/checkov-action` (the GitHub Action)](https://github.com/bridgecrewio/checkov-action) (~20 min) — the canonical CI integration; read how `soft_fail_on` and SARIF upload wire into a PR check.
+- [Checkov — suppressing and skipping checks (inline `checkov:skip`)](https://www.checkov.io/2.Basics/Suppressing%20and%20Skipping%20Policies.html) (~20 min) — the *correct* way to record a true false-positive, with a rationale. This is the judgment move, documented.
+- [Writing a custom Checkov check (Python / YAML)](https://www.checkov.io/3.Custom%20Policies/Python%20Custom%20Policies.html) (~20 min) — skim, for the stretch: when no built-in rule encodes *your* org's verdict, you write the rule.
 
-**CI/CD integration (~1 hr)**
-- [GitHub Actions — using Checkov in CI](https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html) — the canonical integration pattern. Read this to understand how to fail a PR on a policy violation.
-- [MITRE ATT&CK T1562 — Impair Defenses](https://attack.mitre.org/techniques/T1562/) — many IaC misconfigurations (logging disabled, security group too open) enable this technique family; useful framing for why these checks matter.
+**Why the patterns matter (~1 hr)**
+- [CIS AWS Foundations Benchmark](https://www.cisecurity.org/benchmark/amazon_web_services) (~30 min, skim) — the controls each `CKV_AWS_*` maps to (2.1.1 S3 encryption, 5.2/5.3 SG ingress). The gate enforces these; cite them in findings.
+- [MITRE ATT&CK — T1562 Impair Defenses](https://attack.mitre.org/techniques/T1562/) (~15 min) — many IaC misconfigs (logging off, SG wide open) enable this family; the framing for *why* a blocked merge prevents an attack, not just a lint warning.
+
+> **A concrete IaC supply-chain risk, not just config drift:** a vulnerability in a *Terraform provider
+> or shared module* poisons every config that uses it — pinning module/provider versions and scanning
+> the modules you pull is part of IaC security, not separate from it. A concrete example:
+> [CVE-2025-13357](https://nvd.nist.gov/vuln/detail/CVE-2025-13357) (CVSS 9.8) — the HashiCorp Vault
+> Terraform provider (v4.2.0 to before v5.5.0) defaulted `deny_null_bind` to `false` for the LDAP auth
+> method, so every config using that provider silently allowed anonymous-bind authentication bypass until
+> upgraded to v5.5.0. Track a CVE like this via [NVD](https://nvd.nist.gov/) and note it in your findings.
 
 ## Key concepts
-- Shift-left: catch misconfigurations in PR review, not post-deploy audit
-- HCL static analysis: how scanners parse and evaluate Terraform resources
-- Check libraries: CIS benchmark mapping, MITRE ATT&CK coverage
-- Suppression with rationale vs. suppression as a workaround
-- CI gating: failing the build on policy violations, not just reporting them
-- Key check categories: encryption at rest, public access, IAM wildcard, logging, MFA
+- A scanner is a fast junior reviewer with no context: it catches the known-bad *pattern* (`encrypted = false`, `0.0.0.0/0`, `*`) but never the bad *decision* (intended vs. catastrophic open port; a secret in a variable; permissions that compose into admin).
+- Shift-left literally: block the misconfig in the PR diff, before `terraform apply`, not in a post-deploy audit months later.
+- Checks map to CIS controls and ATT&CK techniques — traceability from a finding back to a published standard is what makes it a finding, not a lint nit.
+- Suppression is an audit trail, not a mute button: silence a *true* false-positive inline, with a rationale and a check-ID — never blanket-skip across the codebase.
+- The deliverable is the **gate**: the verdict encoded so it fails the bad state and passes the fix, and can't regress when someone copies the module.
+- IaC has a supply chain too — pin and scan the providers/modules you pull.
 
 ## AI acceleration
-AI is remarkably good at writing Terraform that passes a scanner — and remarkably good at writing
-Terraform that looks correct but has subtle IAM over-grants or encryption misses. The workflow that
-works: let the model generate a resource block, run `checkov` or `tfsec` on it immediately, and
-feed the findings back to the model for a fix. The model is your first-pass engineer; you are the
-reviewer who checks that the fix doesn't introduce a new problem (e.g., a too-restrictive S3 policy
-that breaks the application) and that every suppression annotation has a real rationale.
+AI is excellent at writing Terraform that *passes a scanner* — and just as good at writing Terraform that
+looks correct but hides an IAM over-grant or an encryption miss. The reliable workflow: let the model
+draft a resource block, run `checkov`/`tfsec` on it immediately, feed the findings back, iterate. The
+model is your first-pass engineer; you are the reviewer. But the judgment the model can't do for you is
+exactly the scanner's blind spot: it will happily "fix" a finding by moving a wildcard from `Action` to
+`Resource` (still broken), suppress a *real* exposure as if it were a false-positive, or pass the gate
+while leaving the secret in the variable. Make the model draft the gate and the suppressions; **you**
+confirm each suppression has a real rationale, that the gate fails the *original* config for the *right*
+reason, and that it passes only the genuinely-fixed one. AI authors, you review, you own the verdict.

@@ -1,82 +1,125 @@
 # Module 03 — IAM Attack Paths
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · breach-driven, predict-the-blast-radius (graph). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *privilege escalation in the cloud isn't a vulnerability; it's a path through a graph that legitimate permissions drew for you.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md) · [Module 02 — Cloud Identity & IAM](../02-cloud-identity-iam/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *privilege escalation in the cloud isn't a vulnerability — it's a policy composition that an attacker walks like a graph.*
+## The research
 
-## Why this matters
-In traditional network pentests, privilege escalation means exploiting a vulnerability. In the cloud,
-the most dangerous escalation paths are entirely within the intended behaviour of IAM — the attacker
-simply chains legitimate API calls that the policy permits. These paths are invisible to any single
-policy review but obvious once you model the account as a graph. `pmapper` and `cloudfox` exist
-because human eyeballing of flat policy lists reliably misses the composed paths that attackers
-exploit. Finding and fixing them before an attacker does is the core skill this module builds.
+In 2018, **Rhino Security Labs** published a catalogue that should be uncomfortable reading for anyone
+who signs off on IAM policies: **["AWS IAM Privilege Escalation — 21 Methods"](https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/)**.
+Not 21 bugs in AWS — 21 *combinations of permissions that AWS grants exactly as intended* and that
+nonetheless let a low-privilege principal become administrator. `iam:CreatePolicyVersion` lets you
+write a new version of a policy you're attached to — so set it to `Allow *:*`. `iam:PassRole` plus a
+launch action (`ec2:RunInstances`, `lambda:CreateFunction`) lets you hand an admin role to a compute
+resource you control and *become* it. `iam:AttachUserPolicy` lets you attach `AdministratorAccess` to
+yourself. Each is one line in a policy. None is a CVE. Every one is admin.
 
-## Objective
-Build and traverse an IAM privilege-escalation graph for a seeded Meridian Financial account, identify
-all paths from a low-privilege starting principal to admin, and write a remediation plan that breaks
-each path with a minimal, targeted policy change.
+The catalogue's real lesson isn't the list — it's that these paths are **invisible to policy review.**
+A human reading flat policy documents one at a time cannot see that user A can assume role B, which can
+pass role C to a Lambda, which has `iam:*`. No single step looks alarming; the *composition* is total
+compromise. So this module turns on a prediction, and the naive guess is reliably wrong:
 
-## The core idea
-Think of an IAM account as a directed graph: principals are nodes, and an edge from A to B exists
-whenever A can perform an action that results in A gaining B's permissions — or B's permissions being
-applied to A. The edges aren't explicit; they're *implied* by the policy documents and the AWS service
-actions that compose permissions across principals. `iam:PassRole` + `ec2:RunInstances` implies an
-edge from the user to the EC2 role. `iam:CreateAccessKey` on another user implies an edge to that
-user. `sts:AssumeRole` where the trust policy permits it implies a direct edge to the role. The
-escalation isn't a bug — it's the graph navigated intentionally.
+> **Given a menu of ordinary-looking permissions, which ones chain to admin — and how many hops away
+> is "admin" from a principal that has none of the obvious red-flag grants?**
 
-What makes this tractable as a tool problem rather than an infinite enumeration is that the graph is
-bounded: the number of principals and the set of actions that imply edges are finite and known. pmapper
-treats each known escalation technique as a typed edge, builds the full graph in memory, and runs
-reachability queries against it. The question "can any principal reach admin?" becomes a graph search
-for all nodes from which admin is reachable — which takes milliseconds for accounts with hundreds of
-roles, where a human reading policy documents would take hours and still miss multi-hop paths.
+## Your job
 
-The multi-hop path is what makes this particularly dangerous in practice. A single user might have
-no obvious over-broad permission; every individual policy might look reasonable in isolation. But user
-A can assume role B, and role B can pass role C to a Lambda, and role C has `iam:*`. No single step
-looks alarming; the chain is admin escalation. The graph makes the chain visible. This is why the
-standard cloud security assessment discipline is: enumerate the graph, find all paths to admin, fix
-the *edge* in the path that is cheapest to remove (usually the one that can be removed with the least
-operational disruption), then re-run the graph to confirm the path is severed.
+By the end of this module you'll **model an entire account as a directed graph and predict its blast
+radius**: principals are nodes, and an edge from A to B means *A holds a permission that lets it become
+B*. You'll build the graph with **`pmapper`/`cloudfox`**, walk a real multi-hop chain from a
+low-privilege user to admin, find the **minimum cut-set** — the smallest set of edges whose removal
+disconnects *every* path to admin — then **implement the cut and re-run the graph to prove the edge is
+gone.** That last beat is what separates an assessment from a report: in IAM, "fixed" means the path no
+longer exists in the graph, not that someone wrote a recommendation.
 
-Remediating IAM attack paths requires the same discipline as remediation of any graph vulnerability:
-breaking one edge isn't enough if there are multiple paths to the same destination. The minimum
-effective remediation is a cut-set — a set of edges whose removal disconnects all paths from the
-starting node to admin. In practice, the cheapest cut-sets are almost always: (1) scope `iam:PassRole`
-to the specific roles the principal legitimately needs to pass rather than `*`, or (2) add a condition
-key (like `iam:PassedToService`) that restricts PassRole to a specific service, or (3) remove
-unnecessary `sts:AssumeRole` from trust policies where a more specific principal would serve the
-same legitimate purpose. The graph shows you what to cut; the CONTRIBUTING.md principle of "minimal,
-targeted change" tells you not to cut more than you need to.
+## Call it before you read on
+
+Don't scroll. Write down your gut answers — being wrong here is the teaching event, and you'll grade
+yourself in the lab.
+
+> **Q1.** Of these four permissions, which chain to admin: `iam:CreatePolicyVersion`, `s3:GetObject`,
+> `iam:PassRole`, `cloudwatch:GetMetricData`? (Two are escalation primitives; two are inert.)
+>
+> **Q2.** `dev-alice` has *no* admin grant, *no* `iam:*`, and can't attach a policy to herself. She can
+> only `sts:AssumeRole` one Lambda role. Is she safe — and if not, how many hops to admin?
+>
+> **Q3.** Two separate paths run from `dev-alice` to admin. You scope `iam:PassRole` on the role in
+> path 1. Is the account fixed?
+
+## The graph, revealed
+
+Hold your answers against these.
+
+**Q1 — escalation is a permission *type*, not a permission *name*.** `iam:CreatePolicyVersion` and
+`iam:PassRole` are escalation primitives because they let a principal *change what it (or a resource it
+controls) is allowed to do* — they create edges in the graph. `iam:CreatePolicyVersion` lets you author
+`Allow *:*` into a policy you're already attached to; `iam:PassRole` lets you donate a more-powerful
+role to compute you launch. `s3:GetObject` and `cloudwatch:GetMetricData` read data — they're reach, but
+they're *terminal*: they grant no new permissions, so they draw no edges. The skill Rhino's catalogue
+trains is reading a permission and asking **"does this let the holder grant itself or a resource more
+power?"** If yes, it's an edge. The 21 methods are 21 answers to that one question.
+
+**Q2 — she is two hops from admin, and nothing she holds looks dangerous.** `dev-alice` can assume
+`LambdaRole` (hop 1, a plain `sts:AssumeRole` the trust policy permits). That role holds
+`iam:PassRole` and `lambda:UpdateFunctionConfiguration` — so she updates an existing Lambda's execution
+role to `AdminRole` and invokes it (hop 2). Now her code runs with `iam:*` and `s3:*`. **No
+single principal in that chain has an obvious over-grant**; the escalation lives in the *edges between*
+them, which is exactly why flat policy review misses it and why `pmapper` exists. The mental model to
+keep: **the account is a directed graph, an edge is a permission that lets one principal become another,
+and privilege escalation is just reachability to an admin node.** Once you see it that way, "find all
+privesc paths" becomes "graph search from every principal to every `is_admin` node" — milliseconds, not
+an afternoon of squinting at JSON.
+
+**Q3 — no, and this is the whole reason "cut-set" is the right word.** Breaking one edge severs one
+path; if a second path reaches admin through different edges, the account is still compromised. The
+**minimum cut-set** is the smallest set of edges whose removal disconnects *all* paths from the source
+to every admin node — a classic graph operation, and the actual deliverable of an IAM assessment. The
+graph tells you *which* edge is cheapest to cut (usually scoping an `iam:PassRole` `Resource` from `*`
+to the one role legitimately needed, or adding an `iam:PassedToService` condition, or removing an
+over-broad principal from a trust policy); the discipline of the **minimal, targeted change** tells you
+not to cut more than disconnects the graph. And — the beat that makes the verdict yours — you don't stop
+at naming the cut. You apply it and **re-run the analysis**: a fixed account is one where the path finder
+reports *no paths to admin*, proven, not promised.
 
 ## Learn (~4 hrs)
 
-**IAM privilege escalation theory (~1.5 hrs)**
-- [Rhino Security Labs — AWS IAM Privilege Escalation Methods and Mitigation](https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/) — the definitive reference for 21 known IAM escalation paths, each with the required permissions and mitigation. Essential reading before the lab.
-- [MITRE ATT&CK T1548 — Abuse Elevation Control Mechanism: Cloud](https://attack.mitre.org/techniques/T1548/) and [T1078.004 — Valid Accounts: Cloud Accounts](https://attack.mitre.org/techniques/T1078/004/) — the ATT&CK techniques that IAM privilege escalation maps to.
+*Richer than a foundations module: the graph model here is the backbone of the Phase-1 project and the
+capstone, so the time is well spent. Read Rhino's catalogue first — it's the source the tools encode.*
 
-**pmapper (~1.5 hrs)**
-- [pmapper GitHub — README](https://github.com/nccgroup/PMapper) — the graph-based IAM analysis tool from NCC Group. Read the "how it works" and "usage" sections; focus on `pmapper graph create`, `pmapper analysis`, and `pmapper visualize`.
-- [NCC Group Research — Mapping AWS IAM Privilege Escalation Paths with PMapper](https://research.nccgroup.com/2018/12/12/aws-iam-escalation-paths/) — the original analysis that motivated pmapper; it explains the graph model and why flat policy review misses multi-hop paths.
+**The escalation catalogue (~1.5 hrs)**
+- [Rhino Security Labs — AWS IAM Privilege Escalation — 21 Methods](https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/) (~1 hr) — the primary research this whole module rests on. Read the PassRole, CreatePolicyVersion, AttachUserPolicy, and AssumeRole sections closely (those are the edges in the lab graph); skim the rest as a reference for *what a privesc edge looks like.*
+- [MITRE ATT&CK T1548 — Abuse Elevation Control Mechanism: Cloud](https://attack.mitre.org/techniques/T1548/) and [T1078.004 — Valid Accounts: Cloud Accounts](https://attack.mitre.org/techniques/T1078/004/) (~30 min) — the technique IDs your finding cites; map each lab hop to one.
 
-**cloudfox attack-path commands (~1 hr)**
-- [cloudfox GitHub — `privesc` and `iam-simulator`](https://github.com/BishopFox/cloudfox) — cloudfox's privilege escalation detection commands; the `privesc` module automates path finding similar to pmapper. Read the "AWS" section of the docs.
+**The graph model and the tools (~1.5 hrs)**
+- [tecRacer — Map out your IAM with PMapper](https://www.tecracer.com/blog/2021/08/map-out-your-iam-with-pmapper.html) (~30 min) — a walkthrough of *why* modeling IAM as a directed graph is the right abstraction: it works a concrete multi-hop chain (a developer edits a Lambda, borrows its existing role, mints an admin policy) that flat, policy-by-policy review would never surface.
+- [pmapper — README (NCC Group)](https://github.com/nccgroup/PMapper) (~40 min) — read "how it works," then `pmapper graph create`, `pmapper analysis`, and `pmapper query`. This is the tool that turns the model above into a query.
+- [BishopFox — cloudfox README (`permissions`, `role-trusts`)](https://github.com/BishopFox/cloudfox) (~20 min) — the enumeration accelerator you'll use to corroborate the graph against the live policies.
+
+**The scenario range (~1 hr)**
+- [CloudGoat — README and the `iam_privesc_by_*` scenarios (Rhino Security Labs)](https://github.com/RhinoSecurityLabs/cloudgoat) (~1 hr) — the same author's attack range; read one `iam_privesc_by_rollback` or `iam_privesc_by_key_rotation` scenario writeup so you've seen a privesc path run end-to-end in a *real* account, where IAM is actually enforced. The stretch re-runs the lab there.
 
 ## Key concepts
-- IAM as a directed graph: principals as nodes, permission-composition as edges
-- The 21 known escalation techniques (PassRole, CreateAccessKey, AssumeRole, Lambda invocation, etc.)
-- Why multi-hop paths are missed by flat policy review
-- Graph reachability as a query: "who can reach admin?"
-- Minimum cut-sets: scoping PassRole, conditioning AssumeRole, removing unnecessary federation trust
+- The account is a **directed graph**: principals are nodes, an edge means "A can become B," privesc is reachability to an `is_admin` node
+- An **escalation primitive** is any permission that lets the holder grant itself/a resource more power (`iam:PassRole`, `iam:CreatePolicyVersion`, `iam:AttachUserPolicy`, `sts:AssumeRole`); reach-only permissions draw no edges
+- **Multi-hop paths** are invisible to flat policy review and obvious to graph search — this is why `pmapper`/`cloudfox` exist
+- A **minimum cut-set** is the smallest set of edges whose removal disconnects *all* paths to admin; one cut edge is not a fix if a second path survives
+- A fix is **proven** only when the re-run graph reports *no paths to admin* — implement the cut, don't just recommend it
 - ATT&CK mapping: T1548 (elevation) and T1078.004 (valid accounts)
 
 ## AI acceleration
-Give a model the list of principals, their permissions, and role trust policies and ask it to trace
-escalation paths manually. It is useful for single-hop paths; it reliably misses three-hop chains and
-tends to hallucinate edges from services it doesn't fully model (Lambda execution, ECS task roles).
-Use the model for the first-pass description and remediation wording — then validate every reported
-path by checking it against the pmapper graph or the cloudfox privesc output before you include it
-in a report. Graph tools are faster and more reliable than model enumeration for this task.
+Give a model the principals, their policies, and the role trust policies and ask it to enumerate every
+path to admin. It's a fast first-pass on single-hop edges and a strong drafter of the CISO summary — but
+it has a known failure mode this module exists to expose: it reliably misses three-hop chains and
+hallucinates edges from services it doesn't fully model (Lambda execution, ECS task roles). Treat its
+path list as a *hypothesis*, never the source of truth: validate every reported path against the
+`pmapper`/`cloudfox` graph, and confirm every *absence* of a path the same way. The judgment the model
+can't do for you is the minimum cut — the smallest edge removal that disconnects all paths without
+breaking the principal's real job — and the re-run that proves it. You direct it; you own the graph.

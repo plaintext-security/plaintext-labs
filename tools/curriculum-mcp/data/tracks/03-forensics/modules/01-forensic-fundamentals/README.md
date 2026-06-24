@@ -1,12 +1,19 @@
 # Module 01 — Forensic Fundamentals & Evidence Handling
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 1 · Concept Autopsy — dissect why forensic integrity is the load-bearing concept of the whole track by hashing and verifying evidence, documenting a chain of custody, and producing a defensible record of how the evidence was handled. (Secondary: Misconception Reveal — kill the "hash it later, it's fine" intuition by showing how an image gets excluded.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *every conclusion you ever draw in this track stands or falls on what you do in the first five minutes.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Forensic work is downstream of trust: a timeline reconstruction, a root-cause verdict, a legal hold — all of it is only as reliable as the chain of custody that precedes it. Get the fundamentals wrong and every artifact you surface later is tainted. Courts have excluded forensic evidence because the examiner couldn't prove the image matched the original; IR reports have been challenged because the hash wasn't taken before first access. This module is the foundation everything else is built on, and it pays forward to every subsequent module in the track.
+
+The reference point for what clean evidence handling looks like is the **[M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/)** — a public Digital Corpora dataset that imaged every hard drive and RAM stick of a small company *daily* across four weeks of a (simulated, but realistically run) insider-data-exfiltration investigation, capturing and publishing the MD5/SHA1/SHA256 of each image alongside it. It is the dataset academic and law-enforcement forensics courses actually use, and it is the canonical example of the discipline this module teaches: hash-on-acquisition, day-over-day integrity, and a documented chain of custody that an opposing examiner could re-verify. You will work from M57 images directly in later modules; here, study how its hashes and acquisition logs are structured.
 
 ## Objective
 Explain why forensic integrity matters, compute and verify hashes with `sha256sum` and `dc3dd`, document a chain of custody for collected evidence, and articulate the difference between a forensic image and a live snapshot.
@@ -32,6 +39,7 @@ Finally, understand the difference between **volatile and non-volatile evidence*
 - [dc3dd man page and usage guide (DCFL)](https://sourceforge.net/projects/dc3dd/files/dc3dd/7.2/) — the forensic `dd`; skim the flag listing (`hash`, `log`, `hof`) to understand what it gives you that plain `dd` doesn't.
 
 **Chain of custody (~1 hr)**
+- [Digital Corpora — M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/) — open the scenario page and study how a real teaching dataset publishes its evidence: per-image hashes (MD5/SHA1/SHA256), daily acquisitions, and the supporting documents (warrants, detective reports). ~20 min; this is the shape your own chain-of-custody log should take.
 - [FBI — Digital Evidence Collection & Handling Guide](https://www.fbi.gov/services/information-management) — federal standard for evidence chain of custody and documentation. See Law Enforcement guidance sections.
 - [RFC 3227 — Guidelines for Evidence Collection and Archiving (also above)](https://www.rfc-editor.org/rfc/rfc3227) — includes explicit chain-of-custody requirements, handling procedures, and template forms.
 
@@ -43,6 +51,7 @@ Finally, understand the difference between **volatile and non-volatile evidence*
 - Write-blocking is mandatory before any contact with source media.
 - Collect in order of volatility: RAM → running processes → disk → offline storage.
 - Dead-box vs. live acquisition is a judgment call driven by the investigation's needs, not habit.
+- Real teaching datasets (Digital Corpora's M57-Patents) publish per-image hashes and daily acquisitions — model your own evidence log on them.
 
 ## AI acceleration
 AI is most useful here as a chain-of-custody drafter and report scaffolder: describe what you collected and when, and a model will produce a formatted evidence log you then verify and sign. Where AI is *not* useful: computing hashes (trust the tool, not the model), and deciding whether to pull power (that judgment is yours, not a model's). Use AI to draft; never use it to substitute for running the actual hash command and comparing the output yourself.

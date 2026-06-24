@@ -1,12 +1,19 @@
 # Module 03 — File Systems & Carving
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — recover a deleted file from a raw disk image with SleuthKit (`fls`/`icat`/`fsstat`) and `foremost`, reconstructing the inodes and paths that prove the file existed and was deleted. (Secondary: Tool-Build — turn the carve/recover step into a reusable parser.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *deleted files don't disappear — they just become invisible to the OS, and visible to you.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 When a user deletes a file or an attacker wipes their traces, the operating system marks that space as available — but the data usually remains on disk until overwritten. File system forensics is the discipline of reading what's really on the media, not what the OS presents. It is where evidence goes after it's been "deleted" and where malware that never ran from a normal path often hides. Understanding how NTFS and ext4 actually allocate and reclaim space is what separates an investigator who can say "I found a deleted file" from one who can prove *when it was deleted, who deleted it, and what it contained*.
+
+This is exactly the move at the center of the **[M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/)**, the public Digital Corpora disk-image dataset that forensics courses use to teach recovery: a confidential spreadsheet leaves the company, and the investigation hinges on recovering deleted artifacts and carving content out of unallocated space across the imaged workstation drives — not on what the live filesystem shows. The same dataset ships `bulk_extractor` output so you can check your carving against a known-good reference. Those raw images are the kind of input you point `fls`/`icat`/`foremost` at, and they make a real case out of a technique that toy images make feel academic.
 
 ## Objective
 Use SleuthKit tools (`fls`, `icat`, `fsstat`) to parse a raw disk image and recover deleted file entries; use `foremost` to carve recovered content from unallocated space; document the inodes and file paths that prove a file's existence and deletion.
@@ -29,6 +36,7 @@ Every filesystem is a data structure — a tree of metadata (inodes, MFT entries
 **SleuthKit in practice (~1.5 hr)**
 - [SleuthKit User Guide and Tool Documentation](https://sleuthkit.org/sleuthkit/docs/) — official reference for all SleuthKit tools (`fls`, `icat`, `fsstat`, `istat`, `mmls`); each tool's usage and output format. Keep this open during the lab.
 - [foremost — SourceForge Project Documentation](https://foremost.sourceforge.net/) — the carver's documentation and configuration format; read the header/footer configuration section to understand how you'd add a new file type.
+- [Digital Corpora — M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/) — real disk images where the case turns on recovering a deleted/exfiltrated document. Grab one workstation image (~15 min) and try `fls -d` and `foremost` against it; the included `bulk_extractor` output gives you an answer key to calibrate against.
 
 **FAT32 internals (for the lab image) (~1 hr)**
 - [FAT32 File System Specification (Microsoft)](https://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/fatgen103.doc) — the authoritative spec; sections 3–5 cover the FAT structure and directory entries. Worth a skim so you know what `fsstat` is reporting.
@@ -41,6 +49,7 @@ Every filesystem is a data structure — a tree of metadata (inodes, MFT entries
 - `foremost` uses a header/footer config to carve specific file types from unallocated space.
 - NTFS MFT entries carry dual timestamps (`$SI` vs. `$FN`) that matter for anti-forensics detection.
 - `$LogFile` and `$UsnJrnl` record filesystem operations — often more valuable than the files themselves.
+- Real disk-image datasets (Digital Corpora's M57-Patents) hinge on recovering deleted/carved files from unallocated space — practice against them, not just toy images.
 
 ## AI acceleration
 AI is useful for translating SleuthKit command output into plain English ("what does this `fsstat` output tell me about the volume?") and for drafting foremost configuration entries for new file types. Where AI is not a substitute: it cannot read your disk image, and it will hallucinate inode numbers and specific offsets. Use it to explain the output you've already captured; always verify inode and offset values by running the tools yourself.

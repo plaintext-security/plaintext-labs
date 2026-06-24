@@ -1,12 +1,19 @@
 # Module 06 — Memory Forensics
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — reconstruct attacker behavior from a memory image with Volatility3 — enumerate processes, network connections, and command lines, and find evidence of process injection — producing findings the disk alone could never show. (Secondary: Misconception Reveal — kill "disk analysis sees everything" by surfacing fileless/injected activity that lives only in RAM.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *RAM is the one place an attacker cannot clean up and leave — everything running exists in memory.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Advanced attackers go to great lengths to avoid touching disk: fileless malware runs entirely in memory, injected shellcode lives inside legitimate processes, encryption keys are decrypted at runtime and never written to a file. A traditional disk investigation sees none of this. Memory forensics is the technique that reveals what is actually running — processes, their injected payloads, their network connections, the decryption keys in use — from a single memory capture. For a sophisticated intrusion, memory is often the *only* place the full picture exists.
+
+The most accessible way to build this skill on real images is **[MemLabs](https://github.com/stuxnet999/MemLabs)** (Abhiram Kumar, "stuxnet999") — a popular public set of seven memory-forensics challenges shipping downloadable Windows RAM dumps with escalating difficulty. Each lab is a self-contained investigation: enumerate the processes, find what was injected or hidden, recover the artifact (often a password, a stashed file, or a hidden process). It is the standard on-ramp practitioners point newcomers to because the images are *real captures*, so `pslist`/`malfind`/`netscan` behave exactly as they do on a live incident rather than on a sanitized teaching dump. Lab01 is the natural first target right after this module.
 
 ## Objective
 Use Volatility3 to analyze a memory image: enumerate running processes, identify network connections, extract process command lines, find evidence of process injection, and explain what each finding tells you about attacker behavior.
@@ -43,6 +50,7 @@ A memory image is a dump of physical RAM at a moment in time — every bit of ev
 - `netstat`/`netscan` shows socket and connection tables from the kernel, including recently-closed.
 - Process injection (T1055) is the primary reason memory forensics surfaces what disk analysis misses.
 - A `malfind` hit is a lead; triage by correlating with `pslist` parent and `netscan` connections.
+- MemLabs is the public, downloadable set of real Windows memory images to practice these plugins against — start with Lab01.
 
 ## AI acceleration
 AI is useful for explaining Volatility3 output — feed it a `pslist` dump and ask it to flag anomalous parent-child relationships. For `malfind` hits, feed the disassembled bytes and ask whether they look like shellcode or a JIT stub. Where AI is not reliable: it cannot run Volatility3 against your image, and it will hallucinate specific offsets and process details. Use it to interpret output you've already captured; every finding must trace back to the actual plugin output.

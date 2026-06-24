@@ -1,12 +1,19 @@
 # Module 05 — Browser & Application Artifacts
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 6 · Reconstruct — reconstruct what a user actually did from a Chrome/Chromium SQLite history database with `hindsight` and direct SQL, recovering history, searches, and downloads as artifact-cited findings. (Secondary: Misconception Reveal — show which artifacts survive incognito and disprove "clearing history erases it" via WAL recovery.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *the browser is the most detailed diary of what a user actually did — and most people forget it exists.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Web browsers and desktop applications are the primary interface for most modern work — and most modern threats. A user who was phishing-targeted clicked something in a browser. An insider who exfiltrated data probably navigated to a cloud storage service or a webmail provider. A compromised machine is often first accessed via a malicious payload downloaded by a browser. Understanding what the browser recorded — and that it recorded far more than the visible history — is essential for reconstructing user activity during an incident.
+
+The classic worked example is the **[Nitroba University Harassment scenario](https://digitalcorpora.org/corpora/scenarios/nitroba-university-harassment-scenario/)**, a public Digital Corpora dataset built around a single investigative question: which of several students sharing a dorm IP sent a harassing webmail message? The case is *solved* by reconstructing web activity — the anonymous-mailer page the suspect visited, the webmail logins, the navigation chain that places one person at the keyboard. (Nitroba ships as a PCAP, so you read the activity off the wire rather than out of a SQLite history file — but the artifacts are the same URLs, search terms, and webmail sessions you'll pull from a browser profile here, which is why it's the canonical "tie web activity to a human" teaching case.) It is the same reasoning you apply when an insider's browser history is the evidence that they reached a cloud-storage exfiltration page.
 
 ## Objective
 Extract browsing history, search terms, download records, and cached credentials from a Chrome/Chromium SQLite history database using `hindsight` and direct SQL queries; explain which browser artifacts survive private/incognito mode and which don't.
@@ -32,6 +39,9 @@ Every major browser stores its state in a collection of SQLite databases and JSO
 - [SQLite WAL mode — official documentation](https://www.sqlite.org/wal.html) — explains why WAL files contain rows that history-clearing misses; short and essential for understanding forensic recovery.
 - [DB Browser for SQLite](https://sqlitebrowser.org/) — the GUI tool for exploring SQLite files interactively; useful for understanding schema before scripting queries.
 
+**A real web-activity case (~0.5 hr)**
+- [Digital Corpora — Nitroba University Harassment scenario](https://digitalcorpora.org/corpora/scenarios/nitroba-university-harassment-scenario/) — the canonical teaching case for attributing web activity to a person from a shared IP. Read the scenario brief and slides (~20 min) to see how visited URLs, webmail sessions, and search terms combine into an attribution — the same artifact chain you'll pull from a browser profile in the lab.
+
 **Application artifacts (~0.5 hr)**
 - [SANS Forensic Resources — Application Artifacts](https://digital-forensics.sans.org/blog/) — curated guides on where major applications (Slack, Teams, Office) store forensically relevant data; use as a reference during analysis.
 
@@ -43,6 +53,7 @@ Every major browser stores its state in a collection of SQLite databases and JSO
 - Browser artifacts are redundant: history, DNS cache, downloads, network flows each tell part of the story.
 - Private/incognito mode does not write to the `urls`/`visits` tables — but DNS cache and network flows persist.
 - Application artifact locations vary by OS; know where Slack, Teams, and Outlook store their data.
+- The Nitroba scenario is the canonical case for attributing web activity (mailer pages, webmail logins, searches) to a specific person.
 
 ## AI acceleration
 AI is useful for translating Chrome's timestamp format (feed it a raw microsecond value, get a human-readable datetime) and for drafting SQL queries against the browser schema. Where it's not reliable: it will guess at SQLite schema details and sometimes confuse the Chrome epoch with the Unix epoch. Always verify a timestamp conversion against a known event before trusting AI-generated SQL output.

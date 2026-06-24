@@ -1,9 +1,14 @@
 # Module 08 — Web Attacks: SSRF, XXE & Deserialization
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 3 · Blast-Radius Trace — exploit SSRF, XXE, and insecure deserialization and trace the pivot from a single web bug to infra/IAM compromise (the Capital One 2019 path). (Secondary: Concept Autopsy — the "confused deputy" that unifies all three.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Offensive Security** — *the server-side classes that turn one web bug into cloud compromise.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Beyond the client-facing bugs lie the server-side ones — Server-Side Request Forgery, XML

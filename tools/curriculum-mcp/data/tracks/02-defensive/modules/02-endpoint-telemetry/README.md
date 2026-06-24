@@ -1,9 +1,14 @@
 # Module 02 — Windows & Endpoint Telemetry
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — deploy Sysmon with a good config, read the process/network/persistence events real detections rely on, then author and prove a detection that fires on the malicious chain and stays quiet on benign activity; you commit the config plus a verified detection. (Secondary: Concept Autopsy — the config *is* the detection strategy.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *the endpoint sees what the network can't; Sysmon is how you make it talk.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Most attacker activity — process creation, injection, persistence — happens on the endpoint, where
@@ -13,7 +18,9 @@ here is what makes the later detection and hunting modules possible.
 
 ## Objective
 Deploy Sysmon with a good config, and read the process/network/persistence events that real
-detections are built on — using real attack telemetry.
+detections are built on — using real attack telemetry — then *author* a detection for the attack
+you found and **prove it**: it fires on the malicious chain and stays quiet on benign activity.
+Reading the telemetry and building a verified detection from it are equal halves.
 
 ## The core idea
 The endpoint is where the attack actually executes — a process spawns, injects into another,
@@ -53,6 +60,7 @@ live.
 - Process ancestry and command-line logging
 - Endpoint agents (Sysmon → Wazuh / EDR)
 - Tuning: signal vs volume
+- Author then verify: write the detection (Sigma/predicate) and prove it fires on the malicious chain, quiet on benign — not just "note what it would key on"
 
 ## AI acceleration
 A model explains a Sysmon Event ID or a suspicious command line instantly — a genuine accelerator

@@ -1,9 +1,14 @@
 # Module 10 — ATT&CK Mapping & Coverage
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 13 · Eval Harness — map your detections to MITRE ATT&CK, visualise coverage and gaps in the Navigator, and prioritise what to build next; you commit a Navigator layer that measures coverage rather than vibing it. (Secondary: Judgment-as-Code/Gate — coverage is not effectiveness, and the gap list is what to enforce next.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Defensive Operations** — *you can't defend what you can't measure; map your detections to know your gaps.*
+
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~5–7 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 A pile of detections isn't a strategy. Mapping every detection to MITRE ATT&CK turns "we have 200

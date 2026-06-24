@@ -1,9 +1,14 @@
 # Module 02 — Files, Regex & Log Parsing
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 9 · Tool-Build — build a stdlib-only log parser (`re`, `pathlib`, `collections`) that extracts failed-login IPs from a realistic SSH auth log, flags brute-force patterns, and reports the top offenders. (Secondary: Eval Harness — verify the parser on positive and negative cases, not just the happy path.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Python for Security** — *logs are the ground truth; parsing them is the first craft.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner &nbsp;·&nbsp; **Estimated time:** ~3.5–4.5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 ## Why this matters
 Every security tool eventually outputs text: syslog lines, auth events, IDS alerts, firewall

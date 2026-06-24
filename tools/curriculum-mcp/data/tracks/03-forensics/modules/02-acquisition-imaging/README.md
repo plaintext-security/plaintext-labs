@@ -1,12 +1,19 @@
 # Module 02 — Acquisition & Imaging
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Type 7 · Build-&-Operate — image a disk sector-by-sector with `dc3dd`, verify it with inline hash comparison, and operate the acquisition workflow end to end to produce a verified forensic image. (Secondary: Decision/ADR — choose and defend dead-box vs live acquisition for the scenario as a recorded decision.) [Go to the hands-on lab →](lab.md)*
 
+*Last reviewed: 2026-06*
 
 **Digital Forensics & IR** — *the only shot you get at the original evidence is the first one — take it cleanly.*
 
+<!-- module-meta -->
+**Difficulty:** Intermediate &nbsp;·&nbsp; **Estimated time:** ~4.5–6.5 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
+
 ## Why this matters
 Acquisition is the most time-sensitive and least reversible step in any forensic investigation. If you image a disk sector-perfectly with a verified hash, every subsequent analysis phase can work from that image indefinitely. If you skip the write block, run the wrong tool, or copy only the visible filesystem, you may destroy the very data your investigation depends on — and you can never go back to the original. Memory acquisition is even more time-critical: the moment a machine reboots or the user kills a process, that volatile state is gone. This module teaches you to capture evidence cleanly under pressure.
+
+The clearest illustration of acquisition done right is the **[M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/)**, a public Digital Corpora dataset that imaged the disks *and* RAM of every workstation in a small company every single day for four weeks. Because both volatile and non-volatile state were captured daily — each image hashed at acquisition — investigators could later pin exactly when a sensitive document left the company. That dataset only exists because someone made disciplined dead-box and live-acquisition calls on a schedule; it is the worked example of the trade-offs in this module, and its raw `.dd`/`.E01` disk images and memory snapshots are exactly the inputs you will later parse with SleuthKit and Volatility3.
 
 ## Objective
 Image a disk device sector-by-sector using `dc3dd`, verify the image with inline hash comparison, and understand the considerations for memory acquisition with `avml`; articulate the trade-offs between dead-box and live acquisition for a given scenario.
@@ -25,6 +32,7 @@ The practical workflow on a modern IR engagement runs like this: for a suspected
 ## Learn (~3.5 hrs)
 
 **Disk acquisition (~1.5 hrs)**
+- [Digital Corpora — M57-Patents scenario](https://digitalcorpora.org/corpora/scenarios/m57-patents-scenario/) — a real publicly imaged dataset: daily disk and RAM images of every host in a company, each with published hashes. ~15 min skim of the data layout shows what a multi-host, multi-day acquisition actually produces and how it's organized for re-use.
 - [The Forensics Wiki — Dd](https://forensicswiki.xyz/wiki/index.php?title=Dd) — explains the differences between `dd`, `dc3dd`, and `dcfldd`; short but precise.
 - [libewf / ewfacquire man page](https://manpages.ubuntu.com/manpages/focal/man1/ewfacquire.1.html) — for when you need E01 output. Skim to understand the format options.
 
@@ -44,6 +52,7 @@ The practical workflow on a modern IR engagement runs like this: for a suspected
 - Document tool version, acquisition time, and hash for every image you take.
 - E01 format is the industry standard for disk images; raw is acceptable for lab work and small images.
 - Write-blocking is mandatory before touching source media in dead-box acquisition.
+- The M57-Patents dataset shows the payoff of disciplined daily disk+RAM acquisition: you can pin exactly when data left a host.
 
 ## AI acceleration
 A model is useful for drafting acquisition checklists, case note templates, and hashing scripts. Where AI is not a substitute: computing hashes, running acquisition tools, and making the live-vs-dead-box judgment call. Feed the model your scenario (machine type, suspected attack, investigation goals) and ask it for an acquisition decision tree — then validate each branch against the NIST guidance before you execute.

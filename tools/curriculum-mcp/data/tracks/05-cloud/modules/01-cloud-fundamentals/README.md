@@ -1,82 +1,119 @@
 # Module 01 — Cloud Fundamentals & Shared Responsibility
 
-*Module concept · [Go to the hands-on lab →](lab.md)*
+*Variant D · breach-driven, predict-then-reveal, interleaved ("render the verdict"). [Go to the hands-on lab →](lab.md)*
+
+*Last reviewed: 2026-06*
+
+**Cloud & Container Security** — *every cloud breach ends in one question: provider's fault or yours? Learn to answer it by answering a real one.*
+
+<!-- module-meta -->
+**Difficulty:** Beginner–Intermediate &nbsp;·&nbsp; **Estimated time:** ~4–6 hrs (study + lab) &nbsp;·&nbsp; **Prerequisites:** [Foundations](../../../00-foundations/README.md)
+{ .module-meta }
 
 
-**Cloud & Container Security** — *before you can attack or defend the cloud, you have to know who owns what.*
+## The case
 
-## Why this matters
-Every cloud breach investigation eventually arrives at the same question: was that a failure of the
-provider, or of the customer? The answer determines what you can fix, who you escalate to, and whether
-you were even responsible. Getting shared responsibility wrong is how SOCs miss detections they should
-own, and how engineers ship workloads with the default "the cloud handles it" assumption that attackers
-count on. This module is the frame every other cloud module hangs on.
+On 19 July 2019, an external researcher emailed Capital One: your customer data is on the open
+internet. By the time it was contained, **roughly 100 million US credit-card applications** — names,
+addresses, SSNs, bank account numbers — had been copied out of Amazon S3. The chain, later laid out in
+the [DOJ indictment](https://www.justice.gov/usao-wdwa/press-release/file/1188626/download) and the
+[US Senate report](https://www.hsgac.senate.gov/wp-content/uploads/imo/media/doc/Capital%20One%20Report.pdf),
+went like this:
 
-## Objective
-Enumerate a simulated AWS account using the CLI, identify the IAM policies and resource configurations
-that define the customer's responsibility boundary, and articulate what the provider guarantees vs. what
-you own for at least three service types (IaaS, PaaS, SaaS).
+1. A misconfigured web-application firewall let an attacker make the server **fetch a URL of their
+   choosing** (a server-side request forgery).
+2. They pointed it at the **instance metadata service** — a special address every EC2 box can reach —
+   and it handed back the **temporary credentials of the server's IAM role.**
+3. That role was allowed to **`s3:List*` and read *every* bucket in the account**, not just the one it
+   needed.
+4. The data was **encrypted at rest**. They walked out with it anyway.
+5. The activity was in **CloudTrail the whole time.** Nobody was watching; an outsider reported it.
 
-## The core idea
-The shared responsibility model is the cloud's load-bearing conceptual structure — and it's genuinely
-unintuitive until you think about it in terms of the managed-service spectrum. At one end, IaaS (raw EC2
-instances) looks like a rented data-centre rack: AWS physically secures and virtualises the hardware, and
-you own the OS, the patches, the firewall rules, the keys, and everything running on top. At the other end,
-SaaS (think AWS WorkMail or Salesforce) hands you a running application; your surface is the identity
-configuration and data governance. PaaS (Lambda, RDS) sits in between — the runtime is managed, but the
-execution role's permissions, the code the function runs, and the data it touches are entirely yours.
-The mental model that makes this stick: **draw a horizontal line through the stack; everything above the
-line is yours, everything below is the provider's — and the line moves depending on the service type.**
+This was not an AWS breach. AWS ran exactly as designed at every step. So here is the question this
+entire module — and your whole career in cloud security — turns on:
 
-What the model *doesn't* say is that the boundary is always clear. Misconfigurations regularly live in
-the gap between provider default and secure customer config — an S3 bucket that the provider's default
-left public, an RDS instance where you enabled public accessibility without realising it, an IAM role
-with a trust policy that any principal in the account can assume. These aren't provider bugs; they're
-customer-side responsibilities that look like provider defaults. **The dangerous assumption is that a
-default is secure.** AWS, GCP, and Azure ship permissive defaults in many places precisely because the
-alternative is blocking legitimate use cases. The responsibility model does not excuse defaults from
-scrutiny.
+> **At each link in that chain, whose control failed: Amazon's, or the customer's?**
 
-There's a second layer that trips up even experienced engineers: **the control plane vs. the data plane.**
-IAM controls who can call the API (the control plane — the CloudTrail-logged, auditable surface). S3
-access policies, VPC security groups, and object ACLs control what flows through the service (the data
-plane). Both are the customer's responsibility, but they're controlled differently, fail differently, and
-are logged differently. A GuardDuty finding about API abuse and a VPC flow log finding about data
-exfiltration represent the same breach at two different planes — and the detective controls are different.
-Understanding this split is what separates a cloud security practitioner from someone who just reads the
-shared responsibility FAQ.
+## Your job
 
-The practical starting point for any cloud engagement — offensive or defensive — is account enumeration:
-what's deployed, how it's configured, and what relationships it implies. The CLI is the lingua franca here.
-`aws`, `gcloud`, and `az` are the read-side of the control plane; every specialised cloud security tool
-ultimately calls the same APIs under the covers. Knowing how to enumerate IAM policies, list resources by
-region, and spot the misconfigurations the console hides behind coloured icons is the foundation skill.
-The lab makes this concrete with a simulated AWS environment seeded with the kind of "it was the default"
-misconfiguration Meridian Financial's team found on their first audit.
+By the end of this module you'll **render a verdict** on a real breach chain: for each hop, name the
+owner of the failed control (provider vs. customer), the plane it lived on (who-can-call vs.
+what-flows), and the single configuration change that would have broken the chain there. You'll
+reproduce the *responsibility conditions* of two hops in a local account so the judgment is yours, not
+borrowed — the exact skill a cloud incident responder or GRC analyst is paid for.
 
-## Learn (~3 hrs)
+## Call it before you read on
 
-**Shared responsibility (~1 hr)**
-- [AWS Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/) — the definitive primary source; read the full page, not just the diagram. Note how the boundary shifts between EC2, RDS, and S3.
-- [CISA Cloud Security Technical Reference Architecture (TRA), section 2](https://www.cisa.gov/resources-tools/resources/cloud-security-technical-reference-architecture) — a US-government synthesis of shared responsibility across all three hyperscalers; section 2 maps the model to concrete services.
+Don't scroll to the answers. Write down your gut verdict on these three — you'll grade yourself in a
+moment, and again in the lab. Being *wrong* here is the point; it's what makes the reveal stick.
 
-**AWS account structure & CLI (~1.5 hrs)**
-- [AWS CLI Getting Started](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) — installation and credential setup; follow the "install" and "configure" sections.
-- [AWS CLI Command Reference: IAM](https://docs.aws.amazon.com/cli/latest/reference/iam/) — the enumeration commands you'll use: `list-users`, `list-roles`, `get-policy`, `get-policy-version`. Skim the structure before the lab.
+> **Q1.** The 100M records were **encrypted at rest**, and the attacker still read them in plaintext.
+> Did the encryption do anything? Whose control was supposed to stop this?
+>
+> **Q2.** The stolen credentials came from the **instance metadata service — a feature Amazon builds
+> and runs.** Does that make this hop Amazon's failure?
+>
+> **Q3.** Add it up across all five hops: **how many were Amazon's responsibility?**
 
-**Threat framework orientation (~0.5 hr)**
-- [MITRE ATT&CK for Cloud — Tactics overview](https://attack.mitre.org/matrices/enterprise/cloud/) — look at the tactic columns; each one maps to a phase of an attack that crosses one of the responsibility layers you just studied.
+## The model, revealed
+
+Hold your three answers against these. The shared responsibility model is usually drawn as a single
+diagram — provider below the line, customer above it. That picture is true but useless, because it
+hides the only thing that matters in an incident: **where the line actually sits for *this* control.**
+Here's where it sat for Capital One.
+
+**Q1 — the encryption that didn't matter.** Encryption at rest is the control everyone *feels* is
+"handled by AWS," and in a sense it is: AWS makes it nearly free to turn on. But it defends against a
+specific threat — someone stealing the physical disk or the raw storage. It does **nothing** against a
+principal the account *authorized* to read the data, because that principal's reads are decrypted
+transparently. The over-permissioned role *was* authorized. So the failed control wasn't encryption at
+all — it was **who was allowed to use the key and the bucket**, which is identity, which is the
+customer's. **The mental model to keep: encryption protects data from people without keys; it is
+silent against people you gave keys to.** The customer owned that, and it was wide open.
+
+**Q2 — the line is finer than the diagram.** The metadata service is Amazon's — it exists, it works,
+it did its job. But *whether that server should have been allowed to ask it for credentials over an
+unauthenticated request*, and *how powerful the credentials it returned were*, are both customer
+settings (enforcing IMDSv2; scoping the role). This is the move that separates someone who *understands*
+shared responsibility from someone who recites it: **the provider can own the mechanism while the
+customer owns the configuration of that same mechanism.** The line doesn't run between *services*. It
+runs *through* them. Capital One didn't enforce IMDSv2 and didn't scope the role — both their side of a
+line that runs straight through an AWS feature.
+
+**Q3 — the answer is zero.** Walk the whole chain and every wall that gave way was a customer control
+left in a permissive or unmonitored state: the WAF config, IMDSv2 not enforced, the over-broad role,
+detection nobody wired up. Amazon's surface — the hypervisor, the metadata service, S3's durability,
+CloudTrail's recording — held end to end. **That is the entire lesson of shared responsibility, and the
+reason "the default is not secure" is the most expensive sentence in cloud:** the breaches that look
+like provider failures are almost always customer-owned controls that *felt* like provider territory.
+If you predicted "one or two were Amazon's," you've just felt exactly the misconception this module
+exists to correct — and you'll feel it again, hands-on, in the lab.
+
+Two of those hops — the over-broad role reading every bucket (Q1's real cause) and the
+"encryption didn't help" twist — you'll reproduce in a local account and verdict yourself. The point
+isn't to re-exploit Capital One; it's to make the *judgment* muscle memory.
+
+## Learn (~2 hrs)
+
+*Deliberately short. This is a foundations module: the spine above is yours to own, not to outsource to
+a tour of five sites. Read these to go deeper on the mechanism, not to learn the model.*
+
+- [AWS Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/) (~30 min) — the primary source. Read it *after* the case above and notice how few "secure" boxes are actually AWS's.
+- [Krebs on Security — the Capital One breach, explained](https://krebsonsecurity.com/2019/08/what-we-can-learn-from-the-capital-one-hack/) (~20 min) — the clearest public walk-through of the chain; corroborates the brief above with a second source.
+- [AWS — Use IMDSv2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html) (~20 min, skim) — read *why* IMDSv2 exists: it's the customer control that would have broken hop 2. The page is literally Capital One's lesson turned into product.
+- [MITRE ATT&CK for Cloud — tactics](https://attack.mitre.org/matrices/enterprise/cloud/) (~15 min, orient only) — skim the columns and ask which side of the line each tactic attacks.
 
 ## Key concepts
-- The shared responsibility model as a spectrum (IaaS → PaaS → SaaS), not a binary split
-- Customer-owned vs. provider-owned surface for EC2, S3, RDS, and Lambda
-- "Default is not secure" — permissive defaults are customer responsibility to harden
-- Control plane (IAM/API) vs. data plane (flow logs, object policies) and why both matter
-- CLI as the ground-truth interface to the control plane
+- The shared-responsibility line runs *through* services, not just between them — provider owns the mechanism, customer owns its configuration
+- Encryption at rest is silent against an authorized, over-permissioned principal — identity is the real control
+- "Default is not secure": the breaches that look like provider failures are usually customer controls left permissive
+- Control plane (who can call: IAM, role scope) vs. data plane (what flows: bucket reads, exfil) — a chain crosses both
+- Rendering a per-hop responsibility verdict is the core skill of cloud IR and GRC
 
 ## AI acceleration
-Paste an IAM policy document into a model and ask it to identify overly-broad permissions and whether
-the actions map to ATT&CK techniques. The model is reliable at spotting `*` wildcards and unused
-actions — but it cannot see the effective permissions that arise from permission boundaries, SCPs, and
-resource policies all layered together. Treat its output as a first-pass triage list; validate each
-finding against the actual policy evaluation logic before escalating. You own the conclusion.
+Hand a model the public Capital One post-mortem and ask it to produce the per-hop responsibility verdict
+*before* you write yours. It's a fast, confident draft — and a perfect adversary to check, because it
+reliably makes the two errors this module is about: it will often say "the data was encrypted, so it was
+protected" (Q1 — false) and lean toward blaming "the AWS metadata service" (Q2 — wrong owner). Your job
+is to catch exactly those misattributions. If you can explain *why* the model put the line on the wrong
+side, you've learned the module. You own the verdict.
