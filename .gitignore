@@ -28,6 +28,7 @@ credentials
 *.vmem
 *.raw
 *.lime
+*.img
 *.E01
 *.aff4
 
@@ -46,3 +47,6 @@ venv/
 Thumbs.db
 .idea/
 .vscode/
+
+# shared dataset cache (lib/fetch.sh)
+.cache/

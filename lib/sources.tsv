@@ -1,0 +1,29 @@
+# plaintext-labs dataset registry — the ONE place every fetched real dataset is defined + verified.
+# Labs reference a source by NAME via lib/fetch.sh (fetch_file / fetch_repo / fetch_feed); never hard-code a URL in a lab.
+# Columns: name<TAB>type<TAB>url<TAB>sha256<TAB>notes      (sha256 '-' = not yet pinned; fill once validated on a runner)
+# type: file = single download (cached forever) · repo = shallow git clone · feed = re-fetched when stale (PLT_FEED_TTL_H)
+#
+# --- logs / telemetry ---------------------------------------------------------------------------------------------------
+loghub-openssh	file	https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log	-	real sshd brute-force log (logpai/loghub, ICSE'23)
+loghub-apache	file	https://raw.githubusercontent.com/logpai/loghub/master/Apache/Apache_2k.log	-	real Apache error log (logpai/loghub)
+loghub-linux	file	https://raw.githubusercontent.com/logpai/loghub/master/Linux/Linux_2k.log	-	real Linux syslog (logpai/loghub)
+# --- Windows event logs / ATT&CK tests ---------------------------------------------------------------------------------
+evtx-attack-samples	repo	https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES	-	real attack EVTX (GPL-3.0); reference paths under the clone
+atomic-red-team	repo	https://github.com/redcanaryco/atomic-red-team	-	ATT&CK atomic tests
+python-evtx	repo	https://github.com/williballenthin/python-evtx	-	EVTX -> XML conversion tool
+# --- forensics images ---------------------------------------------------------------------------------------------------
+memlabs	repo	https://github.com/stuxnet999/MemLabs	-	memory-forensics CTF images (download links inside the repo)
+digitalcorpora-nitroba	file	https://downloads.digitalcorpora.org/corpora/scenarios/2008-nitroba/nitroba.pcap	-	real Nitroba Univ. harassment case (PCAP)
+# M57-Patents (digitalcorpora 2009-m57-patents) is multi-GB / multi-file — fetch a specific drive/usb image per lab; see that lab's PROVENANCE.
+# --- network captures (Malware-Traffic-Analysis.net; password-protected zips, pw 'infected', LIVE MALWARE — do NOT auto-unzip) ---
+mta-2024-12-17-smartapesg	file	https://www.malware-traffic-analysis.net/2024/12/17/2024-12-17-SmartApeSG-to-NetSupport-RAT.pcap.zip	-	pw-zip 'infected'; RAT C2
+mta-2024-07-30	file	https://www.malware-traffic-analysis.net/2024/07/30/2024-07-30-traffic-analysis-exercise.pcap.zip	-	pw-zip 'infected'
+mta-2024-10-23-redline	file	https://www.malware-traffic-analysis.net/2024/10/23/2024-10-23-Redline-Stealer-infection-traffic.pcap.zip	-	pw-zip 'infected'; RedLine stealer
+# --- vulnerable targets / tools -----------------------------------------------------------------------------------------
+vulhub	repo	https://github.com/vulhub/vulhub	-	per-CVE vulnerable docker-compose envs
+# --- threat-intel feeds (re-fetched when stale) -------------------------------------------------------------------------
+cisa-kev	feed	https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json	-	CISA Known Exploited Vulnerabilities catalog (JSON)
+threatfox-recent	feed	https://threatfox.abuse.ch/export/csv/recent/	-	auth=abusech; recent IOCs (CSV)
+feodo-ipblocklist	feed	https://feodotracker.abuse.ch/downloads/ipblocklist.json	-	auth=abusech; botnet C2 IPs (JSON)
+urlhaus-recent	feed	https://urlhaus.abuse.ch/downloads/csv_recent/	-	auth=abusech; recent malicious URLs (CSV)
+# MalwareBazaar samples are fetched by hash/tag via its API (mb-api.abuse.ch, needs MB_AUTH_KEY) — see malware/*/fetch-sample.sh, not cached here.
