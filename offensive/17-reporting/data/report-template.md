@@ -1,7 +1,7 @@
 # Penetration Test Report
 <!-- Template: fill in every section; delete placeholder text before submitting -->
 
-**Client:** Meridian Financial  
+**Client:** Example Corp  
 **Engagement:** Internal Web Application + Infrastructure Assessment  
 **Assessment Period:** [Start Date] – [End Date]  
 **Prepared by:** [Tester name / team]  

@@ -9,7 +9,7 @@
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/offensive/01-recon
 make up      # builds the Python recon harness
-make demo    # runs 4-step passive recon on meridian-financial.com (offline)
+make demo    # runs 4-step passive recon on example.com bundled data (offline)
 make down
 ```
 
@@ -24,48 +24,72 @@ scoring — without live network calls, so the demo is deterministic.
 > targets you own).
 
 ## Scenario
-Meridian Financial's security team has asked for an external attack-surface
-assessment. Start with no credentials — only the domain name
-`meridian-financial.com`. Map every externally visible asset, fingerprint
-the stack, and identify priority targets for the next phase.
+A client has asked for an external attack-surface assessment. Start with
+no credentials — only a domain name. Map every externally visible asset,
+fingerprint the stack, and identify priority targets for the next phase.
 
-## Do
+**This lab is live-first.** The primary path is real passive recon
+(crt.sh + DNS) against **a real domain you control or one that is in
+scope for a public bug-bounty program** — that is how the work is
+actually done, and it pulls real edge CVEs by name. The bundled
+`example.com` dataset (RFC-2606 reserved) is the **offline fallback** so
+the demo is deterministic and so you can validate the harness before
+pointing it at a live target. Do the live run; fall back to the bundled
+data only when you have no authorized domain handy.
 
-1. [ ] Run `make demo`. Read the priority ranking: what are the top three
-   targets and why does each score high? Which CVE is the most critical?
+## Live mode — the primary path (authorized targets only)
 
-2. [ ] Open `data/crt_sh.json`. Add a new synthetic CT entry for
-   `vpn2.meridian-financial.com` (a backup VPN). Re-run the demo and
-   confirm it appears in the subdomain list.
-
-3. [ ] The SPF record includes `sendgrid.net`. What does that mean from a
-   phishing-simulation perspective? What check would confirm whether
-   Meridian actually uses Sendgrid for outbound email?
-
-4. [ ] The `score_interest()` function in `recon.py` uses hardcoded rules.
-   Extend it: if the tech stack contains `WordPress`, add 15 points (WP
-   has a large CVE surface and many discoverable plugins). Confirm
-   `www.meridian-financial.com` rises in the ranking.
-
-5. [ ] Run `python3 recon.py --report` (in the container shell via
-   `make shell`) and read the generated `recon-report.md`. This is your
-   deliverable template.
-
-## Live mode (optional — authorized targets only)
-
-To run against a real target:
+Run real passive recon against **a domain you control** (your own site,
+a lab tenant) **or a domain that is in scope for a public bug-bounty
+program** (read the program scope first — only in-scope assets). This is
+the real workflow; do this before falling back to the bundled data.
 
 ```bash
-# 1. Replace data/crt_sh.json with live crt.sh output:
+# 1. Pull live crt.sh output for your authorized domain:
 curl -s "https://crt.sh/?q=%.yourdomain.com&output=json" > data/crt_sh.json
 
-# 2. Run DNS resolution (requires host CLI):
+# 2. Resolve each discovered host (requires the host CLI):
 for sub in $(jq -r '.[].name_value' data/crt_sh.json | sort -u); do
   host $sub 2>/dev/null | grep "has address" | awk '{print $1, $NF}'
 done
 
-# 3. Run recon.py with your populated data files.
+# 3. Fingerprint and score with the harness against your populated data:
+make shell && python3 recon.py --report
 ```
+
+> Authorization: only run live recon against assets you own or that are
+> explicitly in scope (your domain, a written-permission engagement, a
+> bug-bounty program's listed scope). Passive recon still creates logs on
+> the target's DNS servers.
+
+## Do
+
+Run steps 1–5 against your **live** target where you have one; use the
+bundled `example.com` dataset as the offline fallback otherwise.
+
+1. [ ] Run the recon (live, or `make demo` for the bundled fallback). Read
+   the priority ranking: what are the top three targets and why does each
+   score high? Which CVE is the most critical?
+
+2. [ ] Add a new CT entry for a backup VPN host (e.g. `vpn2.<domain>`) —
+   live, this surfaces naturally from crt.sh; offline, add it to
+   `data/crt_sh.json` as `vpn2.example.com`. Re-run and confirm it appears
+   in the subdomain list.
+
+3. [ ] If the SPF record includes a third-party relay (e.g.
+   `sendgrid.net`), what does that mean from a phishing-simulation
+   perspective? What check would confirm whether the target actually uses
+   that relay for outbound email?
+
+4. [ ] The `score_interest()` function in `recon.py` uses hardcoded rules.
+   Extend it: if the tech stack contains `WordPress`, add 15 points (WP
+   has a large CVE surface and many discoverable plugins). Confirm a
+   WordPress host (e.g. `www.example.com` in the bundled data) rises in
+   the ranking.
+
+5. [ ] Run `python3 recon.py --report` (in the container shell via
+   `make shell`) and read the generated `recon-report.md`. This is your
+   deliverable template.
 
 ## Success criteria — you're done when
 - [ ] You can explain why certificate transparency is more comprehensive
@@ -94,10 +118,10 @@ to `data/crt_sh.json` before running the analysis. Commit the extended
 script.
 
 ## Connects forward
-The priority targets from this lab — especially `vpn.meridian-financial.com`
-(FortiGate CVE) and `jira.meridian-financial.com` (Jira auth bypass) — are
-the scope input for module 02 (active scanning). The subdomains feed
-module 03 (vuln ID).
+The priority targets from this lab — especially `vpn.example.com`
+(FortiGate CVE-2024-21762) and `jira.example.com` (Confluence
+CVE-2023-22515) — are the scope input for module 02 (active scanning).
+The subdomains feed module 03 (vuln ID).
 
 ## Marketable proof
 > "I map an external attack surface passively — CT logs, DNS enumeration,
@@ -106,5 +130,5 @@ module 03 (vuln ID).
 
 ## Stretch
 - Add email-infrastructure recon: check the DMARC record
-  (`_dmarc.meridian-financial.com`), parse the SPF include chain
-  recursively, and assess the spoofing risk level.
+  (`_dmarc.<domain>`), parse the SPF include chain recursively, and
+  assess the spoofing risk level.

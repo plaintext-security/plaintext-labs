@@ -51,7 +51,7 @@ no-outage. The gap between "the Ansible run went green" and "the app is still up
 
 ## Scenario
 
-Meridian Financial has 800 Ubuntu hosts that have run in production for years — app servers, internal
+The organization has 800 Ubuntu hosts that have run in production for years — app servers, internal
 tools, a couple of legacy boxes nobody wants to touch. Audit says they must all meet the CIS baseline you
 wrote in Module 06. The one rule from the VP of Engineering: **do not break production.** You cannot pick a
 Saturday and `ansible-playbook` the whole fleet — a big-bang rollout changes every host at once, so when a

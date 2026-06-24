@@ -25,7 +25,7 @@ for line in result.stdout.splitlines():
 # Set DONT_REQUIRE_PREAUTH (0x400000 = 4194304)
 new_uac = uac | 4194304
 
-ldif = f"""dn: CN={username},OU=ServiceAccounts,DC=meridian,DC=local
+ldif = f"""dn: CN={username},OU=ServiceAccounts,DC=corp,DC=local
 changetype: modify
 replace: userAccountControl
 userAccountControl: {new_uac}

@@ -1,16 +1,16 @@
 {
   "meta": {
-    "description": "BloodHound-shaped ACL findings for Meridian Financial. Each entry represents a misconfigured ACE that creates an attack path.",
+    "description": "BloodHound-shaped ACL findings for Corp. Each entry represents a misconfigured ACE that creates an attack path.",
     "generated": "2024-01-01",
-    "domain": "MERIDIAN.LOCAL"
+    "domain": "CORP.LOCAL"
   },
   "acl_misconfigurations": [
     {
       "id": "ACL-001",
       "severity": "CRITICAL",
-      "principal": "SVC-DEPLOY@MERIDIAN.LOCAL",
+      "principal": "SVC-DEPLOY@CORP.LOCAL",
       "principal_type": "User",
-      "target": "IT-ADMINS@MERIDIAN.LOCAL",
+      "target": "IT-ADMINS@CORP.LOCAL",
       "target_type": "Group",
       "ace_type": "GenericWrite",
       "attack_description": "svc-deploy can modify any attribute on the IT-Admins group, including its membership (member attribute). An attacker who controls svc-deploy can add any account (including jsmith) to IT-Admins.",
@@ -25,9 +25,9 @@
     {
       "id": "ACL-002",
       "severity": "HIGH",
-      "principal": "FINANCE-MANAGERS@MERIDIAN.LOCAL",
+      "principal": "FINANCE-MANAGERS@CORP.LOCAL",
       "principal_type": "Group",
-      "target": "FINANCE-USERS@MERIDIAN.LOCAL",
+      "target": "FINANCE-USERS@CORP.LOCAL",
       "target_type": "Group",
       "ace_type": "GenericWrite",
       "attack_description": "Any member of Finance-Managers (currently amurphy) can add members to Finance-Users. This allows lateral movement to any Finance OU resource accessible to Finance-Users.",
@@ -42,9 +42,9 @@
     {
       "id": "ACL-003",
       "severity": "HIGH",
-      "principal": "HELPDESK-STAFF@MERIDIAN.LOCAL",
+      "principal": "HELPDESK-STAFF@CORP.LOCAL",
       "principal_type": "Group",
-      "target": "OU=Finance,OU=Corp,DC=meridian,DC=local",
+      "target": "OU=Finance,OU=Corp,DC=corp,DC=local",
       "target_type": "OU",
       "ace_type": "User-Force-Change-Password",
       "attack_description": "Helpdesk-Staff members (rrodriguez, qwalker) can reset passwords for all Finance OU users without knowing the current password. Compromise of a helpdesk account = immediate access to all Finance accounts.",
@@ -59,9 +59,9 @@
     {
       "id": "ACL-004",
       "severity": "HIGH",
-      "principal": "SVC-BACKUP@MERIDIAN.LOCAL",
+      "principal": "SVC-BACKUP@CORP.LOCAL",
       "principal_type": "User",
-      "target": "MERIDIAN.LOCAL",
+      "target": "CORP.LOCAL",
       "target_type": "Domain",
       "ace_type": "UnconstrainedDelegation",
       "attack_description": "svc-backup has unconstrained delegation. Any user who authenticates to the backup service will have their TGT stored in memory on the backup server. If the DC's machine account is coerced to authenticate (e.g., via printer spooler abuse), the DC TGT is retrievable and can be used to forge any ticket.",
@@ -72,18 +72,18 @@
         "Extract DC$ TGT from memory, use it for DCSync or golden ticket"
       ],
       "attck_technique": "T1558.001",
-      "remediation": "Remove unconstrained delegation from svc-backup. Convert to constrained delegation limited to BackupSvc/backup01.meridian.local only. Or migrate to a gMSA."
+      "remediation": "Remove unconstrained delegation from svc-backup. Convert to constrained delegation limited to BackupSvc/backup01.corp.local only. Or migrate to a gMSA."
     }
   ],
   "attack_paths": [
     {
       "name": "jsmith to Domain Admins via ACL chain",
       "hops": [
-        {"step": 1, "from": "JSMITH@MERIDIAN.LOCAL", "to": "SVC-MSSQL@MERIDIAN.LOCAL", "edge": "Kerberoast", "technique": "T1558.003"},
-        {"step": 2, "from": "SVC-MSSQL@MERIDIAN.LOCAL", "to": "SVC-DEPLOY@MERIDIAN.LOCAL", "edge": "PasswordReuse/Crack", "technique": "T1078"},
-        {"step": 3, "from": "SVC-DEPLOY@MERIDIAN.LOCAL", "to": "IT-ADMINS@MERIDIAN.LOCAL", "edge": "GenericWrite", "technique": "T1484.001"},
-        {"step": 4, "from": "IT-ADMINS@MERIDIAN.LOCAL", "to": "DC01.MERIDIAN.LOCAL", "edge": "AdminTo", "technique": "T1021.002"},
-        {"step": 5, "from": "DC01.MERIDIAN.LOCAL", "to": "DOMAIN ADMINS@MERIDIAN.LOCAL", "edge": "DCSync/secretsdump", "technique": "T1003.006"}
+        {"step": 1, "from": "JSMITH@CORP.LOCAL", "to": "SVC-MSSQL@CORP.LOCAL", "edge": "Kerberoast", "technique": "T1558.003"},
+        {"step": 2, "from": "SVC-MSSQL@CORP.LOCAL", "to": "SVC-DEPLOY@CORP.LOCAL", "edge": "PasswordReuse/Crack", "technique": "T1078"},
+        {"step": 3, "from": "SVC-DEPLOY@CORP.LOCAL", "to": "IT-ADMINS@CORP.LOCAL", "edge": "GenericWrite", "technique": "T1484.001"},
+        {"step": 4, "from": "IT-ADMINS@CORP.LOCAL", "to": "DC01.CORP.LOCAL", "edge": "AdminTo", "technique": "T1021.002"},
+        {"step": 5, "from": "DC01.CORP.LOCAL", "to": "DOMAIN ADMINS@CORP.LOCAL", "edge": "DCSync/secretsdump", "technique": "T1003.006"}
       ],
       "total_hops": 5
     }

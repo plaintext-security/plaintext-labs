@@ -8,24 +8,31 @@
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/09-detecting-ad-attacks
-make up      # start the chainsaw container with EVTX data + Sigma rules
-make demo    # run chainsaw over the EVTX samples, then score the rules on a held-out corpus
-make shell   # interactive shell to write and test your own rules
+make fetch-data  # pull REAL attack EVTX (DCSync, PtH, Zerologon) from the shared cache
+make up          # start the chainsaw container with EVTX data + Sigma rules
+make demo        # chainsaw hunts the real EVTX, then scores the rules on a held-out corpus
+make shell       # interactive shell to write and test your own rules
 make down
 ```
 
-The `data/evtx/` directory contains real-shaped EVTX (JSON-shaped) events for each AD attack:
-- `kerberoast-4769.json` — Event 4769 with RC4 etype (Kerberoast)
-- `asrep-4768.json` — Event 4768 with PreAuthType=0 (AS-REP roast)
-- `dcsync-4662.json` — Event 4662 with DS-Replication (DCSync)
-- `pth-4624.json` — Event 4624 Type 3 with NtLmSsp (PTH)
+`make fetch-data` pulls **genuine Windows Security EVTX** from the shared cache
+(`sbousseaden/EVTX-ATTACK-SAMPLES`, GPL-3.0) into `data/evtx/` — chainsaw hunts the real binary logs,
+not hand-shaped JSON:
+- `dcsync-4662.evtx` — real `CA_DCSync_4662.evtx`: Event 4662 DS-Replication (DCSync)
+- `pth-4624.evtx` — real `LM_4624_mimikatz_sekurlsa_pth...evtx`: Event 4624 Type 3 NTLM (pass-the-hash)
+- `zerologon-cve-2020-1472.evtx` — real Zerologon (CVE-2020-1472) capture: anonymous logon + DC machine-account reset (4624/4626 + 4742)
 
-The `data/rules/` directory contains the Sigma rules to study and extend. `data/heldout/events.json`
-is a **held-out** labelled corpus — attack events the rules must catch and benign near-misses they
-must NOT fire on — that the rules were never written against; `scripts/eval_detections.py` scores the
-rules against it and is the regression gate.
+Kerberoasting (4769) and AS-REP roasting (4768) have no clean public EVTX sample, so the demo scores
+those two rules against small generated `data/evtx/*.json` events that mirror the real field layout —
+clearly the synthetic minority, with the heavy lifting on real telemetry above.
 
-> This lab analyses bundled telemetry. No live attack systems involved.
+The `data/rules/` directory contains the Sigma rules to study and extend (`zerologon.yml` ships as a
+worked example for the CVE). `data/heldout/events.json` is a **held-out** labelled corpus — attack
+events the rules must catch and benign near-misses they must NOT fire on — that the rules were never
+written against; `scripts/eval_detections.py` scores the rules against it and is the regression gate.
+
+> Authorization: this analyses bundled public telemetry — no live attack systems. The Zerologon
+> sample exploits CVE-2020-1472; you only ever *read* it.
 
 ## Scenario
 
@@ -51,14 +58,21 @@ effectiveness on a held-out benign+attack corpus is the half that keeps a rule o
 3. [ ] **Write the DCSync Sigma rule.** Fill in the `dcsync-stub.yml` stub. You'll need: the right
    Event ID for directory-service access, the extended-right GUID that identifies replication, and an
    exclusion so legitimate DC-to-DC replication (machine accounts) doesn't fire it. Tag the correct
-   sub-technique. Validate it with chainsaw against the DCSync EVTX.
+   sub-technique. Validate it with chainsaw against the **real** `dcsync-4662.evtx` — confirm which
+   account name in the genuine capture exercised the replication right.
 
 4. [ ] **Write the PTH Sigma rule.** Create `data/rules/pth.yml` to catch a pass-the-hash logon.
    Decide which event, logon type, and authentication package signal an NTLM network logon, then add
    exclusions so machine accounts, the null SID, and localhost don't generate noise. Validate against
-   the PTH EVTX.
+   the **real** `pth-4624.evtx`.
 
-5. [ ] **Score against the held-out corpus.** Run `make eval`. This scores all four rules against
+5. [ ] **Hunt a real CVE — Zerologon (CVE-2020-1472).** Study the shipped `data/rules/zerologon.yml`,
+   then run it with chainsaw over the **real** `zerologon-cve-2020-1472.evtx`. In the genuine capture,
+   find the two-part signal: the anonymous Logon Type 3 (4624/4626) and the Event 4742 resetting the
+   DC's *own* machine-account (`$`) password. Read the NVD entry (CVE-2020-1472) and note in your report
+   why the patch — not the detection — is the real fix, and what `audit_policy_required` the rule needs.
+
+6. [ ] **Score against the held-out corpus.** Run `make eval`. This scores all four rules against
    `data/heldout/events.json` — a labelled set of attack events each rule must catch **and benign
    near-misses each must NOT fire on**: the AES (`0x12`) ticket for the *same* service SPN, the `DC2$`
    machine account doing legitimate replication, the normal `PreAuthType=2` AS-REQ, the Kerberos
@@ -66,13 +80,13 @@ effectiveness on a held-out benign+attack corpus is the half that keeps a rule o
    catch every attack?), **precision**, and **FP-rate** (did it stay quiet on the benign noise?). A
    rule that fires on the demo attack but also on its benign twin is alert fatigue, not a detection.
 
-6. [ ] **See the gate go RED, then keep it GREEN.** Run `make gate` — it scores a deliberately
+7. [ ] **See the gate go RED, then keep it GREEN.** Run `make gate` — it scores a deliberately
    too-broad ruleset (the exclusions dropped) and the gate exits non-zero, because each rule now fires
    on its benign near-miss (a false positive). That is exactly how a detection rots into noise:
    coverage stays fine, effectiveness collapses. Now make sure *your* rules keep `make eval` GREEN —
    if you ever loosen a filter and a benign near-miss starts matching, the gate catches it.
 
-7. [ ] **Document the audit policy requirement.** For each of the four rules, write down which specific
+8. [ ] **Document the audit policy requirement.** For each of the rules, write down which specific
    audit category must be enabled on the DC for the event to appear at all. This is the prerequisite
    most environments miss — without it the event never logs and no Sigma rule can ever fire.
 
@@ -87,11 +101,13 @@ effectiveness on a held-out benign+attack corpus is the half that keeps a rule o
 
 ## Deliverables
 
-`data/rules/kerberoast.yml`, `dcsync.yml`, `asrep.yml`, `pth.yml` — the four Sigma rules. Commit them.
-Commit `detection-report.md` — the audit policy requirements, your held-out scorecard (recall /
-precision / FP-rate per rule), and which benign near-miss each exclusion suppresses. Commit the
-held-out corpus and `scripts/eval_detections.py` (the `make eval` / `make gate` gate) alongside them so
-the detections can't silently regress.
+`data/rules/kerberoast.yml`, `dcsync.yml`, `asrep.yml`, `pth.yml` — the four Sigma rules — plus the
+shipped `zerologon.yml` you validated against the real CVE-2020-1472 EVTX. Commit them.
+Commit `detection-report.md` — the audit policy requirements (including Zerologon's), your held-out
+scorecard (recall / precision / FP-rate per rule), and which benign near-miss each exclusion
+suppresses. Commit the held-out corpus and `scripts/eval_detections.py` (the `make eval` / `make gate`
+gate) alongside them so the detections can't silently regress. (The fetched `*.evtx` are third-party
+GPL artifacts pulled by `make fetch-data` — they are git-ignored, not committed.)
 
 ## Automate & own it
 

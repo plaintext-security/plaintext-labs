@@ -3,16 +3,16 @@
     "System": {
       "EventID": 4662,
       "TimeCreated": "2024-01-15T03:42:11.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "SubjectUserSid": "S-1-5-21-1000-1000-1000-1150",
       "SubjectUserName": "tallen",
-      "SubjectDomainName": "MERIDIAN",
+      "SubjectDomainName": "CORP",
       "ObjectServer": "DS",
       "ObjectType": "19195a5b-6da0-11d0-afd3-00c04fd930c9",
-      "ObjectName": "DC=meridian,DC=local",
+      "ObjectName": "DC=corp,DC=local",
       "OperationType": "Object Access",
       "Properties": "1131f6ae-9c07-11d1-f79f-00c04fc2dcd2 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
     },
@@ -22,16 +22,16 @@
     "System": {
       "EventID": 4662,
       "TimeCreated": "2024-01-15T03:42:12.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "SubjectUserSid": "S-1-5-21-1000-1000-1000-1001",
       "SubjectUserName": "DC02$",
-      "SubjectDomainName": "MERIDIAN",
+      "SubjectDomainName": "CORP",
       "ObjectServer": "DS",
       "ObjectType": "19195a5b-6da0-11d0-afd3-00c04fd930c9",
-      "ObjectName": "DC=meridian,DC=local",
+      "ObjectName": "DC=corp,DC=local",
       "OperationType": "Object Access",
       "Properties": "1131f6ae-9c07-11d1-f79f-00c04fc2dcd2 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
     },

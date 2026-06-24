@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Financial — vulnerability assessment workflow.
+"""Vulnerability assessment workflow.
 
 Takes service versions (from module 02 scan output) and walks the
 full CVE research chain:
@@ -10,11 +10,13 @@ and vulnerability management. The key insight: CVSS tells you severity;
 KEV tells you urgency. A medium-CVSS CVE in KEV outranks a critical-CVSS
 CVE that's never been exploited.
 
-Bundled data covers the three CVEs most relevant to the recon output
-from module 01:
+Bundled data covers the CVEs most relevant to the recon (module 01) and
+scan (module 02) output:
   - CVE-2021-44228 (Log4Shell) — the canonical teaching example
-  - CVE-2023-44487 (HTTP/2 Rapid Reset) — affects nginx on the victim
-  - CVE-2024-21762 (FortiGate RCE) — from vpn.meridian-financial.com
+  - CVE-2023-44487 (HTTP/2 Rapid Reset) — DoS class affecting the nginx
+    edge; module 02 also fingerprinted the nginx build as being in the
+    CVE-2017-7529 range (range-filter integer overflow, nginx <= 1.13.2)
+  - CVE-2024-21762 (FortiGate RCE) — from vpn.example.com
 
 Usage:
     python3 vuln_assess.py            # demo mode — full assessment
@@ -133,7 +135,7 @@ def demo(write_report: bool = False) -> int:
     kev_ids  = load_kev(kev_data)
 
     print("=" * 64)
-    print("Meridian Financial — Vulnerability Assessment")
+    print("Vulnerability Assessment — example.com")
     print(f"CVE sources: NVD (bundled) | KEV catalog v{kev_data['catalogVersion']}")
     print("=" * 64)
 
@@ -179,9 +181,13 @@ def demo(write_report: bool = False) -> int:
     Apache Log4j 2.14.1 - Information Disclosure          | exploits/java/webapps/50461.txt
     → PoC available, weaponized exploits exist in Metasploit (exploit/multi/misc/log4shell_header_injection)
 
-  searchsploit "nginx 1.24":
-    No results found.
-    → CVE-2023-44487 is a DoS; tooling exists but Metasploit module not yet merged.
+  searchsploit nginx:
+    nginx 1.3.9 < 1.4.0 - Chunked Encoding Stack Buffer Overflow | exploits/...
+    nginx - 'CVE-2017-7529' Integer Overflow / Memory Disclosure  | exploits/...
+    → module 02 fingerprinted the edge nginx in the CVE-2017-7529
+      range (<= 1.13.2): range-filter integer overflow, PoC public.
+      CVE-2023-44487 (HTTP/2 Rapid Reset) is a separate DoS class on
+      the same edge; tooling exists but is mostly load-generators.
 
   searchsploit "FortiGate 7.4":
     Fortinet FortiOS 7.4.x - CVE-2024-21762 RCE           | exploits/python/remote/54916.py
@@ -199,13 +205,14 @@ def demo(write_report: bool = False) -> int:
     Priority: P0.
 
   CVE-2024-21762 (FortiGate): CVSS 9.8 CRITICAL, IN KEV, nation-state
-    exploitation confirmed. vpn.meridian-financial.com runs FortiGate
+    exploitation confirmed. vpn.example.com runs FortiGate
     SSL-VPN — confirm version, then patch or disable VPN immediately.
     Priority: P0.
 
   CVE-2023-44487 (Rapid Reset): CVSS 7.5 HIGH, IN KEV, DoS only.
-    Affects nginx 1.24.0 (victim). Patch to 1.25.3. Lower urgency
-    vs. RCE above but still requires patching.
+    Affects the nginx edge. Patch to 1.25.3. Lower urgency vs. RCE
+    above but still requires patching. (Note: module 02 also flagged
+    the same nginx as CVE-2017-7529 — verify and patch both.)
     Priority: P1.
 
   Key insight: two P0 CVEs rank ahead because they're in CISA KEV
@@ -223,12 +230,13 @@ def demo(write_report: bool = False) -> int:
 def _write_report(assessments: list[dict]) -> None:
     out = Path("vuln-assessment.md")
     lines = [
-        "# Vulnerability Assessment — Meridian Financial",
+        "# Vulnerability Assessment — example.com",
         f"Date: {date.today().isoformat()}",
         "",
         "## Scope",
-        "Target: meridian-financial.com (module 01 recon output).",
-        "Services assessed: nginx 1.24.0, FortiGate SSL-VPN, Log4j2.",
+        "Target: example.com (module 01 recon output).",
+        "Services assessed: nginx (CVE-2017-7529 range, per module 02), "
+        "FortiGate SSL-VPN, Log4j2.",
         "",
         "## CVE → CWE → CVSS → KEV → PoC chain",
         "",

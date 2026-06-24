@@ -1,5 +1,5 @@
 ---
-# Meridian Financial — AD Hardening Playbook
+# Corp — AD Hardening Playbook
 # Version: 1.0
 # Applies CIS-aligned remediations for the findings from the Track 06 red team engagement.
 #
@@ -15,14 +15,14 @@
 #
 # The 'name:' field is the audit trail — each task describes the control it implements.
 
-- name: Meridian Financial — Active Directory Hardening
+- name: Corp — Active Directory Hardening
   hosts: domain_controllers
   gather_facts: false
 
   vars:
-    domain: "MERIDIAN.LOCAL"
-    domain_dn: "DC=meridian,DC=local"
-    dc_host: "dc01.meridian.local"
+    domain: "CORP.LOCAL"
+    domain_dn: "DC=corp,DC=local"
+    dc_host: "dc01.corp.local"
     high_privilege_groups:
       - "Domain Admins"
       - "Enterprise Admins"
@@ -102,7 +102,7 @@
         msg: |
           REMEDIATION: Remove unconstrained delegation from svc-backup
           Current: userAccountControl includes TRUSTED_FOR_DELEGATION (flag 0x80000)
-          Target:  Configure constrained delegation to BackupSvc/backup01.meridian.local only
+          Target:  Configure constrained delegation to BackupSvc/backup01.corp.local only
           Command: samba-tool user setattribute svc-backup userAccountControl 512
           Then configure constrained delegation via LDAP or samba-tool
           Risk removed: TGT theft via unconstrained delegation (T1558.001)
@@ -114,9 +114,9 @@
 
     - name: "3.1 — Remove GenericWrite ACE on IT-Admins for svc-deploy"
       # Use dacledit.py or PowerShell:
-      # dacledit.py MERIDIAN.LOCAL/tallen:'password'@dc01 \
+      # dacledit.py CORP.LOCAL/tallen:'password'@dc01 \
       #   -action remove -rights GenericWrite \
-      #   -principal svc-deploy -target-dn 'CN=IT-Admins,CN=Users,DC=meridian,DC=local'
+      #   -principal svc-deploy -target-dn 'CN=IT-Admins,CN=Users,DC=corp,DC=local'
       ansible.builtin.debug:
         msg: |
           REMEDIATION: Remove GenericWrite ACE from IT-Admins for svc-deploy
@@ -177,7 +177,7 @@
             --history-length=24 \
             --max-pwd-age=0 \
             --min-pwd-age=1
-          Apply to OU=ServiceAccounts,DC=meridian,DC=local
+          Apply to OU=ServiceAccounts,DC=corp,DC=local
           Risk removed: Kerberoasting success rate (weak passwords)
 
   post_tasks:

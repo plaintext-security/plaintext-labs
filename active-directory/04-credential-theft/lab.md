@@ -20,7 +20,7 @@ make down
 
 ## Scenario
 
-You have cracked `svc-mssql`'s password from module 03 (or use `jsmith:Welcome1!` as your initial credential). Your goal: extract all NTLM hashes from the Meridian domain and demonstrate that the Administrator NT hash allows interactive access to the DC without knowing the plaintext password.
+You have cracked `svc-mssql`'s password from module 03 (or use `jsmith:Welcome1!` as your initial credential). Your goal: extract all NTLM hashes from the Corp domain and demonstrate that the Administrator NT hash allows interactive access to the DC without knowing the plaintext password.
 
 ## Do
 
@@ -34,7 +34,7 @@ You have cracked `svc-mssql`'s password from module 03 (or use `jsmith:Welcome1!
 
 5. [ ] **Understand the hash chain.** Draw the path: `jsmith` (foothold) → Kerberoast `svc-mssql` → crack → … → `tallen` (DA) → secretsdump DC → `Administrator` NT hash → PTH to DC SYSTEM. How many distinct credentials were involved, and how many were *cracked* vs *replayed*?
 
-6. [ ] **Identify LAPS gaps.** In `data/meridian-domain.md`, LAPS covers IT computers but not Finance or HR workstations. What does cracking one Finance workstation's local admin password get an attacker, given that gap?
+6. [ ] **Identify LAPS gaps.** In `data/corp-domain.md`, LAPS covers IT computers but not Finance or HR workstations. What does cracking one Finance workstation's local admin password get an attacker, given that gap?
 
 ## Success criteria — you're done when
 

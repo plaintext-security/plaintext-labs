@@ -3,12 +3,12 @@
     "System": {
       "EventID": 4768,
       "TimeCreated": "2024-01-15T01:55:33.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "svc-legacy",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "TargetSid": "S-1-5-21-1000-1000-1000-1203",
       "ServiceName": "krbtgt",
       "TicketOptions": "0x40800010",
@@ -24,12 +24,12 @@
     "System": {
       "EventID": 4768,
       "TimeCreated": "2024-01-15T01:55:35.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "svc-monitor",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "TargetSid": "S-1-5-21-1000-1000-1000-1204",
       "ServiceName": "krbtgt",
       "TicketOptions": "0x40800010",
@@ -45,12 +45,12 @@
     "System": {
       "EventID": 4768,
       "TimeCreated": "2024-01-15T08:30:01.000Z",
-      "Computer": "dc01.meridian.local",
+      "Computer": "dc01.corp.local",
       "Channel": "Security"
     },
     "EventData": {
       "TargetUserName": "jsmith",
-      "TargetDomainName": "MERIDIAN.LOCAL",
+      "TargetDomainName": "CORP.LOCAL",
       "ServiceName": "krbtgt",
       "TicketOptions": "0x40800010",
       "Status": "0x0",

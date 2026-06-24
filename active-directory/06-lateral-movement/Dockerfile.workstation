@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY data/workstation-smb.conf /etc/samba/smb.conf
 
 # Create a test share directory
-RUN mkdir -p /srv/share && echo "Meridian workstation share" > /srv/share/readme.txt
+RUN mkdir -p /srv/share && echo "Corp workstation share" > /srv/share/readme.txt
 
 EXPOSE 139 445
 

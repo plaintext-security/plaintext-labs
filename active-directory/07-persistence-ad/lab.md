@@ -20,7 +20,7 @@ make down
 
 ## Scenario
 
-You have achieved domain admin access on Meridian (modules 04-06). Before the blue team discovers the breach, you want to establish persistence mechanisms that survive password resets and account remediation. Your goal: forge a golden ticket, forge a silver ticket for the MSSQL service, demonstrate DCSync persistence rights, and document what incident response must do to genuinely remove each persistence method.
+You have achieved domain admin access on Corp (modules 04-06). Before the blue team discovers the breach, you want to establish persistence mechanisms that survive password resets and account remediation. Your goal: forge a golden ticket, forge a silver ticket for the MSSQL service, demonstrate DCSync persistence rights, and document what incident response must do to genuinely remove each persistence method.
 
 ## Do
 

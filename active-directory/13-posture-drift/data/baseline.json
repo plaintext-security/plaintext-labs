@@ -1,5 +1,5 @@
 {
-  "_comment": "DECLARED HARDENED BASELINE for Meridian (the committed 'this is good' posture from Modules 10-12). This file IS the decision log: when you bless a sanctioned change you edit it here and commit with who/why. Thresholds are chosen by the operator and justified inline below. drift-detect.py diffs the OBSERVED posture (data/observed.json) against this and reports per-fact deltas, not a score.",
+  "_comment": "DECLARED HARDENED BASELINE for Corp (the committed 'this is good' posture from Modules 10-12). This file IS the decision log: when you bless a sanctioned change you edit it here and commit with who/why. Thresholds are chosen by the operator and justified inline below. drift-detect.py diffs the OBSERVED posture (data/observed.json) against this and reports per-fact deltas, not a score.",
 
   "_thresholds": {
     "krbtgt_max_age_days": 180,

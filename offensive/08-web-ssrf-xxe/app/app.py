@@ -1,5 +1,5 @@
 """
-Meridian Financial — document processing portal.
+Document processing portal (INTENTIONALLY VULNERABLE).
 
 Deliberately vulnerable for educational use:
   Bug 1: /api/fetch  — SSRF (CWE-918): fetches any URL the user supplies.
@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "Meridian document portal v2.1"})
+    return jsonify({"status": "ok", "service": "Document Portal v2.1"})
 
 
 @app.route("/api/fetch")

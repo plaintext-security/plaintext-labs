@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Linux LOLBins (Living off the Land) demo — Meridian Financial app server.
+Linux LOLBins (Living off the Land) demo — lab app server.
 
 Demonstrates a full LOLBin chain using ONLY native binaries:
   Step 1 — Download cradle: python3 + urllib (no curl/wget needed)
@@ -37,7 +37,7 @@ DIVIDER = "─" * 64
 PAYLOAD_PATH = Path(__file__).parent / "payload" / "stage2.py"
 PAYLOAD_PORT = 8765
 PAYLOAD_URL  = f"http://127.0.0.1:{PAYLOAD_PORT}/stage2.py"
-DROP_PATH    = "/tmp/.meridian_update"
+DROP_PATH    = "/tmp/.sysupdate"
 
 
 class PayloadHandler(BaseHTTPRequestHandler):
@@ -66,7 +66,7 @@ def run(cmd: str, **kw) -> subprocess.CompletedProcess:
 
 def demo() -> int:
     print("=" * 64)
-    print("Meridian Financial app server — LOLBins Demo")
+    print("Lab app server — LOLBins Demo")
     print("Technique: download cradle → exec → persistence via native binaries")
     print("=" * 64)
 
@@ -140,7 +140,7 @@ def demo() -> int:
     if DROP_PATH in verify.stdout:
         print(f"\n  ✓ Crontab entry added:")
         for line in verify.stdout.splitlines():
-            if DROP_PATH in line or "meridian" in line.lower():
+            if DROP_PATH in line or "sysupdate" in line.lower():
                 print(f"    {line}")
     else:
         print(f"  crontab output: {verify.stdout.strip() or '(empty)'}")
@@ -153,7 +153,7 @@ def demo() -> int:
     print("  Behavioural detections still catch it:\n")
     rows = [
         ("auditd / Sysmon",    "python3 opening a network socket (SOCK_STREAM to 127.0.0.1)"),
-        ("auditd / Sysmon",    "python3 writing to /tmp/.meridian_update (unusual path + hidden)"),
+        ("auditd / Sysmon",    "python3 writing to /tmp/.sysupdate (unusual path + hidden)"),
         ("auditd / Sysmon",    "python3 reading + executing file in /tmp (exec(open(...)))"),
         ("osquery",            "SELECT * FROM crontab WHERE command LIKE '%/tmp%' — flags /tmp payload"),
         ("Falco",              "Spawned process inheriting interpreter (python→python chain)"),

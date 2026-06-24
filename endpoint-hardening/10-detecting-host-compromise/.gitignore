@@ -1,0 +1,5 @@
+# Real Windows attack telemetry fetched/generated on demand — never committed.
+# EVTX samples are staged from the shared cache by `make fetch`; events.json is
+# rendered from them by `make convert`.
+data/evtx/
+data/events.json

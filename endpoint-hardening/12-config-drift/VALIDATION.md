@@ -33,7 +33,7 @@ make up && make demo && make down
 ## Likely first-run fixups (no daemon was available to confirm)
 - `sysctl -w` may be restricted in the container even with `privileged: true` on
   some kernels; the `drift.sh` writes are wrapped in `|| true` and the detector
-  keys off the on-disk `99-meridian-hardening.conf` value, so detection still
+  keys off the on-disk `99-cis-hardening.conf` value, so detection still
   fires. If a runner blocks the runtime write entirely, only the live-value side
   effect is skipped — the file-level drift/diff path is unaffected.
 - The `--check --diff` output format is what `parse_delta` keys on; if Ansible

@@ -67,7 +67,7 @@
       sysctl:
         name: net.ipv4.conf.all.rp_filter
         value: "{{ rp_filter }}"
-        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
         reload: no
       tags: sysctl
 

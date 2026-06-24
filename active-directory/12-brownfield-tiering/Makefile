@@ -1,9 +1,10 @@
-# Module 12 — Tiering a Brownfield Domain lab (deterministic SIMULATION).
-# Models the flat AD state + PATH-001 as a graph; tiers it in waves and proves, per wave,
-# that no admin is locked out AND the targeted attack hop is dead. No live Samba DC — the
-# GPO Deny-logon user-rights that close the path are enforced client-side by the Windows
-# LSA, which these labs don't ship; see VALIDATION.md. No `grade` target — honor system.
-.PHONY: up down reset shell demo before check
+# Module 12 — Tiering a Brownfield Domain lab.
+# Models the flat AD state + PATH-001 as a graph; tiers it in waves and proves, per wave, that
+# no admin is locked out AND the targeted attack hop is dead. The GPO Deny-logon user-rights are
+# enforced client-side by the Windows LSA (which these labs don't ship), so that ENFORCEMENT
+# stays modelled — but the directory FACTS the model rests on are verified live against the
+# bundled Samba DC by `make corroborate` (ldap3). See VALIDATION.md. No `grade` — honor system.
+.PHONY: up down reset shell demo before check corroborate
 
 up:
 	docker compose up -d --build
@@ -16,6 +17,11 @@ reset:
 
 shell:
 	docker compose exec lab bash
+
+corroborate: ## Verify the flat baseline fixture against the LIVE DC (rosters, SPN surface) via ldap3
+	docker compose run --rm lab sh -c '\
+	    until python3 -c "import socket; socket.create_connection((\"10.10.0.10\", 389), 3)" 2>/dev/null; do sleep 3; done; \
+	    python3 corroborate-live.py'
 
 before:     ## Re-walk PATH-001 on the FLAT domain — prove it reaches Domain Admin (t=0)
 	docker compose run --rm lab python3 flat-walk.py

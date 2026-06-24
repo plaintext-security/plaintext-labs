@@ -11,17 +11,27 @@ cd plaintext-labs/offensive/08-web-ssrf-xxe
 make up
 ```
 
-The container runs a minimal Flask app (`app/app.py`) — Meridian Financial's
-document portal — with two deliberate server-side bugs. A mock cloud metadata
+The container runs a minimal Flask app (`app/app.py`) — the document processing
+portal — with two deliberate server-side bugs. A mock cloud metadata
 server runs on `127.0.0.1:5001` inside the container, simulating what the
 AWS Instance Metadata Service (169.254.169.254) looks like from an EC2 host.
 
 ## Scenario
 
-Meridian's document portal has two features: a URL fetcher (for link previews)
+The document portal has two features: a URL fetcher (for link previews)
 and an XML invoice importer. Both features process server-supplied data without
 validating the input source. Neither can be exploited from the UI — but the API
 endpoints have no server-side trust boundary.
+
+This is the **2019 Capital One breach** in miniature. There, a misconfigured
+ModSecurity WAF on an EC2 instance let attacker Paige Thompson reach an SSRF
+that hit the IMDSv1 metadata endpoint at `169.254.169.254`, which handed back
+the temporary credentials for the instance's over-permissioned IAM role
+(`ISRM-WAF-Role`). Those credentials could list and read S3 buckets — about
+30 GB exfiltrated, ~100 million US and 6 million Canadian customers affected.
+The fix that closed this class is **IMDSv2**: it requires a session token
+obtained by a `PUT` request *before* any metadata `GET`, so a plain SSRF that
+can only force a `GET` no longer reaches the credentials.
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,

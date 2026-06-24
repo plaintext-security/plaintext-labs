@@ -1,34 +1,31 @@
-title: Cron Persistence via Crontab Modification
+title: LSASS Memory Access via Sysmon ProcessAccess
 id: a3b4c5d6-e7f8-9012-bcde-f01234567890
 status: experimental
 description: >
-  Detects modification of user crontab files, a common persistence technique.
-  A crontab entry running a script from /tmp is a high-confidence indicator
-  of malicious persistence.
-author: Meridian Security Team
+  Detects a process opening a handle to lsass.exe with high access rights — the
+  signature of credential dumping (e.g. mimikatz sekurlsa::logonpasswords).
+  Matches the real EVTX-ATTACK-SAMPLES credential-access sample staged by
+  `make convert` (Sysmon Event ID 10 against lsass.exe).
+author: Platform Security
 date: 2026/06/01
 references:
-  - https://attack.mitre.org/techniques/T1053/003/
+  - https://attack.mitre.org/techniques/T1003/001/
 tags:
-  - attack.persistence
-  - attack.t1053.003
+  - attack.credential_access
+  - attack.t1003.001
 logsource:
-  product: linux
-  service: auditd
+  product: windows
+  service: sysmon
 detection:
   selection:
-    type: SYSCALL
-    exe: '/usr/bin/crontab'
-    key: 'cron_modification'
-  filter_benign:
-    auid: '0'   # root modifying its own crontab is less suspicious
-  condition: selection and not filter_benign
+    EventID: '10'
+    TargetImage: 'lsass.exe'
+  condition: selection
 fields:
-  - uid
-  - auid
-  - exe
-  - key
+  - SourceImage
+  - TargetImage
+  - GrantedAccess
 falsepositives:
-  - Legitimate user crontab edits for scheduled jobs
-  - Ansible/configuration management modifying crontabs
+  - Legitimate security products (EDR/AV) that read LSASS memory
+  - Some backup or diagnostic tooling
 level: high

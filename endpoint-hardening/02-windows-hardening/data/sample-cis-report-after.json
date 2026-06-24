@@ -1,7 +1,7 @@
 {
   "benchmark": "CIS Microsoft Windows 11 Enterprise Benchmark",
   "profile": "Level 1 (L1) - Corporate/Enterprise Environment",
-  "hostname": "MERIDIAN-WS-001",
+  "hostname": "FIN-WS-001",
   "scan_date": "2026-06-01T11:30:00Z",
   "score": 74,
   "total_checks": 240,

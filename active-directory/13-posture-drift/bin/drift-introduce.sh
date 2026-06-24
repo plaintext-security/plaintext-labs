@@ -1,24 +1,45 @@
 #!/usr/bin/env bash
-# drift-introduce.sh — simulate a MONTH OF DECAY on the hardened Meridian domain.
+# drift-introduce.sh — introduce a MONTH OF DECAY on the Corp domain.
 #
-# In a full Samba-DC build this would run real `samba-tool spn add`, `dacledit.py`,
-# `samba-tool group addmembers`, and advance the krbtgt clock against the live dc01. In this
-# deterministic SIMULATION it instead MUTATES the observed-posture seed (data/observed.json)
-# with the same NET EFFECT, so drift-detect.py has real change to find. The learner is NOT
-# told the exact set from the lab text — the detector must surface each item.
+# TWO modes:
+#   (default)  MUTATE the observed-posture seed (data/observed.json) — deterministic, CI-safe,
+#              so `make detect` always has the same change to find.
+#   --live     Run REAL `samba-tool` against the bundled DC (dc01.corp.local) to register a new
+#              Kerberoastable SPN and add an unexpected member to Domain Admins, then let
+#              `make detect-live` collect the drift over LDAP. This is the genuine-DC path; the
+#              detector logic is identical, only the source of the facts changes.
 #
-# Mutations applied (each is a realistic, independently-introduced regression):
-#   1. New Kerberoastable SPN registered on svc-newdb        -> T1558.003
-#   2. GenericWrite re-added on Finance-Managers (re-grown ACE) -> T1098 / T1484.001
-#   3. A user (mnguyen) added to Domain Admins (unexpected)   -> T1098
-#   4. krbtgt clock advanced past the baseline threshold      -> standing T1558.001
+# Mutations (each a realistic, independently-introduced regression):
+#   1. New Kerberoastable SPN registered on svc-newdb           -> T1558.003
+#   2. GenericWrite re-added on Finance-Managers (re-grown ACE)  -> T1098 / T1484.001  (seed mode only)
+#   3. A user (mnguyen) added to Domain Admins (unexpected)      -> T1098
+#   4. krbtgt clock advanced past the baseline threshold         -> standing T1558.001 (seed mode only)
 #
-# Reproducible: resets observed.json from observed.clean.json first, then applies the set.
+# The learner is NOT told the exact set from the lab text — the detector must surface each item.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OBS="${HERE}/data/observed.json"
 CLEAN="${HERE}/data/observed.clean.json"
+
+# ---- LIVE mode: real samba-tool against the DC ---------------------------------------------
+if [ "${1:-}" = "--live" ]; then
+    DC_HOST="${DC_ADMIN_HOST:-dc01.corp.local}"
+    ADMIN_PASS="${SAMBA_ADMIN_PASSWORD:-C0rp@Admin!}"
+    echo "[*] LIVE drift: running real samba-tool against ${DC_HOST} (Administrator)..."
+    # 1. Register a new Kerberoastable SPN on a freshly-created service account.
+    samba-tool user create svc-newdb 'N3wDb$3rv1ce!' \
+        -H "ldap://${DC_HOST}" -U "Administrator%${ADMIN_PASS}" 2>/dev/null || true
+    samba-tool spn add "MSSQLSvc/newdb01.corp.local:1433" svc-newdb \
+        -H "ldap://${DC_HOST}" -U "Administrator%${ADMIN_PASS}" 2>/dev/null || true
+    # 3. Add an unexpected member to Domain Admins.
+    samba-tool group addmembers "Domain Admins" mnguyen \
+        -H "ldap://${DC_HOST}" -U "Administrator%${ADMIN_PASS}" 2>/dev/null || true
+    echo "[*] Live drift introduced on ${DC_HOST}."
+    echo "    Run 'make detect-live' (python3 drift-detect.py --live) to collect + name it over LDAP."
+    echo "    (The ACE re-grow and krbtgt-age regressions are exercised in the deterministic seed mode.)"
+    exit 0
+fi
 
 echo "[*] Resetting observed posture to the clean hardened state..."
 cp "${CLEAN}" "${OBS}"

@@ -29,9 +29,9 @@ REPORT="$(run_check)"; RC=$?
 # Heuristic: AIDE prints "found differences" / a summary with non-zero counts when
 # anything changed. Treat a clean run as: exit 0 AND none of our planted paths named.
 planted_seen=0
-echo "$REPORT" | grep -q '/srv/app/bin/meridian'        && planted_seen=1
+echo "$REPORT" | grep -q '/srv/app/bin/webapp'        && planted_seen=1
 echo "$REPORT" | grep -q '/srv/app/bin/\.helper'        && planted_seen=1
-echo "$REPORT" | grep -q '/etc/cron\.d/meridian-update' && planted_seen=1
+echo "$REPORT" | grep -q '/etc/cron\.d/webapp-update' && planted_seen=1
 
 MODE="${1:-auto}"
 if [ "$MODE" = "auto" ]; then
@@ -61,20 +61,20 @@ case "$MODE" in
     else
       bad "AIDE returned 0 (clean) but a tamper was expected — was 'make tamper' run? is the DB current?"
     fi
-    if echo "$REPORT" | grep -q '/srv/app/bin/meridian'; then
-      ok "modified binary detected: /srv/app/bin/meridian"
+    if echo "$REPORT" | grep -q '/srv/app/bin/webapp'; then
+      ok "modified binary detected: /srv/app/bin/webapp"
     else
-      bad "modified binary NOT detected: /srv/app/bin/meridian"
+      bad "modified binary NOT detected: /srv/app/bin/webapp"
     fi
     if echo "$REPORT" | grep -q '/srv/app/bin/\.helper'; then
       ok "new SUID-root file detected: /srv/app/bin/.helper"
     else
       bad "new SUID-root file NOT detected: /srv/app/bin/.helper"
     fi
-    if echo "$REPORT" | grep -q '/etc/cron\.d/meridian-update'; then
-      ok "dropped cron job detected: /etc/cron.d/meridian-update"
+    if echo "$REPORT" | grep -q '/etc/cron\.d/webapp-update'; then
+      ok "dropped cron job detected: /etc/cron.d/webapp-update"
     else
-      bad "dropped cron job NOT detected: /etc/cron.d/meridian-update"
+      bad "dropped cron job NOT detected: /etc/cron.d/webapp-update"
     fi
     ;;
 

@@ -2,14 +2,20 @@ FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Minimal toolchain for the deterministic tiering SIMULATION: Python (graph/attack-path
-# checks over the seed JSON) plus ldap-utils so a learner extending toward a real Samba DC
-# has ldapsearch on hand. No live DC is provisioned here — see VALIDATION.md for the gap.
+# Toolchain: Python + ldap3 (the deterministic wave gate over the seed JSON AND the LIVE
+# corroboration `make corroborate` that reads real rosters/SPNs off the bundled Samba DC) plus
+# ldap-utils for ad-hoc ldapsearch. The GPO-logon ENFORCEMENT remains modelled — see VALIDATION.md.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
+    python3-pip \
+    python3-venv \
     ldap-utils \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir ldap3
 
 WORKDIR /lab
 COPY . /lab

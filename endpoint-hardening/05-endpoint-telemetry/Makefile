@@ -1,10 +1,20 @@
 # Module 05 — Endpoint Telemetry & EDR
 # Standard targets: up / down / reset / demo / shell
 
-.PHONY: up down reset demo shell
+.PHONY: up down reset demo shell fetch seed
 
-up:
+# Stage the real Atomic Red Team T1053.003 test from the shared cache (host side).
+fetch:
+	sh fetch-data.sh
+
+up: fetch
 	docker compose up -d --build
+	@$(MAKE) -s seed
+
+# Detonate the real (benign) cron-persistence artifact inside the container so
+# osquery telemetry surfaces a documented technique, not an invented compromise.
+seed:
+	docker compose exec lab bash /lab/seed-compromise.sh
 
 down:
 	docker compose down
@@ -39,7 +49,15 @@ demo:
 		  "SELECT path, permissions FROM file WHERE path LIKE '"'"'/usr/bin/%'"'"' AND permissions LIKE '"'"'%s%'"'"' AND uid = 0 LIMIT 10" \
 		2>/dev/null | python3 -m json.tool'
 	@echo ""
-	@echo "=== Run 'make shell' then 'osqueryi' for interactive queries ==="
+	@echo "--- Query 5: Cron persistence (surfaces the seeded Atomic Red Team T1053.003 artifact) ---"
+	docker compose exec lab bash -c '\
+		osqueryi --json \
+		  "SELECT command, path FROM crontab WHERE command LIKE '"'"'%/tmp/%'"'"'" \
+		2>/dev/null | python3 -m json.tool 2>/dev/null || echo "(run make seed first)"'
+	@echo ""
+	@echo "=== Real artifact: Atomic Red Team T1053.003 (cron persistence) is detonated in this host."
+	@echo "    See data/atomic/T1053.003.md for the upstream technique definition."
+	@echo "    Run 'make shell' then 'osqueryi' for interactive queries ==="
 
 shell:
 	docker compose exec lab bash

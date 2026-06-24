@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Broken access control audit — Meridian Financial internal portal.
+Broken access control audit — internal order portal.
 
 Demonstrates:
   1. Authentication — confirm login works for two users
@@ -48,7 +48,7 @@ def fmt(r) -> str:
 
 def demo() -> int:
     print("=" * 64)
-    print("Meridian Financial — Broken Access Control Audit")
+    print("Broken Access Control Audit")
     print("OWASP A01: Broken Access Control (CWE-639 + CWE-284)")
     print("=" * 64)
 

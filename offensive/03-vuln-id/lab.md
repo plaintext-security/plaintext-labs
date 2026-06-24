@@ -23,10 +23,11 @@ CVE→CWE→CVSS→KEV→PoC research chain and generates `vuln-assessment.md`.
 > targets you own).
 
 ## Scenario
-Your module 02 scan found `nginx 1.24.0` on ports 80/443 and the module
-01 recon flagged `vpn.meridian-financial.com` (FortiGate). Research the
-vulnerability surface for both, prioritize by real-world exploitation
-signal, and produce a risk verdict before moving to exploitation.
+Your module 02 scan fingerprinted the edge `nginx` in the CVE-2017-7529
+range (nginx ≤ 1.13.2 — range-filter integer overflow) on ports 80/443,
+and the module 01 recon flagged `vpn.example.com` (FortiGate). Research
+the vulnerability surface, prioritize by real-world exploitation signal,
+and produce a risk verdict before moving to exploitation.
 
 ## Do
 
@@ -45,7 +46,7 @@ signal, and produce a risk verdict before moving to exploitation.
 
 4. [ ] Add a fourth CVE to `data/nvd_cves.json` and `data/kev.json`:
    **CVE-2023-22515** (Atlassian Confluence broken access control —
-   your recon found `jira.meridian-financial.com` with Jira 9.4.0).
+   your recon found `jira.example.com` / `confluence.example.com`).
    Look it up on NVD and fill in the correct CVSS, CWE, and KEV status.
    Re-run the demo and confirm it appears in the priority table.
 
@@ -92,7 +93,8 @@ full assessment doc also feeds module 03's output into the SIEM
 > exploited."
 
 ## Stretch
-- Add automated version-range checking: given `nginx 1.24.0`, query
-  the NVD API with `&keywordSearch=nginx&keywordExactMatch` and filter
-  results to only CVEs where the affected version range includes 1.24.0.
-  This is what a real vulnerability scanner does.
+- Add automated version-range checking: given the detected `nginx 1.13.2`,
+  query the NVD API with `&keywordSearch=nginx&keywordExactMatch` and filter
+  results to only CVEs whose affected version range includes 1.13.2 (you
+  should surface CVE-2017-7529). This is what a real vulnerability scanner
+  does.

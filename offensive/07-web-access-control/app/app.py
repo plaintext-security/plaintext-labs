@@ -1,5 +1,5 @@
 """
-Meridian Financial — internal portal.
+Internal order portal (INTENTIONALLY VULNERABLE).
 
 Deliberately vulnerable for educational use:
   Bug 1: /api/orders/<id> — no ownership check (IDOR, CWE-639)
@@ -11,7 +11,7 @@ Fix: enforce authorization server-side on every request; deny-by-default;
 from flask import Flask, request, jsonify, session
 
 app = Flask(__name__)
-app.secret_key = "meridian-secret-2024"
+app.secret_key = "dev-insecure-secret"
 
 # --- In-memory "database" ---------------------------------------------------
 

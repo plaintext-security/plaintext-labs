@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the Meridian ACL misconfiguration findings (severity, principal, edge, target)."""
+"""Print the Corp ACL misconfiguration findings (severity, principal, edge, target)."""
 import json
 import sys
 

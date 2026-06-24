@@ -1,12 +1,12 @@
 {
-  "www.meridian-financial.com": {
+  "www.example.com": {
     "server": "cloudflare",
     "technologies": ["Cloudflare", "WordPress 6.4.3", "jQuery 3.7.1", "PHP/8.1"],
     "headers": {"X-Powered-By": "PHP/8.1", "Server": "cloudflare"},
     "status": 200,
     "interesting": false
   },
-  "portal.meridian-financial.com": {
+  "portal.example.com": {
     "server": "nginx/1.18.0",
     "technologies": ["Nginx 1.18.0", "React", "Node.js", "JWT Auth"],
     "headers": {"Server": "nginx/1.18.0", "X-Frame-Options": "SAMEORIGIN"},
@@ -14,7 +14,7 @@
     "interesting": true,
     "notes": "Client-facing financial portal — JWT auth, React SPA"
   },
-  "vpn.meridian-financial.com": {
+  "vpn.example.com": {
     "server": "nginx",
     "technologies": ["Nginx", "Fortinet FortiGate SSL-VPN"],
     "headers": {"Server": "nginx"},
@@ -22,7 +22,7 @@
     "interesting": true,
     "notes": "FortiGate VPN portal — check for CVE-2023-27997 / CVE-2024-21762"
   },
-  "dev.meridian-financial.com": {
+  "dev.example.com": {
     "server": "Apache/2.4.52",
     "technologies": ["Apache 2.4.52", "Django/4.2", "Python/3.9"],
     "headers": {"Server": "Apache/2.4.52", "X-Powered-By": "Django/4.2"},
@@ -30,7 +30,7 @@
     "interesting": true,
     "notes": "Dev environment — Apache 2.4.52 (CVE-2021-41773 patched, but 2.4.52 still vulnerable to mod_sed)"
   },
-  "staging.meridian-financial.com": {
+  "staging.example.com": {
     "server": "Apache/2.4.52",
     "technologies": ["Apache 2.4.52", "Django/4.2"],
     "headers": {"Server": "Apache/2.4.52"},
@@ -38,7 +38,7 @@
     "interesting": false,
     "notes": "Basic auth — 401; possibly same stack as dev"
   },
-  "api.meridian-financial.com": {
+  "api.example.com": {
     "server": "awselb/2.0",
     "technologies": ["AWS ALB", "Swagger UI 4.18.1"],
     "headers": {"Server": "awselb/2.0", "X-Amzn-RequestId": "redacted"},
@@ -46,7 +46,7 @@
     "interesting": true,
     "notes": "Swagger UI exposed — API documentation accessible without auth"
   },
-  "jira.meridian-financial.com": {
+  "jira.example.com": {
     "server": "nginx/1.24.0",
     "technologies": ["Nginx 1.24.0", "Atlassian Jira 9.4.0"],
     "headers": {"X-AREQUESTTOKEN": "redacted"},
@@ -54,7 +54,7 @@
     "interesting": true,
     "notes": "Jira 9.4.0 — check CVE-2023-22515 (broken access control, auth bypass)"
   },
-  "backups.meridian-financial.com": {
+  "backups.example.com": {
     "server": "AmazonS3",
     "technologies": ["AWS S3"],
     "headers": {"Server": "AmazonS3"},

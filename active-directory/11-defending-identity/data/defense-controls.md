@@ -1,4 +1,4 @@
-# Meridian Financial — Defense Control Matrix
+# Corp — Defense Control Matrix
 
 > Maps each attack technique from modules 03-08 to its prevention and detection controls.
 > Use this matrix to drive your tiered admin model design and GPO specification.
@@ -77,16 +77,16 @@ Apply to: **All Tier 1 and Tier 2 computers** via a domain-wide GPO with excepti
 
 | Policy Path | Setting | Value |
 |-------------|---------|-------|
-| `Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Deny log on locally` | Add Tier 0 account group | `MERIDIAN\Tier0-Admins` |
-| `Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Deny log on through Remote Desktop Services` | Add Tier 0 account group | `MERIDIAN\Tier0-Admins` |
+| `Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Deny log on locally` | Add Tier 0 account group | `CORP\Tier0-Admins` |
+| `Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Deny log on through Remote Desktop Services` | Add Tier 0 account group | `CORP\Tier0-Admins` |
 
 ### Tier 1 accounts (IT-Admins sgarcia, pmartinez)
 Apply to: **All Tier 2 computers** (Finance, HR workstations).
 
 | Policy Path | Setting | Value |
 |-------------|---------|-------|
-| Deny log on locally | Tier 1 admin group | `MERIDIAN\Tier1-Admins` |
-| Deny log on through RDS | Tier 1 admin group | `MERIDIAN\Tier1-Admins` |
+| Deny log on locally | Tier 1 admin group | `CORP\Tier1-Admins` |
+| Deny log on through RDS | Tier 1 admin group | `CORP\Tier1-Admins` |
 
 ### Protected Users — add these accounts
 | Account | Justification |

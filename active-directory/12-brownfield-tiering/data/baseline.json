@@ -1,7 +1,7 @@
 {
   "meta": {
-    "description": "Meridian Financial — FLAT brownfield AD state (pre-tiering). The graph models who can log on where today, the privileged-group rosters, and the single attack path (PATH-001) that works BECAUSE a Domain Admin logs on interactively to a Tier-2 workstation. This is the t=0 baseline the migration migrates AWAY from. Reuses the Module 02 domain and the Module 08 PATH-001 fixture.",
-    "domain": "MERIDIAN.LOCAL",
+    "description": "Corp — FLAT brownfield AD state (pre-tiering). The graph models who can log on where today, the privileged-group rosters, and the single attack path (PATH-001) that works BECAUSE a Domain Admin logs on interactively to a Tier-2 workstation. This is the t=0 baseline the migration migrates AWAY from. Reuses the Module 02 domain and the Module 08 PATH-001 fixture.",
+    "domain": "CORP.LOCAL",
     "state": "flat-brownfield",
     "generated": "2024-01-01"
   },
@@ -18,14 +18,14 @@
   },
 
   "hosts": [
-    {"name": "DC01.MERIDIAN.LOCAL",      "tier": 0, "ou": "Domain Controllers"},
-    {"name": "JUMP01.MERIDIAN.LOCAL",    "tier": 0, "ou": "OU=Tier0,DC=meridian,DC=local", "role": "Tier 0 privileged access workstation / jump host"},
-    {"name": "BACKUP01.MERIDIAN.LOCAL",  "tier": 1, "ou": "OU=ServiceAccounts,DC=meridian,DC=local"},
-    {"name": "DB01.MERIDIAN.LOCAL",      "tier": 1, "ou": "OU=ServiceAccounts,DC=meridian,DC=local"},
-    {"name": "FIN-WS01.MERIDIAN.LOCAL",  "tier": 2, "ou": "OU=Finance,OU=Corp,DC=meridian,DC=local", "pilot": true},
-    {"name": "FIN-WS02.MERIDIAN.LOCAL",  "tier": 2, "ou": "OU=Finance,OU=Corp,DC=meridian,DC=local"},
-    {"name": "HR-WS01.MERIDIAN.LOCAL",   "tier": 2, "ou": "OU=HR,OU=Corp,DC=meridian,DC=local"},
-    {"name": "IT-WS01.MERIDIAN.LOCAL",   "tier": 2, "ou": "OU=IT,OU=Corp,DC=meridian,DC=local"}
+    {"name": "DC01.CORP.LOCAL",      "tier": 0, "ou": "Domain Controllers"},
+    {"name": "JUMP01.CORP.LOCAL",    "tier": 0, "ou": "OU=Tier0,DC=corp,DC=local", "role": "Tier 0 privileged access workstation / jump host"},
+    {"name": "BACKUP01.CORP.LOCAL",  "tier": 1, "ou": "OU=ServiceAccounts,DC=corp,DC=local"},
+    {"name": "DB01.CORP.LOCAL",      "tier": 1, "ou": "OU=ServiceAccounts,DC=corp,DC=local"},
+    {"name": "FIN-WS01.CORP.LOCAL",  "tier": 2, "ou": "OU=Finance,OU=Corp,DC=corp,DC=local", "pilot": true},
+    {"name": "FIN-WS02.CORP.LOCAL",  "tier": 2, "ou": "OU=Finance,OU=Corp,DC=corp,DC=local"},
+    {"name": "HR-WS01.CORP.LOCAL",   "tier": 2, "ou": "OU=HR,OU=Corp,DC=corp,DC=local"},
+    {"name": "IT-WS01.CORP.LOCAL",   "tier": 2, "ou": "OU=IT,OU=Corp,DC=corp,DC=local"}
   ],
 
   "accounts": {
@@ -34,12 +34,12 @@
       "in_protected_users": false,
       "logon_rights": {
         "comment": "FLAT: a Domain Admin can log on interactively EVERYWHERE, including Tier 2 workstations. This is the brownfield sin — it makes the DA credential harvestable from any compromised workstation.",
-        "interactive": ["DC01.MERIDIAN.LOCAL", "JUMP01.MERIDIAN.LOCAL", "FIN-WS01.MERIDIAN.LOCAL", "FIN-WS02.MERIDIAN.LOCAL", "HR-WS01.MERIDIAN.LOCAL", "IT-WS01.MERIDIAN.LOCAL"],
-        "remote_interactive": ["DC01.MERIDIAN.LOCAL", "JUMP01.MERIDIAN.LOCAL", "FIN-WS01.MERIDIAN.LOCAL", "FIN-WS02.MERIDIAN.LOCAL", "HR-WS01.MERIDIAN.LOCAL", "IT-WS01.MERIDIAN.LOCAL"]
+        "interactive": ["DC01.CORP.LOCAL", "JUMP01.CORP.LOCAL", "FIN-WS01.CORP.LOCAL", "FIN-WS02.CORP.LOCAL", "HR-WS01.CORP.LOCAL", "IT-WS01.CORP.LOCAL"],
+        "remote_interactive": ["DC01.CORP.LOCAL", "JUMP01.CORP.LOCAL", "FIN-WS01.CORP.LOCAL", "FIN-WS02.CORP.LOCAL", "HR-WS01.CORP.LOCAL", "IT-WS01.CORP.LOCAL"]
       },
       "legitimate_work": {
         "comment": "tallen's REAL job: administer the domain from the Tier 0 jump host. A correct migration must keep this working.",
-        "must_log_on_to": ["JUMP01.MERIDIAN.LOCAL", "DC01.MERIDIAN.LOCAL"]
+        "must_log_on_to": ["JUMP01.CORP.LOCAL", "DC01.CORP.LOCAL"]
       }
     },
 
@@ -48,11 +48,11 @@
       "in_protected_users": false,
       "logon_rights": {
         "comment": "A non-Tier-0 IT admin who legitimately works ON the Tier 2 workstations (helpdesk-style). Migration must NOT lock this account out of the pilot OU — only Tier 0 accounts are denied there.",
-        "interactive": ["FIN-WS01.MERIDIAN.LOCAL", "FIN-WS02.MERIDIAN.LOCAL", "HR-WS01.MERIDIAN.LOCAL", "IT-WS01.MERIDIAN.LOCAL"],
-        "remote_interactive": ["FIN-WS01.MERIDIAN.LOCAL"]
+        "interactive": ["FIN-WS01.CORP.LOCAL", "FIN-WS02.CORP.LOCAL", "HR-WS01.CORP.LOCAL", "IT-WS01.CORP.LOCAL"],
+        "remote_interactive": ["FIN-WS01.CORP.LOCAL"]
       },
       "legitimate_work": {
-        "must_log_on_to": ["FIN-WS01.MERIDIAN.LOCAL", "IT-WS01.MERIDIAN.LOCAL"]
+        "must_log_on_to": ["FIN-WS01.CORP.LOCAL", "IT-WS01.CORP.LOCAL"]
       }
     },
 
@@ -61,11 +61,11 @@
       "in_protected_users": false,
       "logon_rights": {
         "comment": "GOTCHA the model misses: a service account that SILENTLY logs on INTERACTIVELY (it should run as a service, but ops wired it to log on locally on BACKUP01). A blanket Tier-1 Deny-interactive would break the nightly backup. The migration must spot this and exclude it / fix the service config first.",
-        "interactive": ["BACKUP01.MERIDIAN.LOCAL"],
+        "interactive": ["BACKUP01.CORP.LOCAL"],
         "remote_interactive": []
       },
       "legitimate_work": {
-        "must_log_on_to": ["BACKUP01.MERIDIAN.LOCAL"]
+        "must_log_on_to": ["BACKUP01.CORP.LOCAL"]
       }
     },
 
@@ -74,11 +74,11 @@
       "in_protected_users": false,
       "logon_rights": {
         "comment": "Ordinary Finance user — the attacker's entry point in PATH-001.",
-        "interactive": ["FIN-WS01.MERIDIAN.LOCAL"],
+        "interactive": ["FIN-WS01.CORP.LOCAL"],
         "remote_interactive": []
       },
       "legitimate_work": {
-        "must_log_on_to": ["FIN-WS01.MERIDIAN.LOCAL"]
+        "must_log_on_to": ["FIN-WS01.CORP.LOCAL"]
       }
     }
   }

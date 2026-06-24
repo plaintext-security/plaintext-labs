@@ -1,10 +1,14 @@
-# Meridian Financial — Endpoint Profile
+# Endpoint Profile — Financial-Services Org
+
+These two hosts are representative of a mid-size financial-services firm's pre-hardening estate.
+They are modelled on the kind of endpoints that real breaches have started from — see the
+**Real-world anchor** at the bottom.
 
 ## Host A: Finance Analyst Workstation
 
 **Hardware:** Dell Latitude 5540, Intel Core i7, 16 GB RAM, 512 GB NVMe SSD, TPM 2.0 present.
 
-**OS:** Windows 11 Enterprise (23H2), domain-joined to `corp.meridian.internal`.
+**OS:** Windows 11 Enterprise (23H2), domain-joined to `corp.example.internal`.
 
 **Software installed:**
 - Microsoft 365 Apps (Word, Excel, Outlook, Teams) — version current
@@ -20,8 +24,8 @@
 - Primary interface: corporate LAN, VLAN 10 (Finance), /24 subnet
 - VPN: split-tunnel (only `10.0.0.0/8` goes through VPN when remote)
 - SMB share access: `\\fileserver01\Finance` (financial reports, salary data)
-- RDP access: permitted to `db-reporting01.corp.meridian.internal` (read-only)
-- Internet: outbound HTTP/HTTPS permitted (proxy: `proxy.meridian.internal:8080`)
+- RDP access: permitted to `db-reporting01.corp.example.internal` (read-only)
+- Internet: outbound HTTP/HTTPS permitted (proxy: `proxy.example.internal:8080`)
 
 **Data held locally:**
 - Cached Outlook OST (email including payroll approval chains)
@@ -33,8 +37,9 @@
 
 **Authentication:**
 - Domain password (complexity enforced: 12 chars, 90-day rotation — rarely enforced)
-- No MFA for local machine or VPN (MFA deployed only for O365)
+- **No MFA for local machine or VPN** (MFA deployed only for O365)
 - Local administrator account: disabled per policy (periodically re-enabled by user IT tickets)
+- Note: at least one VPN account is for a *former* contractor and was never disabled
 
 **Current hardening state:**
 - Windows Defender enabled, definitions current
@@ -49,20 +54,20 @@
 ## Host B: Linux Application Server
 
 **Hardware:** VMware virtual machine, 4 vCPUs, 8 GB RAM, 100 GB virtual disk.
-**Hypervisor host:** `esx01.corp.meridian.internal` (ESXi 8.0)
+**Hypervisor host:** `esx01.corp.example.internal` (ESXi 8.0)
 
 **OS:** Ubuntu 22.04 LTS, kernel 5.15.0-102-generic.
 
 **Role:** Internal payroll calculation API. Receives POST requests from the Citrix session
 backend; returns salary and deduction calculations. Connects to PostgreSQL database on
-`db01.corp.meridian.internal:5432`.
+`db01.corp.example.internal:5432`.
 
 **Network position:**
 - Interface: corporate LAN, VLAN 20 (Servers), /24 subnet
 - Inbound: TCP 8443 from VLAN 10 (Finance) and VLAN 30 (Citrix backend)
-- Outbound: TCP 5432 to `db01.corp.meridian.internal`
+- Outbound: TCP 5432 to `db01.corp.example.internal`
 - Outbound: TCP 443 to package mirrors (quarterly maintenance window)
-- SSH: TCP 22 from `jumphost01.corp.meridian.internal` only (via firewall rule)
+- SSH: TCP 22 from `jumphost01.corp.example.internal` only (via firewall rule)
 
 **Software:**
 - Python 3.10 (payroll API: `/opt/payroll-api/`, runs as user `payroll`)
@@ -93,7 +98,7 @@ backend; returns salary and deduction calculations. Connects to PostgreSQL datab
 
 ## Notes for the threat model exercise
 
-Both hosts are representative of Meridian Financial's current pre-hardening state. The threat
+Both hosts are representative of the organization's current pre-hardening state. The threat
 model should consider:
 
 1. **Threat actor classes:** opportunistic ransomware (commodity malware, phishing), targeted
@@ -103,6 +108,25 @@ model should consider:
 2. **Crown jewels:** salary data, payroll calculation API (financial manipulation potential),
    domain credentials (lateral movement), banking credentials (VDI session theft).
 
-3. **Initial access assumptions:** phishing email landing a payload on the workstation is the
-   most realistic initial access vector. Supply-chain compromise of a Python package is a
-   realistic vector for the application server.
+3. **Initial access assumptions:** phishing email landing a payload on the workstation, or a
+   reused/leaked credential on a remote-access account, are the most realistic initial access
+   vectors. Supply-chain compromise of a Python package is a realistic vector for the
+   application server.
+
+---
+
+## Real-world anchor — Colonial Pipeline (2021)
+
+This profile's `No MFA for VPN` weakness and `former contractor's VPN account never disabled`
+are not invented hypotheticals. The **Colonial Pipeline ransomware attack (May 2021)**, attributed
+to the DarkSide group, began exactly this way: the attackers got in using a single compromised
+password for an **inactive VPN account that did not have multi-factor authentication enabled**.
+That one missing control — an endpoint/remote-access authentication weakness, not a software CVE —
+led to a six-day shutdown of the largest US fuel pipeline.
+
+When you trace attack paths for Host A, treat the VPN/MFA gap as a **named, real** initial-access
+vector (ATT&CK **T1078 Valid Accounts**, sub-technique **T1078.002 Domain Accounts**), and the
+post-access credential theft as **T1003.001 (OS Credential Dumping: LSASS Memory)**. Your top-five
+backlog should make "the Colonial Pipeline path" one of the first things you close.
+
+Reference: CISA / public reporting on the Colonial Pipeline incident; MITRE ATT&CK T1078, T1003.001.

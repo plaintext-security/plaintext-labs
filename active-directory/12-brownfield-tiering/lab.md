@@ -2,31 +2,34 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
-> **Environment status: to be built & validated.** The `plaintext-labs/active-directory/12-brownfield-tiering/`
-> environment (a Samba4 Meridian DC carrying the flat, brownfield state — DAs with workstation-logon
-> rights, service accounts logging on interactively — plus a tools container with `samba-tool`,
-> `ldapsearch`, and the impacket attack scripts from modules 03–08) is **not yet built**. This `lab.md`
-> is the authored instruction set; the `docker-compose.yml` + `Makefile` (`up`/`down`/`reset`/`demo`)
-> still need to be created and `make up && make demo` run green on a clean Linux runner before this lab
-> counts as done. Until then, treat the commands below as the spec the environment must satisfy.
-
 ## Setup
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/12-brownfield-tiering
-make up      # start the brownfield Meridian DC + tools container
-make demo    # show the flat baseline: who can log on where, and the live PATH-001 hop
-make shell   # interactive shell in the tools container
+make up           # start the Samba DC + the tiering tools container
+make corroborate  # verify the flat baseline fixture against the LIVE DC (ldap3): rosters + SPN surface
+make before       # re-walk PATH-001 on the flat domain — prove it reaches Domain Admin (t=0)
+make demo         # full story: PATH-001 open on the flat domain, then dead after tiering in waves
+make shell        # interactive shell in the tools container
 make down
 ```
 
+How this lab is honest about what is and isn't live: the **directory facts** the model rests on —
+who is in Domain Admins / Backup Operators, which accounts carry an SPN — are read **live off the DC**
+by `make corroborate` (`corroborate-live.py`, ldap3). What stays *modelled* is GPO Deny-logon
+**enforcement**: Samba does not enforce client-side `SeDenyInteractiveLogonRight` (that lives in the
+Windows LSA on a domain-joined client these labs don't ship), so the wave gate evaluates the
+logon-rights graph for reachability. The judgement it encodes — a *failed* attack scores PASS, a
+*still-working* one scores FAIL — is identical to the real-DC case. See `VALIDATION.md`.
+
 The lab provides:
-- A Samba4 DC seeded with the **flat brownfield Meridian state**: `tallen` (Domain Admin) has logon rights everywhere including the Finance workstation objects; `svc-backup` logs on interactively; nothing is tiered.
-- A tools container with `samba-tool`, `ldapsearch`, `ldap3`, and the impacket scripts (`GetNPUsers.py`, `GetUserSPNs.py`, `secretsdump.py`) used to re-walk PATH-001 hops.
-- `data/meridian-domain.md` — the domain spec (accounts, OUs, the existing flat logon reality).
-- `data/target-tiers.md` — the Module 11 tier assignment (Tier 0/1/2) you are migrating *toward*.
-- `data/path-001.md` — the primary attack path from Module 08, hop by hop, so you know which hop each wave must close.
+- A Samba4 DC (the same image built in Module 02) reachable at `dc01.corp.local` / `10.10.0.10`, carrying the real accounts/groups/SPNs PATH-001 depends on.
+- A tools container with `samba-tool`, `ldapsearch`, and `ldap3`.
+- `corroborate-live.py` — reads the live privileged-group rosters and SPN surface off the DC and checks them against `data/baseline.json`.
+- `data/baseline.json` — the **flat brownfield state** graph: `tallen` (Domain Admin) logs on everywhere including Finance workstations; `svc-backup` logs on interactively; nothing is tiered.
+- `data/waves.json` — the staged migration (pilot OU → Protected Users → widen), each wave with its no-lockout assertions and the PATH-001 hop it must close.
+- `data/path-001.json` — the primary attack path from Module 08, hop by hop, so you know which hop each wave must close.
 
 > **Authorization.** Everything here runs against your own lab domain only. Never apply these GPO/logon
 > changes to a domain you do not own or have explicit written permission to modify — a mis-scoped
@@ -34,11 +37,11 @@ The lab provides:
 
 ## Scenario
 
-You are the AD security lead at Meridian Financial. Module 11 produced the tiered-admin **design** on paper. Module 08 produced **PATH-001** — the low-priv-to-Domain-Admin path that works *because* `tallen` (a DA) logs into Finance workstations, so a compromised workstation yields a DA credential. The CISO has signed off on the design. Now you must **deploy it on the live domain without an outage**: no admin gets locked out, and at each step you prove the relevant hop of PATH-001 is now dead. The whole company logs into this domain every morning. A big-bang GPO link at the root is off the table — it would deny logons company-wide the instant it replicates and you would be debugging a lockout live.
+You are the AD security lead for the `corp.local` domain. Module 11 produced the tiered-admin **design** on paper. Module 08 produced **PATH-001** — the low-priv-to-Domain-Admin path that works *because* `tallen` (a DA) logs into Finance workstations, so a compromised workstation yields a DA credential. The CISO has signed off on the design. Now you must **deploy it on the live domain without an outage**: no admin gets locked out, and at each step you prove the relevant hop of PATH-001 is now dead. The whole company logs into this domain every morning. A big-bang GPO link at the root is off the table — it would deny logons company-wide the instant it replicates and you would be debugging a lockout live.
 
 ## Do
 
-1. [ ] **Capture the flat baseline (the "before").** Run `make demo`. Record the brownfield reality you're migrating from: which privileged accounts (`tallen`, `sgarcia`, `svc-backup`) can log on to which hosts/OUs today, and *prove the attack works now* — re-walk the PATH-001 hop that depends on a DA credential being harvestable from a Finance workstation (use `secretsdump.py` / the seeded LSASS-equivalent artifact). This is your t=0 proof that the path is open. Save it as `proof/before.md`.
+1. [ ] **Corroborate the baseline against the live DC, then capture the flat "before."** First run `make corroborate` — it reads the real Domain Admins / Backup Operators rosters and the SPN surface off `dc01.corp.local` via ldap3 and confirms `data/baseline.json` describes the domain that's actually running (if it doesn't, the rest of the lab is reasoning about a fiction). Then run `make before` / `make demo`: record the brownfield reality you're migrating from — which privileged accounts (`tallen`, `sgarcia`, `svc-backup`) can log on where today — and *prove the attack works now* by re-walking the PATH-001 hop that depends on a DA credential being harvestable from a Finance workstation. This is your t=0 proof that the path is open. Save it as `proof/before.md`.
 
 2. [ ] **Predict the big-bang failure, then write the staged plan.** *Before* touching anything: in one paragraph, state what breaks if you link `Deny log on through Remote Desktop Services` + `Deny log on locally` for Tier 0 accounts at the **domain root** right now (which legitimate logons die, why you can't tell intended-deny from lockout, why there's no incremental rollback). Then write `migration-runbook.md` — the wave plan: order the waves by blast radius (lowest-risk pilot first), name every account each wave touches, and define the per-wave proof and rollback.
 

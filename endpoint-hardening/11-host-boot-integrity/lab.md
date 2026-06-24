@@ -41,10 +41,10 @@ you can edit them and re-baseline.
 
 ## Scenario
 
-Meridian Financial has hardened its Linux fleet to a CIS baseline (Module 03), pushed it as code
+The organization has hardened its Linux fleet to a CIS baseline (Module 03), pushed it as code
 (Module 06), and stood up telemetry (Module 05). Then IR gets a tip: *one host may have been touched
 during last month's incident.* Hardening tells you how the box was **configured**; it says nothing
-about what **changed** since. You'll give Meridian the missing answer — a file-integrity baseline that
+about what **changed** since. You'll give the organization the missing answer — a file-integrity baseline that
 can prove, on demand, whether a host still matches its known-good state — and then play the attacker:
 plant a trojaned binary, a SUID-root backdoor, and a persistence cron, and watch the baseline catch
 every one. Finally you'll confront the control's own weak point — the baseline database — and reason
@@ -66,9 +66,9 @@ about the boot chain that runs *before* any file checker exists.
 
 ### Part 2: Plant a tamper and prove detection
 3. [ ] **Play the attacker.** `make tamper` runs `data/tamper.sh`, which establishes a foothold three
-   classic ways: (1) **trojans the app binary** (`/srv/app/bin/meridian` — content changes), (2)
+   classic ways: (1) **trojans the app binary** (`/srv/app/bin/webapp` — content changes), (2)
    **plants a SUID-root binary** (`/srv/app/bin/.helper`, mode `4755`, owner root — a privilege-escalation
-   primitive), and (3) **drops a persistence cron** (`/etc/cron.d/meridian-update`). Read the script;
+   primitive), and (3) **drops a persistence cron** (`/etc/cron.d/webapp-update`). Read the script;
    each tamper maps to a real ATT&CK technique (T1554 / T1548.001 / T1053.003).
 
 4. [ ] **Catch all three.** `make check` again. AIDE re-fingerprints the watched tree, diffs against

@@ -1,7 +1,7 @@
-# Meridian Financial — Active Directory Domain Specification
+# Corp — Active Directory Domain Specification
 
 > **Fictional environment for training purposes only.**
-> This document describes the Meridian Financial AD domain used throughout Track 06.
+> This document describes the Corp AD domain used throughout Track 06.
 > All names, IP addresses, and configurations are invented.
 
 ---
@@ -10,14 +10,14 @@
 
 | Property | Value |
 |----------|-------|
-| Forest root domain | `MERIDIAN.LOCAL` |
-| NetBIOS name | `MERIDIAN` |
+| Forest root domain | `CORP.LOCAL` |
+| NetBIOS name | `CORP` |
 | Forest functional level | Windows Server 2016 |
 | Domain functional level | Windows Server 2016 |
 | External trusts | None |
 | Child domains | None |
 
-The forest contains a single domain: `MERIDIAN.LOCAL`. There are no child domains and no external trusts. All Kerberos tickets are issued by the DC in this domain. A single forest means a single Kerberos realm and a single schema.
+The forest contains a single domain: `CORP.LOCAL`. There are no child domains and no external trusts. All Kerberos tickets are issued by the DC in this domain. A single forest means a single Kerberos realm and a single schema.
 
 ---
 
@@ -25,8 +25,8 @@ The forest contains a single domain: `MERIDIAN.LOCAL`. There are no child domain
 
 | Hostname | IP | Role |
 |----------|----|------|
-| `dc01.meridian.local` | 10.10.0.10 | PDC Emulator, RID Master, Infrastructure Master |
-| `dc02.meridian.local` | 10.10.0.11 | Schema Master, Domain Naming Master (secondary DC) |
+| `dc01.corp.local` | 10.10.0.10 | PDC Emulator, RID Master, Infrastructure Master |
+| `dc02.corp.local` | 10.10.0.11 | Schema Master, Domain Naming Master (secondary DC) |
 
 Both DCs run Windows Server 2019 Standard. `dc01` is the PDC emulator and the preferred KDC for most clients. The KRBTGT account password was last reset **3 years ago** (a known risk — golden ticket persistence lives as long as this hash is valid).
 
@@ -35,7 +35,7 @@ Both DCs run Windows Server 2019 Standard. `dc01` is the PDC emulator and the pr
 ## Organisational Unit Structure
 
 ```
-MERIDIAN.LOCAL
+CORP.LOCAL
 ├── Domain Controllers (built-in)
 ├── Corp
 │   ├── Finance
@@ -106,11 +106,11 @@ MERIDIAN.LOCAL
 
 | Username | SPN | Password age | Notes |
 |----------|-----|-------------|-------|
-| `svc-mssql` | `MSSQLSvc/db01.meridian.local:1433` | 2 years | SQL Server service account. Member of Domain Users only, but has `db_owner` on the financial DB. **Kerberoastable.** |
-| `svc-backup` | `BackupSvc/backup01.meridian.local` | 18 months | Backup agent. Member of Backup-Operators. **Kerberoastable.** |
-| `svc-web` | `HTTP/intranet.meridian.local` | 6 months | IIS app pool. Member of Domain Users. **Kerberoastable.** |
-| `svc-legacy` | `LegacySvc/appserver01.meridian.local` | 3 years | Legacy app. **No pre-authentication required (AS-REP roastable).** Member of Domain Users. |
-| `svc-monitor` | `MonitorSvc/siem01.meridian.local` | 1 year | SIEM integration. **No pre-authentication required (AS-REP roastable).** |
+| `svc-mssql` | `MSSQLSvc/db01.corp.local:1433` | 2 years | SQL Server service account. Member of Domain Users only, but has `db_owner` on the financial DB. **Kerberoastable.** |
+| `svc-backup` | `BackupSvc/backup01.corp.local` | 18 months | Backup agent. Member of Backup-Operators. **Kerberoastable.** |
+| `svc-web` | `HTTP/intranet.corp.local` | 6 months | IIS app pool. Member of Domain Users. **Kerberoastable.** |
+| `svc-legacy` | `LegacySvc/appserver01.corp.local` | 3 years | Legacy app. **No pre-authentication required (AS-REP roastable).** Member of Domain Users. |
+| `svc-monitor` | `MonitorSvc/siem01.corp.local` | 1 year | SIEM integration. **No pre-authentication required (AS-REP roastable).** |
 | `svc-deploy` | None | 8 months | Deployment automation. Member of IT-Admins. **Has GenericWrite on IT-Admins group (misconfiguration).** |
 
 ---
@@ -138,10 +138,10 @@ MERIDIAN.LOCAL
 
 | Server | Share | Access |
 |--------|-------|--------|
-| `fs01.meridian.local` | `\\fs01\Finance` | Finance-Users (read/write) |
-| `fs01.meridian.local` | `\\fs01\HR` | HR-Users (read/write) |
-| `fs01.meridian.local` | `\\fs01\IT` | IT-Admins (read/write), IT-Staff (read) |
-| `fs01.meridian.local` | `\\fs01\Shared` | Authenticated Users (read) |
+| `fs01.corp.local` | `\\fs01\Finance` | Finance-Users (read/write) |
+| `fs01.corp.local` | `\\fs01\HR` | HR-Users (read/write) |
+| `fs01.corp.local` | `\\fs01\IT` | IT-Admins (read/write), IT-Staff (read) |
+| `fs01.corp.local` | `\\fs01\Shared` | Authenticated Users (read) |
 
 `fs01` is also accessible via SMB with NTLM authentication (SMB signing is **not required** — a known risk).
 
@@ -170,7 +170,7 @@ MERIDIAN.LOCAL
 | Account | Delegation type | Allowed services |
 |---------|----------------|-----------------|
 | `svc-backup` | **Unconstrained delegation** | (any) — legacy configuration |
-| `svc-mssql` | Constrained delegation | `MSSQLSvc/db01.meridian.local:1433` |
+| `svc-mssql` | Constrained delegation | `MSSQLSvc/db01.corp.local:1433` |
 | `dc01`, `dc02` | Unconstrained (DCs always have this) | N/A |
 
 **Risk:** `svc-backup` has unconstrained delegation. Any user who authenticates to this service will have their TGT stored in memory on the backup server — a classic persistence/escalation vector.
@@ -182,7 +182,7 @@ MERIDIAN.LOCAL
 | Service | Reason NTLM accepted |
 |---------|---------------------|
 | `\\fs01\*` (SMB) | SMB signing not required; NTLM not disabled |
-| `http://intranet.meridian.local` | IIS configured for Windows Authentication (NTLM + Negotiate) |
+| `http://intranet.corp.local` | IIS configured for Windows Authentication (NTLM + Negotiate) |
 | `\\dc01\SYSVOL`, `\\dc01\NETLOGON` | NTLM fallback enabled by default |
 | Legacy app on `appserver01` | Application hardcoded for NTLM; Kerberos not supported |
 

@@ -1,4 +1,4 @@
-# Lab 01 — Map the Meridian Domain
+# Lab 01 — Map the Corp Domain
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
@@ -10,24 +10,24 @@ This lab uses no containers — it is a structured analysis exercise against a p
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/01-ad-windows-model
-make demo   # prints the Meridian domain structure
+make demo   # prints the Corp domain structure
 ```
 
-The `data/` directory contains `meridian-domain.md` — a detailed description of the fictional Meridian Financial AD structure: domains, OUs, groups, service accounts, trusts, and the key security design decisions (good and bad).
+The `data/` directory contains `corp-domain.md` — a detailed description of the fictional Corp AD structure: domains, OUs, groups, service accounts, trusts, and the key security design decisions (good and bad).
 
 > Everything in this lab is against data you own. No external targets, no authorization needed.
 
 ## Scenario
 
-You've just joined Meridian Financial's security team. Before you can find attack paths or write detections, you need an accurate mental map of the domain. Your job: read the Meridian domain spec and answer the questions below — in writing — as if you're briefing a new red teamer who has never seen the environment.
+You've just joined Corp's security team. Before you can find attack paths or write detections, you need an accurate mental map of the domain. Your job: read the Corp domain spec and answer the questions below — in writing — as if you're briefing a new red teamer who has never seen the environment.
 
 ## Do
 
-1. [ ] Run `make demo` to print the Meridian domain structure. Read `data/meridian-domain.md` in full.
+1. [ ] Run `make demo` to print the Corp domain structure. Read `data/corp-domain.md` in full.
 
-2. [ ] **Map the trust boundary.** Draw (by hand or in a Markdown table) the Meridian forest/domain topology. Identify: what is the single forest? What domains exist? Are there any external trusts? Which is the forest root?
+2. [ ] **Map the trust boundary.** Draw (by hand or in a Markdown table) the Corp forest/domain topology. Identify: what is the single forest? What domains exist? Are there any external trusts? Which is the forest root?
 
-3. [ ] **Trace a Kerberos authentication.** Pick the scenario: *jsmith* (Finance OU) opens a file share on `\\fs01.meridian.local`. Write down, step by step: what ticket does jsmith's workstation request first? From whom? What does the KDC verify before issuing it? What ticket is requested next? What does `fs01` check to decide whether jsmith can read the share? Map each step to the field in the Kerberos exchange.
+3. [ ] **Trace a Kerberos authentication.** Pick the scenario: *jsmith* (Finance OU) opens a file share on `\\fs01.corp.local`. Write down, step by step: what ticket does jsmith's workstation request first? From whom? What does the KDC verify before issuing it? What ticket is requested next? What does `fs01` check to decide whether jsmith can read the share? Map each step to the field in the Kerberos exchange.
 
 4. [ ] **Identify the high-value groups.** From the domain spec: list every group whose membership gives domain-wide elevated access. For each, note what access it grants and whether it has any service accounts in it (a common misconfiguration).
 
@@ -37,18 +37,18 @@ You've just joined Meridian Financial's security team. Before you can find attac
 
 ## Success criteria — you're done when
 
-- [ ] You can explain the Meridian Kerberos flow end-to-end without consulting your notes.
-- [ ] You have a written topology map (text or table) of the Meridian forest/domain structure.
+- [ ] You can explain the Corp Kerberos flow end-to-end without consulting your notes.
+- [ ] You have a written topology map (text or table) of the Corp forest/domain structure.
 - [ ] You have identified the three highest-risk groups and at least two GPO gaps with explanations.
 - [ ] You have listed the NTLM fallback surfaces and can articulate the attack scenario for each.
 
 ## Deliverables
 
-`meridian-map.md` — your annotated domain map, Kerberos walkthrough, high-value group list, GPO gaps, and NTLM risk notes. Commit it to your fork. This becomes the reference document for every later module.
+`corp-map.md` — your annotated domain map, Kerberos walkthrough, high-value group list, GPO gaps, and NTLM risk notes. Commit it to your fork. This becomes the reference document for every later module.
 
 ## Automate & own it
 
-**Required.** Write a short Python script (`parse_domain.py`) that reads `data/meridian-domain.md` and prints a summary: number of users per OU, list of groups with more than 5 members, list of service accounts with SPNs. Have a model draft it; you read every line and verify the output matches the spec. Commit it next to your `meridian-map.md`. The point is that even conceptual analysis should produce a reproducible artifact.
+**Required.** Write a short Python script (`parse_domain.py`) that reads `data/corp-domain.md` and prints a summary: number of users per OU, list of groups with more than 5 members, list of service accounts with SPNs. Have a model draft it; you read every line and verify the output matches the spec. Commit it next to your `corp-map.md`. The point is that even conceptual analysis should produce a reproducible artifact.
 
 ## AI acceleration
 
@@ -56,7 +56,7 @@ Use a model to quiz you: paste the Kerberos flow you wrote in step 3 and ask the
 
 ## Connects forward
 
-The Meridian domain structure is the target for every subsequent lab. Your `meridian-map.md` is a living document — you'll add findings to it in modules 02 (enumeration), 05 (ACL abuse), and 08 (path to DA). The service accounts with SPNs you identified here are the Kerberoasting targets in module 03.
+The Corp domain structure is the target for every subsequent lab. Your `corp-map.md` is a living document — you'll add findings to it in modules 02 (enumeration), 05 (ACL abuse), and 08 (path to DA). The service accounts with SPNs you identified here are the Kerberoasting targets in module 03.
 
 ## Marketable proof
 
@@ -64,5 +64,5 @@ The Meridian domain structure is the target for every subsequent lab. Your `meri
 
 ## Stretch
 
-- Look up what a **SID history** attack is and whether any accounts in the Meridian spec could be exploited for it.
-- Research what the **Protected Users** security group does (hint: Kerberos-only, no delegation, short ticket lifetime) and identify which Meridian accounts *should* be in it but aren't.
+- Look up what a **SID history** attack is and whether any accounts in the Corp spec could be exploited for it.
+- Research what the **Protected Users** security group does (hint: Kerberos-only, no delegation, short ticket lifetime) and identify which Corp accounts *should* be in it but aren't.

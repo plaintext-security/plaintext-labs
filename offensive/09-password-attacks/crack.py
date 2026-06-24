@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Financial — password hash cracking harness.
+"""Password hash cracking harness.
 
 Demonstrates the key concepts in password attacks:
   1. Hash identification — why MD5 looks different from bcrypt
@@ -42,8 +42,8 @@ ROCKYOU_SAMPLE = [
     "tigger", "cheese", "ginger", "1234567890", "joshua", "password1", "batman",
     "hunter", "secret", "1q2w3e4r", "pass", "hello", "passw0rd", "password123",
     "test", "welcome", "login", "admin", "admin123", "changeme", "abc",
-    # Common Meridian-specific guesses (rules-based mutations)
-    "meridian", "Meridian1", "meridian123", "M3r1d14n!", "finance2024",
+    # Common company-specific guesses (rules-based mutations)
+    "acme", "Acme1", "acme123", "Acm3Corp!", "company2024",
 ]
 
 # Rules: common password mutations a rules engine applies
@@ -147,7 +147,7 @@ def demo() -> int:
     hashes = load_hashes(DATA_DIR / "hashes.txt")
 
     print("=" * 64)
-    print("Meridian Financial — Password Hash Cracking")
+    print("Password Hash Cracking — lab dump")
     print(f"Loaded {len(hashes)} hashes from dump")
     print("=" * 64)
 

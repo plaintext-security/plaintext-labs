@@ -1,0 +1,43 @@
+title: Zerologon (CVE-2020-1472) — DC Machine Account Password Reset
+id: f2e9b0a5-7d6c-8e1f-3a0b-2c9d8e7f6a5b
+status: test
+description: |
+  Detects exploitation of Zerologon (CVE-2020-1472): the Netlogon cryptographic flaw that lets an
+  unauthenticated attacker reset a Domain Controller's own machine-account password to empty, then
+  use it to DCSync. The wire signal is an anonymous Logon Type 3 (4624/4626) immediately followed by
+  a computer-account change (Event 4742) targeting the DC's own machine account ($) — a password
+  reset on the DC by an actor that did not authenticate as that DC.
+  Requires: Audit Computer Account Management (Success) and Audit Logon on DCs.
+author: Plaintext Security
+date: 2024-01-01
+references:
+  - https://nvd.nist.gov/vuln/detail/CVE-2020-1472
+  - https://attack.mitre.org/techniques/T1068/
+  - https://www.secura.com/blog/zero-logon
+tags:
+  - attack.privilege_escalation
+  - attack.t1068
+  - cve.2020.1472
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_account_change:
+    EventID: 4742
+    TargetUserName|endswith: '$'   # a computer (machine) account was changed
+  selection_anon_logon:
+    EventID:
+      - 4624
+      - 4626
+    LogonType: 3
+    TargetUserName: 'ANONYMOUS LOGON'
+  condition: selection_account_change or selection_anon_logon
+falsepositives:
+  - Routine machine-account password rotation performed by the account itself (correlate the
+    SubjectUserName to the same machine account, and require the anonymous-logon event nearby).
+level: critical
+audit_policy_required:
+  category: 'Account Management'
+  subcategory: 'Audit Computer Account Management'
+  setting: 'Success'
+  note: 'Patch is the real fix (Aug 2020 / Feb 2021 enforcement). Detection is defence-in-depth.'

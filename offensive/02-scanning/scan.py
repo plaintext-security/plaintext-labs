@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
-"""Meridian Financial — nmap scan runner and report parser.
+"""nmap scan runner and report parser.
 
 Runs a structured three-phase nmap scan against the lab target and
 prints a formatted report — the same output you'd hand to module 03
 (vulnerability identification).
+
+The lab target is the Vulhub nginx CVE-2017-7529 environment (a real,
+named CVE: integer overflow in the nginx range filter, nginx <= 1.13.2).
+`make target-up` stands it up on host :8080; version detection here
+reveals an nginx in the vulnerable range — the finding module 03 acts on.
 
 Phase 1: Host discovery + port scan (TCP connect, all major ports)
 Phase 2: Service and version detection (-sV)
 Phase 3: Default NSE scripts (-sC) against discovered services
 
 > AUTHORIZATION REQUIRED — only scan systems you own or have explicit
-> written permission to test. In this lab the target is the bundled
-> victim container (hostname 'target' on the lab network).
+> written permission to test. In this lab the target is the Vulhub
+> container you stood up yourself.
 
 Usage:
-    python3 scan.py [target]      # default: target
+    python3 scan.py [host] [port]   # default: host.docker.internal 8080
     python3 scan.py --help
 """
 from __future__ import annotations
@@ -24,8 +29,10 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-TARGET = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else "target"
-PORTS  = "22,80,443,8080,8443,3306,5432"
+_args   = [a for a in sys.argv[1:] if not a.startswith("--")]
+TARGET  = _args[0] if len(_args) > 0 else "host.docker.internal"
+_port   = _args[1] if len(_args) > 1 else "8080"
+PORTS   = f"22,80,443,{_port},8443,3306,5432"
 DIVIDER = "─" * 64
 
 
@@ -107,8 +114,8 @@ def print_report(report: dict) -> None:
 
 def demo() -> int:
     print("=" * 64)
-    print(f"Meridian Financial — Port Scan: {TARGET}")
-    print(f"Authorization: lab network only (target is the victim container)")
+    print(f"Port Scan: {TARGET}")
+    print(f"Authorization: lab only (target is the Vulhub nginx CVE-2017-7529 container you stood up)")
     print("=" * 64)
 
     # Phase 1 — Host discovery + port discovery
@@ -156,10 +163,11 @@ def demo() -> int:
         print(line)
     print(f"""
   Next steps (→ module 03 — vulnerability identification):
-    • Run searchsploit against discovered versions.
-    • Check nginx {next((p['version'] for h in report3.get('hosts',[]) for p in h['ports'] if p['service']=='http'), 'unknown')} CVEs on NVD.
-    • The X-Powered-By header hints at the application stack.
-    • Port 443 TLS cert CN reveals internal hostname.
+    • Run `searchsploit nginx` against the discovered version.
+    • The detected nginx version is in the CVE-2017-7529 range
+      (<= 1.13.2) — confirm it on NVD: integer overflow in the range
+      filter, leaks cache file headers/memory.
+    • Server/version banners hint at the application stack.
 """)
     return 0
 

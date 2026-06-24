@@ -6,7 +6,7 @@
 
 up:
 	@echo "Module 01 is a design exercise — no container to start."
-	@echo "Open data/meridian-endpoint-profile.md and data/threat-model-template.md"
+	@echo "Open data/endpoint-profile.md and data/threat-model-template.md"
 
 down:
 	@echo "Nothing to stop."
@@ -17,12 +17,17 @@ reset:
 demo:
 	@echo ""
 	@echo "=========================================================="
-	@echo "  Meridian Financial — Endpoint Threat Model Exercise"
+	@echo "  Financial-Services Org — Endpoint Threat Model Exercise"
 	@echo "=========================================================="
 	@echo ""
 	@echo "HOSTS IN SCOPE:"
 	@echo "  Host A: Finance analyst workstation (Windows 11, domain-joined)"
 	@echo "  Host B: Payroll API server (Ubuntu 22.04)"
+	@echo ""
+	@echo "REAL-WORLD ANCHOR (Colonial Pipeline, May 2021 / DarkSide):"
+	@echo "  Initial access = compromised VPN account, NO MFA (ATT&CK T1078.002)"
+	@echo "  The profile reproduces this gap (no MFA on VPN; stale contractor account)."
+	@echo "  Make 'close the Colonial Pipeline path' one of your top-5 priorities."
 	@echo ""
 	@echo "CROWN JEWELS:"
 	@echo "  - Domain credentials cached in LSASS (workstation)"
@@ -38,7 +43,7 @@ demo:
 	@echo "  Phishing → persistence → payroll API access → salary manipulation"
 	@echo ""
 	@echo "YOUR TASK:"
-	@echo "  1. Open data/meridian-endpoint-profile.md — read both host profiles"
+	@echo "  1. Open data/endpoint-profile.md — read both host profiles"
 	@echo "  2. Open data/threat-model-template.md — fill in assets, paths, mitigations"
 	@echo "  3. Produce threat-model.md — your completed threat model"
 	@echo "  4. Identify your top-5 hardening priorities"

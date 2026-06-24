@@ -2,7 +2,7 @@
 
 ## What was built
 
-A **deterministic simulation** of a flat (brownfield) Meridian AD domain and the staged
+A **deterministic simulation** of a flat (brownfield) Corp AD domain and the staged
 tiering migration that closes its primary attack path. No live Samba DC is provisioned;
 the domain's logon-rights state and PATH-001 are modelled as committed JSON graphs and the
 attack is a reachability check over them.

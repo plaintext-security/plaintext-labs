@@ -1,4 +1,4 @@
-# Lab 02 — Enumerate the Meridian Domain
+# Lab 02 — Enumerate the Corp Domain
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
@@ -17,9 +17,9 @@ make down    # stop everything when done
 ```
 
 The lab provides:
-- `samba-dc` — a Samba4 container acting as `dc01.meridian.local` with 30+ pre-seeded users and all the misconfigurations from `data/meridian-domain.md`.
+- `samba-dc` — a Samba4 container acting as `dc01.corp.local` with 30+ pre-seeded users and all the misconfigurations from `data/corp-domain.md`.
 - `attacker` — a Debian container with `ldapsearch`, `enum4linux-ng`, and `bloodhound-python` installed, pre-configured to reach the DC.
-- `data/bloodhound-meridian.json` — a pre-generated BloodHound dataset for the Meridian domain (import this into BloodHound CE if you want the graph without running the full ingestor).
+- `data/bloodhound-corp.json` — a pre-generated BloodHound dataset for the Corp domain (import this into BloodHound CE if you want the graph without running the full ingestor).
 
 > Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
 > only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
@@ -27,7 +27,7 @@ The lab provides:
 
 ## Scenario
 
-You're a red teamer who has just obtained credentials for `jsmith` (password: `Welcome1!`) on the Meridian Financial network. Your goal is to enumerate the entire domain — users, groups, service accounts, SPNs, and delegation settings — and build a BloodHound graph that shows the attack paths available from `jsmith`.
+You're a red teamer who has just obtained credentials for `jsmith` (password: `Welcome1!`) on the Corp network. Your goal is to enumerate the entire domain — users, groups, service accounts, SPNs, and delegation settings — and build a BloodHound graph that shows the attack paths available from `jsmith`.
 
 ## Do
 
@@ -35,19 +35,19 @@ You're a red teamer who has just obtained credentials for `jsmith` (password: `W
 
 2. [ ] **Raw LDAP — user enumeration.** Bind to the DC over LDAP as `jsmith` and pull every user object, requesting `sAMAccountName`, `userPrincipalName`, and `memberOf`. Save the output, count the accounts, and flag the ones that are clearly not human users.
 
-3. [ ] **Find Kerberoastable accounts.** Narrow your filter to only user objects that carry a `servicePrincipalName`. List the SPNs and cross-reference `data/meridian-domain.md` — did you find all three Kerberoastable accounts? (Hint: this is a bitwise-AND of two object conditions.)
+3. [ ] **Find Kerberoastable accounts.** Narrow your filter to only user objects that carry a `servicePrincipalName`. List the SPNs and cross-reference `data/corp-domain.md` — did you find all three Kerberoastable accounts? (Hint: this is a bitwise-AND of two object conditions.)
 
 4. [ ] **Find AS-REP roastable accounts.** Filter on the `DONT_REQUIRE_PREAUTH` bit of `userAccountControl`. Which accounts have it set, and why is each exploitable with no password at all? (Hint: you'll need the LDAP bitwise-AND matching rule OID and the flag's decimal value — look them up.)
 
 5. [ ] **Find unconstrained delegation.** Filter on the `userAccountControl` bit for unconstrained delegation. Which accounts appear, and why does the list always include DCs?
 
-6. [ ] **Run bloodhound-python.** Collect a full BloodHound dataset from the DC as `jsmith`, producing a ZIP. Import it into BloodHound CE, or examine the raw JSON inside the ZIP. (If you'd rather skip the ingest, `data/bloodhound-meridian.json` is a pre-generated dataset for the same domain.)
+6. [ ] **Run bloodhound-python.** Collect a full BloodHound dataset from the DC as `jsmith`, producing a ZIP. Import it into BloodHound CE, or examine the raw JSON inside the ZIP. (If you'd rather skip the ingest, `data/bloodhound-corp.json` is a pre-generated dataset for the same domain.)
 
 7. [ ] **Analyse the BloodHound data.** From the graph or the raw JSON, answer: what is the shortest path from `jsmith` to `Domain Admins`? How many hops, and what is the edge type of each (e.g., `MemberOf`, `GenericWrite`, `CanPSRemote`)?
 
 ## Success criteria — you're done when
 
-- [ ] You have a complete list of Meridian users, groups, and computers from ldapsearch.
+- [ ] You have a complete list of Corp users, groups, and computers from ldapsearch.
 - [ ] You have identified all three Kerberoastable SPNs and both AS-REP roastable accounts.
 - [ ] You have identified the unconstrained delegation accounts.
 - [ ] You have a BloodHound dataset (generated or from `data/`) imported and can answer "shortest path from jsmith to DA" with specific hops and edge types.

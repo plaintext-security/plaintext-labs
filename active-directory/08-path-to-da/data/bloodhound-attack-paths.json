@@ -1,7 +1,7 @@
 {
   "meta": {
-    "description": "Meridian Financial — complete attack path dataset from jsmith to Domain Admins. Use with BloodHound CE or path-analyzer.py.",
-    "domain": "MERIDIAN.LOCAL",
+    "description": "Corp — complete attack path dataset from jsmith to Domain Admins. Use with BloodHound CE or path-analyzer.py.",
+    "domain": "CORP.LOCAL",
     "generated": "2024-01-01",
     "total_paths": 3
   },
@@ -15,14 +15,14 @@
       "hops": [
         {
           "step": 1,
-          "from": {"type": "User", "name": "JSMITH@MERIDIAN.LOCAL"},
-          "to": {"type": "User", "name": "SVC-MSSQL@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "JSMITH@CORP.LOCAL"},
+          "to": {"type": "User", "name": "SVC-MSSQL@CORP.LOCAL"},
           "edge": "Kerberoast",
           "attck_technique": "T1558.003",
           "attck_name": "Kerberoasting",
           "credential_before": "jsmith:Welcome1!",
           "credential_after": "svc-mssql NT hash (cracked from TGS)",
-          "action": "Request TGS for MSSQLSvc/db01.meridian.local:1433 as jsmith; crack RC4 hash offline with hashcat and rockyou.txt (password: Sql2019)",
+          "action": "Request TGS for MSSQLSvc/db01.corp.local:1433 as jsmith; crack RC4 hash offline with hashcat and rockyou.txt (password: Sql2019)",
           "tool": "GetUserSPNs.py, hashcat -m 13100",
           "events_generated": ["4769 (TGS-REQ with etype 23) on dc01"],
           "events_absent": ["No failed logon", "No lockout"],
@@ -30,8 +30,8 @@
         },
         {
           "step": 2,
-          "from": {"type": "User", "name": "SVC-MSSQL@MERIDIAN.LOCAL"},
-          "to": {"type": "User", "name": "SVC-DEPLOY@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "SVC-MSSQL@CORP.LOCAL"},
+          "to": {"type": "User", "name": "SVC-DEPLOY@CORP.LOCAL"},
           "edge": "CredentialReuse",
           "attck_technique": "T1078.002",
           "attck_name": "Valid Accounts — Domain Accounts",
@@ -45,8 +45,8 @@
         },
         {
           "step": 3,
-          "from": {"type": "User", "name": "SVC-DEPLOY@MERIDIAN.LOCAL"},
-          "to": {"type": "Group", "name": "IT-ADMINS@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "SVC-DEPLOY@CORP.LOCAL"},
+          "to": {"type": "Group", "name": "IT-ADMINS@CORP.LOCAL"},
           "edge": "GenericWrite",
           "attck_technique": "T1484.001",
           "attck_name": "Domain Policy Modification — Group Policy Modification",
@@ -60,30 +60,30 @@
         },
         {
           "step": 4,
-          "from": {"type": "Group", "name": "IT-ADMINS@MERIDIAN.LOCAL"},
-          "to": {"type": "Computer", "name": "DC01.MERIDIAN.LOCAL"},
+          "from": {"type": "Group", "name": "IT-ADMINS@CORP.LOCAL"},
+          "to": {"type": "Computer", "name": "DC01.CORP.LOCAL"},
           "edge": "AdminTo",
           "attck_technique": "T1021.002",
           "attck_name": "Remote Services — SMB/Windows Admin Shares",
           "credential_before": "jsmith (now in IT-Admins) NT hash",
           "credential_after": "SYSTEM on dc01",
           "action": "Pass-the-hash to dc01 using jsmith's NT hash; IT-Admins has local admin rights on DC",
-          "tool": "psexec.py -hashes :NT_HASH MERIDIAN.LOCAL/jsmith@dc01.meridian.local",
+          "tool": "psexec.py -hashes :NT_HASH CORP.LOCAL/jsmith@dc01.corp.local",
           "events_generated": ["4624 Logon Type 3 (network logon) on dc01", "7045 (new service installed) on dc01"],
           "events_absent": [],
           "detection_difficulty": "LOW — 7045 + 4624 Type 3 from unusual source is a strong signal"
         },
         {
           "step": 5,
-          "from": {"type": "Computer", "name": "DC01.MERIDIAN.LOCAL"},
-          "to": {"type": "Group", "name": "DOMAIN ADMINS@MERIDIAN.LOCAL"},
+          "from": {"type": "Computer", "name": "DC01.CORP.LOCAL"},
+          "to": {"type": "Group", "name": "DOMAIN ADMINS@CORP.LOCAL"},
           "edge": "DCSync",
           "attck_technique": "T1003.006",
           "attck_name": "OS Credential Dumping — DCSync",
           "credential_before": "SYSTEM on dc01",
           "credential_after": "All domain NT hashes including krbtgt and Administrator",
           "action": "Run secretsdump.py from SYSTEM context on dc01; extract all credential material including krbtgt hash for golden ticket persistence",
-          "tool": "secretsdump.py -just-dc-ntlm dc01.meridian.local",
+          "tool": "secretsdump.py -just-dc-ntlm dc01.corp.local",
           "events_generated": ["4662 (DS-Replication-Get-Changes) on dc01"],
           "events_absent": [],
           "detection_difficulty": "MEDIUM — 4662 detectable if audit policy is set; many environments don't audit this"
@@ -100,7 +100,7 @@
         {
           "step": 1,
           "from": {"type": "User", "name": "UNAUTHENTICATED"},
-          "to": {"type": "User", "name": "SVC-LEGACY@MERIDIAN.LOCAL"},
+          "to": {"type": "User", "name": "SVC-LEGACY@CORP.LOCAL"},
           "edge": "ASREPRoast",
           "attck_technique": "T1558.004",
           "attck_name": "AS-REP Roasting",
@@ -114,8 +114,8 @@
         },
         {
           "step": 2,
-          "from": {"type": "User", "name": "SVC-LEGACY@MERIDIAN.LOCAL"},
-          "to": {"type": "User", "name": "RRODRIGUEZ@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "SVC-LEGACY@CORP.LOCAL"},
+          "to": {"type": "User", "name": "RRODRIGUEZ@CORP.LOCAL"},
           "edge": "CredentialAccess",
           "attck_technique": "T1078.002",
           "attck_name": "Valid Accounts",
@@ -129,8 +129,8 @@
         },
         {
           "step": 3,
-          "from": {"type": "User", "name": "RRODRIGUEZ@MERIDIAN.LOCAL"},
-          "to": {"type": "User", "name": "CLEE@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "RRODRIGUEZ@CORP.LOCAL"},
+          "to": {"type": "User", "name": "CLEE@CORP.LOCAL"},
           "edge": "ForceChangePassword",
           "attck_technique": "T1098.001",
           "attck_name": "Account Manipulation — Additional Cloud Credentials",
@@ -144,8 +144,8 @@
         },
         {
           "step": 4,
-          "from": {"type": "User", "name": "CLEE@MERIDIAN.LOCAL"},
-          "to": {"type": "Group", "name": "PAYROLL-ACCESS@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "CLEE@CORP.LOCAL"},
+          "to": {"type": "Group", "name": "PAYROLL-ACCESS@CORP.LOCAL"},
           "edge": "MemberOf",
           "attck_technique": "T1078.002",
           "attck_name": "Valid Accounts",
@@ -168,8 +168,8 @@
       "hops": [
         {
           "step": 1,
-          "from": {"type": "User", "name": "JSMITH@MERIDIAN.LOCAL"},
-          "to": {"type": "Computer", "name": "BACKUP01.MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "JSMITH@CORP.LOCAL"},
+          "to": {"type": "Computer", "name": "BACKUP01.CORP.LOCAL"},
           "edge": "CanAuthenticate",
           "attck_technique": "T1558.003",
           "attck_name": "Kerberoasting (svc-backup)",
@@ -183,8 +183,8 @@
         },
         {
           "step": 2,
-          "from": {"type": "Computer", "name": "BACKUP01.MERIDIAN.LOCAL"},
-          "to": {"type": "User", "name": "DC01$@MERIDIAN.LOCAL"},
+          "from": {"type": "Computer", "name": "BACKUP01.CORP.LOCAL"},
+          "to": {"type": "User", "name": "DC01$@CORP.LOCAL"},
           "edge": "UnconstrainedDelegation",
           "attck_technique": "T1558.001",
           "attck_name": "Steal or Forge Kerberos Tickets — Golden Ticket",
@@ -198,8 +198,8 @@
         },
         {
           "step": 3,
-          "from": {"type": "User", "name": "DC01$@MERIDIAN.LOCAL"},
-          "to": {"type": "Group", "name": "DOMAIN ADMINS@MERIDIAN.LOCAL"},
+          "from": {"type": "User", "name": "DC01$@CORP.LOCAL"},
+          "to": {"type": "Group", "name": "DOMAIN ADMINS@CORP.LOCAL"},
           "edge": "DCSync",
           "attck_technique": "T1003.006",
           "attck_name": "DCSync using DC machine account TGT",
@@ -245,7 +245,7 @@
       "paths_broken": ["PATH-003 steps 2-3"],
       "effort": "MEDIUM",
       "impact": "Eliminates unconstrained delegation TGT theft vector",
-      "recommended_action": "Configure constrained delegation to BackupSvc/backup01.meridian.local only"
+      "recommended_action": "Configure constrained delegation to BackupSvc/backup01.corp.local only"
     },
     {
       "id": "M-005",

@@ -34,7 +34,7 @@ function New-ScriptBlockLogRecord {
     # exactly this shape — note ScriptBlockText holds the *deobfuscated* command.
     param(
         [Parameter(Mandatory)][string]$ScriptBlockText,
-        [string]$User = 'MERIDIAN\jsmith',
+        [string]$User = 'CORP\jsmith',
         [string]$ComputerName = 'FIN-WKSTN-07'
     )
     [pscustomobject]@{

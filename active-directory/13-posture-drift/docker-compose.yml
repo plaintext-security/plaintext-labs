@@ -1,10 +1,52 @@
 services:
+  # The live Samba DC (reuses the image built in 02-enumeration). The detector's --live mode
+  # reads posture straight off this DC over LDAP; the seed-file mode needs none of this.
+  samba-dc:
+    build:
+      context: ../02-enumeration
+      dockerfile: Dockerfile.dc
+    image: plaintext/corp-dc:latest
+    container_name: corp-dc
+    hostname: dc01
+    domainname: corp.local
+    environment:
+      SAMBA_DOMAIN: CORP
+      SAMBA_REALM: CORP.LOCAL
+      SAMBA_ADMIN_PASSWORD: "C0rp@Admin!"
+    networks:
+      ad-net:
+        ipv4_address: 10.10.0.10
+    volumes:
+      - ../02-enumeration/data:/data:ro
+    healthcheck:
+      test: ["CMD", "samba-tool", "domain", "info", "dc01.corp.local"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
   lab:
     build: .
     image: plaintext/ad-posture-drift:latest
     working_dir: /lab
+    environment:
+      DC_HOST: "ldap://10.10.0.10"
+      BASE_DN: "DC=corp,DC=local"
+      DC_USER: "jsmith@CORP.LOCAL"
+      DC_PASSWORD: "Welcome1!"
+    networks:
+      ad-net:
+        ipv4_address: 10.10.0.40
+    dns:
+      - 10.10.0.10
     volumes:
       - ./data:/lab/data
       - ./bin:/lab/bin
       - ./drift-detect.py:/lab/drift-detect.py
     command: sleep infinity
+
+networks:
+  ad-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24

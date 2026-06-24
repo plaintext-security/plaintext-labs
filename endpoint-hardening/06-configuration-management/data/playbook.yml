@@ -1,9 +1,9 @@
 ---
-# Meridian Financial — CIS-Equivalent Linux Hardening Playbook
+# CIS-Equivalent Linux Hardening Playbook for the organization
 # Applies 5 CIS-equivalent controls to Ubuntu 22.04
 # Run: ansible-playbook -i inventory data/playbook.yml
 
-- name: Meridian Linux Hardening — CIS Level 1 Equivalent
+- name: Linux Hardening — CIS Level 1 Equivalent
   hosts: target
   gather_facts: yes
   become: yes
@@ -82,7 +82,7 @@
         name: kernel.randomize_va_space
         value: '2'
         state: present
-        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
         reload: yes
       tags: sysctl
 
@@ -91,7 +91,7 @@
         name: net.ipv4.conf.all.accept_redirects
         value: '0'
         state: present
-        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
         reload: yes
       tags: sysctl
 
@@ -100,7 +100,7 @@
         name: net.ipv4.conf.all.log_martians
         value: '1'
         state: present
-        sysctl_file: /etc/sysctl.d/99-meridian-hardening.conf
+        sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
         reload: yes
       tags: sysctl
 

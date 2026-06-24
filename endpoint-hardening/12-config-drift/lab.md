@@ -50,7 +50,7 @@ control, pull them back, and alert.
 
 ## Scenario
 
-Meridian Financial hardened its Ubuntu fleet to a CIS baseline (Module 03), pushed it as an Ansible
+The organization hardened its Ubuntu fleet to a CIS baseline (Module 03), pushed it as an Ansible
 playbook (Module 06), and scored it compliant (Module 07). That was a *project*. Now it has to become a
 *program*: the hosts that passed in January must *stay* passing in March, when nobody is watching. A package
 update has already silently flipped a sysctl on one host; an on-call engineer re-opened root SSH at 2 a.m.

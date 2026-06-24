@@ -21,7 +21,7 @@ make down      # stop when done
 
 ## Scenario
 
-Meridian Financial's red team reported that the payroll server has at least one exploitable
+The organization's red team reported that the payroll server has at least one exploitable
 SUID binary misconfiguration. Before the remediation window, your job is to: verify the
 finding, understand the exploitation path, apply the remediation, confirm the path is closed,
 and add the check to the compliance scan so it doesn't regress.
@@ -54,7 +54,7 @@ and add the check to the compliance scan so it doesn't regress.
    and confirm it is in enforce mode:
    ```bash
    apparmor_parser -r /lab/data/suid-apparmor-profile
-   aa-status | grep -A2 meridian
+   aa-status | grep -A2 webapp
    ```
    Re-attempt the escalation and observe both the permission denial and the AppArmor log entry.
 

@@ -9,14 +9,14 @@
       "name": "Pilot: deny Tier 0 logon on the Finance pilot host (FIN-WS01)",
       "blast_radius": "one OU (Finance pilot workstation)",
       "mutations": [
-        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS01.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS01.MERIDIAN.LOCAL"}
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS01.CORP.LOCAL"}
       ],
       "targets_path_hop": 3,
       "no_lockout_assertions": [
-        {"account": "tallen", "must_still_log_on_to": "JUMP01.MERIDIAN.LOCAL"},
-        {"account": "tallen", "must_still_log_on_to": "DC01.MERIDIAN.LOCAL"},
-        {"account": "sgarcia", "must_still_log_on_to": "FIN-WS01.MERIDIAN.LOCAL"}
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "tallen", "must_still_log_on_to": "DC01.CORP.LOCAL"},
+        {"account": "sgarcia", "must_still_log_on_to": "FIN-WS01.CORP.LOCAL"}
       ],
       "rollback": "Unlink the Deny-logon GPO from the Finance pilot OU; tallen regains logon on FIN-WS01."
     },
@@ -29,8 +29,8 @@
       ],
       "targets_path_hop": 3,
       "no_lockout_assertions": [
-        {"account": "tallen", "must_still_log_on_to": "JUMP01.MERIDIAN.LOCAL"},
-        {"account": "tallen", "must_still_log_on_to": "DC01.MERIDIAN.LOCAL"}
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "tallen", "must_still_log_on_to": "DC01.CORP.LOCAL"}
       ],
       "rollback": "Remove tallen from Protected Users. Caveat: any NTLM/RC4-dependent task for tallen breaks while in Protected Users — confirm none exists before this wave."
     },
@@ -39,17 +39,17 @@
       "name": "Widen Deny-logon to the remaining Tier 2 OUs (HR, IT, Finance-WS02)",
       "blast_radius": "all Tier 2 workstation OUs",
       "mutations": [
-        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS02.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS02.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "HR-WS01.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "HR-WS01.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "IT-WS01.MERIDIAN.LOCAL"},
-        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "IT-WS01.MERIDIAN.LOCAL"}
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "FIN-WS02.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "FIN-WS02.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "HR-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "HR-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "interactive", "host": "IT-WS01.CORP.LOCAL"},
+        {"action": "deny_logon", "account": "tallen", "right": "remote_interactive", "host": "IT-WS01.CORP.LOCAL"}
       ],
       "targets_path_hop": 3,
       "no_lockout_assertions": [
-        {"account": "tallen", "must_still_log_on_to": "JUMP01.MERIDIAN.LOCAL"},
-        {"account": "sgarcia", "must_still_log_on_to": "IT-WS01.MERIDIAN.LOCAL"}
+        {"account": "tallen", "must_still_log_on_to": "JUMP01.CORP.LOCAL"},
+        {"account": "sgarcia", "must_still_log_on_to": "IT-WS01.CORP.LOCAL"}
       ],
       "rollback": "Unlink the Deny-logon GPO from the widened OU scope."
     }

@@ -1,0 +1,15 @@
+# Small deterministic wordlist for cracking the LIVE TGS-REP / AS-REP hashes
+# this lab pulls from the DC. These are the weak service-account passwords seeded
+# by 02-enumeration/data/setup.sh (mixed with decoys). Swap in rockyou.txt for the
+# realistic run — the point is that bad service-account passwords crack at all.
+Welcome1!
+Summer2024!
+Password123
+Sql$3rv1ce2019!
+B@ckup$3rv1ce!
+W3b$3rv1ce2021!
+L3g@cy$3rv1ce!
+M0n1t0r$3rv1ce!
+D3pl0y$3rv1ce!
+ChangeMe123
+Autumn2023

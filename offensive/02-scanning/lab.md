@@ -8,40 +8,55 @@
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/offensive/02-scanning
-make up      # builds victim (nginx 1.24.0 on 80/443) + scanner container
+make up      # builds the scanner + stands up the Vulhub nginx CVE-2017-7529 target (:8080)
 make demo    # runs three-phase nmap scan and prints structured report
 make down
 ```
 
-Compose: a `victim` container (nginx 1.24.0 serving HTTP + HTTPS with a
-self-signed cert naming `target.meridian-financial.com`) and a `lab`
-scanner container (nmap + Python). The `scan.py` harness runs three
-progressive nmap phases and parses the XML output into a formatted
-report — the same artifact you'd hand to module 03.
+The scan **target** is a real, named CVE: the
+[Vulhub](https://github.com/vulhub/vulhub) `nginx/CVE-2017-7529`
+environment — an integer overflow in the nginx range-filter module
+(nginx 0.5.6–1.13.2) that leaks cache file headers and memory
+(CVE-2017-7529, NVD). It is pulled on demand from the shared dataset
+cache (`fetch_repo vulhub`, source name **`vulhub`**) and stood up on
+host `:8080` — it is **not** committed to this repo. `make up` runs
+`make target-up`, which clones Vulhub once into the cache and starts its
+`nginx/CVE-2017-7529` compose.
 
-> Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
-> only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
-> targets you own).
+The `lab` scanner container (nmap + Python) runs `scan.py`: three
+progressive nmap phases parsed from XML into a formatted report — the
+same artifact you'd hand to module 03. Version detection against the
+target reveals an nginx in the CVE-2017-7529 vulnerable range; that is
+the real finding the next phase acts on. (A small custom nginx victim
+also ships under `victim/` for an offline reference, but the lab now
+centers on the real Vulhub CVE.)
+
+> Authorization: the Vulhub target you stand up is yours — attack it freely. The habit still matters
+> everywhere else: only test systems you own or have explicit written permission to test (Vulhub, DVWA,
+> PortSwigger Academy, targets you own).
 
 ## Scenario
-Meridian's red team just received a scope authorization for
-`portal.meridian-financial.com` (192.168.10.15). Before touching
-vulnerability databases, run a complete port scan and enumerate every
-service. Your output is the input to the next phase.
+You have a scope authorization for a single internet-facing host — an
+nginx-fronted portal. Before touching vulnerability databases, run a
+complete port scan and enumerate every service. Version detection will
+fingerprint the nginx build; that version (and the CVE it implies) is
+the input to the next phase.
 
 ## Do
 
 1. [ ] Run `make demo` and read all three phase outputs. Which ports
-   are open, and what do the NSE scripts reveal that `-sV` alone does
-   not?
+   are open, what nginx **version** does `-sV` detect, and what do the
+   NSE scripts reveal that `-sV` alone does not?
 
-2. [ ] The current scan only targets ports 22,80,443,8080,8443,3306,5432.
+2. [ ] The scan targets a focused port list (22,80,443,8080,8443,3306,5432).
    Run a full-port scan from inside the container (`make shell` then
-   `nmap -Pn -p- -T4 target`). How long does it take vs. the targeted
-   scan, and does it find any additional ports?
+   `nmap -Pn -p- -T4 host.docker.internal`). How long does it take vs.
+   the targeted scan, and does it find any additional ports?
 
-3. [ ] The victim's TLS certificate reveals its CN. What hostname does
-   it disclose, and why is that useful intelligence during recon?
+3. [ ] The detected nginx version falls in the CVE-2017-7529 range
+   (nginx ≤ 1.13.2). What is that CVE, and why is an exact version
+   banner such valuable intelligence during scanning? *(Hint:
+   `searchsploit nginx` and the NVD entry for CVE-2017-7529.)*
 
 4. [ ] The scan uses TCP connect (`-sT` equivalent — no SYN because no
    root needed). Explain: what's the difference between a SYN scan
@@ -57,6 +72,9 @@ service. Your output is the input to the next phase.
 ## Success criteria — you're done when
 - [ ] You can explain the three-phase scan methodology (discovery →
   version → NSE) and why each phase exists.
+- [ ] Version detection identified the nginx build and you mapped it to
+  the real **CVE-2017-7529** (nginx ≤ 1.13.2 range-filter integer
+  overflow), confirmed against NVD.
 - [ ] You understand why the docker compose needs `cap_add: [NET_RAW]`
   for SYN scans, and what breaks without it.
 - [ ] `scan.py --json` emits valid JSON you could pipe to `jq`.
@@ -79,8 +97,8 @@ the feed from this phase into module 03's vulnerability lookup.
 ## Connects forward
 The `{service, version}` pairs from `scan-notes.json` are the direct
 input to module 03 (vulnerability identification) — you'll run
-`searchsploit nginx 1.24.0` and `nuclei -t cves` against the same
-target.
+`searchsploit nginx` (surfacing CVE-2017-7529) and `nuclei -t cves`
+against the same target.
 
 ## Marketable proof
 > "I scan and enumerate a target with Nmap — three-phase (discovery,

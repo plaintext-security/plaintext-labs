@@ -5,25 +5,28 @@
 
 ## Setup
 
-This is an analysis lab — no container needed for the core exercise. The BloodHound dataset and attack path JSON are in `data/`.
+You collect the graph **for real** from the live Samba DC, then analyse it offline.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/08-path-to-da
-make demo   # print the Meridian attack path with ATT&CK mapping
+make up       # start the Samba DC + a bloodhound-python collector
+make collect  # run a LIVE BloodHound collection against dc01.corp.local (writes data/*.zip)
+make demo     # analyse the attack paths with ATT&CK mapping
+make down
 ```
 
-Optional: import `data/bloodhound-attack-paths.json` into BloodHound CE to see the graph visualisation. Spin up BloodHound CE using Docker per the [official quick start](https://github.com/SpecterOps/BloodHound#quick-start).
+`make collect` runs `bloodhound-python` as `jsmith` against the DC over real LDAP/SMB and drops the SharpHound-format JSON (zipped) into `data/`. Import that zip into BloodHound CE (Docker — see the [official quick start](https://github.com/SpecterOps/BloodHound#quick-start)) to walk the graph visually. The curated `data/bloodhound-attack-paths.json` is a *reference* dataset: a worked, fully annotated path with ATT&CK metadata that `path-analyzer.py` reads, so you have a canonical answer to check your own analysis against.
 
-> This lab analyses pre-generated data. No live attack systems are involved.
+> Authorization: this collector talks to the DC that ships with this lab — it's yours, collect freely. The habit holds everywhere else: only run BloodHound against domains you own or are authorised to assess.
 
 ## Scenario
 
-You are completing a red team engagement for Meridian Financial. You have reached the end of the active exploitation phase and have domain admin access. Your deliverable to the client is a complete attack path report: the chain from `jsmith` to `Domain Admins`, each hop explained and mapped to ATT&CK, with prioritised mitigations. This is the document that drives the client's remediation roadmap.
+You are completing a red team engagement for Corp. You have reached the end of the active exploitation phase and have domain admin access. Your deliverable to the client is a complete attack path report: the chain from `jsmith` to `Domain Admins`, each hop explained and mapped to ATT&CK, with prioritised mitigations. This is the document that drives the client's remediation roadmap.
 
 ## Do
 
-1. [ ] **Load the attack path data.** Run `make demo` to see the full Meridian path printed with ATT&CK technique IDs. Then open `data/bloodhound-attack-paths.json` and read the raw path structure — understand the schema: nodes, edges, hop metadata.
+1. [ ] **Collect the live graph, then load the reference path.** Run `make collect` to pull the real graph off `dc01.corp.local` — note which objects, edges, and SPNs the collector actually found (this is *your* data, not a fixture). Then run `make demo` to see the curated reference path printed with ATT&CK technique IDs, open `data/bloodhound-attack-paths.json`, and understand the schema: nodes, edges, hop metadata. Confirm the accounts in the reference path (svc-mssql, svc-deploy, IT-Admins, …) are the ones your live collection surfaced.
 
 2. [ ] **Trace each hop.** For each hop in the path, answer in writing:
    - What is the starting credential and how was it obtained?
@@ -32,7 +35,7 @@ You are completing a red team engagement for Meridian Financial. You have reache
    - What Windows Event ID is generated on the target, if any?
    - What is the resulting new access level?
 
-3. [ ] **Map to ATT&CK.** For each hop, record the technique ID and sub-technique ID. Look up the detection guidance on the ATT&CK page for each. Are any hops completely undetectable with the current Meridian logging policy? Which ones?
+3. [ ] **Map to ATT&CK.** For each hop, record the technique ID and sub-technique ID. Look up the detection guidance on the ATT&CK page for each. Are any hops completely undetectable with the current Corp logging policy? Which ones?
 
 4. [ ] **Identify the highest-value remediation.** Which single fix breaks the *most* paths to DA? Justify your answer. (Hint: consider what removing the GenericWrite ACE on IT-Admins would do to the path count, vs. what rotating svc-mssql's password would do.)
 

@@ -2,32 +2,34 @@
 
 *Hands-on lab · [← Back to the module concept](README.md)*
 
-> **Environment status: to be built & validated.** The `plaintext-labs/active-directory/13-posture-drift/`
-> environment (a Samba4 Meridian DC seeded in the **hardened** end-state from Modules 10–12, plus a
-> tools container with `ldap3`, `ldapsearch`, `samba-tool`, Adalanche, and a `drift-introduce` script
-> that mutates the DC to simulate a month of decay) is **not yet built**. This `lab.md` is the authored
-> instruction set; the `docker-compose.yml` + `Makefile` (`up`/`down`/`reset`/`demo`/`drift`) still need
-> to be created and `make up && make demo` run green on a clean Linux runner before this lab counts as
-> done. Until then, treat the commands below as the spec the environment must satisfy.
-
 ## Setup
+
+The detector runs in **two collection modes**. The default seed-file mode is deterministic (great
+for the gate and CI); the `*-live` targets read posture straight off the bundled Samba DC over LDAP.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/active-directory/13-posture-drift
-make up      # start the HARDENED Meridian DC + tools container
-make demo    # capture the t=0 baseline, then run the detector (clean: no drift)
-make drift   # mutate the DC to simulate a month of decay (new SPN, re-added ACE, etc.)
-make shell   # interactive shell
+make up           # start the Samba DC + the detector/tools container
+make demo         # deterministic: clean -> introduce drift -> detector names every regression
+make drift        # mutate the seed posture to simulate a month of decay (CI-safe)
+
+# --- the real-DC path -----------------------------------------------------------------------
+make baseline-live  # snapshot the LIVE DC posture (ldap3) into data/baseline.live.json
+make drift-live     # introduce REAL drift on the DC via samba-tool (new SPN + unexpected DA)
+make detect-live    # collect LIVE posture over LDAP and diff it against your baseline (exit 1 on drift)
+make shell          # interactive shell
 make down
 ```
 
 The lab provides:
-- A Samba4 DC seeded in the **hardened steady-state** from Modules 10–12 (no Kerberoastable accounts, no dangerous ACEs, clean privileged groups, freshly-rotated krbtgt).
-- A tools container with `ldap3`, `ldapsearch`, `samba-tool`, **Adalanche** (headless AD attack-graph analyzer), and `cron`.
-- `data/baseline.json` — the **declared hardened baseline** (the committed "this is good" posture: Kerberoastable accounts `[]`, dangerous ACEs `[]`, privileged-group rosters, krbtgt age threshold).
-- `bin/drift-introduce.sh` — applies a realistic month of decay to the live DC (register an SPN on `svc-newdb`, grant `GenericWrite` on `Finance-Managers`, add a user to `Domain Admins`, advance the simulated krbtgt clock).
-- `data/meridian-domain.md` — the domain spec.
+- A Samba4 DC (the same image built in Module 02) reachable at `dc01.corp.local` / `10.10.0.10`.
+- A detector/tools container with `ldap3`, `ldapsearch`, `samba-tool`, and `cron`.
+- `data/baseline.json` — the **declared baseline** (the committed "this is good" posture: Kerberoastable accounts `[]`, dangerous ACEs `[]`, privileged-group rosters, krbtgt age threshold).
+- `drift-detect.py` — the detect→diff loop. `collect_observed_live()` reads the live DC via ldap3 (kerberoastable SPNs, AS-REP/unconstrained UAC bits, privileged-group rosters, krbtgt age); `--live` / `make detect-live` exercises it for real.
+- `bin/drift-introduce.sh` — applies a month of decay: in seed mode it mutates `data/observed.json`; with `--live` (`make drift-live`) it runs real `samba-tool spn add` / `group addmembers` against the DC.
+
+> **Note on Adalanche.** The optional attack-graph corroboration step uses Adalanche, which is not bundled (it ingests a live DC); run it yourself against `make up`'s DC if you want the graph view. The drift loop itself does not require it.
 
 > **Authorization.** Runs against your own lab domain only. The `drift-introduce.sh` mutations and any
 > reconciliation (rotating krbtgt, removing ACEs, ejecting accounts) are destructive — never run them
@@ -35,15 +37,15 @@ The lab provides:
 
 ## Scenario
 
-You are the AD security lead at Meridian. The hardening sprint (Module 10), the tiered design (Module 11), and the brownfield rollout (Module 12) are *done* — the domain is hardened and PATH-001 is dead, today. The CISO's next question is the one that actually matters operationally: **"Will it still be hardened next month, and how will we know the day it isn't?"** Your job: pin the current hardened posture as a committed baseline, build a scheduled detector that diffs the live domain against it, simulate a month of decay, and prove your detector catches every regression — then reconcile each one (bless it into the baseline or re-enforce) and prove steady-state is restored.
+You are the AD security lead for the `corp.local` domain. The hardening sprint (Module 10), the tiered design (Module 11), and the brownfield rollout (Module 12) are *done* — the domain is hardened and PATH-001 is dead, today. The CISO's next question is the one that actually matters operationally: **"Will it still be hardened next month, and how will we know the day it isn't?"** Your job: pin the current hardened posture as a committed baseline, build a scheduled detector that diffs the live domain against it, simulate a month of decay, and prove your detector catches every regression — then reconcile each one (bless it into the baseline or re-enforce) and prove steady-state is restored.
 
 ## Do
 
 1. [ ] **Pin the declared baseline.** Run `make demo`. Inspect `data/baseline.json` — the committed hardened posture (Kerberoastable accounts, no-preauth accounts, unconstrained-delegation principals, dangerous ACEs, privileged-group rosters, krbtgt age + threshold). Confirm it matches the live DC right now (the detector reports **no drift** on a clean domain). This is your declared state, version-controlled. *Decide the thresholds yourself* — e.g. krbtgt max age (180 days per ATT&CK M1015, or stricter); justify your choice in a comment.
 
-2. [ ] **Build the detector loop: detect → diff.** Write the core: capture the **observed** posture (the same facts as the baseline) from the live DC via ldap3, then **diff observed against `baseline.json`** and emit a structured delta — *per fact*, not a score. Store both baseline and observed as **sorted, normalized JSON** so the diff shows real change, not reordering noise. On a clean domain it must emit an empty delta (no false drift).
+2. [ ] **Run and own the detector loop: detect → diff.** The shipped `drift-detect.py` implements it: it captures the **observed** posture and diffs it against `baseline.json`, emitting a per-fact delta (never a score), with both sides sorted/normalized so the diff shows real change, not reordering noise. Read `collect_observed_live()` and confirm each fact maps to a real LDAP query (SPN search, the `userAccountControl` bit-and OID for AS-REP/unconstrained, group `member` reads, krbtgt `pwdLastSet` → age). Then prove the two modes agree: `make detect` (seed) and, after `make up`, `make detect-live` (real ldap3 collection off the DC) run the **same** diff logic. On a clean state it must emit an empty delta.
 
-3. [ ] **Introduce drift (simulate a month).** Run `make drift` (`bin/drift-introduce.sh`). It mutates the live DC to mimic real decay: registers an SPN on `svc-newdb` (newly Kerberoastable), grants `GenericWrite` on `Finance-Managers` (a re-added dangerous ACE), adds a user to `Domain Admins` (unexpected privileged-group membership), and advances the krbtgt age past your threshold. You are **not** told the exact set — your detector must find them.
+3. [ ] **Introduce drift, two ways.** Seed mode: `make drift` mutates `data/observed.json` (new `svc-newdb` SPN, re-added `GenericWrite` on `Finance-Managers`, an unexpected `Domain Admins` member, krbtgt aged past threshold) — deterministic, so the gate is reproducible. Real-DC mode: `make drift-live` runs actual `samba-tool spn add` and `group addmembers` against `dc01.corp.local`, then `make detect-live` collects and names the drift over LDAP. You are **not** told the exact set — your detector must find them.
 
 4. [ ] **Detect the drift — diff catches every regression.** Re-run your detector. It must emit a delta that names **each** introduced change as a concrete fact: *new Kerberoastable SPN on `svc-newdb`*, *`GenericWrite` re-added on `Finance-Managers`*, *`<user>` joined `Domain Admins`*, *krbtgt age over threshold*. Map each to its ATT&CK technique (the ACE/group-add → T1098; the stale krbtgt → standing T1558.001 risk). Save the delta as `drift-report.md`. If your detector misses one, fix the detector — a drift detector that misses drift is the failure the module is about.
 

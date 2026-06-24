@@ -1,0 +1,3 @@
+# Real EVTX fetched by `make fetch-data` from sbousseaden/EVTX-ATTACK-SAMPLES (GPL-3.0) —
+# generated/third-party, never committed. The small generated *.json events ARE committed.
+*.evtx

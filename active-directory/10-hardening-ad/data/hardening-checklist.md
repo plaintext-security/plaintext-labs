@@ -1,4 +1,4 @@
-# Meridian Financial — AD Hardening Checklist (CIS-Aligned)
+# Corp — AD Hardening Checklist (CIS-Aligned)
 
 > Annotate each item with: **Compliant** / **Non-compliant** / **N/A** and your evidence.
 
@@ -6,7 +6,7 @@
 
 ## 1. Account & Credential Hygiene
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 1.1 | Kerberoastable service accounts have passwords > 25 characters and rotated within 12 months | CIS L1 | **Non-compliant** | svc-mssql: 2yr old, svc-backup: 18mo, svc-web: 6mo — all potentially crackable |
 | 1.2 | All service accounts use gMSA or MSA where technically feasible | CIS L2 | **Non-compliant** | No gMSA deployed; all service accounts are regular user accounts |
@@ -19,7 +19,7 @@
 
 ## 2. Delegation Configuration
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 2.1 | No non-DC accounts have unconstrained delegation | CIS L1 | **Non-compliant** | svc-backup has unconstrained delegation |
 | 2.2 | All constrained delegation uses protocol transition only where required | CIS L2 | **Compliant** | svc-mssql uses standard constrained delegation |
@@ -30,7 +30,7 @@
 
 ## 3. Privileged Access
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 3.1 | Domain Admins group has fewer than 5 members | CIS L1 | **Compliant** | DA: tallen, Administrator (2 members) |
 | 3.2 | Enterprise Admins group is empty except during forest operations | CIS L1 | **Compliant** | EA: Administrator only |
@@ -43,7 +43,7 @@
 
 ## 4. ACL / Permission Model
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 4.1 | No non-admin accounts have GenericWrite on privileged groups | CIS L1 | **Non-compliant** | svc-deploy has GenericWrite on IT-Admins |
 | 4.2 | No non-admin accounts have WriteDacl on the domain object | CIS L1 | **Compliant** | No non-admin WriteDacl detected |
@@ -55,7 +55,7 @@
 
 ## 5. Audit Policy
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 5.1 | Audit Kerberos Service Ticket Operations: Success | CIS L1 | **Unknown** | Not verified in current GPO config |
 | 5.2 | Audit Kerberos Authentication Service: Success and Failure | CIS L1 | **Unknown** | Not verified |
@@ -67,7 +67,7 @@
 
 ## 6. GPO Hardening
 
-| # | Control | CIS Ref | Meridian Status | Evidence |
+| # | Control | CIS Ref | Corp Status | Evidence |
 |---|---------|---------|-----------------|---------|
 | 6.1 | SMB signing required on all servers and DCs | CIS L1 | **Non-compliant** | fs01 does not require SMB signing |
 | 6.2 | SMB signing required on all workstations | CIS L2 | **Non-compliant** | No GPO enforces workstation signing |

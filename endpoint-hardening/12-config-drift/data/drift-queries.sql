@@ -16,8 +16,8 @@ SELECT 'CIS-3.3.7' AS control, name, current_value
   FROM system_controls
  WHERE name = 'net.ipv4.conf.all.rp_filter';
 
--- CIS-6.1.10 — world-writable files under /srv/meridian. Any row == drift.
+-- CIS-6.1.10 — world-writable files under /srv/webapp. Any row == drift.
 SELECT 'CIS-6.1.10' AS control, path, mode
   FROM file
- WHERE directory = '/srv/meridian'
+ WHERE directory = '/srv/webapp'
    AND (mode LIKE '%6' OR mode LIKE '%7' OR mode LIKE '%2' OR mode LIKE '%3');

@@ -16,7 +16,7 @@ for CloudGoat scenarios (Part B). Part A (flaws.cloud) requires no account.
 
 ## Scenario
 
-Meridian Financial has migrated part of their infrastructure to AWS.  
+The target organization has migrated part of its infrastructure to AWS.  
 You have been authorised to practice against two targets:
 
 1. **flaws.cloud** — a public, intentionally vulnerable S3 bucket challenge (levels 1–6).

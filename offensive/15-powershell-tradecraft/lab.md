@@ -25,7 +25,7 @@ level; AMSI is a Windows runtime feature, so the AMSI step below is documented a
 > targets you own).
 
 ## Scenario
-A phish has landed you code execution as `MERIDIAN\jsmith` on a finance workstation. You'll reproduce
+A phish has landed you code execution as `CORP\jsmith` on a workstation. You'll reproduce
 the standard PowerShell first moves — stage a payload, run it in memory, then encode and obfuscate the
 launcher — and at each step record exactly what an analyst would see. The deliverable is an operator's
 note that pairs each technique with its telemetry, which Defensive Module 13 then hunts.

@@ -1,4 +1,4 @@
-"""Meridian Financial — employee directory (INTENTIONALLY VULNERABLE).
+"""Acme Directory — employee directory (INTENTIONALLY VULNERABLE).
 
 A deliberately insecure search endpoint for learning SQL injection. The query is
 built by string concatenation, so user input crosses straight into the SQL control
@@ -10,7 +10,7 @@ import sqlite3
 
 from flask import Flask, jsonify, request
 
-DB = "/app/meridian.db"
+DB = "/app/directory.db"
 app = Flask(__name__)
 
 
@@ -34,7 +34,7 @@ def init_db():
     cur.executemany(
         "INSERT INTO users VALUES (?, ?)",
         [
-            ("admin", "S3cr3t-Meridian-Admin!"),
+            ("admin", "S3cr3t-Adm1n-Pw!"),
             ("svc_backup", "b@ckup-svc-2026"),
         ],
     )

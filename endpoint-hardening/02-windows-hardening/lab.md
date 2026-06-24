@@ -24,7 +24,7 @@ For the VM: use a Windows 11 evaluation image from [Microsoft Evaluation Center]
 
 ## Scenario
 
-Meridian Financial's new CIS hardening programme starts with Windows 11 analyst workstations.
+The organization's new CIS hardening programme starts with Windows 11 analyst workstations.
 You have been handed a freshly built Windows 11 VM with no hardening applied. Your job:
 run a CIS-CAT Lite baseline scan, apply a representative set of Level 1 controls using LGPO
 and PowerShell, rescan, and produce a delta report that the security team can present to the audit committee.

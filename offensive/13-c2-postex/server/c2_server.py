@@ -1,5 +1,5 @@
 """
-Meridian Financial red-team exercise — minimal C2 server.
+Minimal C2 server (lab).
 
 Teaches the server-side of a C2 framework:
   - Implant check-in and session management

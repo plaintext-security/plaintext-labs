@@ -15,7 +15,7 @@ No Docker required. The validator and report template run with Python 3 only.
 
 ## Scenario
 
-You have completed a simulated penetration test against Meridian Financial's
+You have completed a simulated penetration test against the target's
 internal web application. Your raw notes include findings from throughout the
 offensive track (SSRF, IDOR, privilege escalation, LOLBins). Turn those raw
 notes into a professional deliverable the CISO can share with the board and

@@ -15,10 +15,11 @@ re-added on Finance-Managers", "mnguyen joined Domain Admins", "krbtgt 211d > 18
 so it can be adjudicated. We diff sorted, normalized facts so the delta shows real change, not
 JSON key/list-ordering noise.
 
-SIMULATION NOTE. The OBSERVED posture is read from data/observed.json (a seed mutated by
-bin/drift-introduce.sh). In a full Samba-DC build the same facts would be COLLECTED LIVE via
-the ldap3 queries sketched in collect_observed_live() below — the diff/report/exit logic is
-identical. No live DC ships here (see VALIDATION.md).
+TWO COLLECTION MODES, ONE DIFF. By default the OBSERVED posture is read from data/observed.json
+(a seed mutated by bin/drift-introduce.sh) so the gate is deterministic in CI. With `--live` it is
+COLLECTED for real off the Samba DC via collect_observed_live() (ldap3) — same dict shape, so the
+diff/report/exit logic below is reused verbatim. `make detect-live` runs the live path against the
+DC that ships with this lab's docker-compose.
 
 SCORING DIRECTION (the thing a model inverts — verify it):
   * a FRESH krbtgt (age <= threshold) is CLEAN; a STALE one (> threshold) is DRIFT.
@@ -63,22 +64,94 @@ def strip_comments(d):
     return d
 
 
-def collect_observed_live(host):  # pragma: no cover - documentation of the real-DC path
-    """SKETCH of the live collector a Samba-DC build would use (ldap3). Not exercised in the
-    simulation; here to make the gap explicit and to seed the learner's extension.
+# --- well-known userAccountControl bits (matched server-side via OID 1.2.840.113556.1.4.803) ---
+UAC_BITAND = "userAccountControl:1.2.840.113556.1.4.803:"
+UAC_DONT_REQUIRE_PREAUTH = 0x400000   # AS-REP roastable
+UAC_TRUSTED_FOR_DELEGATION = 0x80000  # unconstrained delegation
 
-        from ldap3 import Server, Connection, ALL
-        conn = Connection(Server(host, get_info=ALL), user=..., password=..., auto_bind=True)
-        # kerberoastable: user objects with an SPN
-        conn.search(base, '(&(objectClass=user)(servicePrincipalName=*)'
-                          '(!(objectClass=computer)))', attributes=['sAMAccountName'])
-        # asrep: uAC & 0x400000 ; unconstrained: uAC & 0x80000 (bit-and OID 1.2.840.113556.1.4.803)
-        # priv group rosters: read member of CN=Domain Admins,... etc.
-        # dangerous ACEs: parse nTSecurityDescriptor for non-default GenericWrite/WriteDacl/...
-        # krbtgt age: now - pwdLastSet of CN=krbtgt
-    The returned dict has the SAME shape as data/observed.json, so the diff below is reused
-    verbatim."""
-    raise NotImplementedError("live collector is the Samba-DC extension; see VALIDATION.md")
+# Privileged groups whose rosters we pin (CN -> baseline key). Read by group membership.
+PRIV_GROUPS = ["Domain Admins", "Enterprise Admins", "Backup Operators", "IT-Admins"]
+
+
+def _ldap_filetime_age_days(filetime):
+    """Convert a Windows FILETIME (100-ns since 1601) pwdLastSet into integer age in days."""
+    if not filetime or int(filetime) == 0:
+        return None
+    # ldap3 returns pwdLastSet either as a tz-aware datetime or a raw FILETIME int.
+    if isinstance(filetime, datetime.datetime):
+        last_set = filetime
+        if last_set.tzinfo is None:
+            last_set = last_set.replace(tzinfo=datetime.timezone.utc)
+    else:
+        epoch = datetime.datetime(1601, 1, 1, tzinfo=datetime.timezone.utc)
+        last_set = epoch + datetime.timedelta(microseconds=int(filetime) / 10)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    return max(0, (now - last_set).days)
+
+
+def collect_observed_live(host, base_dn, user, password):
+    """Collect the live AD security posture off a Samba DC via ldap3 and return a dict with the
+    SAME shape as data/observed.json, so the diff/report/exit logic below is reused verbatim.
+
+    Maps each baseline fact to a server-side LDAP query:
+      * kerberoastable  -> user (non-computer) objects with a servicePrincipalName
+      * asrep           -> userAccountControl & DONT_REQUIRE_PREAUTH (bit-and OID)
+      * unconstrained   -> userAccountControl & TRUSTED_FOR_DELEGATION (bit-and OID)
+      * priv rosters    -> member of each privileged group
+      * krbtgt age      -> now - pwdLastSet of CN=krbtgt
+    dangerous_aces (nTSecurityDescriptor parsing) is left to the learner extension — the field is
+    returned empty so a missing parser surfaces as "no ACE drift", never a crash.
+    """
+    from ldap3 import Server, Connection, ALL, SUBTREE  # imported lazily; only --live needs it
+
+    conn = Connection(Server(host, get_info=ALL), user=user, password=password, auto_bind=True)
+
+    def names(ldap_filter, attr="sAMAccountName"):
+        conn.search(base_dn, ldap_filter, search_scope=SUBTREE, attributes=[attr])
+        out = []
+        for e in conn.entries:
+            v = e[attr].value
+            if v:
+                out.append(v)
+        return sorted(out)
+
+    observed = {
+        "kerberoastable_accounts": names(
+            "(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*)"
+            "(!(sAMAccountName=krbtgt)))"),
+        "asrep_roastable_accounts": names(
+            f"(&(objectClass=user)({UAC_BITAND}={UAC_DONT_REQUIRE_PREAUTH}))"),
+        "unconstrained_delegation_principals": names(
+            f"(&(objectClass=user)({UAC_BITAND}={UAC_TRUSTED_FOR_DELEGATION})"
+            "(!(sAMAccountName=krbtgt)))"),
+        "dangerous_aces": [],  # nTSecurityDescriptor parsing is the learner extension
+        "privileged_group_rosters": {},
+        "krbtgt": {},
+    }
+
+    # Privileged-group rosters: read each group's member DNs, resolve to sAMAccountName.
+    for group in PRIV_GROUPS:
+        conn.search(base_dn, f"(&(objectClass=group)(cn={group}))",
+                    search_scope=SUBTREE, attributes=["member"])
+        members = []
+        if conn.entries:
+            for dn in (conn.entries[0]["member"].values or []):
+                conn.search(dn, "(objectClass=*)", search_scope="BASE",
+                            attributes=["sAMAccountName"])
+                if conn.entries and conn.entries[0]["sAMAccountName"].value:
+                    members.append(conn.entries[0]["sAMAccountName"].value)
+        observed["privileged_group_rosters"][group] = sorted(members)
+
+    # krbtgt age from pwdLastSet.
+    conn.search(base_dn, "(sAMAccountName=krbtgt)", search_scope=SUBTREE,
+                attributes=["pwdLastSet"])
+    if conn.entries:
+        age = _ldap_filetime_age_days(conn.entries[0]["pwdLastSet"].value)
+        if age is not None:
+            observed["krbtgt"]["age_days"] = age
+
+    conn.unbind()
+    return observed
 
 
 def diff_posture(baseline, observed, krbtgt_max):
@@ -168,14 +241,32 @@ def main():
     p.add_argument("--observed", default="observed.json")
     p.add_argument("--json", action="store_true", help="machine-readable delta")
     p.add_argument("--out", help="also write a markdown report to this path")
+    p.add_argument("--live", action="store_true",
+                   help="collect the observed posture LIVE off the DC via ldap3 (not the seed file)")
+    p.add_argument("--dump-live", action="store_true",
+                   help="collect LIVE posture and print it as JSON (use to seed baseline.live.json)")
+    p.add_argument("--host", default=os.environ.get("DC_HOST", "ldap://dc01.corp.local"),
+                   help="DC LDAP URL for --live")
+    p.add_argument("--base-dn", default=os.environ.get("BASE_DN", "DC=corp,DC=local"))
+    p.add_argument("--user", default=os.environ.get("DC_USER", "jsmith@CORP.LOCAL"))
+    p.add_argument("--password", default=os.environ.get("DC_PASSWORD", "Welcome1!"))
     args = p.parse_args()
 
+    if args.dump_live:
+        obs = collect_observed_live(args.host, args.base_dn, args.user, args.password)
+        obs["_thresholds"] = {"krbtgt_max_age_days": 180}
+        print(json.dumps(obs, indent=2))
+        return 0
+
     baseline_raw = load(args.baseline)
-    observed_raw = load(args.observed)
     krbtgt_max = baseline_raw.get("_thresholds", {}).get("krbtgt_max_age_days", 180)
 
+    if args.live:
+        observed = collect_observed_live(args.host, args.base_dn, args.user, args.password)
+    else:
+        observed = strip_comments(load(args.observed))
+
     baseline = strip_comments(baseline_raw)
-    observed = strip_comments(observed_raw)
     deltas = diff_posture(baseline, observed, krbtgt_max)
 
     if args.json:

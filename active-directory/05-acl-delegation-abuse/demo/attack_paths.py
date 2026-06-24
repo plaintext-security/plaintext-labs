@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the Meridian ACL attack paths (chained ACE edges from a low-priv principal to DA)."""
+"""Print the Corp ACL attack paths (chained ACE edges from a low-priv principal to DA)."""
 import json
 import sys
 

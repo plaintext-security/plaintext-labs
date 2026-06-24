@@ -1,4 +1,4 @@
-# Meridian Financial Windows App Server — Lab misconfiguration seeder
+# Lab Windows App Server — misconfiguration seeder
 #
 # Run as Administrator on the Windows eval VM BEFORE starting the lab.
 # Plants three common privesc vectors:
@@ -14,10 +14,10 @@ $ErrorActionPreference = "Stop"
 
 if ($Cleanup) {
     Write-Host "[*] Cleaning up lab misconfigurations..."
-    Stop-Service -Name "MeridianUpdater" -Force -ErrorAction SilentlyContinue
-    sc.exe delete MeridianUpdater 2>$null | Out-Null
-    Remove-Item "C:\Program Files\Meridian Financial Services\MeridianUpdater.exe" -Force -ErrorAction SilentlyContinue
-    Remove-Item "C:\Program Files\Meridian Financial Services" -Recurse -Force -ErrorAction SilentlyContinue
+    Stop-Service -Name "NorthwindUpdater" -Force -ErrorAction SilentlyContinue
+    sc.exe delete NorthwindUpdater 2>$null | Out-Null
+    Remove-Item "C:\Program Files\Northwind Software\NorthwindUpdater.exe" -Force -ErrorAction SilentlyContinue
+    Remove-Item "C:\Program Files\Northwind Software" -Recurse -Force -ErrorAction SilentlyContinue
     reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer" /v AlwaysInstallElevated /f 2>$null | Out-Null
     reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer" /v AlwaysInstallElevated /f 2>$null | Out-Null
     Write-Host "[+] Cleanup complete."
@@ -25,28 +25,28 @@ if ($Cleanup) {
 }
 
 Write-Host "==============================="
-Write-Host "Meridian Financial — Lab Setup"
+Write-Host "Lab Windows App Server — Setup"
 Write-Host "==============================="
 
 # ── Vector 1: Unquoted service path ─────────────────────────────────────────
 Write-Host "`n[1] Creating vulnerable service: unquoted path with spaces..."
 
-$svcDir = "C:\Program Files\Meridian Financial Services"
+$svcDir = "C:\Program Files\Northwind Software"
 New-Item -ItemType Directory -Path $svcDir -Force | Out-Null
 
 # Dummy service binary (cmd.exe copy — benign stand-in)
-Copy-Item "C:\Windows\System32\cmd.exe" "$svcDir\MeridianUpdater.exe" -Force
+Copy-Item "C:\Windows\System32\cmd.exe" "$svcDir\NorthwindUpdater.exe" -Force
 
 # Create service with UNQUOTED path — vulnerable to search-order hijack
-# Windows will try: "C:\Program.exe", "C:\Program Files\Meridian.exe", then the real path
-sc.exe create MeridianUpdater `
-    binPath= "C:\Program Files\Meridian Financial Services\MeridianUpdater.exe" `
+# Windows will try: "C:\Program.exe", "C:\Program Files\Northwind.exe", then the real path
+sc.exe create NorthwindUpdater `
+    binPath= "C:\Program Files\Northwind Software\NorthwindUpdater.exe" `
     start= auto `
-    DisplayName= "Meridian Updater Service" | Out-Null
+    DisplayName= "Northwind Updater Service" | Out-Null
 
-Write-Host "  Service created: MeridianUpdater"
-Write-Host "  Path: $svcDir\MeridianUpdater.exe  (unquoted)"
-Write-Host "  Verify: sc qc MeridianUpdater"
+Write-Host "  Service created: NorthwindUpdater"
+Write-Host "  Path: $svcDir\NorthwindUpdater.exe  (unquoted)"
+Write-Host "  Verify: sc qc NorthwindUpdater"
 
 # ── Vector 2: AlwaysInstallElevated ─────────────────────────────────────────
 Write-Host "`n[2] Setting AlwaysInstallElevated registry keys..."
@@ -58,16 +58,16 @@ Write-Host "  HKLM and HKCU AlwaysInstallElevated = 1"
 Write-Host "  Exploit: msfvenom -p windows/x64/shell_reverse_tcp ... -f msi > shell.msi; msiexec /quiet /qn /i shell.msi"
 
 # ── Vector 3: Weak service DACL ──────────────────────────────────────────────
-Write-Host "`n[3] Weakening service DACL (Everyone: Full Control on MeridianUpdater)..."
+Write-Host "`n[3] Weakening service DACL (Everyone: Full Control on NorthwindUpdater)..."
 
-$acl = Get-Acl "$svcDir\MeridianUpdater.exe"
+$acl = Get-Acl "$svcDir\NorthwindUpdater.exe"
 $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
     "Everyone", "FullControl", "Allow"
 )
 $acl.SetAccessRule($rule)
-Set-Acl "$svcDir\MeridianUpdater.exe" $acl
+Set-Acl "$svcDir\NorthwindUpdater.exe" $acl
 
-Write-Host "  Everyone now has FullControl on $svcDir\MeridianUpdater.exe"
+Write-Host "  Everyone now has FullControl on $svcDir\NorthwindUpdater.exe"
 Write-Host "  Exploit: replace the binary with a reverse shell, restart service"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
