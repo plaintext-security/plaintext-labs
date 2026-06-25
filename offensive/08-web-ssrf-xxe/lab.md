@@ -116,3 +116,7 @@ credentials or reachable metadata services.
 - Chain XXE to SSRF: replace `file:///etc/hostname` with
   `http://127.0.0.1:5001/latest/meta-data/iam/security-credentials/`
   in the entity declaration. Does the XML parser fetch it?
+- **Insecure deserialization** — the third server-side class this module covers — is not in this
+  env; exploit it on [PortSwigger's deserialization labs](https://portswigger.net/web-security/deserialization)
+  and note in `findings.md` how it shares the SSRF/XXE "confused deputy" shape: a parser acting on
+  attacker-controlled input without realising it's been redirected.

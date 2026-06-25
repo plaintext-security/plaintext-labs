@@ -22,9 +22,10 @@ blocks known-malicious binaries but allows native tools. Accomplish your
 objectives — download a payload, execute it, and persist — using only the
 system's own trusted binaries.
 
-> Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
-> only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
-> targets you own).
+> Authorization: the target container ships with this lab and runs on your own machine — build the
+> LOLBin chain against it freely. The habit still matters everywhere else: only run evasion or
+> living-off-the-land techniques against systems you own or have explicit written permission to test
+> (a lab you stood up, a signed engagement scope).
 
 ## Do
 
@@ -91,7 +92,7 @@ detect the crontab and process-chain artifacts here.
 ## Stretch
 
 - Add a Windows LOLBin demo: on your eval VM, execute the `powershell` download
-  cradle and `certutil` chain from Step 5. Observe in Sysmon Event ID 1 (process
+  cradle and `certutil` chain from the Windows LOLBAS table in Step 4. Observe in Sysmon Event ID 1 (process
   creation) and Event ID 3 (network connection).
 - Modify `lolbins_demo.py` to add a jitter to the download timing. Does this
   affect the detection window?

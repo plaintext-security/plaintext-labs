@@ -33,9 +33,10 @@ hats: analyze what you left on the wire and how a defender would detect it. The 
 Flask C2 that ships with this lab stays as an annotated reference for the session/task/result
 API a real C2 implements under the hood.
 
-> Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
-> only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
-> targets you own).
+> Authorization: the `target` container ships with this lab and runs on your own machine — operate
+> your C2 against it freely. The habit still matters everywhere else: only run a C2 or implant against
+> systems you own or have explicit written permission to test (a lab you stood up, a signed engagement
+> scope). A live C2 is a high-trust tool — never point one at infrastructure you don't control.
 
 ## Do
 

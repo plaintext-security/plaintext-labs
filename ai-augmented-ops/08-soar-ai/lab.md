@@ -177,7 +177,7 @@ orchestration layer that **Module 09 (Securing the AI You Run)** attacks with a 
 payload — an alert crafted to flip the AI classification and trip an auto-action. Your failure branch
 and your branch-logic gate are both mitigations: the gate becomes the regression test proving the
 injection stays fixed once you harden it. The labelled fixture is a sibling of the held-out sets in
-[Module 11](../../README.md) — same held-out + scorecard + gate discipline, applied to branch logic.
+[Module 11](../11-ai-evaluation/README.md) — same held-out + scorecard + gate discipline, applied to branch logic.
 
 ## Marketable proof
 > "I built an AI-augmented SOAR workflow in n8n — local-model classification feeding deterministic
