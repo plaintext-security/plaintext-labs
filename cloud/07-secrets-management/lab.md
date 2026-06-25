@@ -70,7 +70,7 @@ key is harmless by construction. The build is the deliverable; the breach is the
    typed or stored a password.
 
 7. [ ] **Use it, then watch it die.** Connect with the minted user
-   (`PGPASSWORD=<pw> psql -h db -U <user> -d  -c 'SELECT count(*) FROM payments;'`) — it works.
+   (`PGPASSWORD=<pw> psql -h db -U <user> -d corp -c 'SELECT count(*) FROM payments;'`) — it works.
    Wait past the TTL (or `vault lease revoke <lease_id>`) and try again — login fails. **This is the
    answer to the predict prompt:** there is nothing to rotate and nothing to leak long-term; a leaked
    copy is already dead.

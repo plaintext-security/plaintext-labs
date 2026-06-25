@@ -11,7 +11,7 @@ echo "== Pointing Vault at Postgres (Vault holds the admin cred, apps never do) 
 vault write database/config/postgres \
     plugin_name=postgresql-database-plugin \
     allowed_roles="app-role" \
-    connection_url="postgresql://{{username}}:{{password}}@db:5432/?sslmode=disable" \
+    connection_url="postgresql://{{username}}:{{password}}@db:5432/corp?sslmode=disable" \
     username="vaultadmin" \
     password="vaultadminpass"
 

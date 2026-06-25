@@ -68,11 +68,16 @@ echo "   -> Lambda notifier deployed"
 # Create an S3 bucket for the data exfil demonstration
 echo "[4/4] Creating exfil target S3 bucket..."
 $AL s3api create-bucket --bucket sensitive-records --region $REGION 2>/dev/null || true
-$AL s3 cp /dev/stdin s3://sensitive-records/customer-data.csv <<'CSV'
+# Write to a temp file then upload — `s3 cp /dev/stdin` is rejected by the AWS CLI
+# ("character special device / FIFO"), which would abort the script under `set -e`.
+CUST_CSV="$(mktemp)"
+cat > "$CUST_CSV" <<'CSV'
 customer_id,name,account_number,balance
 C001,Alice Chen,ACC-0001234,142500.00
 C002,Bob Marsh,ACC-0001235,87300.50
 CSV
+$AL s3 cp "$CUST_CSV" s3://sensitive-records/customer-data.csv
+rm -f "$CUST_CSV"
 echo "   -> S3 bucket sensitive-records seeded"
 
 echo ""

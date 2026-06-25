@@ -6,9 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       curl git jq unzip zip wget \
     && rm -rf /var/lib/apt/lists/*
 
-# AWS SAM CLI
+# AWS SAM CLI — pinned for a reproducible, deterministic build.
+# (Using the `latest/download` redirect is non-deterministic: it resolves to whatever
+#  release is newest at build time, so a bad/incompatible release breaks CI silently.)
+ARG SAM_CLI_VERSION=v1.162.1
 RUN curl -sSfL \
-      "https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip" \
+      "https://github.com/aws/aws-sam-cli/releases/download/${SAM_CLI_VERSION}/aws-sam-cli-linux-x86_64.zip" \
       -o /tmp/sam.zip \
     && unzip -q /tmp/sam.zip -d /tmp/sam-install \
     && /tmp/sam-install/install \

@@ -25,11 +25,11 @@ services:
     environment:
       POSTGRES_USER: vaultadmin
       POSTGRES_PASSWORD: vaultadminpass
-      POSTGRES_DB: 
+      POSTGRES_DB: corp
     volumes:
       - ./data/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vaultadmin -d "]
+      test: ["CMD-SHELL", "pg_isready -U vaultadmin -d corp"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -57,7 +57,7 @@ services:
       - VAULT_TOKEN=root-dev-token
       # Postgres (for verifying dynamic creds with psql)
       - PGHOST=db
-      - PGDATABASE=
+      - PGDATABASE=corp
       # AWS / LocalStack (for the Secrets Manager variant; awslocal reads LOCALSTACK_HOST)
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test

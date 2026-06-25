@@ -3,6 +3,10 @@
 services:
   lab:
     build: .
+    # plaso is installed from the GIFT "stable" PPA, whose libyal dependency
+    # debs are published for amd64 only. Pin the build/run platform so this is
+    # deterministic on CI (amd64) and emulated transparently on arm64 dev hosts.
+    platform: linux/amd64
     image: plaintext/timeline-analysis:1.0
     working_dir: /lab
     volumes:

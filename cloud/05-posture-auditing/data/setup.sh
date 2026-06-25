@@ -26,12 +26,17 @@ $ALIAS s3api put-bucket-acl \
   --bucket inherited-public-data \
   --acl public-read
 
-# Drop a plausible-looking file in it
-$ALIAS s3 cp /dev/stdin s3://inherited-public-data/employee-list.csv <<'CSV'
+# Drop a plausible-looking file in it. Write to a temp file then upload —
+# `s3 cp /dev/stdin` is rejected by the AWS CLI ("character special device / FIFO"),
+# which would abort this script under `set -e`.
+EMP_CSV="$(mktemp)"
+cat > "$EMP_CSV" <<'CSV'
 employee_id,name,email,department
 1001,Alice Chen,alice@.example,Engineering
 1002,Bob Marsh,bob@.example,Finance
 CSV
+$ALIAS s3 cp "$EMP_CSV" s3://inherited-public-data/employee-list.csv
+rm -f "$EMP_CSV"
 
 echo "   -> bucket inherited-public-data is public (T1530)"
 

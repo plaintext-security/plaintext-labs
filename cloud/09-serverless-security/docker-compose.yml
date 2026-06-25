@@ -10,10 +10,13 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
-      # Enable Lambda execution
-      - LAMBDA_EXECUTOR=local
     ports:
       - "4566:4566"
+    volumes:
+      # LocalStack 3.x Lambda v2 spawns each function in its own runtime container
+      # via the host Docker socket. Without this mount, `lambda invoke` fails with
+      # "function is in the Failed state". (LAMBDA_EXECUTOR=local was removed in 2.0.)
+      - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 5s
