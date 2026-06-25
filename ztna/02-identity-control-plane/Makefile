@@ -1,5 +1,8 @@
 # Module 02 — Identity as the Control Plane lab.
 # Standard targets: up / down / reset / demo.
+# Recipes use bash features (substring expansion ${VAR:0:80}); force bash so they
+# don't break under dash, which is /bin/sh on Debian/Ubuntu CI runners.
+SHELL := /bin/bash
 .PHONY: up down reset demo
 
 KEYCLOAK_URL = http://localhost:8080
