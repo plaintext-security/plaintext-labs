@@ -86,7 +86,7 @@ reproducible from a single `git clone`.
 
 ## Connects forward
 This capstone integrates modules 05 (IDS alerts), 06 (SIEM rules),
-14 (threat-intel enrichment), and 13 (TheHive case management) into
+15 (threat-intel enrichment), and 14 (TheHive case management) into
 one automated pipeline. The human-gate + AI-scoring pattern is the
 foundation Track 12 (AI-Augmented Ops) builds on with MCP and RAG.
 

@@ -114,8 +114,8 @@ cloud track, audits a generated IAM policy for the over-broad default.
   on the host** the next time *any* container was started — the shared-kernel limit from the module
   turned into a real breakout, not a thought experiment. (The original disclosure is the
   [openwall advisory](https://www.openwall.com/lists/oss-security/2019/02/11/2); a clear technical
-  walk-through is [Aqua Security's analysis](https://www.aquasec.com/blog/cve-2019-5736-runc-vulnerability/).)
-  A clear technical walk-through is [Palo Alto Unit 42 — Breaking out of Docker via runC](https://unit42.paloaltonetworks.com/breaking-docker-via-runc-explaining-cve-2019-5736/),
+  walk-through is [Palo Alto Unit 42 — Breaking out of Docker via runC](https://unit42.paloaltonetworks.com/breaking-docker-via-runc-explaining-cve-2019-5736/)
+  or [Aqua Security's analysis](https://www.aquasec.com/blog/cve-2019-5736-runc-vulnerability/),
   with [Red Hat's advisory](https://access.redhat.com/security/vulnerabilities/runcescape) for the
   vendor view. In two sentences in `docker-notes.md`, tie it back to the module: which restriction
   failed, and why "a container is not a security boundary by default" is the exact sentence this CVE

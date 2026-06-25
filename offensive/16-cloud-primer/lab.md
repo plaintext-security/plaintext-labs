@@ -22,9 +22,11 @@ You have been authorised to practice against two targets:
 1. **flaws.cloud** — a public, intentionally vulnerable S3 bucket challenge (levels 1–6).
 2. **CloudGoat** — a Terraform-provisioned deliberately-vulnerable AWS environment you deploy into your own account.
 
-> Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
-> only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
-> targets you own).
+> Authorization: only test systems you own or are explicitly authorised to test. flaws.cloud is a
+> public learning target its author invites you to attack; CloudGoat deploys **into your own AWS
+> account**, so you own it — never point either toolset at infrastructure you have not been given
+> written permission to assess, and tear CloudGoat down when you're done to avoid leaving exposed
+> resources (and surprise bills).
 
 ## Do
 

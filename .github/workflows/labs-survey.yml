@@ -103,7 +103,7 @@ jobs:
           safe=$(printf '%s' "${{ matrix.lab }}" | tr '/' '__')
           st=PASS; [ "${{ steps.run.outcome }}" = "success" ] || st=FAIL
           printf '%s %s\n' "$st" "${{ matrix.lab }}" > "results/$safe.txt"
-      - uses: actions/upload-artifact@v4   # pin to SHA to match repo policy (see labs-ci.yml)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         if: always()
         with:
           name: result-${{ strategy.job-index }}
@@ -119,7 +119,7 @@ jobs:
       pull-requests: write      # only used when promote=true (open the PR)
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
-      - uses: actions/download-artifact@v4   # pin to SHA to match repo policy
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
           path: results
           pattern: result-*

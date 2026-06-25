@@ -21,9 +21,10 @@ offensive track (SSRF, IDOR, privilege escalation, LOLBins). Turn those raw
 notes into a professional deliverable the CISO can share with the board and
 the engineering team can act on within 30 days.
 
-> Authorization: this app is yours — attack it freely. The habit still matters everywhere else:
-> only test systems you own or have explicit written permission to test (DVWA, PortSwigger Academy,
-> targets you own).
+> No target is attacked in this lab — you're writing up findings, not running exploits. The
+> authorization rule still governs the work it documents: a real engagement report covers only
+> systems you owned or were explicitly authorised in writing to test. Treat the findings here as
+> coming from such an authorised assessment.
 
 ## Do
 
