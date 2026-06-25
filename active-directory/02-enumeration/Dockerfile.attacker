@@ -18,10 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# enum4linux-ng is not published on PyPI — install it from its upstream repo
+# (pinned to a release tag for determinism). `git` is already installed above.
 RUN pip install --no-cache-dir \
     impacket==0.12.0 \
     bloodhound==1.6.1 \
-    enum4linux-ng \
-    ldap3
+    ldap3 \
+    "enum4linux-ng @ git+https://github.com/cddmp/enum4linux-ng.git@v1.3.10"
 
 WORKDIR /lab

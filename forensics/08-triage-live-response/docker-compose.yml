@@ -1,13 +1,16 @@
-version: "3.9"
-
 services:
   server:
-    image: wlambert/velociraptor:0.72.0
+    build: .
+    image: plaintext/velociraptor:0.77.1
     container_name: velo-server
     command: >
       sh -c "
-        velociraptor config generate --merge '{\"Client\":{\"server_urls\":[\"http://server:8000/\"]},\"GUI\":{\"bind_address\":\"0.0.0.0\",\"bind_port\":8889},\"Frontend\":{\"bind_address\":\"0.0.0.0\",\"bind_port\":8000}}' > /config/server.config.yaml &&
-        velociraptor --config /config/server.config.yaml frontend --plaintext
+        if [ ! -f /config/server.config.yaml ]; then
+          velociraptor config generate --merge '{\"Client\":{\"server_urls\":[\"https://server:8000/\"],\"use_self_signed_ssl\":true},\"GUI\":{\"bind_address\":\"0.0.0.0\",\"bind_port\":8889,\"use_plain_http\":true},\"Frontend\":{\"bind_address\":\"0.0.0.0\",\"bind_port\":8000}}' > /config/server.config.yaml &&
+          velociraptor --config /config/server.config.yaml config client > /config/client.config.yaml &&
+          velociraptor --config /config/server.config.yaml user add admin admin --role administrator;
+        fi &&
+        velociraptor --config /config/server.config.yaml frontend -v
       "
     volumes:
       - velo-config:/config
@@ -18,21 +21,20 @@ services:
     networks:
       - velo-net
     healthcheck:
-      test: ["CMD", "sh", "-c", "test -f /config/server.config.yaml"]
+      test: ["CMD", "sh", "-c", "test -f /config/client.config.yaml"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   agent:
-    image: wlambert/velociraptor:0.72.0
+    image: plaintext/velociraptor:0.77.1
     container_name: velo-agent
     depends_on:
       server:
         condition: service_healthy
     command: >
       sh -c "
-        sleep 5 &&
-        velociraptor config client --config /config/server.config.yaml > /config/client.config.yaml &&
+        sleep 3 &&
         velociraptor --config /config/client.config.yaml client -v
       "
     volumes:
@@ -41,7 +43,7 @@ services:
       - velo-net
 
   lab:
-    image: wlambert/velociraptor:0.72.0
+    image: plaintext/velociraptor:0.77.1
     container_name: velo-lab
     depends_on:
       - server

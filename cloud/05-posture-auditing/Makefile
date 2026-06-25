@@ -18,24 +18,4 @@ shell:     ## Open a shell in the lab container (LocalStack accessible as http:/
 	docker compose exec lab bash
 
 demo:      ## Run prowler against the seeded LocalStack account and show HIGH/CRITICAL findings
-	@echo "== Running prowler posture scan against LocalStack =="
-	docker compose run --rm lab sh -c '\
-		prowler aws \
-			--endpoint-url http://localstack:4566 \
-			--services s3 ec2 iam cloudtrail \
-			--output-formats json \
-			--output-filename /tmp/prowler-demo \
-			--severity high critical \
-			--no-banner 2>/dev/null || true; \
-		echo ""; \
-		echo "== Findings (FAIL, HIGH+CRITICAL) =="; \
-		jq -r \
-			'"'"'["CHECK", "RESOURCE", "SEVERITY", "STATUS"] | @tsv,
-			 (.[] | select(.status=="FAIL") | select(.severity | test("high|critical","i"))
-			  | [.check_id, (.resource_arn // .resource_id // "n/a"), .severity, .status] | @tsv)'"'"' \
-			/tmp/prowler-demo.json 2>/dev/null \
-		|| echo "(prowler JSON path may vary by version — see /tmp/prowler-demo* for raw output)"; \
-		echo ""; \
-		echo "== Summary =="; \
-		echo "Total FAIL findings:"; \
-		jq '"'"'[.[] | select(.status=="FAIL")] | length'"'"' /tmp/prowler-demo.json 2>/dev/null || echo "see raw output"'
+	docker compose run --rm lab bash data/scan.sh

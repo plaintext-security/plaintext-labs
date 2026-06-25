@@ -15,9 +15,11 @@ services:
       - ./data/corp-realm.json:/opt/keycloak/data/import/corp-realm.json:ro
     ports:
       - "8080:8080"
+    # The Keycloak image ships no curl/wget, so probe the realm endpoint with
+    # bash's built-in /dev/tcp and assert HTTP 200 on /realms/corp.
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/corp || exit 1"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/corp HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 20
       start_period: 30s
