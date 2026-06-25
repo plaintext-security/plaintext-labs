@@ -1,0 +1,1 @@
+Needs a local Ollama model pull (~637MB) + CPU inference at demo time — unreliable/slow on a plain CI runner. Run locally (make up && make demo) instead.
