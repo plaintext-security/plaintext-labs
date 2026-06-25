@@ -1,0 +1,5 @@
+Falco runtime detection requires a real Linux host whose kernel can attach Falco's
+modern-eBPF probe (CONFIG_BTF, /boot + /lib/modules, deep kernel access). The probe
+fails to initialise on container CI runners and on Docker Desktop's linuxkit kernel
+("Initialization issues during scap_init"), so `make demo` cannot pass on a plain
+runner. The escape (attacker) half works in CI; the detection half needs real infra.

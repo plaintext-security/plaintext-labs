@@ -16,10 +16,10 @@ echo "--- Artifact: System.Process.List (pslist) ---"
 cat /data/pslist.json | python3 -c "
 import json, sys
 rows = json.load(sys.stdin)
-print(f'{'PID':<8} {'PPID':<8} {'Name':<28} {'CommandLine'}")
+print('%-8s %-8s %-28s %s' % ('PID', 'PPID', 'Name', 'CommandLine'))
 print('-'*80)
 for r in rows:
-    print(f\"{r.get('Pid',''):<8} {r.get('PPid',''):<8} {r.get('Name',''):<28} {r.get('CommandLine','')[:60]}\")
+    print('%-8s %-8s %-28s %s' % (r.get('Pid',''), r.get('PPid',''), r.get('Name',''), str(r.get('CommandLine',''))[:60]))
 "
 echo ""
 
@@ -27,10 +27,10 @@ echo "--- Artifact: System.Network.Netstat (connections) ---"
 cat /data/netstat.json | python3 -c "
 import json, sys
 rows = json.load(sys.stdin)
-print(f'{'PID':<8} {'Proto':<8} {'LocalAddr':<24} {'RemoteAddr':<24} {'State'}")
+print('%-8s %-8s %-24s %-24s %s' % ('PID', 'Proto', 'LocalAddr', 'RemoteAddr', 'State'))
 print('-'*80)
 for r in rows:
-    print(f\"{r.get('Pid',''):<8} {r.get('Type',''):<8} {r.get('Laddr',''):<24} {r.get('Raddr',''):<24} {r.get('Status','')}\")
+    print('%-8s %-8s %-24s %-24s %s' % (r.get('Pid',''), r.get('Type',''), r.get('Laddr',''), r.get('Raddr',''), r.get('Status','')))
 "
 echo ""
 
@@ -38,10 +38,10 @@ echo "--- Artifact: System.VFS.ListDirectory — recent writes under /tmp ---"
 cat /data/recent_files.json | python3 -c "
 import json, sys
 rows = json.load(sys.stdin)
-print(f'{'Modified':<22} {'Size':<10} {'Path'}")
+print('%-22s %-10s %s' % ('Modified', 'Size', 'Path'))
 print('-'*80)
 for r in rows:
-    print(f\"{r.get('Mtime',''):<22} {str(r.get('Size','')):<10} {r.get('FullPath','')}\")
+    print('%-22s %-10s %s' % (r.get('Mtime',''), str(r.get('Size','')), r.get('FullPath','')))
 "
 echo ""
 

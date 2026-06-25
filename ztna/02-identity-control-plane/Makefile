@@ -11,7 +11,8 @@ TOKEN_URL    = $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/token
 up:    ## Start Keycloak with the Corp realm pre-loaded
 	docker compose up -d
 	@echo "Waiting for Keycloak to be ready..."
-	@until docker compose exec keycloak curl -sf http://localhost:8080/realms/corp > /dev/null 2>&1; do \
+	@# The Keycloak image has no curl, so probe /realms/corp via bash /dev/tcp.
+	@until docker compose exec -T keycloak bash -c 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /realms/corp HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3' > /dev/null 2>&1; do \
 		printf '.'; sleep 3; \
 	done
 	@echo ""

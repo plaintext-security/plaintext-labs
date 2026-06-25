@@ -20,4 +20,10 @@ RUN pip install --no-cache-dir \
 WORKDIR /lab
 COPY . /lab
 
+# Prowler 4.x hardcodes the public STS endpoint for credential validation, so it
+# can't talk to LocalStack out of the box (it dies on GetCallerIdentity before
+# any check runs). Patch it to honour AWS_ENDPOINT_URL. Fails the build loudly
+# if the upstream source has drifted from the pinned version.
+RUN python3 data/patch-prowler-localstack.py
+
 CMD ["bash"]
