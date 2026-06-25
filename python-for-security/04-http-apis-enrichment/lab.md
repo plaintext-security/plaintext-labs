@@ -57,7 +57,8 @@ enriched data in JSON for automated downstream processing.
    real IPs are 429'd. Don't run the reference yet — you'll use it as a check at the end.
 2. [ ] Write your own `enrich.py` using `httpx.Client`:
    - Load the (dummy) API key from `os.environ.get("VT_API_KEY", "demo-key")`.
-   - Set a `timeout=httpx.Timeout(connect=5.0, read=10.0)` on the client.
+   - Set a `timeout=httpx.Timeout(10.0, connect=5.0, read=10.0)` on the client (the positional
+     default covers `write`/`pool`; `httpx.Timeout` requires either a default or all four).
    - Iterate over `data/iocs.txt` line by line.
    - For each IOC, detect type (IP vs URLhaus sample id), call the correct endpoint.
    - Accumulate results in a list of dicts, keeping the `source`/`fetched_at` provenance fields.

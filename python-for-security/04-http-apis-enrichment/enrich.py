@@ -42,7 +42,7 @@ def enrich_one(client: httpx.Client, ioc: str) -> dict:
 
     for attempt in range(2):
         try:
-            resp = client.get(url, timeout=httpx.Timeout(connect=5.0, read=10.0))
+            resp = client.get(url, timeout=httpx.Timeout(10.0, connect=5.0, read=10.0))
         except httpx.TimeoutException:
             return {"ioc": ioc, "type": ioc_type, "verdict": "error", "error": "timeout"}
 

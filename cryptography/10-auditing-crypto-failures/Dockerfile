@@ -12,16 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       less \
       jq \
       python3 \
+      git \
+      ca-certificates \
       bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Install testssl.sh (pinned)
-RUN wget -q https://github.com/drwetter/testssl.sh/archive/refs/tags/3.2.tar.gz \
-      -O /tmp/testssl.tar.gz && \
-    tar -xzf /tmp/testssl.tar.gz -C /opt && \
-    mv /opt/testssl.sh-3.2 /opt/testssl && \
-    ln -s /opt/testssl/testssl.sh /usr/local/bin/testssl.sh && \
-    rm /tmp/testssl.tar.gz
+# Install testssl.sh (pinned to the 3.2 release branch)
+RUN git clone --depth 1 --branch 3.2 https://github.com/drwetter/testssl.sh.git /opt/testssl && \
+    ln -s /opt/testssl/testssl.sh /usr/local/bin/testssl.sh
 
 WORKDIR /lab
 COPY . /lab

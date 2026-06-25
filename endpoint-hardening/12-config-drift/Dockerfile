@@ -33,7 +33,10 @@ RUN mkdir -p /run/sshd && \
 # Inventory: localhost is both controller and target (Module 06 pattern)
 RUN mkdir -p /lab
 COPY . /lab
-RUN printf '[target]\nlocalhost ansible_connection=local\n' > /lab/inventory && \
+# Write the inventory OUTSIDE /lab: the compose file bind-mounts ./:/lab, which
+# would shadow an inventory written under /lab and leave ansible unable to match
+# the [target] group. /opt/inventory survives the mount.
+RUN printf '[target]\nlocalhost ansible_connection=local\n' > /opt/inventory && \
     chmod +x /lab/data/*.sh 2>/dev/null || true
 
 WORKDIR /lab
