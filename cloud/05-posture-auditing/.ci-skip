@@ -1,0 +1,1 @@
+Prowler scan over LocalStack exceeds the 12-min CI per-lab budget on amd64 runners (the demo is correct but slow). Run locally: make up && make demo.
