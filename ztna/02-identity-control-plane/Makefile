@@ -10,12 +10,15 @@ TOKEN_URL    = $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/token
 
 up:    ## Start Keycloak with the Corp realm pre-loaded
 	docker compose up -d
-	@echo "Waiting for Keycloak to be ready (realm import + boot can take ~60s)..."
-	@# The Keycloak image has no curl, so probe /realms/corp via bash /dev/tcp.
-	@# Bounded so CI fails fast with a clear message rather than hanging to the job timeout.
-	@i=0; until docker compose exec -T keycloak bash -c 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /realms/corp HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3' > /dev/null 2>&1; do \
+	@echo "Waiting for Keycloak + the corp realm to be ready (realm import + boot can take ~60s)..."
+	@# Probe the actual token endpoint (from the host, which has curl) until it issues a
+	@# token — this is exactly what `make demo` does, so it guarantees users/clients are
+	@# fully imported, not just that the realm responds. Bounded so CI fails fast.
+	@i=0; until curl -sf -X POST $(TOKEN_URL) \
+		-d "grant_type=password" -d "client_id=$(CLIENT_ID)" -d "client_secret=$(CLIENT_SECRET)" \
+		-d "username=analyst" -d "password=analyst123" -d "scope=openid" 2>/dev/null | grep -q access_token; do \
 		i=$$((i+1)); \
-		if [ $$i -gt 100 ]; then echo ""; echo "Keycloak did not become ready in time; recent logs:"; docker compose logs --tail 30 keycloak; exit 1; fi; \
+		if [ $$i -gt 100 ]; then echo ""; echo "Keycloak token endpoint did not become ready in time; recent logs:"; docker compose logs --tail 30 keycloak; exit 1; fi; \
 		printf '.'; sleep 3; \
 	done
 	@echo ""

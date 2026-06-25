@@ -5,6 +5,11 @@
 # gitleaks will find both patterns.
 set -euo pipefail
 
+# The repo lives on a bind-mounted dir owned by the host/runner uid, but this runs
+# as root in the container — git would refuse with "dubious ownership" (exit 128) on
+# a clean CI runner. Trust any path so git init/commit work regardless of uid.
+git config --global --add safe.directory '*'
+
 REPO="/lab/data/repo"
 
 if [ -d "$REPO/.git" ]; then
