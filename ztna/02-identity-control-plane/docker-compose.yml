@@ -21,5 +21,5 @@ services:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/corp HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 5s
-      retries: 20
-      start_period: 30s
+      retries: 30
+      start_period: 45s

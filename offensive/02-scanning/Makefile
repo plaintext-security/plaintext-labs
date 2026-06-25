@@ -33,6 +33,17 @@ target-up: ## Clone + start the Vulhub nginx CVE-2017-7529 target (:8080)
 	. "$$(d=$$PWD; while [ ! -f "$$d/lib/fetch.sh" ] && [ "$$d" != / ]; do d=$$(dirname "$$d"); done; echo "$$d")/lib/fetch.sh" && \
 	repo=$$(fetch_repo vulhub) && \
 	cd "$$repo/nginx/CVE-2017-7529" && docker compose up -d
+	@echo "Waiting for the Vulhub nginx target to listen on :8080..."
+	@# The scanner races the target otherwise: scan.py exits non-zero when it
+	@# finds no open ports. Poll :8080 with curl (any HTTP response, including
+	@# 4xx, means nginx is up) until it answers, or fail fast with a clear
+	@# message rather than handing demo a dead target.
+	@i=0; until curl -s -o /dev/null --max-time 2 http://localhost:8080/; do \
+		i=$$((i+1)); \
+		if [ $$i -gt 60 ]; then echo "Target did not come up on :8080 in time."; exit 1; fi; \
+		printf '.'; sleep 2; \
+	done
+	@echo ""
 	@echo "Target up: http://localhost:8080/  (nginx CVE-2017-7529 — scan it)"
 
 target-down: ## Stop the Vulhub target

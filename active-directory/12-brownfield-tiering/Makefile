@@ -24,23 +24,23 @@ corroborate: ## Verify the flat baseline fixture against the LIVE DC (rosters, S
 	    python3 corroborate-live.py'
 
 before:     ## Re-walk PATH-001 on the FLAT domain — prove it reaches Domain Admin (t=0)
-	docker compose run --rm lab python3 flat-walk.py
+	docker compose exec lab python3 flat-walk.py
 
 check:      ## Run the cumulative per-wave two-part gate (no-lockout AND attack-dead)
-	docker compose run --rm lab python3 wave-check.py --cumulative
+	docker compose exec lab python3 wave-check.py --cumulative
 
 demo:       ## Full story: PATH-001 open on the flat domain, then dead after tiering in waves
 	@echo "########################################################################"
 	@echo "# BEFORE — the flat brownfield domain. A Domain Admin logs on to a Tier 2"
 	@echo "# workstation, so PATH-001 runs to Domain Admin. This is the t=0 reality."
 	@echo "########################################################################"
-	docker compose run --rm lab python3 flat-walk.py
+	docker compose exec lab python3 flat-walk.py
 	@echo ""
 	@echo "########################################################################"
 	@echo "# MIGRATE — tier the domain in waves (pilot OU -> Protected Users -> widen)."
 	@echo "# Each wave must keep legitimate admins logged on AND kill its target hop."
 	@echo "########################################################################"
-	docker compose run --rm lab python3 wave-check.py --cumulative
+	docker compose exec lab python3 wave-check.py --cumulative
 	@echo ""
 	@echo "=== AFTER ==="
 	@echo "PATH-001's credential-harvest hop is dead while tallen still administers from"

@@ -12,6 +12,12 @@ services:
     depends_on: [victim]
     networks: [lab]
     cap_add: [NET_RAW, NET_ADMIN]
+    # The demo scans the Vulhub target published on the host's :8080 via
+    # host.docker.internal. Docker Desktop injects that name automatically, but
+    # plain Linux dockerd (e.g. GitHub Actions runners) does not — map it to the
+    # host gateway explicitly so the scan resolves the target on every engine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     working_dir: /lab
     volumes:
       - ./:/lab

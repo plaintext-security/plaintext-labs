@@ -18,14 +18,14 @@ shell:
 	docker compose exec lab bash
 
 reset-state:  ## Restore the clean (no-drift) observed posture
-	docker compose run --rm lab cp data/observed.clean.json data/observed.json
+	docker compose exec lab cp data/observed.clean.json data/observed.json
 	@echo "observed.json reset to the clean hardened state."
 
 detect:     ## Run the detector: diff observed vs baseline, report per-fact delta (exit 1 on drift)
-	docker compose run --rm lab python3 drift-detect.py
+	docker compose exec lab python3 drift-detect.py
 
 drift:      ## Simulate a month of decay (new SPN, re-added ACE, unexpected DA, stale krbtgt)
-	docker compose run --rm lab bash bin/drift-introduce.sh
+	docker compose exec lab bash bin/drift-introduce.sh
 
 drift-live: ## Introduce REAL drift on the DC via samba-tool (new SPN + unexpected Domain Admin)
 	docker compose run --rm lab bash bin/drift-introduce.sh --live
@@ -35,15 +35,15 @@ demo:       ## t=0 clean (no drift) -> introduce drift -> detector names every r
 	@echo "# t=0 — CLEAN domain. Detector diffs observed vs the declared baseline and"
 	@echo "# must report NO DRIFT (empty delta == no false positives)."
 	@echo "########################################################################"
-	docker compose run --rm lab sh -c 'cp data/observed.clean.json data/observed.json && python3 drift-detect.py'; \
+	docker compose exec lab sh -c 'cp data/observed.clean.json data/observed.json && python3 drift-detect.py'; \
 	  test $$? -eq 0 && echo "[ok] clean domain -> exit 0 (no drift)" || (echo "UNEXPECTED: clean domain reported drift" && exit 1)
 	@echo ""
 	@echo "########################################################################"
 	@echo "# DRIFT — simulate a month of decay, then re-run the detector. It must name"
 	@echo "# EACH introduced regression as a concrete fact and exit non-zero."
 	@echo "########################################################################"
-	docker compose run --rm lab bash bin/drift-introduce.sh
-	@docker compose run --rm lab sh -c 'python3 drift-detect.py; test $$? -ne 0 && echo "[ok] drift present -> exit non-zero (gate would alert)" || (echo "UNEXPECTED: detector missed the drift" && exit 1)'
+	docker compose exec lab bash bin/drift-introduce.sh
+	@docker compose exec lab sh -c 'python3 drift-detect.py; test $$? -ne 0 && echo "[ok] drift present -> exit non-zero (gate would alert)" || (echo "UNEXPECTED: detector missed the drift" && exit 1)'
 	@echo ""
 	@echo "=== Verdict ==="
 	@echo "PASS: detector is silent on the clean domain and names every regression under drift."
