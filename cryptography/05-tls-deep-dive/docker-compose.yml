@@ -6,7 +6,11 @@ services:
     container_name: tls-nginx
     volumes:
       - ./data/nginx-weak.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./data/gen-cert.sh:/docker-entrypoint.d/99-gen-cert.sh:ro
+      - ./data/gen-cert.sh:/gen-cert.sh:ro
+    # Install openssl (not in nginx:alpine), generate the self-signed cert, then hand off
+    # to the stock nginx entrypoint. Run the script with `sh` explicitly so it does not
+    # depend on the bind-mount exec bit (Docker Desktop on macOS does not preserve it).
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache openssl >/dev/null && sh /gen-cert.sh && exec /docker-entrypoint.sh nginx -g 'daemon off;'"]
     ports:
       - "8443:443"
     healthcheck:

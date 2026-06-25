@@ -15,7 +15,7 @@
 set -uo pipefail
 
 LAB=/lab
-INV="$LAB/inventory"
+INV="/opt/inventory"
 PLAYBOOK="$LAB/data/playbook.yml"
 EVENTS="$LAB/drift-events.log"
 mode="${1:-detect}"
@@ -67,9 +67,12 @@ detect() {
   local out rc
   out="$(run_check)"; rc=$?
 
-  # FAIL CLOSED: a non-zero ansible run that isn't the expected "drift => changed"
-  # signal (e.g. unreachable target, parse error) is failure-to-verify.
-  if echo "$out" | grep -qiE 'unreachable=|FAILED!|ERROR!|could not|Connection.*refused'; then
+  # FAIL CLOSED: a run we genuinely could not complete (an unreachable target,
+  # a connection refusal, or a parser/playbook ERROR!) is failure-to-verify.
+  # Match unreachable=[1-9] (NOT the benign unreachable=0 in every PLAY RECAP),
+  # and deliberately skip task-level fatal/FAILED! lines that carry ignore_errors
+  # /failed_when handlers — those are expected and reported as failed=0.
+  if echo "$out" | grep -qiE 'unreachable=[1-9]|ERROR!|Connection.*refused|Failed to connect'; then
     echo "FATAL: drift check could not complete (controller could not verify the target)." >&2
     echo "       This is failure-to-verify, NOT 'no drift'. Exiting non-zero." >&2
     return 3
@@ -101,7 +104,7 @@ loop() {
   echo "== Steady-state loop: detect -> diff -> alert -> reconcile =="
   local out rc
   out="$(run_check)"; rc=$?
-  if echo "$out" | grep -qiE 'unreachable=|FAILED!|ERROR!|could not'; then
+  if echo "$out" | grep -qiE 'unreachable=[1-9]|ERROR!|Connection.*refused|Failed to connect'; then
     emit_event "ALL" "verify-failed" "drift-check" "FAIL-CLOSED"
     echo "FATAL: failure-to-verify; alerting and exiting non-zero." >&2
     return 3

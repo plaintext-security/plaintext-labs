@@ -27,7 +27,8 @@ demo:
 		openssl x509 -in /tmp/leaf.crt -noout -dates; \
 		echo ""; \
 		echo "CA flag (basicConstraints):"; \
-		openssl x509 -in /tmp/leaf.crt -noout -text | grep -A2 "Basic Constraints"'
+		openssl x509 -in /tmp/leaf.crt -noout -text | grep -A2 "Basic Constraints" || \
+		echo "  (no CA basicConstraints — correct: a leaf certificate is NOT a CA)"'
 	@echo ""
 	@echo "=== Run 'make shell' for the full revocation and OCSP exercises ==="
 

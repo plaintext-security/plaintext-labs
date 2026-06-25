@@ -1,0 +1,1 @@
+Needs a kind k8s cluster + Cilium eBPF kube-proxy replacement (3 nodes, /sys/fs/bpf) unavailable on a plain Docker CI runner.

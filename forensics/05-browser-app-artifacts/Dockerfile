@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install hindsight
-RUN pip install --no-cache-dir pyhindsight==20231012
+RUN pip install --no-cache-dir pyhindsight==20250307
 
 WORKDIR /lab
 COPY . /lab/

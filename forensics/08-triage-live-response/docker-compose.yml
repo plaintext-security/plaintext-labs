@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   server:
-    image: wlambert/velociraptor:0.72.4
+    image: wlambert/velociraptor:0.72.0
     container_name: velo-server
     command: >
       sh -c "
@@ -24,7 +24,7 @@ services:
       retries: 10
 
   agent:
-    image: wlambert/velociraptor:0.72.4
+    image: wlambert/velociraptor:0.72.0
     container_name: velo-agent
     depends_on:
       server:
@@ -41,7 +41,7 @@ services:
       - velo-net
 
   lab:
-    image: wlambert/velociraptor:0.72.4
+    image: wlambert/velociraptor:0.72.0
     container_name: velo-lab
     depends_on:
       - server

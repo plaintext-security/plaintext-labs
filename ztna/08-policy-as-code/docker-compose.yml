@@ -13,7 +13,11 @@ services:
       - "8181:8181"
 
   # Helper service: runs opa eval / opa test one-shots in the same image.
-  # Used by Makefile demo/eval/test targets.
+  # Used by Makefile demo/eval/test targets via `docker compose run --rm lab eval ...`
+  # (the OPA image ENTRYPOINT is already /opa, so the subcommand follows directly).
+  # The image is distroless (no shell / no sleep), so the long-running form is an
+  # idle `opa run --server` on a separate port — only needed so the service can be
+  # brought up; the demo/eval/test targets override this command via `run`.
   lab:
     image: openpolicyagent/opa:0.68.0
     container_name: opa-runner
@@ -21,4 +25,4 @@ services:
     volumes:
       - ./data:/lab/data
       - ./:/lab
-    command: ["sleep", "infinity"]
+    command: ["run", "--server", "--log-level=error", "--addr=0.0.0.0:8282"]

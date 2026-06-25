@@ -16,7 +16,9 @@ set -uo pipefail
 
 FLEET=/fleet
 INV=/lab/data/inventory.ini
-HEALTH=/lab/fleet-health.sh
+# Invoke via `bash` so it works even when the executable bit didn't survive
+# git/Docker COPY (these scripts are committed mode 644).
+HEALTH="bash /lab/fleet-health.sh"
 
 ring="${2:-}"
 SERIAL="${3:-2}"          # batch size for the fleet ring
@@ -62,7 +64,7 @@ roll() {
   echo "=== ROLL ring='$ring' serial=$SERIAL max_fail=${MAX_FAIL_PCT}% exception=$EXCEPTION ==="
 
   echo "-- health BEFORE (every host in ring must be serving) --"
-  if "$HEALTH" "$ring" no; then
+  if $HEALTH "$ring" no; then
     :
   elif [ "$EXCEPTION" = "1" ]; then
     # We are re-rolling specifically to REPAIR a host the full baseline broke
@@ -94,7 +96,7 @@ roll() {
       done
       sleep 1
       echo "-- health AFTER batch (hardened AND still serving) --"
-      if ! "$HEALTH" "$ring" yes; then
+      if ! $HEALTH "$ring" yes; then
         # compute this batch's failure share to decide halt
         local fails=0
         for bh in "${batch[@]}"; do
@@ -122,7 +124,7 @@ back() {
     apply_unhardened "$h"
   done
   sleep 1
-  "$HEALTH" "$ring" no
+  $HEALTH "$ring" no
   echo "=== ring '$ring' rolled back (serving the old way again). ==="
 }
 

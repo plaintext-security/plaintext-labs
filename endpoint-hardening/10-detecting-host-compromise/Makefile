@@ -41,8 +41,8 @@ demo:
 	@echo ""
 	@echo "--- Convert example rule to Splunk SPL ---"
 	docker compose exec lab bash -c '\
-		sigma convert -t splunk data/example-rule.yml 2>/dev/null || \
-		echo "(sigma-cli: use '\''sigma convert -t splunk <rule.yml>'\'' to convert rules)"'
+		sigma convert -t splunk --without-pipeline data/example-rule.yml 2>/dev/null || \
+		echo "(sigma-cli: use '\''sigma convert -t splunk --without-pipeline <rule.yml>'\'' to convert rules)"'
 	@echo ""
 	@echo "=== Run 'make shell' to write your own detection rules ==="
 	@echo "    Hint: write rules/persistence-runkey.yml, rules/credaccess-lsass.yml, rules/lateral-service.yml"

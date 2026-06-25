@@ -70,7 +70,7 @@ coverage to ATT&CK.
    # Repeat for each rule
    ```
    Confirm each rule fires on exactly the intended phase and no others. Then convert one rule to a
-   real backend with sigma-cli to prove portability: `sigma convert -t splunk rules/credaccess-lsass.yml`.
+   real backend with sigma-cli to prove portability: `sigma convert -t splunk --without-pipeline rules/credaccess-lsass.yml`.
 
 7. [ ] Map your three rules to the [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/):
    create a layer JSON file (`coverage.json`) marking T1547.001, T1003.001, and T1021.002

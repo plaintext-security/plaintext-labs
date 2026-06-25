@@ -1,0 +1,1 @@
+Needs a real kind k8s cluster (kind + helm) plus Falco modern_ebpf host-kernel access, unavailable on a plain Docker CI runner.

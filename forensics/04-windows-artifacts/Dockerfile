@@ -6,9 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install chainsaw (latest release binary for Linux x86_64)
-RUN CHAINSAW_VERSION=2.9.0 && \
-    curl -fsSL "https://github.com/WithSecureLabs/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_x86_64-unknown-linux-musl.tar.gz" \
+# Install chainsaw (pre-built release binary). Chainsaw ships gnu (not musl)
+# builds and now publishes both x86_64 and aarch64 Linux assets, so this works
+# on amd64 (CI) and arm64 alike.
+RUN CHAINSAW_VERSION=2.16.0 && \
+    ARCH="$(uname -m)" && \
+    curl -fsSL "https://github.com/WithSecureLabs/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_${ARCH}-unknown-linux-gnu.tar.gz" \
     | tar -xz -C /usr/local/bin/ --strip-components=1 chainsaw/chainsaw && \
     chmod +x /usr/local/bin/chainsaw
 

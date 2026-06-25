@@ -39,7 +39,7 @@ result the LLM can parse.
    import fastmcp, httpx, os, re
    mcp = fastmcp.FastMCP("ioc-enrichment")
 
-   @mcp.tool
+   @mcp.tool()
    def enrich_ip(ip: str) -> dict:
        """Enrich an IP address with real threat-intel data (abuse.ch Feodo Tracker + URLhaus)."""
        ...

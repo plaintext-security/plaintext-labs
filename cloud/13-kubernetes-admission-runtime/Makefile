@@ -4,7 +4,7 @@
 
 CLUSTER_NAME = plaintext-lab-13
 KYVERNO_VER  = 3.2.6
-FALCO_VER    = 4.3.2
+FALCO_VER    = 4.3.1
 
 check-prereqs:
 	@command -v kind    >/dev/null 2>&1 || { echo "ERROR: kind not found. Install: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"; exit 1; }

@@ -15,7 +15,7 @@ IP_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
 mcp = fastmcp.FastMCP("ioc-enrichment")
 
 
-@mcp.tool
+@mcp.tool()
 def enrich_ip(ip: str) -> dict:
     """Enrich an IP address with real threat-intel data (abuse.ch Feodo Tracker + URLhaus).
 
@@ -29,7 +29,7 @@ def enrich_ip(ip: str) -> dict:
     try:
         resp = httpx.get(
             f"{API_BASE}/api/v3/ip/{ip}",
-            timeout=httpx.Timeout(connect=5.0, read=10.0),
+            timeout=httpx.Timeout(10.0, connect=5.0, read=10.0),
         )
     except httpx.TimeoutException:
         return {"error": "timeout", "ip": ip}

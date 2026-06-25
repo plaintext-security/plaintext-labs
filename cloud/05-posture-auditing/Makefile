@@ -22,6 +22,7 @@ demo:      ## Run prowler against the seeded LocalStack account and show HIGH/CR
 	docker compose run --rm lab sh -c '\
 		prowler aws \
 			--endpoint-url http://localstack:4566 \
+			--services s3 ec2 iam cloudtrail \
 			--output-formats json \
 			--output-filename /tmp/prowler-demo \
 			--severity high critical \

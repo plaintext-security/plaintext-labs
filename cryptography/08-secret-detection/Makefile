@@ -5,6 +5,8 @@
 
 up:
 	docker compose up -d --build
+	@# The ./:/lab bind mount shadows the image-built repo, so (re)build it at runtime.
+	docker compose exec lab bash /lab/data/init-repo.sh
 
 down:
 	docker compose down
