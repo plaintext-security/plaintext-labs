@@ -16,8 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# NetExec (nxc) is distributed via git/pipx and pulls Rust/C build deps; it is not a reliable
+# pip-installable PyPI wheel, so it is not baked into this image. The demo uses an smbclient-based
+# liveness fallback (demo/smb_alive.py) that exercises the real Samba SMB targets. To run the
+# interactive nxc commands shown in lab.md, install it yourself:
+#   pipx install git+https://github.com/Pennyw0rth/NetExec  (see github.com/Pennyw0rth/NetExec)
 RUN pip install --no-cache-dir \
-    impacket==0.12.0 \
-    netexec
+    impacket==0.12.0
 
 WORKDIR /lab

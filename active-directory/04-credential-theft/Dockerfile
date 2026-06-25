@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     krb5-user \
     smbclient \
+    ldap-utils \
     dnsutils \
     && rm -rf /var/lib/apt/lists/*
 
