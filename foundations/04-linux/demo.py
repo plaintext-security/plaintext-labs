@@ -51,27 +51,64 @@ def demo_users() -> None:
                       if l.startswith("sudo:") or l.startswith("wheel:")), "")
     members = sudo_line.split(":")[-1].strip()
     print(f"\n  sudo/wheel group members: {members or '(none in container)'}")
+
+    # Group membership isn't the whole story — /etc/sudoers (and sudoers.d) can
+    # grant rights directly, including NOPASSWD. That's where jsmith's broad
+    # privilege lives, and it's the account the auth log ties the compromise to.
+    sudoers_files = [Path("/etc/sudoers")] + sorted(Path("/etc/sudoers.d").glob("*")) \
+        if Path("/etc/sudoers.d").is_dir() else [Path("/etc/sudoers")]
+    grants = []
+    for f in sudoers_files:
+        try:
+            for l in f.read_text().splitlines():
+                s = l.strip()
+                if not s or s.startswith("#") or s.startswith("Defaults"):
+                    continue
+                if "ALL" in s and not s.startswith("%"):
+                    flag = "  ← NOPASSWD (no password needed for root!)" if "NOPASSWD" in s else ""
+                    grants.append(f"    {s}{flag}")
+        except (FileNotFoundError, PermissionError):
+            pass
+    print("\n  sudoers grants (direct, not via group):")
+    print("\n".join(grants) if grants else "    (none)")
     print()
     print("  Command: grep ':0:' /etc/passwd")
     print("  Command: getent group sudo wheel")
+    print("  Command: sudo grep -rvE '^#|^$|^Defaults' /etc/sudoers /etc/sudoers.d/")
 
 
 def demo_suid() -> None:
     section("SUID binaries — 'find / -perm -4000 -type f 2>/dev/null'")
     print()
-    out = run("find /usr/bin /usr/sbin /bin /sbin -perm -4000 -type f 2>/dev/null | sort")
+    # Search the WHOLE filesystem (the lab text's `find / -perm -4000`), not just
+    # the system bin dirs — a planted backdoor hides outside them (e.g. /usr/local).
+    out = run("find / -perm -4000 -type f 2>/dev/null | sort")
+    STOCK_DIRS = ("/usr/bin/", "/bin/", "/usr/sbin/", "/sbin/")
+    unexpected = []
     if out:
         for line in out.splitlines():
             stat_out = run(f"stat -c '%U %n' {line} 2>/dev/null")
             owner = stat_out.split()[0] if stat_out else "?"
-            flag = "  ← root-owned SUID" if owner == "root" else ""
+            odd = owner == "root" and not line.startswith(STOCK_DIRS)
+            if odd:
+                unexpected.append(line)
+                flag = "  ← ⚠ UNEXPECTED: root-owned SUID outside system dirs (check GTFOBins!)"
+            elif owner == "root":
+                flag = "  ← root-owned SUID (stock)"
+            else:
+                flag = ""
             print(f"  {line}{flag}")
     else:
-        print("  (no SUID binaries found — normal in this minimal container)")
+        print("  (find returned nothing — unexpected; even a minimal box ships SUID binaries)")
     print()
     print("  SUID means the binary runs as its *owner*, not the caller.")
-    print("  A root-owned SUID binary can be abused for privilege escalation")
-    print("  if it has a GTFOBin entry (see: gtfobins.github.io).")
+    print("  The stock ones (su, mount, passwd, sudo…) are expected. The one that")
+    print("  is NOT — a root-owned SUID bash in /usr/local/bin — is the attacker's")
+    print("  persistence: `bash -p` returns a root shell (GTFOBins). That binary is")
+    print("  the SUID half of the story the auth log tells: jsmith was brute-forced,")
+    print("  its NOPASSWD root was used to drop a SUID-root shell.")
+    if unexpected:
+        print(f"\n  Backdoor found: {', '.join(unexpected)}")
 
 
 def demo_processes() -> None:
