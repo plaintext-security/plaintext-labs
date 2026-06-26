@@ -105,6 +105,11 @@ cloud track, audits a generated IAM policy for the over-broad default.
 ## Stretch
 - Run a container as a non-root user **with a read-only root filesystem** (`--read-only`) and dropped
   capabilities (`--cap-drop ALL`); note what breaks, what you had to add back, and what that buys you.
+  Expect a surprise: for a clean app like this one (writes nothing, binds a high port) **nothing breaks
+  — and that *is* the finding** (deny-all costs you nothing here). To feel the constraint instead of
+  just asserting it, break it on purpose: have the app write under `/app` and watch `--read-only` reject
+  it, then hand back the minimum with `--tmpfs /app`. The lesson is the discipline: deny everything,
+  re-grant only the one path the app proves it needs.
 - Deliberately run one container `--privileged` and one with `-v /:/host`, point `inspect.py` at both,
   and from inside, read a file off the real host to *feel* the hole the module described — on a VM you
   own and can throw away.
