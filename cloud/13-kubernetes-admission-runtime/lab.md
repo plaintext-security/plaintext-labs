@@ -137,3 +137,5 @@ Falco rule: the model drafts the `condition`; you confirm it fires on the exec a
 - Add a Kyverno **mutate** policy that auto-injects `runAsNonRoot: true` and `allowPrivilegeEscalation: false` into any pod missing them, and confirm `kubectl describe pod` shows the mutated values — defense that doesn't depend on the developer.
 - Write a Kyverno **generate** policy that drops a default-deny NetworkPolicy into every new namespace (the module-12 control, applied automatically) — closing the lateral-movement path Graboid used to hop hosts.
 - Wire Falco output to a webhook (a local HTTP listener or `ngrok`) so the `/tmp`-exec alert lands somewhere a responder would actually see it.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Harden a Workload End to End](../../phase-2-project.md).

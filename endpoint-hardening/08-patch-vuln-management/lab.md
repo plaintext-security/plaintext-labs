@@ -122,3 +122,5 @@ capstone.
 - Track the vulnerability count over time: run grype before and after patching several packages
   and plot the severity distribution. This is the "vulnerability debt" trend chart that
   security programmes use to show progress.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Compliance-as-Code Pipeline](../../phase-2-project.md).

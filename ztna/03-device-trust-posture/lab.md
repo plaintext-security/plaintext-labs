@@ -160,3 +160,5 @@ device cannot reach `tag:corp-only`. You direct it; you own the deny.
 - Extend `posture-check.sh` to query the headscale API (`GET /api/v1/node`) for registered nodes,
   flag any whose last-seen timestamp is older than 24 hours (a stale node is a red flag), and report
   the overdue ones.
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Identity Control Plane & Device Trust](../../phase-1-project.md).

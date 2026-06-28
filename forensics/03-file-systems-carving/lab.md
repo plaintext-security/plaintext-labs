@@ -120,3 +120,5 @@ The filesystem layer you work here is the foundation for Module 04 (Windows arti
 ## Stretch
 - Research the `$UsnJrnl` on NTFS: what does it record, and how would you extract it with SleuthKit or `MFTECmd`?
 - Try `tsk_recover` on the disk image: how does it differ from your manual `icat` approach? What does it miss?
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Forensically Sound Acquisition Kit](../../phase-1-project.md).

@@ -135,3 +135,5 @@ durable queue.
   cross-host) and what you lose (the `ls`-able transparency of a directory).
 - Add a tiny retry-with-backoff on the enrichment call before dead-lettering — and decide honestly when
   a retry helps (transient timeout) versus when it just delays the inevitable (the API is down).
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Pipelines & Portable Tooling](../../phase-2-project.md).

@@ -120,3 +120,5 @@ posture, IaC scanning, and Kubernetes in depth — this is the on-ramp.
   SSRF exploit from module 08.
 - Run `pacu` against your CloudGoat environment: `run iam__enum_permissions`.
   Compare Pacu's automatic enumeration to your manual steps.
+
+> **▶ Phase 3 project.** You've finished Phase 3 — now integrate these modules: [Phase 3 Project — Single Attack Chain from Foothold](../../phase-3-project.md).

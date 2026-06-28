@@ -133,3 +133,5 @@ input to the NIST containment decision.
   see the enriched results.
 - Add a second service to the `docker-compose.yml` — a second endpoint agent — and run the demo
   hunt against both. Observe how the server correlates results across clients.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Compromised-Host Super-Timeline](../../phase-2-project.md).

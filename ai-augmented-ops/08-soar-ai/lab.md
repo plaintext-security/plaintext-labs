@@ -196,3 +196,5 @@ injection stays fixed once you harden it. The labelled fixture is a sibling of t
 - Express the threshold as config (a `thresholds.json` the workflow reads) and add a fixture that
   fails the gate if the config is edited to let the AI auto-contain — encoding "no unsupervised
   irreversible action" as a rule the team can't quietly relax.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Build the Copilot](../../phase-2-project.md).

@@ -209,3 +209,5 @@ insert-after-03-and-renumber, or append-as-11). Match the OpenTofu + `local`-pro
   && make plan` (fail-before / pass-after the learner completes the import) is green on a Linux runner;
   since `make plan` is *expected to fail until the learner finishes*, the marker likely stays off (it's a
   learner-exercise lab, like Module 03's gate).
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Infrastructure & Config as Code](../../phase-1-project.md).

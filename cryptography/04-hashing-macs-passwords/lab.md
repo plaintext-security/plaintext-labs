@@ -97,3 +97,5 @@ Applied-Crypto Failures) includes finding unsalted or weak password hashes as an
 - Research rainbow tables: how does a salt specifically defeat them? Write a one-paragraph
   explanation, then verify your understanding by showing that two Argon2id hashes of the same
   password produce different outputs (different salts).
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Crypto Primitives Toolkit](../../phase-1-project.md).

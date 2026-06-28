@@ -67,3 +67,5 @@ parse rate on the real log; have AI extend it to a second log format and review 
 
 ## Stretch
 - Add enrichment (geoIP on the source IP) and explain how that sharpens a later detection.
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Host + Network Telemetry Pipeline](../../phase-1-project.md).

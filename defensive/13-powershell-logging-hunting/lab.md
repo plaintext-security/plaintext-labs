@@ -87,3 +87,5 @@ tested under fire in **Module 09 (Detection Testing)**.
 - Convert your bundled-JSON hunt to run over a real `.evtx` with [Chainsaw](https://github.com/WithSecureLabs/chainsaw)
   and a Sigma ruleset — the production path.
 - Add detection for a PowerShell **v2 downgrade** (`-Version 2`) attempt and explain why it's high-signal.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Tested Detection Set + Documented Hunt](../../phase-2-project.md).

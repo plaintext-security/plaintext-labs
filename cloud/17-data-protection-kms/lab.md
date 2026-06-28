@@ -138,3 +138,5 @@ this?" is answered by the key policy you wrote here.
   `aws s3api head-object` showing `ServerSideEncryption: aws:kms`.
 - Compare an AWS-managed key, a customer-managed key (CMK), and a key with imported material (BYOK):
   who controls rotation and the key policy in each, and when does the difference matter?
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Account Audit to Fix-as-Code Pipeline](../../phase-1-project.md).

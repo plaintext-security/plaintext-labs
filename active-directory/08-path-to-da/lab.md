@@ -74,3 +74,5 @@ The attack path and its detections feed directly into the Sigma rules in module 
 
 - Write a Cypher query in BloodHound CE that finds *all* paths (not just shortest) from any Finance user to Domain Admins, and counts how many unique paths exist. Discuss what a "high path count" means for prioritisation.
 - Research **graph-based prioritisation**: the concept of "choke points" in an attack graph — nodes whose removal breaks the most paths. Look at the BloodHound CE tier zero analysis as an implementation of this idea.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Own the Domain](../../phase-2-project.md).

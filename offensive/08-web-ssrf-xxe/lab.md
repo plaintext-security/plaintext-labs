@@ -116,3 +116,5 @@ credentials or reachable metadata services.
 - Chain XXE to SSRF: replace `file:///etc/hostname` with
   `http://127.0.0.1:5001/latest/meta-data/iam/security-credentials/`
   in the entity declaration. Does the XML parser fetch it?
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Replayable PoC & Exploit Writeup](../../phase-2-project.md).

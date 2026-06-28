@@ -78,3 +78,5 @@ The ACL misconfigurations identified here feed directly into the BloodHound path
 
 - Research **shadow credentials** (T1556.007): if you have `GenericWrite` on a user, you can set `msDS-KeyCredentialLink` to add a certificate credential you control, then authenticate as that user via PKINIT. Trace how this works and why it bypasses password-based detection.
 - Write a BloodHound Cypher query that finds all paths where a non-admin user has `WriteDacl` on any group that has `AdminTo` rights on a computer.
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Map & Break In](../../phase-1-project.md).

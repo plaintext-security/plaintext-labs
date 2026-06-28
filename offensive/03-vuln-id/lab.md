@@ -98,3 +98,5 @@ full assessment doc also feeds module 03's output into the SIEM
   results to only CVEs whose affected version range includes 1.13.2 (you
   should surface CVE-2017-7529). This is what a real vulnerability scanner
   does.
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Attack-Surface Map & Prioritised Target List](../../phase-1-project.md).

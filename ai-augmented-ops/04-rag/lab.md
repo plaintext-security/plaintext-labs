@@ -155,3 +155,5 @@ the regression test that proves the poisoning stays fixed once you mitigate it.
   needs its *own* eval.
 - Sweep `CHUNK_SIZE` across several values, plot recall@3 against chunk size, and pick the operating
   point deliberately — the chunking dial, tuned by measurement instead of feel.
+
+> **▶ Phase 1 project.** You've finished Phase 1 — now integrate these modules: [Phase 1 Project — Run & Ground Models](../../phase-1-project.md).

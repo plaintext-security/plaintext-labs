@@ -98,3 +98,5 @@ structured finding category.
   manual certificate management.
 - Research Certificate Transparency (CT): what is a CT log, why does Chrome require certificates
   to be CT-logged, and what is the security benefit? Look up `step-ca`'s CT integration.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — Private CA to TLS Scan](../../phase-2-project.md).

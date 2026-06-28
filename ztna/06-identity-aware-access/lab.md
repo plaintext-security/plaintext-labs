@@ -173,3 +173,5 @@ end. And the no-bypass / trust-only-the-proxy discipline is exactly what the **V
   watch it 401. This is the upstream half of the trust boundary, made concrete.
 - Add mTLS between Pomerium and the backend (`tls_upstream` on the route + a self-signed client cert)
   so even a proxy-bypass attempt requires the right client certificate.
+
+> **▶ Phase 2 project.** You've finished Phase 2 — now integrate these modules: [Phase 2 Project — No-Inbound-Port Access, Self-Hosted and Managed](../../phase-2-project.md).
