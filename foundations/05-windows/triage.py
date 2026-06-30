@@ -211,9 +211,29 @@ def demo() -> None:
     print(f"{'=' * 64}\n")
 
 
+def load_events(source: str) -> list[dict]:
+    """Load events from native triage JSON, a real .evtx, evtx_dump output, or
+    stdin (`-`). The evtx_to_triage aid is imported lazily so the bundled-sample
+    demo path stays stdlib-only (no evtx_dump dependency for `make demo`)."""
+    if source == "-":
+        from evtx_to_triage import normalize_text
+        return normalize_text(sys.stdin.read())
+    if Path(source).suffix.lower() == ".evtx":
+        from evtx_to_triage import convert
+        return convert(source)
+    text = Path(source).read_text()
+    try:
+        data = json.loads(text)
+        if isinstance(data, list) and (not data or "EventID" in data[0]):
+            return data  # native triage schema
+    except json.JSONDecodeError:
+        pass
+    from evtx_to_triage import normalize_text  # saved evtx_dump output
+    return normalize_text(text)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        events = json.loads(Path(sys.argv[1]).read_text())
-        analyze(events)
+        analyze(load_events(sys.argv[1]))
     else:
         demo()
