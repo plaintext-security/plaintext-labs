@@ -130,3 +130,14 @@ Foundations capstone's log-parsing tool.
   triage logic against the real export — then compare it to the bundled model.
 - Add a 4104 (PowerShell script-block) check to `triage.py` and explain why 4104 sometimes shows you
   the decoded script when 4688's command line doesn't.
+- **Read `.evtx` in-process — and weigh the cost.** The repo ships an aid (`evtx_to_triage.py`) that
+  shells out to the `evtx_dump` CLI and reshapes its output. Cut the middleman: teach `triage.py` to
+  parse a `.evtx` *natively* with [python-evtx](https://github.com/williballenthin/python-evtx)
+  (`pip install python-evtx`; iterate `Evtx(path).records()` and parse each `record.xml()` into the
+  same flat dict). The real exercise is the **judgment**: a pure-Python library means no external
+  binary (more portable, easy to `pip` anywhere) but it's slower and adds a dependency, whereas
+  shelling out to the Rust `evtx_dump` is fast but assumes the CLI is installed — name which you'd
+  choose for a one-off triage box vs. a shipped tool, and why. **Gotcha to respect:** keep the import
+  **lazy** (only when a `.evtx` is actually passed), or you break `make demo` — the bundled-sample
+  path must stay stdlib-only so CI doesn't need python-evtx. Prove your parser is faithful by diffing
+  its JSON against the `evtx_dump`-based aid's output on the same file.

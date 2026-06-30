@@ -45,6 +45,10 @@ step feeds the next.
 
 1. [ ] **Capture a live exchange.** Start a packet capture on all interfaces, writing to a file, in the
    background. (Which flags write to a *file* instead of printing? How do you background a command?)
+   *(Why* all *interfaces, not the default? In a container, name resolution goes to Docker's embedded
+   DNS at `127.0.0.11` over the **loopback** interface — so a capture bound to `eth0` alone records the
+   ARP and TCP handshake but **misses the DNS query and answer entirely**. Capturing every interface is
+   what makes the lookup visible.)*
 2. [ ] **Generate traffic.** In another shell, produce exactly one DNS lookup and one HTTP request to
    the lab server, then stop the capture cleanly.
 3. [ ] **Find the lookup.** From the saved file, isolate just the DNS traffic. Point to the **query**
@@ -107,3 +111,15 @@ Cloud track's logging-and-detection modules close.
   not the payload. Explain *why* the body is opaque — and what a defender can still learn from the
   metadata (the destination, the SNI, the timing) even without decrypting it. This is exactly the
   metadata a DNS/TLS beacon hunt leans on.
+- **The resolver lies about its port — find out how.** Capture DNS on the loopback interface
+  (`-i lo`) while you `curl http://server` and look closely: the *answer* comes from `127.0.0.11:53`,
+  but the *query* you sent to `:53` shows up with a **high destination port** (tcpdump won't even
+  dissect it as DNS) — your app never asked for that port. Trace the machinery: the container reaches
+  the embedded resolver via `127.0.0.11` (confirm in `/etc/resolv.conf`), and the container's *own*
+  netfilter rules rewrite the port in flight. Dump them with `iptables -t nat -S` (the lab container
+  has `NET_ADMIN`) and find the **DNAT** that redirects `:53` to the resolver's real high port and the
+  **SNAT** that rewrites the answer's source back to `:53`. **Answer two questions:** what connection
+  state ties the two halves together so the application never notices, and why does
+  `tcpdump -i lo port 53` catch the answer but *miss* the question (what filter would catch both)? This
+  DNAT-to-a-local-port trick is the same one behind transparent proxies and a lot of container "magic"
+  addresses — spot it here and you'll recognize it everywhere.
