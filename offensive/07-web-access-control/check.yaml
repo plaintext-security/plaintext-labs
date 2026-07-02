@@ -1,6 +1,6 @@
 lab: offensive/07-web-access-control
-# Grades the attacker->fixer state: after you patch app/app.py, both exploits must now
-# return HTTP 403. Apply your fixes, then `make grade` (it runs the checks in the container).
+# Checks the attacker->fixer state: after you patch app/app.py, both exploits must now
+# return HTTP 403. Apply your fixes, then `make check` (it runs the checks in the container).
 checks:
   - name: writeup-complete
     type: structural

@@ -1,4 +1,4 @@
-.PHONY: up down reset shell demo grade
+.PHONY: up down reset shell demo check
 
 up:
 	docker compose up -d --build
@@ -15,5 +15,5 @@ shell:
 demo:
 	docker compose run --rm lab python3 audit.py
 
-grade:     ## Grade your fix against grade.yaml (writes receipt.json on pass)
-	python3 ../../scripts/grade.py grade.yaml
+check:     ## Run the checks in check.yaml to verify your fix (self-check; nothing is recorded)
+	python3 ../../scripts/check.py check.yaml

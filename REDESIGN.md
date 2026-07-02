@@ -22,7 +22,7 @@ library, and the conversion roadmap live in the **`plaintext`** repo:
 - **Wave 3** — per-track lab conversions as each track is converted in `plaintext`.
 
 ## Bar for any lab here (unchanged)
-`make up && make demo && make down` green on a Linux runner before adding `.ci-demo`; a `grade.yaml`
-using the check type the module's **type** maps to (see the library); grade general solutions against a
+`make up && make demo && make down` green on a Linux runner before adding `.ci-demo`; a `check.yaml`
+using the check type the module's **type** maps to (see the library); check general solutions against a
 **held-out** set, never the demo set (doubly true for Eval Harness labs). Keep generated artifacts
 (captures, keys, dumps) out of git.

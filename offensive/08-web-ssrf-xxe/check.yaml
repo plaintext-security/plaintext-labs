@@ -1,6 +1,6 @@
 lab: offensive/08-web-ssrf-xxe
-# Grades the attacker->fixer state: after you patch app/app.py, the SSRF must return 403 and
-# the XXE entity must no longer resolve to file contents. Apply your fixes, then `make grade`.
+# Checks the attacker->fixer state: after you patch app/app.py, the SSRF must return 403 and
+# the XXE entity must no longer resolve to file contents. Apply your fixes, then `make check`.
 checks:
   - name: writeup-complete
     type: structural
