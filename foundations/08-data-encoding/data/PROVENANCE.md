@@ -7,7 +7,7 @@ the exact kinds of data analysts decode daily, with all C2 indicators rendered u
 
 | Artifact | What it is | Real anchor |
 |---|---|---|
-| `PS_B64` | base64 PowerShell `-enc` download cradle | The genuine `powershell.exe -enc <base64>` loader pattern used by commodity malware — **Emotet** among them (the family named in the module README). `iex (New-Object Net.WebClient).DownloadString(...)` is the canonical cradle (ATT&CK [T1059.001](https://attack.mitre.org/techniques/T1059/001/) + [T1105](https://attack.mitre.org/techniques/T1105/)). |
+| `PS_B64` | base64 PowerShell `-enc` download cradle (**UTF-16LE**, as real `-enc` encodes) | The genuine `powershell.exe -enc <base64>` loader pattern used by commodity malware — **Emotet** among them (the family named in the module README). The plaintext is UTF-16LE before base64 (Windows `-enc` convention), so decoding needs `iconv -f utf-16le` — the lab's Step 2 lesson. `iex (New-Object Net.WebClient).DownloadString(...)` is the canonical cradle (ATT&CK [T1059.001](https://attack.mitre.org/techniques/T1059/001/) + [T1105](https://attack.mitre.org/techniques/T1105/)). |
 | `URLENC` | URL-encoded `../../../etc/passwd` | Real path-traversal shape seen in web access logs. |
 | `HEX` | hex-encoded C2 domain (`cdn-update.example`) | Bytes-as-text from a PE `.data` section; domain uses RFC 2606 `.example` so it never resolves. |
 | `DOUBLE` | base64-over-URL-encoded cradle to `c2.cdn-update.invalid` | Layered-encoding peel; `.invalid` (RFC 2606) never resolves. |
