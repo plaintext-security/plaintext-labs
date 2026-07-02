@@ -66,8 +66,17 @@ step feeds the next.
 7. [ ] **Do it for real (recommended).** `make fetch-data`, unzip the MTA.net capture with the password
    from the [about page](https://www.malware-traffic-analysis.net/about.html), and open the real `.pcap`
    in the lab container. Apply the *same* workflow — isolate the DNS, then hunt the HTTP/DNS callbacks —
-   to genuine RAT C2 traffic. The tells you defended on the synthetic capture should transfer; note where
-   real traffic is messier than the model. (Read-only: never run anything it references.)
+   but expect real C2 to look **nothing like the synthetic model**: it hides in normal-looking domains
+   amid a firehose of legitimate Windows/Microsoft telemetry, and it may carry no "random subdomain" tell
+   at all. **You won't recognize the malicious names by sight — and that's expected.** The skill is
+   *method*, not recall: (1) pin the **one suspect host**, (2) read its traffic **in sequence** (delivery
+   → callback → repeat), and (3) **enrich the domains you don't recognize** — look them up (VirusTotal,
+   urlscan.io, or a plain web search) rather than hoping one looks obviously wrong. A *legitimate* service
+   used at the wrong time is itself a tell (e.g. why would a workstation call a geolocation API?). Treat
+   "I found a suspicious callback and can justify it" as the win — full host/user attribution and naming
+   the malware family belong to the Active Directory and Forensics tracks, not this one. Check yourself
+   against the published [analysis](https://www.malware-traffic-analysis.net/2024/07/30/index.html).
+   (Read-only: never run anything it references.)
 
 ## Success criteria — you're done when
 - [ ] You can point to the DNS query and the A record it returned in your own capture.
@@ -87,7 +96,10 @@ and prints (a) the DNS queries and their answers, (b) the SYN/SYN-ACK/ACK of eac
 any DNS lookup that *looks like a beacon* by a rule you choose and can defend — e.g. an unusually long
 subdomain, a high-entropy/random-looking name, or a name not on an allowlist. **AI drafts the parser;
 you review every line, confirm it flags the real beacon for the right reason, and run it against both
-captures to prove it.** Commit the script alongside `networking.md`. (A pcap library like `scapy` or
+captures to prove it.** *Next layer (the Step 7 reflex in code):* have it **enrich** each flagged domain
+— look it up against a reputation source (e.g. the VirusTotal or urlscan.io API) and print the verdict —
+so the tool investigates the names you don't recognize instead of relying on a structural guess. Commit
+the script alongside `networking.md`. (A pcap library like `scapy` or
 `dpkt` is the usual path; reading `tcpdump -r` text output is a fine beginner alternative.)
 
 ## AI acceleration

