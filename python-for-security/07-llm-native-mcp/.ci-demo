@@ -1,0 +1,1 @@
+Validated: `make up && make demo && make down` green (MCP arg validation + typed LLM output, offline).

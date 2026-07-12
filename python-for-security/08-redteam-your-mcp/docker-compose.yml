@@ -1,0 +1,8 @@
+services:
+  lab:
+    build: .
+    image: plaintext/python-sift-08:1.0
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity
