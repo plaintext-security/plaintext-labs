@@ -1,0 +1,19 @@
+# Reference migrated project — what the learner's `sift` v0 should look like after
+# Lab 01: a uv-managed project, ruff-clean, ready for a CI gate. (The learner builds
+# their own; this is the reference the demo checks against.)
+[project]
+name = "sift"
+version = "0.1.0"
+description = "Alert enrichment-and-triage tool (grown across Track 09)"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

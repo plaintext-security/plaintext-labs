@@ -1,6 +1,0 @@
-Source: loghub OpenSSH_2k.log (real internet-facing SSH server 'LabSZ')
-URL: https://raw.githubusercontent.com/logpai/loghub/master/OpenSSH/OpenSSH_2k.log
-Retrieved: 2026-06-24 (committed excerpt: first ~40 lines, verbatim)
-Note: sshd.log here is the OFFLINE FALLBACK excerpt. Run `python data/fetch_log.py`
-      to replace it with the full 2,000-line corpus.
-License/terms: loghub research dataset, see https://github.com/logpai/loghub
