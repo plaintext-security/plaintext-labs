@@ -1,0 +1,1 @@
+Validated: `make up && make demo && make down` green (streams 50k rows, duckdb query, structlog JSON).

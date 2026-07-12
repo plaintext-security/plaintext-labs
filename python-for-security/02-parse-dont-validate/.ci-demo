@@ -1,0 +1,1 @@
+Validated: `make up && make demo && make down` green (pydantic boundary rejects all malformed input).
