@@ -6,8 +6,9 @@
 
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
-`plaintext-labs/python-for-security/03-data-at-scale/`: the `sift` project from Module 02, a bundled
-(trimmed) URLhaus sample plus a pointer to the full dump, and `polars`/`duckdb`/`structlog` installed.
+`plaintext-labs/python-for-security/03-data-at-scale/`: the `sift` project from Module 02, a large
+synthetic feed generated at demo time (a redistributable stand-in for the spine), pointers to
+**Loghub** (CC BY 4.0, bundleable) and a live **URLhaus** pull, and `polars`/`duckdb`/`structlog` installed.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -18,14 +19,15 @@ make demo    # streams the sample feed, runs the columnar triage query, emits JS
 make down
 ```
 
-Reproducible at zero cost; the bundled sample runs offline, the full feed is fetched on demand.
+Reproducible at zero cost; the demo generates its feed offline, and a real corpus (Loghub, or a live
+URLhaus pull) is fetched on demand.
 
 ## Scenario
 
-`sift` currently validates one alert at a time. Now it has to handle a **real** feed: abuse.ch URLhaus,
-a live catalog of malicious URLs that's millions of rows. You'll make `sift` stream it without exhausting
-memory, answer triage questions with a columnar engine instead of Python loops, and emit structured logs
-a SIEM could ingest.
+`sift` currently validates one alert at a time. Now it has to handle a **real** feed at scale — a Loghub
+log corpus (redistributable, up to tens of GB), or a live abuse.ch URLhaus pull of malicious URLs. You'll
+make `sift` stream it without exhausting memory, answer triage questions with a columnar engine instead
+of Python loops, and emit structured logs a SIEM could ingest.
 
 > Only test systems you own or have explicit written permission to test. This lab reads a public threat
 > feed and processes bundled data locally.
