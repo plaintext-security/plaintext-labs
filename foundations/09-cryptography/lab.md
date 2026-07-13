@@ -44,7 +44,7 @@ OpenSSL Cookbook — choosing the right subcommand and flags is part of the less
 
 2. [ ] **Symmetric encryption — data you need back.**
    **Predict:** with one shared key, can you both lock and unlock the message?
-   **Do:** encrypt the message with **AES** and decrypt it back — a full round-trip. (Use a
+   **Do:** encrypt the message with **AES** in CBC mode and decrypt it back — a full round-trip. (Use a
    key-derivation flag so a passphrase works.) **Reveal:** same key encrypts and decrypts; this is the
    *reversible* tool — exactly what Adobe used, and exactly what a password storage system must **not**.
    **Record:** "symmetric = one shared key, reversible; for data you need to read again."
@@ -65,12 +65,18 @@ OpenSSL Cookbook — choosing the right subcommand and flags is part of the less
 5. [ ] **Reproduce the Adobe failure — and the fix.** This is the heart of the lab.
    **Predict:** if you encrypt two *identical* passwords in **ECB** mode with the same key, will the two
    ciphertexts look the same or different? What about hashing them **with a unique salt each**?
-   **Do:** encrypt the same short string twice with `openssl enc -aes-128-ecb` (same key, no salt) and
-   compare the outputs. Then salt-and-hash the same string twice (prepend a different random salt each
-   time, then SHA-256) and compare those. **Reveal:** the ECB ciphertexts are **identical** — that's the
-   pattern leak that let researchers cluster Adobe's 153M rows; the salted hashes are **different** —
-   that's the fix. **Record:** the two pairs, side by side, with one line: *"ECB: same in, same out
-   (leaks); salted hash: same in, different out (safe)."*
+   **Do:** first try the obvious thing — encrypt the same short string twice with
+   `openssl enc -aes-128-ecb` and a passphrase, and compare. The outputs *differ*, and that's not ECB
+   saving you: in passphrase mode openssl generates a fresh random **salt** every run and derives a
+   *different key* from it each time (the output even begins with the base64 of `Salted__`). Adobe's
+   bug needs the *same key every time* — so rerun both encryptions passing one fixed raw key with
+   `-K <32 hex chars> -nosalt`, and compare again. Then salt-and-hash the same string twice (prepend a
+   different random salt each time, then SHA-256) and compare those. **Reveal:** with the key held
+   fixed, the ECB ciphertexts are **identical** — that's the pattern leak that let researchers cluster
+   Adobe's 153M rows; the salted hashes are **different** — that's the fix. Notice the rhyme: the
+   per-run salt that "spoiled" your first attempt is the very same medicine, applied by openssl to keep
+   passphrase encryption from leaking this way. **Record:** the two pairs, side by side, with one line:
+   *"ECB + fixed key: same in, same out (leaks); salted hash: same in, different out (safe)."*
 
 6. [ ] **(Optional) Tamper check.** Flip a single byte of the AES ciphertext from step 2 and try to
    decrypt — observe that plain CBC produces garbage but doesn't *detect* the change, which is why
@@ -80,8 +86,9 @@ OpenSSL Cookbook — choosing the right subcommand and flags is part of the less
 - [ ] You produce a SHA-256 digest and can say in one sentence why it proves integrity but not secrecy.
 - [ ] You round-trip a message through both AES (symmetric) and RSA (asymmetric).
 - [ ] You can read a certificate's issuer, subject, and validity, and name who vouches for it.
-- [ ] **You reproduced the Adobe failure:** two identical inputs in ECB give identical ciphertext, while
-  two salted hashes of the same input differ — and you can explain why that distinction sank Adobe.
+- [ ] **You reproduced the Adobe failure:** two identical inputs in ECB under one fixed key give
+  identical ciphertext, while two salted hashes of the same input differ — and you can explain why that
+  distinction sank Adobe.
 - [ ] You scored your "Call it" prediction from the README against the reveal.
 
 ## Deliverables
@@ -119,5 +126,7 @@ in depth), and the Web track (session and password handling). The salted-hash ch
 ## Stretch
 - Replace the SHA-256 in `hash_and_verify.py` with a *real* password hash (bcrypt or Argon2 via a
   library) and explain what "slow by design" buys you that a fast hash like SHA-256 does not.
-- Redo the symmetric step with `-aes-256-gcm` (authenticated encryption) and explain what the
-  authentication tag detects that plain CBC silently misses.
+- Try to redo the symmetric step with `-aes-256-gcm` and watch `openssl enc` refuse — the `enc` tool
+  deliberately doesn't support AEAD modes (it can't stream the authentication tag safely). Do the GCM
+  round-trip in a few lines of Python with the `cryptography` library's `AESGCM` instead, then flip one
+  ciphertext byte and explain what the authentication tag detects that plain CBC silently misses.

@@ -121,13 +121,13 @@ def demo_rsa() -> None:
 
         # Encrypt with public key
         run(f"echo -n '{short_msg}' | "
-            f"openssl rsautl -encrypt -pubin -inkey {pubkey} -out {ct_file} 2>/dev/null")
+            f"openssl pkeyutl -encrypt -pubin -inkey {pubkey} -out {ct_file} 2>/dev/null")
         ct_b64 = base64.b64encode(ct_file.read_bytes()).decode() if ct_file.exists() else "—"
         print(f"  Public key:  2048-bit RSA (anyone can encrypt)")
         print(f"  Ciphertext:  {ct_b64[:60]}…")
 
         # Decrypt with private key
-        run(f"openssl rsautl -decrypt -inkey {privkey} -in {ct_file} -out {dec_file} 2>/dev/null")
+        run(f"openssl pkeyutl -decrypt -inkey {privkey} -in {ct_file} -out {dec_file} 2>/dev/null")
         recovered = dec_file.read_text() if dec_file.exists() else "(failed)"
         ok = "✓" if recovered.strip() == short_msg else "✗"
         print(f"  Decrypted:   {recovered.strip()!r}  {ok}")
@@ -139,8 +139,8 @@ def demo_rsa() -> None:
         print("  CLI:")
         print("    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem")
         print("    openssl rsa -in private.pem -pubout -out public.pem")
-        print("    echo -n 'secret' | openssl rsautl -encrypt -pubin -inkey public.pem > ct.bin")
-        print("    openssl rsautl -decrypt -inkey private.pem < ct.bin")
+        print("    echo -n 'secret' | openssl pkeyutl -encrypt -pubin -inkey public.pem -out ct.bin")
+        print("    openssl pkeyutl -decrypt -inkey private.pem -in ct.bin")
 
 
 def demo_certificate() -> None:
@@ -279,7 +279,8 @@ def demo_bit_flip() -> None:
         print("  is unsafe — an attacker can modify the message without knowing the key.")
         print()
         print("  AES-GCM adds an authentication tag that detects any tampering.")
-        print("  CLI: openssl enc -aes-256-gcm -pbkdf2 -in pt.txt -out ct.bin -pass pass:P@ss")
+        print("  (Note: `openssl enc` deliberately refuses AEAD modes like GCM — use a")
+        print("  library instead, e.g. Python cryptography's AESGCM. See the lab Stretch.)")
 
 
 def main() -> None:
