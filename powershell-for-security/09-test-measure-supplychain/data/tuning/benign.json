@@ -1,0 +1,7 @@
+[
+  { "TimeCreated": "2026-01-05T09:02:00Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Get-Process | Sort-Object CPU -Descending | Select-Object -First 5" },
+  { "TimeCreated": "2026-01-05T09:06:12Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Test-Connection -ComputerName dc01 -Count 1" },
+  { "TimeCreated": "2026-01-05T09:10:30Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "benign", "Message": "A new process has been created: cmd.exe /c whoami /all" },
+  { "TimeCreated": "2026-01-05T09:14:48Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Get-ChildItem C:\\Users -Recurse -Filter *.docx" },
+  { "TimeCreated": "2026-01-05T09:18:05Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Get-WinEvent -FilterHashtable @{ LogName='Security'; Id=4624 } -MaxEvents 50" }
+]

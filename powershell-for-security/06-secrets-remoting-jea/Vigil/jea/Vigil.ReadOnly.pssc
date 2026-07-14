@@ -1,0 +1,33 @@
+@{
+    # Vigil.ReadOnly - JEA session configuration.
+    # Registers the constrained endpoint that maps a security group to the Vigil.ReadOnly role.
+    # Register on a Windows host with (admin):
+    #   Register-PSSessionConfiguration -Name 'Vigil.ReadOnly' -Path .\Vigil.ReadOnly.pssc -Force
+    # Validate the file's syntax first with:
+    #   Test-PSSessionConfigurationFile -Path .\Vigil.ReadOnly.pssc   # -> True
+    #
+    # Generated shape mirrors:
+    #   New-PSSessionConfigurationFile -SessionType RestrictedRemoteServer -Path .\Vigil.ReadOnly.pssc
+
+    SchemaVersion       = '2.0.0.0'
+    GUID                = 'f0e1d2c3-b4a5-4968-8776-5a4b3c2d1e0f'
+    Author             = 'Plaintext learner'
+    Description        = 'Constrained Vigil read-only hunt endpoint (JEA).'
+
+    # RestrictedRemoteServer => NoLanguage mode + only a tiny default command set. This is what makes
+    # the endpoint "just enough" instead of a full shell.
+    SessionType         = 'RestrictedRemoteServer'
+
+    # Run each connection under a temporary virtual account so analysts connect with NON-admin
+    # credentials yet the endpoint can still read what it needs - without handing them a standing
+    # privileged account.
+    RunAsVirtualAccount = $true
+
+    # Record every session for audit. On a real host this folder is Local-System-writable only.
+    TranscriptDirectory = 'C:\ProgramData\Vigil\Transcripts'
+
+    # Map an operator group to the read-only role. The role name is the .psrc base name.
+    RoleDefinitions     = @{
+        'BUILTIN\Remote Management Users' = @{ RoleCapabilities = 'Vigil.ReadOnly' }
+    }
+}

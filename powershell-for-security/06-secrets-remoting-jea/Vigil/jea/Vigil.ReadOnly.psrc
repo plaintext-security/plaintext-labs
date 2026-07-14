@@ -1,0 +1,35 @@
+@{
+    # Vigil.ReadOnly - JEA role capability.
+    # Exposes ONLY Vigil's read-only hunt verbs. No state-changing cmdlets, no providers,
+    # no external programs. This is the least-privilege surface a remote analyst gets.
+    #
+    # Generated shape mirrors New-PSRoleCapabilityFile output; edited to a minimal read-only role.
+    # Regenerate a blank template on a Windows host with:
+    #   New-PSRoleCapabilityFile -Path .\Vigil.ReadOnly.psrc
+
+    GUID              = 'a7f3c2d1-4b8e-4c6a-9d2f-1e0b3a5c7d90'
+    Author           = 'Plaintext learner'
+    Description      = 'Read-only Vigil hunt role: exposes only Get-VigilEvent and safe read cmdlets.'
+    CompanyName      = 'Plaintext'
+
+    # The read-only Vigil hunt verbs the analyst may call. Listed explicitly - NO wildcards
+    # (Microsoft guidance: wildcards can unintentionally authorize same-named commands).
+    VisibleFunctions = @('Get-VigilEvent')
+
+    # A tiny, deliberately safe read-only set of built-ins. Get-Command/Get-Help make the endpoint
+    # discoverable; there is nothing here that changes state, writes files, or runs code.
+    VisibleCmdlets   = @(
+        'Get-Command'
+        'Get-Help'
+        @{ Name = 'Select-Object' }
+        @{ Name = 'Where-Object' }
+    )
+
+    # No aliases beyond defaults, no providers (no filesystem/registry), no external executables.
+    VisibleAliases          = @()
+    VisibleProviders        = @()
+    VisibleExternalCommands = @()
+
+    # The endpoint must import Vigil so the proxied Get-VigilEvent resolves.
+    ModulesToImport  = @('Vigil')
+}

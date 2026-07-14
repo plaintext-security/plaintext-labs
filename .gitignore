@@ -42,6 +42,16 @@ __pycache__/
 .venv/
 venv/
 
+# === PowerShell lab artifacts (Track 13) — event exports, signing certs, secret stores ===
+*.evtx
+*.pfx
+*.p7s
+*.clixml
+PowerShell_transcript*
+localstore/
+*.secretstore
+.sign/
+
 # === OS / editor cruft ===
 .DS_Store
 Thumbs.db

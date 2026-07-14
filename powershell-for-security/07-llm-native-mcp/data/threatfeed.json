@@ -1,0 +1,5 @@
+[
+  { "Indicator": "185.220.101.7", "Type": "ipv4", "Verdict": "malicious", "Source": "abuse.ch Feodo Tracker (snapshot)", "FirstSeen": "2026-01-30" },
+  { "Indicator": "dc01", "Type": "hostname", "Verdict": "benign", "Source": "internal asset inventory (snapshot)", "FirstSeen": "2025-11-02" },
+  { "Indicator": "8.8.8.8", "Type": "ipv4", "Verdict": "benign", "Source": "known resolver (snapshot)", "FirstSeen": "2024-01-01" }
+]

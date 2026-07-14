@@ -1,0 +1,9 @@
+[
+  { "TimeCreated": "2026-03-18T14:03:00Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Get-Service | Where-Object Status -eq 'Running' | Sort-Object Name" },
+  { "TimeCreated": "2026-03-18T14:06:18Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Import-Module ActiveDirectory; Get-ADUser -Filter * -Properties LastLogonDate" },
+  { "TimeCreated": "2026-03-18T14:10:41Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "benign", "Message": "A new process has been created: C:\\Windows\\System32\\ipconfig.exe /all" },
+  { "TimeCreated": "2026-03-18T14:14:55Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): $cfg = Get-Content ./settings.json -Raw | ConvertFrom-Json; $cfg.Retention" },
+  { "TimeCreated": "2026-03-18T14:19:12Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): # note: base64 encoding is used for the transport header, see RFC 4648" },
+  { "TimeCreated": "2026-03-18T14:23:30Z", "Id": 4104, "ProviderName": "Microsoft-Windows-PowerShell", "Label": "benign", "Message": "Creating Scriptblock text (1 of 1): Invoke-WebRequest -Uri 'https://intranet.corp/status' -UseBasicParsing | Select-Object StatusCode" },
+  { "TimeCreated": "2026-03-18T14:27:52Z", "Id": 4688, "ProviderName": "Microsoft-Windows-Security-Auditing", "Label": "benign", "Message": "A new process has been created: powershell.exe -File C:\\Scripts\\Backup-Shares.ps1 -Verbose" }
+]

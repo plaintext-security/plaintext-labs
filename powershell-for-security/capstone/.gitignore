@@ -1,0 +1,10 @@
+# Signing working directory + generated signatures (never commit the private key).
+.sign/
+*.p7s
+
+# Pester's generated coverage/test-result reports.
+coverage.xml
+testResults.xml
+
+# The learner's ownership write-up is theirs to commit in their OWN repo, not the scaffold.
+WRITEUP.md

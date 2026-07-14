@@ -1,0 +1,1 @@
+make demo validated green on Linux (pwsh 7.4, PSScriptAnalyzer 1.22.0, Pester 5.6.1): analyzer clean, 11/11 Pester (coverage floor met), eval recall 1.0/FP 0.0 with a biting regression gate, openssl CMS sign->verify->tamper-reject loop works, gate exits 0. Authenticode (Set-/Get-AuthenticodeSignature) is Windows-only; the Linux demo uses the equivalent CMS primitive.

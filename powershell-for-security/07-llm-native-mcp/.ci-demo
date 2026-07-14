@@ -1,0 +1,1 @@
+make demo validated green on Linux (pwsh 7.4, PSScriptAnalyzer 1.22.0, Pester 5.6.1): analyzer clean over ./Vigil, 10/10 Pester tests pass offline (hostile MCP args rejected, surface read-only), gate exits 0.

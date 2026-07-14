@@ -1,0 +1,6 @@
+{
+  "Vault": "VigilStore",
+  "SecretName": "vigil-feed-token",
+  "FeedUrl": "https://urlhaus.abuse.ch/downloads/json_recent/",
+  "RemoteHost": "DC01"
+}

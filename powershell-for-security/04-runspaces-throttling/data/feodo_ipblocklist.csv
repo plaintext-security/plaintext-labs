@@ -1,0 +1,17 @@
+# Offline SNAPSHOT of the abuse.ch Feodo Tracker IP blocklist (botnet C2 IPs).
+# Live feed: https://feodotracker.abuse.ch/downloads/ipblocklist.csv
+# This is a small, hand-authored, DETERMINISTIC snapshot so `make demo` runs offline.
+# The IPs below are drawn from documented-malware C2 ranges but are frozen here; do NOT
+# treat this file as a live blocklist. Point Invoke-VigilEnrichment at the live URL to refresh.
+# Columns mirror the real feed: first_seen_utc,dst_ip,dst_port,c2_status,last_online,malware
+"first_seen_utc","dst_ip","dst_port","c2_status","last_online","malware"
+"2026-01-04 07:12:33","185.220.101.7","443","online","2026-02-10","Emotet"
+"2026-01-09 15:44:02","91.219.236.166","8080","online","2026-02-09","Dridex"
+"2026-01-12 03:21:57","45.153.240.51","443","offline","2026-01-30","QakBot"
+"2026-01-15 22:08:11","193.142.146.212","4444","online","2026-02-11","Emotet"
+"2026-01-18 11:55:40","104.244.72.115","443","online","2026-02-08","IcedID"
+"2026-01-21 09:30:19","23.106.223.55","8443","online","2026-02-11","QakBot"
+"2026-01-25 18:02:44","5.188.206.18","443","offline","2026-01-28","Dridex"
+"2026-01-28 06:17:29","141.98.6.195","2078","online","2026-02-10","TrickBot"
+"2026-02-01 14:41:03","195.123.216.130","443","online","2026-02-11","IcedID"
+"2026-02-03 20:59:50","176.111.174.99","8080","online","2026-02-09","Emotet"

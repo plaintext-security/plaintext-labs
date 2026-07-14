@@ -1,0 +1,10 @@
+# Signing working directory - holds the generated code-signing cert/key and a signed copy
+# of the module. Regenerated in-container by sign.ps1; never commit the private key.
+.sign/
+
+# Generated CMS/PKCS#7 detached signatures.
+*.p7s
+
+# Pester's generated coverage/test-result reports.
+coverage.xml
+testResults.xml
