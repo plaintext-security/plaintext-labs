@@ -99,3 +99,11 @@ LLM in Module 07, which has its *own* `429`s.
   structured concurrency (cancellation propagates cleanly) against raw `asyncio`.
 - Add a token-bucket rate limiter (requests-per-second, not just in-flight count) so you respect a
   *per-second* quota even when individual calls are fast — the case a semaphore alone doesn't cover.
+- **Make it durable — move enrichment onto a `huey` task queue.** `pip install huey`, wrap `enrich` in
+  `@huey.task(retries=3)` on a `SqliteHuey` (no extra service to run), start the `huey_consumer` as a
+  separate process, and enqueue the indicator list. **Kill the consumer mid-run, then restart it** — prove
+  the queued jobs resume and nothing is lost. Then write down the trade-off you just felt: in-process async
+  (fast, ephemeral, one batch) vs. a task queue (durable, retryable, continuous), and *when the queue is
+  worth its weight*. **Forward-pointer:** when a durable job grows into a long-running, multi-step
+  *workflow* (enrich → approve → contain → ticket) that must survive restarts across every step, you
+  graduate to durable execution (**Temporal**) — that's SOAR-as-code in the **Automation track**, not here.
