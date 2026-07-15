@@ -12,7 +12,8 @@ reset:
 shell:
 	docker compose exec lab bash
 
-# Reference demo: valid alerts parse into typed models; malformed alerts are
-# REJECTED at the boundary (not silently .get()-ed); secrets load via settings.
+# Reference demo — the before/after: the trusting starter (sift_starter/)
+# accepts garbage or crashes on the messy feed; the typed boundary
+# (sift_reference/) rejects every malformed record; secrets load via settings.
 demo:
 	docker compose run --rm lab python demo.py
