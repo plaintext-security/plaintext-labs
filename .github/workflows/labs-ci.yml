@@ -37,8 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with: { path: plaintext-labs }
+      # plaintext is private, so the default GITHUB_TOKEN (scoped to this repo) can't
+      # read it — PLAINTEXT_TOKEN is a PAT with contents:read on plaintext (the same
+      # PAT the plaintext repo stores as LABS_TOKEN for the mirror-image checkout).
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
-        with: { repository: plaintext-security/plaintext, path: plaintext }
+        with:
+          repository: plaintext-security/plaintext
+          path: plaintext
+          token: ${{ secrets.PLAINTEXT_TOKEN }}
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with: { python-version: "3.12" }
       - name: Check tracks <-> labs consistency
