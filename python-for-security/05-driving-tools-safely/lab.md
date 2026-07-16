@@ -7,9 +7,10 @@
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
 `plaintext-labs/python-for-security/05-driving-tools-safely/`: the `sift` project, the tools to wrap
-(`nmap`, `whois`, **`suricata`**, **`tshark`**) plus the pinned infection pcap, and a copilot-generated
-wrapper with a planted `shell=True` bug for the review beat. `make demo` drives Suricata over the pcap to
-produce `eve.json`, then parses it through `sift`'s pydantic union.
+(`nmap`, `whois`, **`suricata`**, **`tshark`**, **`zeek`**) plus the pinned infection pcap, and a
+copilot-generated wrapper with a planted `shell=True` bug for the review beat. `make demo` drives Suricata
+over the pcap to produce `eve.json`, then parses it through `sift`'s pydantic union; `make gen-zeek` ships a
+second sensor's view (`data/zeek/*.log`) of the *same* capture for the cross-source stretch.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -93,3 +94,15 @@ directly to the Offensive track's injection modules — same bug, other side.
   *Acceptance:* every line of `eve.json` validates to a known event type (`alert`/`flow`/`fileinfo`/…) or
   is quarantined; the `fileinfo` records surface `filename` + `sha256`; and you report where Suricata's
   and `tshark`'s views of the same pcap agree or diverge.
+- **Second sensor: reconcile Zeek against Suricata (a genuinely *different* source).** Everything so far
+  parses one tool's output — Suricata EVE JSON. Now run **Zeek** over the *same* pcap (`make gen-zeek` ships
+  `data/zeek/{conn,dns,http,ssl}.log`) and teach `sift` a different *schema*: Zeek's native **TSV** logs
+  with their `#fields`/`#types` header — not JSON, so a different parser entirely, and the real test of
+  whether your domain model is source-agnostic. Drive Zeek the same safe way (list-form args, no
+  `shell=True`), parse the TSV into `sift`'s domain model, and **reconcile the two sensors**: the STRRAT C2
+  `141.98.10.79` that Suricata *alerts* on appears in Zeek's `conn.log` as a bare connection with no
+  verdict, and the RAT's `ip-api.com` recon shows in both. Suricata is opinionated (detection), Zeek is
+  descriptive (facts) — the lesson is that your typed boundary normalizes both into one model.
+  *Acceptance:* `sift` ingests Zeek TSV (correctly reading the `#fields` header) *and* Suricata EVE into the
+  **same** domain type; the same triage runs against either source; and you report one indicator (e.g. the
+  C2) as seen by both sensors, noting what each view adds that the other doesn't.

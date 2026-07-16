@@ -1,7 +1,13 @@
-.PHONY: up down reset shell demo
+.PHONY: up down reset shell demo gen-zeek
 
 up:
 	docker compose up -d --build
+
+# Regenerate data/zeek/*.log from the SAME anchor PCAP as data/eve.json (second
+# sensor for the cross-source stretch). Runs on the HOST (needs Docker; the lab
+# container has Python, not Zeek). See data/PROVENANCE.md.
+gen-zeek:
+	./gen_zeek.sh
 
 down:
 	docker compose down
