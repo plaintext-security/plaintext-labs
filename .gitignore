@@ -22,6 +22,10 @@ credentials
 *.pcap
 *.pcapng
 *.cap
+*.pcap.zip
+# Track 09: downloaded PCAP archives and large Suricata-generated corpora — labs
+# fetch/generate these (small curated eve.json seeds under data/ ARE committed on purpose).
+python-for-security/*/_gen/
 *.log
 *.dmp
 *.mem

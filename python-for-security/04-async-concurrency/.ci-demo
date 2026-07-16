@@ -1,1 +1,1 @@
-Validated: `make up && make demo && make down` green (120 enriched, bounded concurrency=8, 429s retried).
+Validated: `make up && make demo && make down` green (5 alert-derived indicators enriched, bounded concurrency=3, 429/Retry-After retried).

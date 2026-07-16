@@ -7,7 +7,8 @@
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
 `plaintext-labs/python-for-security/01-modern-toolchain/`: a container with `uv`, `ruff`, `pyright`, and
-`git` preinstalled, plus the legacy `alert_parse.py` you'll migrate and a small bundled alert sample.
+`git` preinstalled, plus the legacy `alert_parse.py` you'll migrate and a small bundled Suricata
+`eve.json` sample (newline-delimited EVE events, one JSON object per line).
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -24,8 +25,10 @@ zero cost.
 
 ## Scenario
 
-You've inherited `alert_parse.py`: a 60-line script a teammate wrote that reads a JSON alert feed and
-prints a summary. It works, it's in production, and it has no tests, no lockfile, no types, and a
+You've inherited `alert_parse.py`: a 60-line script a teammate wrote that reads a Suricata `eve.json`
+alert feed (newline-delimited EVE events) and prints a summary — it walks the `alert`-type events and
+counts them by `alert.signature`. It works, it's in production, and it has no tests, no lockfile, no
+types, and a
 `requirements.txt` last touched two years ago. You're going to migrate it into the modern skeleton the
 rest of this track builds in — **without breaking it at any step** — and turn it into the seed of `sift`,
 the alert-triage tool you grow across all nine modules.
@@ -35,7 +38,7 @@ the alert-triage tool you grow across all nine modules.
 
 ## Do
 
-1. [ ] **Reproduce the legacy baseline.** Run `alert_parse.py` against the bundled sample and capture its
+1. [ ] **Reproduce the legacy baseline.** Run `alert_parse.py` against the bundled `eve.json` and capture its
    output. This is your ground truth — the migration is correct only if this output never changes.
 2. [ ] **Write the spec first.** Using the spec-driven workflow (openspec, or spec-kit), write a short
    change spec for the migration: "wrap the existing script unchanged in a `uv` project; add `ruff`,

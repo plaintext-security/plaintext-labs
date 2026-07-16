@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 LAB = Path(__file__).parent
-DATA = LAB / "data" / "alerts.json"
+DATA = LAB / "data" / "eve.json"
 REF = LAB / "sift_reference"
 
 DIVIDER = "─" * 60
@@ -23,6 +23,11 @@ DIVIDER = "─" * 60
 
 def section(t: str) -> None:
     print(f"\n{DIVIDER}\n{t}\n{DIVIDER}")
+
+
+def load_eve(path: Path) -> list[dict]:
+    """Decode a Suricata eve.json (newline-delimited JSON, one event per line)."""
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 def main() -> int:
@@ -42,7 +47,7 @@ def main() -> int:
     sys.path.insert(0, str(REF))
     from sift.parse import format_summary  # reference migrated code
 
-    migrated = format_summary(json.loads(DATA.read_text())).rstrip()
+    migrated = format_summary(load_eve(DATA)).rstrip()
     print(migrated)
     identical = migrated == legacy
     print(f"\n  byte-for-byte identical: {'✓' if identical else '✗'}")

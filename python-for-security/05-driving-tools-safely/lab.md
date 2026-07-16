@@ -6,9 +6,10 @@
 
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
-`plaintext-labs/python-for-security/05-driving-tools-safely/`: the `sift` project, a couple of local
-tools to wrap (`nmap`, `whois`), and a copilot-generated wrapper with a planted `shell=True` bug for the
-review beat.
+`plaintext-labs/python-for-security/05-driving-tools-safely/`: the `sift` project, the tools to wrap
+(`nmap`, `whois`, **`suricata`**, **`tshark`**) plus the pinned infection pcap, and a copilot-generated
+wrapper with a planted `shell=True` bug for the review beat. `make demo` drives Suricata over the pcap to
+produce `eve.json`, then parses it through `sift`'s pydantic union.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -39,10 +40,14 @@ ones you own inside the lab.
    unsafe wrapper and observe the injected command run. This is why the review matters.
 3. [ ] **Rewrite it safe.** Convert the wrapper to `subprocess.run([...], shell=False)` with an argument
    list. Confirm the same malicious indicator is now inert (passed as one literal argument).
-4. [ ] **Validate before you shell out.** Add a boundary check (reuse Module 02's approach): the indicator
-   must match its expected shape (domain/IP/hash) before any tool sees it. Reject the malformed.
-5. [ ] **Parse structured output.** Drive the tool with a structured-output flag (e.g. `nmap -oX`) and
-   parse that, not scraped stdout text.
+4. [ ] **Validate before you shell out.** Add a boundary check (reuse Module 02's approach): an indicator
+   derived from a real EVE field (a `src_ip`/`dest_ip`, or a `dns.rrname`/`tls.sni` from the dissectors)
+   must match its expected shape (IP/domain) before any tool sees it. Reject the malformed.
+5. [ ] **Drive a dissector; parse structured output.** Wrap `suricata -r <pcap> -l <outdir>` behind the
+   same safe pattern to produce `eve.json`, then parse *that* structured output — the typed `alert` events
+   (`signature`, `severity`, five-tuple) through `sift`'s pydantic union — not scraped stdout text. The
+   path you pass Suricata is untrusted input like any other: `shell=False`, list args. (Same move works for
+   `tshark -T ek`/`-T json`.)
 6. [ ] **Automate & own it.** Commit the safe wrapper and the validation into `sift`, plus a one-line
    trust-checklist entry ("every `subprocess` call: `shell=False`, list args, validated input"). Note in
    the commit what the copilot got wrong and how you caught it.
@@ -77,3 +82,14 @@ directly to the Offensive track's injection modules — same bug, other side.
   can't come back in.
 - Wrap a second tool (`pymisp` or a VirusTotal query) behind the same safe pattern and share the
   validation.
+- **Dissector: `flow` + `fileinfo` (and reconcile against `tshark`).** Grow `sift`'s discriminated union
+  with two more event types from the same driven-tool output: `FlowEvent` (`event_type:"flow"`, the
+  connection summary) and `FileinfoEvent` (`event_type:"fileinfo"`, with `fileinfo.filename` and
+  `fileinfo.sha256` for files carved from the traffic). This continues the growing union you started in
+  M02 (`dns`), M03 (`http`), and M04 (`tls`); anything still unhandled stays quarantined, never fatal.
+  Then — tying the dissector to *this* module's drive-a-tool skill — drive `tshark -T ek` over the same
+  pcap and reconcile its dissection against Suricata's: do the two tools agree on the flows and the
+  carved-file hashes?
+  *Acceptance:* every line of `eve.json` validates to a known event type (`alert`/`flow`/`fileinfo`/…) or
+  is quarantined; the `fileinfo` records surface `filename` + `sha256`; and you report where Suricata's
+  and `tshark`'s views of the same pcap agree or diverge.

@@ -9,7 +9,10 @@ This is a **reference lab** — it ships a one-command environment in the compan
 `plaintext-labs/python-for-security/04-async-concurrency/`: your `sift` project from Module 03, plus a
 small **mock threat-intel API** container that enforces a real rate limit (returns `429` with a
 `Retry-After` header past its quota) so you can prove your bound and backoff work *without* burning a real
-API key. A bundled indicator list (a few thousand entries) is included.
+API key. The indicators aren't invented — you derive them from the corpus you already parse: the unique
+`src_ip` / `dest_ip` values pulled off the validated `AlertEvent`s in `eve.json`. The bundled capture yields a
+handful of unique IPs — enough to prove the bound and backoff bite; regenerate `eve.json` from a larger PCAP
+(or point at a live feed) when you want thousands.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -26,8 +29,9 @@ make the herd and the backoff *legible and reproducible* at zero cost.
 
 ## Scenario
 
-`sift` can now parse a large feed into typed indicators. The next job is enrichment: for each indicator,
-ask a threat-intel API "is this known-bad, and what's the reputation?" The naive version — a sync loop, or
+`sift` can now parse a large `eve.json` into typed `AlertEvent`s. The next job is enrichment: pull the
+unique `src_ip` / `dest_ip` off those alerts and, for each IP, ask a threat-intel API "is this known-bad,
+and what's the reputation?" The naive version — a sync loop, or
 `asyncio.gather` over everything — either takes an hour or gets your key banned in seconds against the
 mock's rate limit. You'll build the enricher that's both *fast* and *polite*.
 
@@ -37,8 +41,10 @@ mock's rate limit. You'll build the enricher that's both *fast* and *polite*.
 
 ## Do
 
-1. [ ] **Feel the pain first.** Run the shipped **sync** enricher (`httpx.get` in a `for` loop) over the
-   indicator list and time it. Record the wall-clock — this is the toil you're eliminating.
+1. [ ] **Derive the indicators, then feel the pain.** Extract the unique `src_ip` / `dest_ip` from your
+   parsed `AlertEvent`s (dedup — the same IP recurs across alerts). Run the shipped **sync** enricher
+   (`httpx.get` in a `for` loop) over that IP set and time it. Record the wall-clock — this is the toil
+   you're eliminating.
 2. [ ] **Write the spec.** Spec the async enricher: reuse one `httpx.AsyncClient`; concurrency bounded to
    *K* (default from the mock's documented rate limit); on `429`, honor `Retry-After` then exponential
    backoff *with jitter*; every indicator returns a typed result (`Ok`/`Err`); the batch always completes.
@@ -99,6 +105,14 @@ LLM in Module 07, which has its *own* `429`s.
   structured concurrency (cancellation propagates cleanly) against raw `asyncio`.
 - Add a token-bucket rate limiter (requests-per-second, not just in-flight count) so you respect a
   *per-second* quota even when individual calls are fast — the case a semaphore alone doesn't cover.
+- **Dissect `tls` and enrich on JA3/SNI — concurrently.** Grow the discriminated union one more member:
+  add a `TlsEvent` for `event_type: "tls"` (pin `tls.sni` and `tls.ja3.hash`, `extra="ignore"` the rest),
+  extending the union you started in M02 (`dns`) and grew in M03 (`http`); unknown event types still
+  quarantine rather than crash. Then run the *same* bounded async enricher over these new indicators —
+  look up each unique `tls.ja3.hash` (a client fingerprint that often outs a malware family regardless of
+  IP) and each `tls.sni` against the mock TI API, concurrently and under the same semaphore + backoff.
+  **Acceptance:** every `tls` line validates into a `TlsEvent` or is quarantined; the JA3/SNI enrichment
+  reuses your bound (max in-flight never exceeds *K*) and honors `429` — no second, unbounded code path.
 - **Make it durable — move enrichment onto a `huey` task queue.** `pip install huey`, wrap `enrich` in
   `@huey.task(retries=3)` on a `SqliteHuey` (no extra service to run), start the `huey_consumer` as a
   separate process, and enqueue the indicator list. **Kill the consumer mid-run, then restart it** — prove

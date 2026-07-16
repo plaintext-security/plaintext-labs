@@ -7,15 +7,16 @@
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
 `plaintext-labs/python-for-security/06-cli-and-api/`: a container with `uv`, `typer`, `fastapi`, and
-`uvicorn` installed, seeded with the `sift` core you built through M5 (the pydantic `Alert`/`Indicator`
-models, the triage layer, and the async enricher) plus a few bundled sample alerts.
+`uvicorn` installed, seeded with the `sift` core you built through M5 (the pydantic EVE `AlertEvent`
+model, the triage layer, and the async enricher) plus a few bundled `eve.json` records (clean `alert`
+lines and a malformed one).
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/python-for-security/06-cli-and-api
 make up      # build the container with the M5 sift core preinstalled
 make shell   # drop into the project
-make demo    # runs the CLI and the API against the same alert and diffs the two results
+make demo    # runs the CLI and the API against the same eve.json alert and diffs the two results
 make down    # stop when done
 ```
 
@@ -26,7 +27,8 @@ black-box image can't teach. It is reproducible at zero cost.
 ## Scenario
 
 `sift` works, but it only runs one way: an analyst types a command. The SOC now wants it **as a service**
-too — a SOAR playbook should be able to `POST` an alert and get the same triage verdict the analyst sees.
+too — a SOAR playbook should be able to `POST` a Suricata EVE `alert` event and get the same triage
+verdict the analyst sees.
 Your job is to add both surfaces *without* forking the logic. The trap is the obvious one: write a
 `typer` CLI, then write a `FastAPI` app, and copy the triage code into both. You'll instead expose the
 existing core through two thin adapters and prove they never disagree.
@@ -38,22 +40,23 @@ existing core through two thin adapters and prove they never disagree.
 
 1. [ ] **Write the spec first.** Spec the increment: "expose the existing `sift` core through a `typer`
    CLI and a `FastAPI` service; both import the same models and the same core function; zero duplicated
-   business logic; the API validates request bodies against the `Alert` model." This is the contract you
-   review the copilot against.
+   business logic; the API validates request bodies against the EVE `AlertEvent` model." This is the
+   contract you review the copilot against.
 2. [ ] **Isolate the core.** Confirm the triage/enrich logic is importable as plain functions
    (`from sift.core import triage, enrich`) with *no* CLI or HTTP concerns mixed in. If M5 left any I/O or
    argument-parsing in those functions, lift it out now — the surfaces will own that.
-3. [ ] **Build the `typer` adapter.** Add a `sift triage <alert.json>` command that reads the file,
-   validates it into an `Alert` with `model_validate_json`, calls `triage`, and prints the verdict as
+3. [ ] **Build the `typer` adapter.** Add a `sift triage <eve.json>` command that reads a real EVE record,
+   validates it into an `AlertEvent` with `model_validate_json`, calls `triage`, and prints the result as
    JSON. Keep it to a handful of lines — parse, delegate, render.
 4. [ ] **Build the `FastAPI` adapter.** Add a `POST /triage` endpoint whose body parameter is typed
-   `alert: Alert` and whose return is typed as your `Verdict` model. Do **not** parse or validate by
-   hand — let FastAPI do it against your model. Serve it with `uvicorn`.
-5. [ ] **Prove the validation payoff.** `POST` a malformed alert (missing a required field, wrong type).
-   Confirm you get a clean `422` with a precise error *before* your code runs — and that it's the *same*
-   `Alert` model rejecting it that guards the CLI.
-6. [ ] **Prove the two surfaces agree.** Run the same sample alert through the CLI and through the API and
-   diff the two verdicts — they must be byte-for-byte identical, because it's one core function.
+   `event: AlertEvent` and whose return is typed as your `TriageResult` model. Do **not** parse or validate
+   by hand — let FastAPI do it against your model. Serve it with `uvicorn`.
+5. [ ] **Prove the validation payoff.** `POST` a malformed EVE line — a truncated/non-JSON body, an
+   `alert.severity` outside Suricata's `1..3` range, or a non-`alert` `event_type` your model doesn't
+   accept yet. Confirm you get a clean `422` with a precise error *before* your code runs — and that it's
+   the *same* `AlertEvent` model rejecting it that guards the CLI.
+6. [ ] **Prove the two surfaces agree.** Run the same EVE alert record through the CLI and through the API
+   and diff the two results — they must be byte-for-byte identical, because it's one core function.
 7. [ ] **Grep for duplication.** Search the adapters for any scoring/triage logic. The business logic must
    appear **exactly once** (in the core). An `if`-branch that scores an alert inside a command or endpoint
    is a bug — fix it by delegating.
@@ -62,9 +65,9 @@ existing core through two thin adapters and prove they never disagree.
    divergence. In the PR, note where the copilot tried to duplicate the logic and how you collapsed it.
 
 ## Success criteria — you're done when
-- [ ] `sift triage <alert.json>` and `POST /triage` produce **identical** verdicts from the same input.
+- [ ] `sift triage <eve.json>` and `POST /triage` produce **identical** results from the same EVE record.
 - [ ] The triage/scoring business logic appears **exactly once** in the repo; both adapters import it.
-- [ ] A malformed request to `POST /triage` returns a `422` validated against the `Alert` model, not a crash.
+- [ ] A malformed EVE line `POST`ed to `/triage` returns a `422` validated against the `AlertEvent` model, not a crash.
 - [ ] Both adapters are thin — each command/endpoint parses input, delegates to the core, and renders out.
 - [ ] Your `make demo` (or equivalent) runs both surfaces and **asserts** they agree.
 
@@ -92,6 +95,16 @@ lives in one typed place, adding MCP is another thin adapter — not a third re-
 > pipeline's API can never drift apart, and every HTTP request is validated against the same models."
 
 ## Stretch (optional)
+- **Dissector rung — one filter, both surfaces.** By now the discriminated union has grown well past
+  `alert`: M02 added `dns`, M03 `http`, M04 `tls`, M05 `flow`/`fileinfo`. Expose an **`event_type` filter
+  as a *shared* concept across both adapters** — a `--event-type` option on the `typer` CLI and an
+  `?event_type=` query parameter on the API — so a caller streams a mixed `eve.json` and triages only the
+  chosen dissected type (e.g. just `dns`, or just `http`). Prove the two-surfaces-one-core discipline
+  holds: the filter predicate lives **once** in the core (a function over the union), and both surfaces
+  merely pass the selected type into it — the CLI flag and the query param must produce **byte-for-byte
+  identical** filtered output, and an unrecognised `event_type` is rejected the same way on both surfaces.
+  *Acceptance:* `sift triage mixed.eve.json --event-type dns` and `POST /triage?event_type=dns` return the
+  same records, and neither surface re-implements the filter.
 - Add FastAPI's auto-generated OpenAPI docs to the deliverable and generate a typed client from them —
   showing the API is consumable by other services without hand-written glue.
 - Make the CLI call the *running API* over HTTP (instead of importing the core directly) behind a flag,
