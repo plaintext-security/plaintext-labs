@@ -106,3 +106,14 @@ directly to the Offensive track's injection modules — same bug, other side.
   *Acceptance:* `sift` ingests Zeek TSV (correctly reading the `#fields` header) *and* Suricata EVE into the
   **same** domain type; the same triage runs against either source; and you report one indicator (e.g. the
   C2) as seen by both sensors, noting what each view adds that the other doesn't.
+- **Third sensor: endpoint telemetry (Sysmon EVTX) — the host side.** Network sensors see a C2 *IP*; they
+  can't see which **process** made the call. That's the endpoint's job. `make gen-sysmon` fetches a real
+  **Sysmon** EventID 3 (network-connection) sample (Bousseaden's EVTX-ATTACK-SAMPLES — GPL, so *fetched, not
+  bundled*), a *third* schema: binary **EVTX** → XML `EventData`, neither JSON nor TSV. Parse it with
+  `python-evtx` into `sift`'s domain model and **join host to wire**: a Sysmon EID 3 record ties an
+  outbound `DestinationIp` to the `Image` (process) that opened it — so a C2 IP the network sensors flagged
+  can be attributed to a process on the host. (Host logs for the STRRAT capture aren't public, so this is a
+  separate real incident — the point is that `sift` absorbs endpoint telemetry too, not just packets.)
+  *Acceptance:* `sift` parses the Sysmon EVTX into the same domain type as EVE/Zeek; you surface at least
+  one EID 3 record as `(process Image, DestinationIp, DestinationPort)`; and you explain the join that turns
+  a network-only IOC into a host-attributed one.

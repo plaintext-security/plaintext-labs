@@ -23,3 +23,17 @@ normalizes both into one domain model.
 
 Committed Zeek sample: `conn.log`, `dns.log`, `http.log`, `ssl.log` (the four that mirror the EVE dissector
 thread). Regenerate the full set (x509, files, kerberos, smb, …) with `make gen-zeek`.
+
+## Third sensor — endpoint telemetry (Sysmon EVTX)
+
+Host logs for the STRRAT capture don't exist publicly, so the endpoint beat is a **separate real incident**:
+a Sysmon EventID 3 (network-connection) sample from Samir Bousseaden's **EVTX-ATTACK-SAMPLES**. It's the
+*host* side — which **process** opened a connection to which IP — the view the network sensors can't get.
+
+- Source: https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES — `Command and Control/DE_sysmon-3-rdp-tun.evtx`
+- sha256 `1d1eb55d1b7c785db26e19b0d50b9eb4a7928671e4edeb82ea5182cb834c874a` (69,632 bytes)
+- 73 records: 42× Sysmon EID 3 (network connection, `Image`→`DestinationIp`), 13× EID 1 (process create), …
+- **GPL-licensed upstream — fetched, never mirrored/committed** (`*.evtx` is gitignored). `make gen-sysmon`
+  fetches + checksum-verifies it; parse with `python-evtx`. It's a *different, non-JSON, non-TSV* format
+  (binary EVTX → XML `EventData`), so it's the third distinct schema `sift`'s domain model must absorb.
+
