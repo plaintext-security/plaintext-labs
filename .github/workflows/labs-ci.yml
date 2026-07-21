@@ -35,12 +35,12 @@ jobs:
     # Prose <-> labs lockstep. Would have caught the PowerShell renumbering drift.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with: { path: plaintext-labs }
       # plaintext is private, so the default GITHUB_TOKEN (scoped to this repo) can't
       # read it — PLAINTEXT_TOKEN is a PAT with contents:read on plaintext (the same
       # PAT the plaintext repo stores as LABS_TOKEN for the mirror-image checkout).
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: plaintext-security/plaintext
           path: plaintext
@@ -58,7 +58,7 @@ jobs:
     outputs:
       labs: ${{ steps.set.outputs.labs }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with: { fetch-depth: 0 }
       - id: set
         shell: bash
@@ -92,7 +92,7 @@ jobs:
       matrix:
         lab: ${{ fromJSON(needs.discover.outputs.labs) }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: up / demo / down
         working-directory: ${{ matrix.lab }}
         timeout-minutes: 20
