@@ -6,25 +6,28 @@
 
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[LocalStack](https://localstack.cloud/) to simulate AWS KMS locally — no cloud account or real
-credentials required.
+[floci](https://github.com/floci-io/floci), a free, MIT-licensed local AWS emulator, to simulate AWS
+KMS on `localhost:4566` — no cloud account or real credentials required. (floci replaces LocalStack,
+whose community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/17-data-protection-kms
-make up        # start LocalStack + create the KMS key
+make up        # start floci + create the KMS key
 make demo      # envelope-encrypt a file, then the key-policy separation build->verify
 make shell     # drop into the lab container to work
 make down      # stop when done
 ```
 
-`make up` creates a KMS key (`alias/data`) and writes its id to `data/key-id.txt`. The lab
-container ships `awslocal` (a drop-in for `aws` pointed at LocalStack) and `openssl`.
+`make up` creates a KMS key (`alias/data`) and writes its id to `data/key-id.txt`. The lab container
+ships the AWS CLI (plain `aws`, pointed at floci via `AWS_ENDPOINT_URL`) and `openssl`.
 
 > Everything runs locally against a simulated AWS environment you own. No real KMS key or data.
-> **Honesty note:** LocalStack simulates the KMS *API*, not AWS's full IAM/key-policy *enforcement*.
+> **Honesty note:** floci simulates the KMS *API*, not AWS's full IAM/key-policy *enforcement*.
 > The lab proves separation of duties by evaluating the key policy logically (`check_keypolicy.py`) —
-> the same evaluation AWS applies — rather than relying on the simulator to deny a call.
+> the same evaluation AWS applies — rather than relying on the simulator to deny a call. (Because the
+> lab drives plain `aws` via `AWS_ENDPOINT_URL`, you can later run the identical steps against a real
+> AWS account you own to watch AWS enforce it live.)
 
 ## Scenario
 
@@ -46,10 +49,10 @@ everything and destroy the key.
    your data — it only wraps the key. Why is this better than sending the whole file to KMS to encrypt?
 
 2. [ ] **Do it by hand.** In `make shell`, mint a data key yourself:
-   `awslocal kms generate-data-key --key-id $(cat data/key-id.txt) --key-spec AES_256`.
+   `aws kms generate-data-key --key-id $(cat data/key-id.txt) --key-spec AES_256`.
    Note the two fields: `Plaintext` (the key you use, then discard) and `CiphertextBlob` (the wrapped
    key you store). Encrypt a file with `openssl enc -aes-256-cbc -pbkdf2`, then recover it by asking
-   `awslocal kms decrypt` to unwrap the key. Confirm the recovered plaintext matches.
+   `aws kms decrypt` to unwrap the key. Confirm the recovered plaintext matches.
 
 3. [ ] **Prove the off-switch.** The wrapped data key is useless without `kms:Decrypt` on the key.
    Write one sentence in `findings.md`: if you revoke the app's `kms:Decrypt`, what happens to every
@@ -78,8 +81,8 @@ delete the key.
    decrypt. If an assertion flips, you over- or under-granted. Capture the before/after in `findings.md`.
 
 7. [ ] **(Stretch in-lab) Apply and rotate.** Apply your policy to the live key
-   (`awslocal kms put-key-policy --key-id $(cat data/key-id.txt) --policy-name default --policy file://data/key-policy-fixed.json`),
-   then enable rotation (`awslocal kms enable-key-rotation --key-id $(cat data/key-id.txt)`) and note
+   (`aws kms put-key-policy --key-id $(cat data/key-id.txt) --policy-name default --policy file://data/key-policy-fixed.json`),
+   then enable rotation (`aws kms enable-key-rotation --key-id $(cat data/key-id.txt)`) and note
    what automatic key rotation does and does *not* re-encrypt.
 
 ## Success criteria — you're done when

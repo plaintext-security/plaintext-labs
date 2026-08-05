@@ -5,9 +5,9 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. Four services: a **lab**
-container (`trufflehog`, `gitleaks`, `vault`, `psql`, `awslocal`, plus `hvac`/`psycopg2` clients), a
+container (`trufflehog`, `gitleaks`, `vault`, `psql`, `aws`, plus `hvac`/`psycopg2` clients), a
 **vault** server (HashiCorp Vault dev mode), a **db** container (Postgres — the store Vault mints leased
-credentials against), and a **localstack** container (simulated AWS for the Secrets Manager variant).
+credentials against), and a **floci** container (simulated AWS for the Secrets Manager variant).
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -88,12 +88,12 @@ key is harmless by construction. The build is the deliverable; the breach is the
 ### Part 4 — The cloud-native parallel, IAM-gated
 
 10. [ ] **Store in a native store behind a `Resource`-scoped read.** Run `make aws-secrets`
-    (`data/setup-aws-secrets.sh`): it puts the secret in Secrets Manager (LocalStack), authors an IAM
+    (`data/setup-aws-secrets.sh`): it puts the secret in Secrets Manager (floci), authors an IAM
     policy allowing `secretsmanager:GetSecretValue` on **only that secret's ARN**, and reads it back.
     Read the policy JSON — confirm `Resource` is the one ARN, not `*`. State when you'd reach for Secrets
     Manager (managed, IAM-native, AWS-only) vs. Vault (multi-cloud, dynamic creds for many backends).
 
-> **LocalStack honesty:** LocalStack CE does not fully *enforce* IAM, so the `Resource`-scoped policy is
+> **Emulator honesty:** floci does not fully *enforce* IAM, so the `Resource`-scoped policy is
 > validated as written, not by a denied API call bouncing. Treat the IAM gate as *assessed from config*
 > here — the same pattern enforces for real against AWS.
 

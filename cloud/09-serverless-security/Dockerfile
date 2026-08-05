@@ -1,5 +1,5 @@
 # Module 09 — Serverless Security
-# AWS SAM CLI + cloudfox + awscli-local, pinned versions.
+# AWS SAM CLI + cloudfox + awscli (v1, honors AWS_ENDPOINT_URL), pinned versions.
 FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,9 +17,8 @@ RUN curl -sSfL \
     && /tmp/sam-install/install \
     && rm -rf /tmp/sam.zip /tmp/sam-install
 
-# awscli v2 + awslocal wrapper
+# awscli (v1, pure-Python; honors AWS_ENDPOINT_URL -> floci or real AWS)
 RUN pip install --no-cache-dir \
-      awscli-local==0.22.0 \
       awscli==1.33.13
 
 # cloudfox — Lambda permission enumeration

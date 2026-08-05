@@ -5,23 +5,26 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account or real credentials.
+[floci](https://github.com/floci-io/floci), a free, MIT-licensed local AWS emulator, to simulate AWS on
+`localhost:4566` — no cloud account or real credentials required. (floci replaces LocalStack, whose
+community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/09-serverless-security
-make up          # start LocalStack + deploy the vulnerable Lambda (over-broad role)
+make up          # start floci + deploy the vulnerable Lambda (over-broad role)
 make demo        # worked walkthrough: enumerate role → normal invoke → event injection
-make shell       # drop into the lab container (awslocal + cloudfox)
+make shell       # drop into the lab container (aws + cloudfox)
 make down        # stop when done
 ```
 
-**What's real and what isn't (read this).** **LocalStack genuinely runs Lambda** — your function code
-actually executes in a container, so the **event injection in Part 2 is a real exploitation**, not a
-simulation: you send a payload and the function runs your command. Where LocalStack is *honest about its
-limits* is **IAM enforcement** — LocalStack CE does **not** enforce IAM, so the role's reach can't be
+**What's real and what isn't (read this).** **floci genuinely runs Lambda** — your function code
+actually executes in a container (floci launches it via the host Docker socket), so the **event
+injection in Part 2 is a real exploitation**, not a simulation: you send a payload and the function runs
+your command. Where a local emulator is *honest about its limits* is **IAM enforcement** — floci does
+**not** enforce IAM, so the role's reach can't be
 proven by brute-forcing denied calls. You prove reach the same way module 02 did: with
-`awslocal iam simulate-principal-policy`, which runs AWS's real evaluation logic and returns
+`aws iam simulate-principal-policy`, which runs AWS's real evaluation logic and returns
 `allowed` / `implicitDeny` / `explicitDeny` *and why*. So the injection is *exploited*; the role's blast
 radius and your fix are *assessed from policy logic.* Honest tools, honest claims.
 
@@ -45,21 +48,21 @@ the evidence) → **Reveal** (check your call) → **Record** (one line in the r
 ### Part 1 — Predict the blast radius, then prove it's the role
 
 1. [ ] **Look at the function, then the role.** List the function
-   (`awslocal lambda list-functions`) and read its handler (`data/lambda/handler.py`) — it's ~40 lines.
+   (`aws lambda list-functions`) and read its handler (`data/lambda/handler.py`) — it's ~40 lines.
    **Predict** from the code alone: how much damage could a foothold here do? Now read the execution
-   role's policy (`awslocal iam get-role-policy --role-name notifier-role --policy-name NotifierPolicy`).
+   role's policy (`aws iam get-role-policy --role-name notifier-role --policy-name NotifierPolicy`).
    **Reveal:** `s3:*`, `iam:*`, and `sts:AssumeRole` all on `*`. **Record:** the code is 40 lines; the
    role is the account.
 
 2. [ ] **Prove the reach with policy logic — not guesses.** Use
-   `awslocal iam simulate-principal-policy` (or `cloudfox`'s permissions/iam-simulator) against the role
+   `aws iam simulate-principal-policy` (or `cloudfox`'s permissions/iam-simulator) against the role
    to confirm it is `allowed` to `iam:CreateUser`, `iam:AttachUserPolicy`, and `s3:GetObject` on the
    seeded `sensitive-records` bucket. **Reveal:** this is Denonia's natural next move — code
    execution → `iam:CreateUser` + attach `AdministratorAccess` → standing admin that outlives the
    function. **Record:** owner = customer (role scope); the function's blast radius is account-wide.
 
 3. [ ] **Find the standing secret.** Read the function configuration
-   (`awslocal lambda get-function-configuration --function-name notifier`). What's in the
+   (`aws lambda get-function-configuration --function-name notifier`). What's in the
    environment variables? **Reveal:** a fake API key and a DB connection string — readable in one call by
    anyone with code execution (the next step gives you exactly that). **Record:** owner = customer; secret
    in env, not a runtime fetch — blast radius = "whenever the function runs," not "one call with a log."
@@ -100,9 +103,9 @@ function's real job is the fix** — and a serverless fix has two halves, the ro
    return or log environment variables. Move the API key to a runtime fetch from a secrets store (or at
    minimum, stop emitting it).
 
-9. [ ] **Redeploy and re-attack.** Repackage and redeploy the function to LocalStack, then re-run the
+9. [ ] **Redeploy and re-attack.** Repackage and redeploy the function to floci, then re-run the
    step-5 injection payload. **Confirm it now returns an error** instead of executing the command — the
-   real exploit, now closed against the real (LocalStack-run) function.
+   real exploit, now closed against the real (floci-run) function.
 
 ## Success criteria — you're done when
 - [ ] `simulate-principal-policy` shows the original role `allowed` to `iam:CreateUser` and read the
@@ -119,7 +122,7 @@ function's real job is the fix** — and a serverless fix has two halves, the ro
 injection demonstration, the env-var finding), each with owner · plane · the breaking change, mapped to
 OWASP Serverless and ATT&CK (T1078 Valid Accounts, T1648/T1496 for the miner outcome). `least-privilege-policy.json`
 — your scoped execution role that passes the checker. `handler-fixed.py` — the remediated function. Commit
-all three. Do **not** commit LocalStack state, the SAM `.aws-sam/` build dir, bucket contents, or any real
+all three. Do **not** commit emulator state, the SAM `.aws-sam/` build dir, bucket contents, or any real
 credentials.
 
 ## Automate & own it
@@ -163,4 +166,4 @@ module (07).
 - Drive a `pacu` Lambda module against the over-broad role to *actually* create an admin user, then write
   the CloudTrail event sequence a SIEM would fire on — a direct preview of modules 14–15.
 - Replicate the Denonia "secret in env" failure end-to-end: move the API key into AWS Secrets Manager (in
-  LocalStack), fetch it at runtime, and show the env-var dump no longer leaks it.
+  floci), fetch it at runtime, and show the env-var dump no longer leaks it.

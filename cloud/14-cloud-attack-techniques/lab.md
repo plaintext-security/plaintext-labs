@@ -5,22 +5,29 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account, no real credentials.
+[floci](https://github.com/floci-io/floci), a free MIT-licensed local AWS emulator, to simulate AWS locally — no cloud account, no real credentials.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/14-cloud-attack-techniques
-make up        # start LocalStack + the lab container (awslocal, stratus-red-team, pacu)
+make up        # start floci + the lab container (aws, stratus-red-team, pacu)
 make demo      # detonate all three techniques and print the CloudTrail-shaped event each fires
 make shell     # drop into the lab container to detonate manually
 make down      # stop everything when done
 ```
 
-`make demo` runs `simulate.sh`, which fires attacker-like API calls against LocalStack and prints the
+`make demo` runs `simulate.sh`, which fires attacker-like API calls against floci and prints the
 CloudTrail JSON each call generates. That JSON — the **captured telemetry** — is this lab's product.
+(floci replaces LocalStack, whose community edition sunset in March 2026.)
+
+> **Where the emulator stops:** floci runs the attacker's *API calls* for real, but no emulator
+> delivers real **CloudTrail** or **GuardDuty** — so the CloudTrail events here are faithfully
+> *shaped* by `simulate.sh`, not emitted by a real trail (this is called out as "synthetic by design"
+> below). To see genuine CloudTrail/GuardDuty telemetry, run the same techniques against an AWS account
+> you own (the real-AWS fidelity route).
 
 > **Authorization — read this. This is offensive tooling.** Stratus Red Team and Pacu detonate *real*
-> attack techniques. Run them **only** against this LocalStack range or an AWS account you own and have
+> attack techniques. Run them **only** against this local emulator range or an AWS account you own and have
 > deliberately stood up as a target — never a production account, never one you don't own, never a
 > shared or employer account without explicit written permission. The blast-radius rule LastPass's
 > attacker ignored is the one you enforce on yourself: dedicated test environment, no production
@@ -51,7 +58,7 @@ Each step runs the same rhythm: **Predict** (commit to a loudness call before yo
    grade it in step 6.
 
 3. [ ] **Detonate T1078.004 — Valid Cloud Accounts.** Fire the role assumption
-   (`simulate.sh --technique assume-role`, or interactively `awslocal sts assume-role`). **Capture** the
+   (`simulate.sh --technique assume-role`, or interactively `aws sts assume-role`). **Capture** the
    event. Which `eventName` marks the assumption? In `userIdentity`, what changes between the original
    key's calls (`type: IAMUser`) and the assumed-role calls (`type: AssumedRole`)? This is LastPass's
    entry move and it is a **management-plane** call — note that it's recorded by default.

@@ -2,7 +2,7 @@
 # Standard targets: up / down / reset / demo / shell
 .PHONY: up down reset demo shell
 
-up:       ## Build and start LocalStack + lab container
+up:       ## Build and start floci + lab container
 	docker compose up -d --build
 
 down:     ## Stop and remove containers

@@ -1,8 +1,9 @@
 # Module 17 — Data Protection & KMS lab.
 # Standard targets: up / down / reset / demo / shell.
+# Runs on floci (free local AWS emulator). `aws` honors AWS_ENDPOINT_URL, so no LocalStack-branded wrapper.
 .PHONY: up down reset demo shell envelope check-keypolicy check-fixed
 
-up:        ## Build, seed (create the KMS key), and start (LocalStack + lab container)
+up:        ## Build, seed (create the KMS key), and start (floci + lab container)
 	docker compose up -d --build
 	@echo "Waiting for seed to complete..."
 	@docker compose wait seed || true
@@ -14,7 +15,7 @@ down:      ## Stop and remove containers
 reset:     ## Tear down completely (containers + local images + volumes)
 	docker compose down --rmi local --volumes --remove-orphans
 
-shell:     ## Drop into the lab container (awslocal + openssl available)
+shell:     ## Drop into the lab container (aws + openssl available)
 	docker compose exec lab bash
 
 envelope:  ## Walk envelope encryption: generate data key -> encrypt -> wrap -> decrypt

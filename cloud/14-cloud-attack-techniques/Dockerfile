@@ -1,5 +1,5 @@
 # Lab 14 — Cloud Attack Techniques
-# Provides: awslocal (awscli-local), jq, python3, and a pinned Stratus Red Team binary.
+# Provides: awscli (honors AWS_ENDPOINT_URL), jq, python3, and a pinned Stratus Red Team binary.
 FROM python:3.12-slim
 
 ARG STRATUS_VERSION=2.16.0
@@ -11,13 +11,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       uuid-runtime \
     && rm -rf /var/lib/apt/lists/*
 
-# awscli v2 (static binary) + awscli-local wrapper
-RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+# awscli v2 (static binary) — arch-aware so the image works on amd64 and arm64.
+RUN case "$(uname -m)" in \
+      x86_64)  AWSCLI_ARCH=x86_64 ;; \
+      aarch64|arm64) AWSCLI_ARCH=aarch64 ;; \
+      *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;; \
+    esac \
+    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${AWSCLI_ARCH}.zip" -o /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp \
     && /tmp/aws/install \
     && rm -rf /tmp/aws /tmp/awscliv2.zip
-
-RUN pip install --no-cache-dir awscli-local==0.22.0
 
 # Stratus Red Team — prebuilt binary for linux/amd64
 RUN curl -fsSL \
@@ -30,12 +33,11 @@ RUN curl -fsSL \
 WORKDIR /lab
 COPY . /lab
 
-# Default AWS env vars pointing at LocalStack (overridable)
+# Default AWS env vars pointing at floci (overridable)
 ENV AWS_DEFAULT_REGION=us-east-1 \
     AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE \
     AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
-    AWS_ENDPOINT_URL=http://localstack:4566 \
-    LOCALSTACK_HOST=localstack
+    AWS_ENDPOINT_URL=http://floci:4566
 
 RUN chmod +x /lab/simulate.sh
 

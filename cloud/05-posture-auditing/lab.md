@@ -5,15 +5,15 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It runs
-[LocalStack](https://localstack.cloud/) (a local AWS API emulator) and a lab container with `prowler`
+[floci](https://github.com/floci-io/floci) (a free, MIT-licensed local AWS API emulator) and a lab container with `prowler`
 pinned — no cloud account or real credentials required.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/05-posture-auditing
-make up         # start LocalStack + seed a deliberately misconfigured account
+make up         # start floci + seed a deliberately misconfigured account
 make demo       # run prowler and show the HIGH/CRITICAL findings
-make shell      # drop into the lab container (prowler + awslocal + jq)
+make shell      # drop into the lab container (prowler + aws + jq)
 make down       # stop when done
 ```
 
@@ -21,10 +21,10 @@ make down       # stop when done
 bucket with a file in it** (the 2017 wave), a security group open to `0.0.0.0/0` on 22/3389, an IAM
 access key that was never rotated, and a CloudTrail trail that exists but isn't logging.
 
-**What this lab is — and isn't (read this).** LocalStack emulates the AWS *API surface* prowler reads,
+**What this lab is — and isn't (read this).** floci emulates the AWS *API surface* prowler reads,
 so the findings are real findings against real config. It does **not** reproduce the 2017 exfiltration
 (there's no public internet pointing at the bucket) — you're not stealing data, you're doing the audit
-that would have caught it. Where a check depends on AWS state LocalStack doesn't model (e.g. root-MFA),
+that would have caught it. Where a check depends on AWS state floci does not model (e.g. root-MFA),
 treat it as *assessed from config*, not exploited.
 
 > Only audit accounts you own or have explicit written permission to test. Posture tools touch every
@@ -42,11 +42,11 @@ worst finding from ever passing review again.
 ### Part 1 — Audit and triage (signal vs. noise)
 
 1. [ ] **Inventory before you scan.** From the lab shell, list what's actually in the account —
-   buckets, security groups, IAM users, trails — with `awslocal` (`awslocal s3 ls`,
-   `awslocal ec2 describe-security-groups`, `awslocal iam list-users`). Note anything that looks wrong
+   buckets, security groups, IAM users, trails — with `aws` (`aws s3 ls`,
+   `aws ec2 describe-security-groups`, `aws iam list-users`). Note anything that looks wrong
    *by eye* (a public ACL, `0.0.0.0/0` ingress). You're building the asset context the scanner won't have.
 
-2. [ ] **Run the linter.** Run `prowler aws --endpoint-url http://localstack:4566` and write JSON to
+2. [ ] **Run the linter.** Run `prowler aws --endpoint-url http://floci:4566` and write JSON to
    `/tmp/findings.json`. **Predict first, then count:** how many FAIL findings do you expect, and which
    *one* is the 2017 bucket? Now count (`jq '[.[]|select(.status=="FAIL")]|length'`) and see how the raw
    number compares to "the one that matters." This gap — many findings, one verdict — *is* the module.
@@ -62,18 +62,18 @@ worst finding from ever passing review again.
    **T1078** (Valid Accounts). This is the column that turns "MEDIUM" into "this is the 2017 leak."
 
 5. [ ] **Confirm the headline finding by hand.** Pick the public bucket. Verify prowler wasn't lying:
-   `awslocal s3api get-bucket-acl` and `get-public-access-block`, and confirm an object reads without
+   `aws s3api get-bucket-acl` and `get-public-access-block`, and confirm an object reads without
    credentials. Understand *why* it's flagged — this is the literal Accenture/Verizon/INSCOM condition.
 
 ### Part 2 — Remediate and verify (the half a checkbox skips)
 
 6. [ ] **Draft the remediation.** For each top-five finding write a one-line note: the fix, the owning
    team (S3 ACL → app team; IAM → security), and whether it's scriptable. At least two must have a real
-   `awslocal` remediation you can run (block public access on the bucket; revoke the `0.0.0.0/0` ingress).
+   `aws` remediation you can run (block public access on the bucket; revoke the `0.0.0.0/0` ingress).
 
 7. [ ] **Apply and re-scan — prove FAIL→PASS.** Remediate the public bucket (re-enable block-public-access
    and drop the public ACL), then **re-run that one check** and confirm the finding is gone.
-   *Hint:* `prowler aws --check s3_bucket_public_access --endpoint-url http://localstack:4566`. A
+   *Hint:* `prowler aws --check s3_bucket_public_access --endpoint-url http://floci:4566`. A
    remediation you didn't re-scan is a wish, not a fix — this flip is the deliverable.
 
 8. [ ] **(Stretch) Second opinion.** Run ScoutSuite against the same account and diff its findings against
@@ -94,7 +94,7 @@ Commit to your **portfolio** repo (not `plaintext-labs`):
 - `remediation-notes.md` — the plan, plus the before/after evidence of the one finding you flipped FAIL→PASS.
 - `check_public_bucket.py` (or `.sh`) — the guardrail from **Automate & own it**.
 
-Do **not** commit: the full prowler JSON (too large), any LocalStack state, `/tmp/legacy-key.json`, or
+Do **not** commit: the full prowler JSON (too large), any emulator state, `/tmp/legacy-key.json`, or
 any `*.key`/`*.pem`/real-key-pattern file.
 
 ## Automate & own it
@@ -104,7 +104,7 @@ check that fails the bad state and passes the fix**, mapped to its CIS control. 
 (or a small shell check) that, given the account, **fails (exit non-zero)** if any bucket has public
 ACLs or block-public-access disabled — printing the bucket and the control it violates, e.g.
 **CIS AWS 2.1.x — "Ensure S3 buckets are not publicly accessible"** <!-- VALIDATE exact CIS control number against the current AWS Foundations Benchmark --> — and **passes (exit zero)** once you've remediated. Run it against the seeded account (red), apply your fix, and run it again (green). Have a model draft the
-boto3/`awslocal` calls and the assertion; review every line and confirm it fails for the *right* reason
+boto3/`aws` calls and the assertion; review every line and confirm it fails for the *right* reason
 (the public ACL, not an unrelated bucket). This is your triage verdict made un-recurrable — and in
 module 06 you'll lift this exact check into a CI gate that blocks the merge before the bucket ever ships.
 

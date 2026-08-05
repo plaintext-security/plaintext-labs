@@ -1,13 +1,9 @@
 # Lab 02 — Cloud Identity & IAM
-# Services: LocalStack (simulated AWS) + lab container (cloudfox + awscli)
+# Services: floci (free local AWS emulator) + lab container (cloudfox + aws cli).
+# The lab drives plain `aws` via AWS_ENDPOINT_URL, so it stays one variable away from real AWS.
 services:
-  localstack:
-    image: localstack/localstack:3.7.0
-    environment:
-      - SERVICES=iam,s3,sts,ec2,ecs,ecr
-      - DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+  floci:
+    image: floci/floci:1.5.34   # MIT-licensed LocalStack replacement; same :4566 endpoint
     ports:
       - "4566:4566"
     healthcheck:
@@ -20,13 +16,13 @@ services:
     build: .
     image: plaintext/cloud-identity-iam
     depends_on:
-      localstack:
+      floci:
         condition: service_healthy
     environment:
+      - AWS_ENDPOINT_URL=http://floci:4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      - LOCALSTACK_HOST=localstack
     volumes:
       - ./:/lab
     command: bash /lab/data/setup.sh
@@ -38,12 +34,10 @@ services:
     depends_on:
       - seed
     environment:
+      - AWS_ENDPOINT_URL=http://floci:4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      - LOCALSTACK_HOST=localstack
-      # Override the LocalStack endpoint for cloudfox
-      - AWS_ENDPOINT_URL=http://localstack:4566
     volumes:
       - ./:/lab
     command: sleep infinity
