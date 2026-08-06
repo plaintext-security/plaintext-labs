@@ -1,14 +1,45 @@
-# Lab 09 — Detection, Eval & Drift in a Zero Trust Environment
+# Lab 09 — Detect the credential-compromise login in a Zero Trust access log
 
-*Hands-on lab · [← Back to the module concept](README.md)*
+> **Hands-on lab.** Environment: `plaintext-labs/ztna/09-monitoring-detection`.
+> Objective: **write a Sigma rule that fires on the one anomalous *authenticated* access and stays quiet
+> on the benign majority**, then turn it into a measured control (held-out eval + regression gate) and
+> add a posture-drift detector. Target: **~90–120 min**, one finish line. This is a **reference lab** —
+> one command stands up the container.
 
-**Type 6 · Reconstruct/Detect (+ Type 13 · Eval Harness, Type 16 · Drift/Steady-State).** You write a
-detection against immutable identity-aware access logs, then do the two things that turn a detection
-from an anecdote into a control: **measure it** on a held-out corpus behind a regression gate, and
-**watch the posture itself for drift** over time. The deliverable is the *scored detection (held-out +
-gate) + the drift detector* — not a writeup. No grader; you verify your own work against the observable
-success criteria below. (Honor system: the committed rules, corpus, scorecard, gate, and drift loop are
-the proof.)
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This replaces re-reading the module.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **The access log is the detection surface now.** | ZT logs *every* request with identity + device + country + result — you detect anomalous *authenticated* access, not edge breaches. |
+| 2 | **The dangerous event SUCCEEDED.** | `lchen`'s `access_allowed` from **NG** is the catch; the loud **RO** `auth_failed` flood is not — a stolen token *passes* auth. |
+| 3 | **A rule is a hypothesis on a benign stream.** | `selection` says what's interesting; `not filter` (the operating-country allowlist) is what keeps it off the benign majority. |
+| 4 | **The demo set can't prove a detection.** | You tuned on it — it's a memorised exam. Grade on a **held-out** corpus the rule never saw. |
+| 5 | **Recall is load-bearing; gate both ways.** | A missed compromise can be a breach; an FP costs minutes. A gate you've only seen *pass* isn't a gate. |
+| 6 | **"Trust nothing" is an over-time posture.** | Token-creep, accreted exceptions, disabled posture checks erode it silently — declare → observe → diff → reconcile catches it. |
+
+*(If you can explain all six cold at the end — especially #2 — you've got the objective.)*
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [detection-surface section](README.md#the-detection-surface-every-request-is-now-a-labelled-log-line)
+> and [hypothesis-on-a-benign-stream](README.md#a-detection-is-a-hypothesis-on-a-benign-stream).
+
+---
+
+## Warm-up — answer before you run anything (2 min)
+
+*Don't look below. Being forced to retrieve is what builds the memory.*
+
+1. Two events in these logs come from outside the operating countries: a **RO** `auth_failed` flood and
+   a single **NG** `access_allowed`. Which one is the real attack, and why is the loud one the *safe*
+   one to have missed?
+2. Your geo-rule fires correctly on the NG event in the demo set. Name the one reason that number still
+   doesn't tell you whether the rule is any good.
+
+---
 
 ## Setup
 
@@ -18,173 +49,197 @@ This is a **reference lab** — it ships a one-command environment in the compan
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/ztna/09-monitoring-detection
-make up         # build + start the container (sigma-cli + the offline matcher + eval + drift)
-make demo       # the full loop: detection fires, eval scores + gates, drift detector flags + reconciles
-make eval       # just the scorecard + regression gate on the held-out corpus
-make gate       # prove the gate catches a too-broad / too-narrow rule (exits non-zero)
-make drift      # introduce posture drift, detect it, reconcile to baseline
-make shell      # drop into the container to work
-make down       # stop it when you're done
+make up      # build + start the container (sigma-cli + the offline matcher detect.py)
+make demo    # fire the worked unexpected-country rule against the bundled ZT access logs
+make shell   # drop into the container to work
+make down    # stop it when you're done
 ```
 
-The container bundles `sigma-cli`, the offline teaching matcher (`detect.py`, adapted for ZT access-log
-structure), the eval harness (`eval.py`), and the drift detector (`drift.py`). The data is split into
-two deliberately-separate sets:
+Two more targets point at **your** rule once you write it:
 
-- `data/access-logs.jsonl` — the **demo/tuning** set: 20 real-shaped structured access events with a few
-  anomalies planted, the set you write and tune the rule against.
-- `heldout/corpus.jsonl` — the **held-out** labelled corpus: events the rule was *never tuned on*, each
-  labelled `anomalous` or `benign`, deliberately stocked with the hard near-misses (legit travel, VPN
-  egress, an impossible-travel pair). This is what `make eval` grades against. That wall between the two
-  sets is what makes the score honest — score on the tuning set and every number is inflated.
+```bash
+make detect RULE=examples/zt-unexpected-country.yml   # run any rule against data/access-logs.jsonl
+make convert RULE=examples/zt-unexpected-country.yml  # compile a rule to Splunk SPL via sigma-cli
+```
 
-> **Authorization note:** Only test systems you own or have explicit written permission to test.
-> Everything here runs locally against bundled data you own — no external targets, no authorization
-> needed. This is honor-system: the gate is a regression guard for *you*, not a grader.
+The container bundles `sigma-cli`, the offline teaching matcher `detect.py` (adapted for ZT access-log
+structure), the worked rule in `examples/zt-unexpected-country.yml`, and the data:
 
-## Scenario
+- `data/access-logs.jsonl` — **20 real-shaped structured access events** (Pomerium/Cloudflare
+  Access-shaped JSONL) with anomalies planted: one unexpected-country `access_allowed`, a six-event
+  `auth_failed` flood, and a growing bulk-export volume. This is the set you write and tune against.
 
-An organization has completed its identity-aware-access pilot (Module 06) and every internal service now
-logs access events to a central SIEM. The logs are structured JSONL — each event carries user identity,
-device, country, service, action, and data volume. The security team wants its leading-indicator
-detection — **a valid session authenticated from outside the operating countries (US, CA, GB, DE, AU)**,
-the classic credential-compromise signal — *operational and proven* before the production rollout: it must
-catch the real anomaly, stay quiet on legitimate travel and VPN egress, and not silently rot. And because
-the deployment will run for years, they want a second control entirely: a detector that catches the
-*posture* drifting away from the Zero Trust baseline they signed off on.
+> **Authorization note.** Everything here runs locally against bundled data you own — no external
+> targets, no authorization needed. This is honor-system: the eval gate and drift loop you build are a
+> regression guard for *you*, not a grader. (Later modules stand up real services you *do* attack —
+> there the rule binds: only test systems you own or have explicit written permission to test.)
 
-## Do
+---
 
-### Stage 1 — Write and fire the detection (Type 6)
+## Build it — read a little, do a little
 
-1. [ ] **Read the demo set.** Open `data/access-logs.jsonl` and note the field structure: `event_type`,
-   `user`, `country`, `device_posture`, `bytes_sent`, `session_id`. Find the anomalous events by eye — the
-   unexpected-country access and the auth-failure cluster should be visible without running anything.
+### Step 1 — Find the anomalies by eye (before any tool)
 
-2. [ ] `make demo`'s first stage fires the example rule (`examples/zt-unexpected-country.yml`) on the
-   unexpected-country event. Which log line, which user, which country? This is a `selection and not
-   filter` rule — identify which field the `filter` excludes (the operating-country allowlist).
+**Concept (30 sec):** Flight-card #1. In a ZT log every request is a labelled line, so the anomalies are
+*readable* — you don't need a tool to spot them. Open the log and look at `event_type`, `country`, and
+`bytes_sent`.
 
-3. [ ] **Understand the filter.** What happens if you remove the `filter` stanza entirely — how many
-   events fire? Verify by temporarily removing it and running `make detect RULE=examples/zt-unexpected-country.yml`.
-   This is the whole game: the rule is a *hypothesis on a benign stream*, and the filter is what keeps it
-   from firing on the benign majority.
+**Do it:** `make shell`, then read `data/access-logs.jsonl`. Find (a) the single `access_allowed` from a
+country that isn't US/CA/GB/DE/AU, (b) the burst of `auth_failed` events from one foreign IP, and (c)
+the `access_allowed` events whose `bytes_sent` climbs into the hundreds of thousands.
 
-### Stage 2 — Measure it on a held-out corpus + gate it (Type 13)
+> **▸ On track if:** you can name the NG event — `user=lchen@corp.com`, `service=data-api`,
+> `country=NG` — the six-event **RO** `auth_failed` flood for `jdoe@corp.com`, and the three growing
+> `hr-portal` `/employees/export` events (187k → 234k → 312k bytes) for `msmith`. Note that `lchen`
+> accessed legitimately from **US** minutes *before* the NG hit — that's an impossible-travel pair.
 
-4. [ ] **Prove it's good — on data it has never seen.** `make eval` scores the rule against
-   `heldout/corpus.jsonl` (the held-out set, *not* the demo set) and prints a scorecard: precision, recall,
-   and FP-rate over labelled `anomalous`/`benign` events. Read the numbers. The held-out set includes the
-   near-misses a naive geo-rule fires on and shouldn't — a legit business trip (logged), a developer's
-   corporate-VPN egress through another country, a cloud job geolocating to a datacenter region — plus the
-   anomaly variants it *must* catch (the compromise login, and an impossible-travel pair). **Recall is the
-   load-bearing metric**: a missed credential-compromise can be a breach; a false positive costs minutes.
+### Step 2 — Fire the worked rule
 
-5. [ ] **See the gate fail both ways.** `make gate` runs the eval against two deliberately-broken copies in
-   `heldout/rules-regressed/`: a **too-narrow** rule (it dropped a country variant and now misses an
-   anomaly — recall falls below the floor) and a **too-broad** rule (it dropped a filter entry and now
-   fires on legit travel — FP-rate climbs above the ceiling). Both must turn the gate RED and exit
-   non-zero. Confirm the contrast: GREEN on the good rule, RED on each regression. *A gate you've only seen
-   pass isn't a gate.*
+**Concept (30 sec):** Flight-card #2 + #3. The worked rule is `selection: event_type = access_allowed`
+`and not filter: country in [US,CA,GB,DE,AU]` — a *successful* access from outside the operating set.
+It targets MITRE ATT&CK **T1078 (Valid Accounts)**: credential compromise looks like a valid login, not
+a failed one.
 
-6. [ ] **Tune against the held-out failures.** If your own variant of the rule misses an anomaly, the
-   scorecard lists the false negatives — widen the rule, re-`make eval`, and confirm you didn't open new
-   false positives on the benign near-misses. This is the FP/recall knee, found deliberately.
+**Do it:** run `make demo` (or `make detect RULE=examples/zt-unexpected-country.yml`). Read the `[HIT]`
+line and confirm it's the NG event — *not* the RO flood.
 
-### Stage 3 — Detect posture drift over time (Type 16)
+> **▸ On track if:** the output shows **exactly one hit** —
+> `[HIT] line 15: 2026-06-08T10:08:14Z  user=lchen@corp.com  country=NG  service=data-api  type=access_allowed`
+> — and `Matched 1 of the events`. The RO `auth_failed` events do **not** fire, because `selection`
+> requires `access_allowed`. That silence on the loud flood is the point: you caught the token that
+> *passed*, not the ones that failed.
 
-7. [ ] **Read the baseline.** Open `baseline/zt-posture.yml` — the intended Zero Trust posture *declared as
-   data*: `max_token_lifetime_minutes`, the allowed `policy_exceptions` set, and the `posture_checks` that
-   must be `enforced`. This is the `t=0` posture the org signed off on.
+### Step 3 — Prove the filter is load-bearing
 
-8. [ ] **Introduce drift and detect it.** `make drift` mutates a copy of the running config three ways —
-   *token-lifetime creep* (15 min → 8 hrs), an *accreted allow-exception* (a contractor DB rule that
-   outlived the contractor), and a *silently-disabled posture check* (device-compliance flipped to
-   `log-only`) — then runs `drift.py` to diff observed config against `baseline/zt-posture.yml`. It must
-   report all three deltas and **exit non-zero**. Read the delta report: each line is a Zero-Trust property
-   that eroded with no alarm of its own.
+**Concept (30 sec):** Flight-card #3. The rule is a hypothesis on a benign stream; `not filter` is what
+keeps it off the benign majority. Take the filter away and see what "no filter" actually means.
 
-9. [ ] **Reconcile to steady-state.** `make drift`'s final step re-applies the baseline and re-runs the
-   diff — it must now report zero deltas and exit 0. That detect → diff → report → reconcile loop *is* the
-   deliverable; "trust nothing" is the posture you hold, and this is how you hold it.
+**Do it:** copy the rule to `my-rule.yml`, delete the `filter:` stanza *and* the `and not filter` from
+`condition:` (leaving `condition: selection`), then `make detect RULE=my-rule.yml`.
 
-10. [ ] **Reason about what ZT changes.** In `detection.md`, address: why is `auth_failed` higher fidelity
-    in ZT than at a perimeter firewall? What would an attacker with a *valid* token (credential compromise,
-    not brute force) look like in these logs, and which field is your best signal? And: which of the three
-    drifts would have most weakened your Stage-1 detection's value (hint: long token lifetimes)?
+> **▸ On track if:** with the filter gone the rule now matches **13 events** — every `access_allowed`
+> in the file — i.e. it fires on the entire benign population and is useless. Restore the filter and
+> you're back to 1. That contrast *is* the lesson: the allowlist is the detection.
 
-## Success criteria — you're done when
+### Step 4 — Compile it to a real SIEM query
 
-- [ ] `make demo` fires on the unexpected-country event cleanly and runs the full eval + drift loop end to end.
-- [ ] `make eval` produces a scorecard (precision/recall/FP-rate) over the **held-out** corpus, and you can
-      state the rule's recall and its FP-rate — not just "it fired in the demo."
-- [ ] `make gate` is GREEN on the good rule and you have **seen it go RED** on *both* a too-narrow and a
-      too-broad rule (recall floor breached / FP-rate ceiling breached).
-- [ ] `make drift` detects all three posture drifts (token-lifetime creep, accreted exception, disabled
-      posture check), reports the deltas, exits non-zero, and then reconciles to zero deltas / exit 0.
-- [ ] Your `detection.md` answers the three ZT-changes-detection questions in step 10.
+**Concept (30 sec):** You write a Sigma rule *once*, as vendor-neutral code; `sigma convert` compiles it
+to whatever backend the org runs. That portability is why detection-as-code beats hand-writing SPL.
+
+**Do it:** run `make convert RULE=examples/zt-unexpected-country.yml` and read the emitted Splunk query.
+
+> **▸ On track if:** you get an SPL query for the same logic (or a clear "conversion requires a matching
+> pipeline" note — the ZT `product: ztna` logsource has no stock Sigma pipeline). Either way you've seen
+> the same rule targeting a real backend, not just the offline matcher.
+
+---
+
+## Prove the control (your finish line)
+
+Run the one check that proves the detection is a control, not an anecdote:
+
+> **The proof:** your unexpected-country rule fires on **exactly the NG `access_allowed`** (the
+> credential-compromise catch) and is **silent on the RO `auth_failed` flood and the in-country bulk
+> export** — one high-fidelity hit, zero benign noise. Confirm `make detect RULE=<your rule>` prints
+> `Matched 1` on the demo set and that the single hit is `lchen` / NG.
+
+*If your rule also flags the RO flood, you're keying on failed auth and will miss real credential
+compromise. If it flags the exports, your `selection` is too broad. Either way, one of the rule and the
+threat model is wrong — fix the rule.*
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Which event is the real attack — the RO `auth_failed` flood or the NG `access_allowed` — and why is
+   the loud one the safe one to miss?
+2. What does removing the `filter` stanza do to the hit count, and what does that prove about where the
+   detection actually lives?
+3. Why can't the demo set tell you whether your rule is good — and what fixes that?
+
+Missed one? Re-run the step that built it, or pull the
+[module reveal](README.md#a-detection-is-a-hypothesis-on-a-benign-stream) — then re-answer.
+
+---
 
 ## Deliverables
 
-- `heldout/corpus.jsonl` — your held-out labelled corpus (or your additions to it): the anomaly variants
-  and the benign near-misses, each labelled and justified.
-- `eval.py` + the `make eval` / `make gate` targets — the scorecard and the regression gate, proven both
-  ways (RED on too-narrow and too-broad).
-- `drift.py` + `baseline/zt-posture.yml` + the `make drift` target — the declared baseline and the
-  detect → diff → reconcile loop.
-- `detection.md` — your notes: the anomalies found by eye, the held-out near-misses and why each is hard,
-  the metric choice (and why recall), and the ZT-changes-detection analysis.
+- **`zt-unexpected-country.yml`** (your version) — the committed Sigma rule that fires on the NG
+  credential-compromise event and stays quiet on the benign majority, mapped to T1078.
+- **`heldout/corpus.jsonl`** — your held-out labelled corpus (built in *Automate & own it*): the anomaly
+  variants (compromise login + an impossible-travel pair) and the benign near-misses (logged business
+  trip, VPN egress, datacenter-region cloud job), each labelled `anomalous`/`benign` and justified.
+- **`eval.py`** + **`drift.py`** + **`baseline/zt-posture.yml`** — the scored/gated eval and the
+  declare → observe → diff → reconcile drift loop.
+- **`detection.md`** — your notes: the anomalies found by eye, the near-misses and why each is hard, the
+  metric choice (and why recall), and the ZT-changes-detection analysis.
 
-Commit all alongside the worked example rule. Lab artifacts (raw log exports, keys) stay out of commits.
+*Lab artifacts (raw log exports, keys) stay out of commits — reference them, don't commit them.*
 
 ## Automate & own it
 
-**Required.** The eval *is* the automation: don't stop at scripting the detection — turn it into a
-**regression gate** so the rule can't silently rot. Wrap the scorecard in an eval that scores your rule
-against the **held-out corpus** and **exits non-zero when recall drops below your floor OR FP-rate climbs
-past your ceiling** — exactly as a unit test fails on a broken function. Prove it both ways (the lab ships
-`heldout/rules-regressed/` and `make eval` / `make gate` to copy). Then layer the **drift detector** on
-top as the steady-state half: a scheduled `drift.py` that diffs observed posture against
-`baseline/zt-posture.yml` and alerts on any delta. AI drafts the metric arithmetic, the scorecard table,
-and the JSON diffing; **you own the metric choice (recall on anomalies, not accuracy), the held-out wall,
-the gate's fail-closed direction, and the baseline values (set from the threat model, not a model's
-default).** (Honor system — the gate and the drift loop guard *you*; there's no grader.)
+**Required.** The shipped env fires the detection; *you* build the two things that turn it into a
+control — this is the automation, not an add-on.
 
-## AI acceleration
+1. **`eval.py` + a regression gate.** Build a **held-out** `heldout/corpus.jsonl` — events the rule was
+   *never* tuned on, each labelled `anomalous`/`benign`, deliberately stocked with the hard near-misses
+   (legit travel, VPN egress, datacenter cloud job) and the anomaly variants (compromise login,
+   impossible-travel pair). Score your rule into precision / recall / FP-rate, and **exit non-zero when
+   recall drops below your floor OR FP-rate climbs past your ceiling** — a unit test for a detection.
+   Prove it **both ways**: GREEN on the good rule, RED on a deliberately too-narrow copy (drops a country
+   variant → recall falls) and a too-broad copy (drops a filter entry → fires on legit travel).
+2. **`drift.py` + `baseline/zt-posture.yml`.** Declare the intended posture as data
+   (`max_token_lifetime_minutes`, allowed `policy_exceptions`, enforced `posture_checks`). Then mutate a
+   copy three ways — token-lifetime creep (15 min → 8 hrs), an accreted contractor allow-exception, a
+   posture check flipped to `log-only` — diff observed against baseline, **report all three deltas and
+   exit non-zero**, then reconcile and confirm zero deltas / exit 0.
 
-Give a model one log line and the field names and ask for a Sigma rule for "successful access from a
-country not in [US, CA, GB, DE, AU]." It produces a working `selection and not filter` pattern fast. Then
-test the deny side by hand: the benign near-misses in the held-out corpus (the VPN-egress event, the
-logged business trip) are exactly where AI rules fail — they nail the hit case and miss the filter edge
-cases. For the eval, have the model *draft* adversarial held-out items, then **label each yourself** against
-the real behavior it mimics — a model labelling its own test set is the contamination this module guards
-against. For the drift detector, the model writes the diff cleanly, but **you set the baseline**: a model
-asked "what's a safe token lifetime?" gives a plausible default; the threat model sets it, and the detector
-flags deviations from *that*.
+Have a model draft the confusion-matrix arithmetic and the JSON diffing — then **own the parts it gets
+wrong**: the metric is **recall on anomalies**, not accuracy; **you** label every held-out near-miss by
+hand (a model labelling its own test set is the contamination this whole module guards against); the
+gate must fail **closed** when the score is missing; and the drift baseline is *your* judgment from the
+threat model, not a model's plausible default. Commit `eval.py`, `drift.py`, `baseline/zt-posture.yml`,
+`heldout/corpus.jsonl`, the rule, and `detection.md`.
+
+## Definition of done (`zt-monitoring-detection` ✅)
+
+- [ ] `make demo` fires on the NG `access_allowed` (`lchen`, `Matched 1`) and stays silent on the RO
+  `auth_failed` flood — you can explain *why* the loud events don't fire.
+- [ ] You proved the filter is load-bearing: removing it matches **13** events; restoring it returns to 1.
+- [ ] `eval.py` scores your rule against a **held-out** corpus (precision/recall/FP-rate), and you can
+  state its recall and FP-rate — not just "it fired in the demo."
+- [ ] The gate is GREEN on the good rule and you have **seen it go RED** on *both* a too-narrow and a
+  too-broad copy (recall floor breached / FP-rate ceiling breached).
+- [ ] `drift.py` detects all three posture drifts, reports the deltas, exits non-zero, then reconciles to
+  zero deltas / exit 0.
+- [ ] `detection.md` answers: why `auth_failed` is higher-fidelity in ZT than at a perimeter; what a
+  *valid-token* attacker looks like in these logs and which field is your best signal; and which drift
+  would most weaken your Stage-1 detection (hint: long token lifetimes).
 
 ## Connects forward
 
-The ZT access-log structure this module detects against is the output of the identity-aware proxy you built
-in Module 06 and would be enriched by microsegmentation flow logs (Module 07) and policy-as-code decision
-logs (Module 08). A production deployment feeds all three to one SIEM and writes detections across them — a
-single unauthorized access from a non-compliant device produces correlated signals in the proxy log, the
+The ZT access-log structure you detect against is the output of the identity-aware proxy from Module 06,
+enriched by microsegmentation flow logs (Module 07) and policy-as-code decision logs (Module 08). A
+production deployment feeds all three to one SIEM and writes detections *across* them — a single
+unauthorized access from a non-compliant device produces correlated signals in the proxy log, the
 flow-drop log, and the policy-decision log at once. That correlation is the ZT detection advantage. The
-drift detector here is the same discipline you'd point at the policy-as-code from Module 08 to catch a
+drift detector here is the same discipline you'd point at Module 08's policy-as-code to catch a
 default-deny baseline quietly accreting allow rules.
 
 ## Marketable proof
 
-> "I write Sigma detections against Zero Trust access logs, **prove them on a held-out corpus** with a
-> precision/recall scorecard and a CI regression gate that fails on a too-broad or too-narrow rule, and I
-> run a **drift detector** that catches the Zero Trust posture itself eroding over time — token-lifetime
-> creep, accreted allow-exceptions, disabled posture checks — and reconciles it back to baseline."
+> "I write Sigma detections against Zero Trust access logs — catching the credential-compromise login
+> that a perimeter never sees — **prove them on a held-out corpus** with a precision/recall scorecard and
+> a CI regression gate that fails on a too-broad or too-narrow rule, and I run a **drift detector** that
+> catches the Zero Trust posture itself eroding over time (token-lifetime creep, accreted
+> allow-exceptions, disabled posture checks) and reconciles it back to baseline."
 
 ## Stretch
 
-- Add an **impossible-travel** detection: two `access_allowed` events for one `session_id`/user from
-  countries too far apart for the time delta. Add labelled cases to the held-out corpus and extend the
-  scorecard so this rule has its own recall floor.
-- Extend `drift.py` to emit a **maturity score** mapped to the CISA ZTMM levels (the further the observed
-  posture is from baseline, the lower the maturity), and gate the build below a maturity floor.
-- Convert `zt-unexpected-country.yml` to an Elastic EQL or Splunk query via `sigma convert` and confirm the
-  field mapping against a real ZT proxy's published access-log field names.
+- Add an **impossible-travel** detection: two `access_allowed` events for one user/`session_id` from
+  countries too far apart for the time delta (the lab's `lchen` US→NG pair is your first case). Add
+  labelled cases to the held-out corpus and give the rule its own recall floor.
+- Extend `drift.py` to emit a **maturity score** mapped to CISA ZTMM levels (the further observed posture
+  is from baseline, the lower the maturity) and gate the build below a maturity floor.
+- Convert `zt-unexpected-country.yml` to Elastic EQL via `sigma convert` and check the field mapping
+  against a real ZT proxy's published access-log field names.

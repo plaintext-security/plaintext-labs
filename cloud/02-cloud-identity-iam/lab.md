@@ -5,21 +5,23 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account or real credentials.
+[floci](https://github.com/floci-io/floci), a free, MIT-licensed local AWS emulator, to simulate AWS on
+`localhost:4566` — no cloud account or real credentials required. (floci replaces LocalStack, whose
+community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/02-cloud-identity-iam
-make up         # build + seed LocalStack with the misconfigured IAM
+make up         # build + seed floci with the misconfigured IAM
 make demo       # worked enumeration walkthrough
-make shell      # drop into the container (cloudfox + awslocal) to work
+make shell      # drop into the container (cloudfox + aws) to work
 make down       # stop when done
 ```
 
-**What this lab is — and isn't (read this).** **LocalStack CE does not *enforce* IAM** — a denied call
-won't actually bounce, so you can't prove "the wall holds" by brute-forcing the API. That's fine,
+**What this lab is — and isn't (read this).** **A local emulator does not *enforce* IAM** — a denied
+call won't actually bounce, so you can't prove "the wall holds" by brute-forcing the API. That's fine,
 because the skill here isn't exploitation; it's **judgment, proven.** You prove reach with
-`awslocal iam simulate-principal-policy`, which runs AWS's real policy-evaluation logic and returns
+`aws iam simulate-principal-policy`, which runs AWS's real policy-evaluation logic and returns
 `allowed` / `explicitDeny` / `implicitDeny` *and why*. So "she can reach it" and later "the path is now
 closed" are both **logical evaluations**, not lucky API calls. Honest tool, honest answer.
 
@@ -42,14 +44,14 @@ the evidence) → **Reveal** (check your call) → **Record** (one line in the r
 ### Part 1 — Predict the reach, then prove it
 
 1. [ ] **Map the principals.** Enumerate users and roles
-   (`awslocal iam list-users`, `awslocal iam list-roles`) and `dev-alice`'s attached policy
+   (`aws iam list-users`, `aws iam list-roles`) and `dev-alice`'s attached policy
    (`DevPolicy`). **Predict** before reading it: how far past "dev" does her key reach?
    **Reveal:** `s3:*` on `*`, `ec2:RunInstances`, and `iam:PassRole` on `*`. **Record:** the label said
    "dev"; the grant says "account."
 
 2. [ ] **Prove the S3 blast radius — not just her bucket.** Create a second, unrelated bucket
-   (`awslocal s3api create-bucket --bucket payroll-prod`), then run
-   `awslocal iam simulate-principal-policy` for `dev-alice` on `s3:DeleteObject` against **both**
+   (`aws s3api create-bucket --bucket payroll-prod`), then run
+   `aws iam simulate-principal-policy` for `dev-alice` on `s3:DeleteObject` against **both**
    `uploads-dev` and `payroll-prod`. Both return `allowed`. This is the Code Spaces
    reach: one key, every bucket, **delete** included. **Record:** owner of finding = customer (the policy
    scope); the key reaches and can destroy data it has no business touching.
@@ -58,7 +60,7 @@ the evidence) → **Reveal** (check your call) → **Record** (one line in the r
    and `ec2:RunInstances`. Confirm with the simulator that she is `allowed` to `iam:PassRole` on the
    admin instance role (`EC2AdminRole`). **Reveal:** that's the canonical compose — launch an
    instance attached to that role and the key *becomes* admin. No exploit; two legitimate grants. (Use
-   `cloudfox aws --profile localstack iam-simulator ...` to corroborate.) **Record:** this is the hop
+   `cloudfox aws --profile local iam-simulator ...` to corroborate.) **Record:** this is the hop
    that turns a lost laptop into a dead company.
 
 4. [ ] **Check the trust walls (federation footnote).** Read the trust policies:

@@ -2,8 +2,8 @@
 # Detection (trufflehog) + the *operate* side of secret management:
 #   - vault       : HashiCorp Vault (dev mode) — KV, policies, AND the database secrets engine
 #   - db          : Postgres — the backing store Vault mints dynamic, short-TTL credentials against
-#   - localstack  : simulated AWS — the cloud-native variant (Secrets Manager + IAM)
-#   - lab         : tooling container (trufflehog, vault, psql, awslocal, hvac, boto3)
+#   - floci       : simulated AWS — the cloud-native variant (Secrets Manager + IAM)
+#   - lab         : tooling container (trufflehog, vault, psql, aws cli, hvac, boto3)
 services:
   vault:
     image: hashicorp/vault:1.17.2
@@ -34,13 +34,8 @@ services:
       timeout: 5s
       retries: 10
 
-  localstack:
-    image: localstack/localstack:3.7.0
-    environment:
-      - SERVICES=secretsmanager,iam,sts
-      - DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+  floci:
+    image: floci/floci:1.5.34   # MIT-licensed LocalStack replacement; same :4566 endpoint
     ports:
       - "4566:4566"
     healthcheck:
@@ -58,11 +53,11 @@ services:
       # Postgres (for verifying dynamic creds with psql)
       - PGHOST=db
       - PGDATABASE=corp
-      # AWS / LocalStack (for the Secrets Manager variant; awslocal reads LOCALSTACK_HOST)
+      # AWS (for the Secrets Manager variant; plain `aws` reads AWS_ENDPOINT_URL -> floci)
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      - LOCALSTACK_HOST=localstack
+      - AWS_ENDPOINT_URL=http://floci:4566
     working_dir: /lab
     volumes:
       - ./:/lab
@@ -71,6 +66,6 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
-      localstack:
+      floci:
         condition: service_healthy
     command: sleep infinity

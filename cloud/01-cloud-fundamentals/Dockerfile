@@ -1,5 +1,5 @@
 # Lab 01 — Cloud Fundamentals & Shared Responsibility
-# Provides: awscli v2 + awslocal (thin LocalStack wrapper) + Python 3
+# Provides: awscli v2 (honors AWS_ENDPOINT_URL -> floci or real AWS) + Python 3
 FROM python:3.12-slim
 
 # aws-cli v2 is not on PyPI; install the official binary bundle.
@@ -26,10 +26,8 @@ RUN case "$(uname -m)" in \
     && /tmp/aws/install \
     && rm -rf /tmp/awscliv2.zip /tmp/aws
 
-# localstack Python tools: awslocal wraps `aws` to point at LocalStack
-RUN pip install --no-cache-dir awscli-local==0.22.0
-
-# Fake credentials so awslocal doesn't complain (LocalStack ignores them)
+# Fake default credentials for the floci route (the emulator ignores them; the
+# real-AWS route overrides these with your own credentials from the environment).
 ENV AWS_ACCESS_KEY_ID=test \
     AWS_SECRET_ACCESS_KEY=test \
     AWS_DEFAULT_REGION=us-east-1

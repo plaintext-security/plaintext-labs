@@ -1,5 +1,0 @@
-[
-  {"id": 1, "source": "suricata", "severity": "high", "indicator": {"kind": "ipv4", "value": "45.83.192.44"}},
-  {"id": 2, "source": "zeek", "severity": "medium", "indicator": {"kind": "domain", "value": "evil-c2.example"}},
-  {"id": 3, "source": "sysmon", "severity": "high", "indicator": {"kind": "sha256", "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}}
-]

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# data/setup.sh — deploy the vulnerable Lambda to LocalStack and seed supporting resources.
-# Called by `make up` after LocalStack is healthy.
+# data/setup.sh — deploy the vulnerable Lambda to floci and seed supporting resources.
+# Called by `make up` after floci is healthy.
 set -euo pipefail
 
-ENDPOINT="http://localstack:4566"
+ENDPOINT="http://floci:4566"
 REGION="us-east-1"
-AL="awslocal --endpoint-url $ENDPOINT --region $REGION"
+AL="aws --endpoint-url $ENDPOINT --region $REGION"
 
 echo "== Seeding  serverless environment =="
 
@@ -41,7 +41,7 @@ echo "[2/4] Packaging Lambda function..."
 cd /lab/data/lambda
 zip -q /tmp/notifier.zip handler.py
 
-echo "[3/4] Deploying Lambda to LocalStack..."
+echo "[3/4] Deploying Lambda to floci..."
 ROLE_ARN="arn:aws:iam::000000000000:role/notifier-role"
 
 $AL lambda create-function \
@@ -87,5 +87,5 @@ echo "   Role:   notifier-role (over-privileged: s3:*, iam:*, sts:AssumeRole *)"
 echo "   S3:     sensitive-records (reachable via the Lambda's role)"
 echo ""
 echo "Test with:"
-echo "  awslocal lambda invoke --function-name notifier \\"
+echo "  aws lambda invoke --function-name notifier \\"
 echo '    --payload '"'"'{"account_id":"ACC-001","event_type":"payment"}'"'"' /tmp/response.json'

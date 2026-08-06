@@ -1,21 +1,17 @@
 # Module 09 — Serverless Security
-# LocalStack (Lambda + IAM + S3) + lab container (SAM CLI + cloudfox).
+# floci (Lambda + IAM + S3) + lab container (SAM CLI + cloudfox).
 services:
-  localstack:
-    image: localstack/localstack:3.4.0
+  floci:
+    image: floci/floci:1.5.34   # MIT-licensed LocalStack replacement; same :4566 endpoint
     environment:
-      - SERVICES=lambda,iam,s3,sts,logs
-      - DEBUG=0
-      - DEFAULT_REGION=us-east-1
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
     ports:
       - "4566:4566"
     volumes:
-      # LocalStack 3.x Lambda v2 spawns each function in its own runtime container
-      # via the host Docker socket. Without this mount, `lambda invoke` fails with
-      # "function is in the Failed state". (LAMBDA_EXECUTOR=local was removed in 2.0.)
+      # floci runs each Lambda in its own runtime container via the host Docker socket.
+      # Without this mount, `lambda invoke` cannot start the function container.
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
@@ -30,11 +26,11 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ENDPOINT_URL=http://floci:4566
     working_dir: /lab
     volumes:
       - ./:/lab
     depends_on:
-      localstack:
+      floci:
         condition: service_healthy
     command: sleep infinity

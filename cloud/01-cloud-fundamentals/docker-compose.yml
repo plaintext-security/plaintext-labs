@@ -1,14 +1,10 @@
 # Lab 01 — Cloud Fundamentals & Shared Responsibility
-# Services: LocalStack (simulated AWS) + lab container (awscli tooling)
-# `make up` starts both; `make shell` drops into the lab container.
+# Services: floci (free local AWS emulator) + lab container (aws cli tooling).
+# `make up` starts both and seeds the account; `make shell` drops into the lab container.
+# The lab drives plain `aws` via AWS_ENDPOINT_URL, so it stays one variable away from real AWS.
 services:
-  localstack:
-    image: localstack/localstack:3.7.0
-    environment:
-      - SERVICES=iam,s3,ec2,sts
-      - DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+  floci:
+    image: floci/floci:1.5.34   # MIT-licensed LocalStack replacement; same :4566 endpoint
     ports:
       - "4566:4566"
     healthcheck:
@@ -21,17 +17,15 @@ services:
     build: .
     image: plaintext/cloud-fundamentals
     depends_on:
-      localstack:
+      floci:
         condition: service_healthy
     environment:
+      - AWS_ENDPOINT_URL=http://floci:4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      # Point awslocal at the LocalStack container by name (same as the lab service)
-      - LOCALSTACK_HOST=localstack
     volumes:
       - ./:/lab
-    # Run setup once then exit
     command: bash /lab/data/setup.sh
     restart: "no"
 
@@ -41,11 +35,11 @@ services:
     depends_on:
       - seed
     environment:
+      - AWS_ENDPOINT_URL=http://floci:4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      # Point awslocal at the LocalStack container by name
-      - LOCALSTACK_HOST=localstack
+    working_dir: /lab
     volumes:
       - ./:/lab
     command: sleep infinity

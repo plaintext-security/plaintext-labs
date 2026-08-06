@@ -22,7 +22,13 @@ credentials
 *.pcap
 *.pcapng
 *.cap
+*.pcap.zip
+# Track 09: downloaded PCAP archives and large Suricata-generated corpora — labs
+# fetch/generate these (small curated eve.json seeds under data/ ARE committed on purpose).
+python-for-security/*/_gen/
 *.log
+# Track 09: committed Zeek TSV seed logs are curated sample data, not generated artifacts
+!python-for-security/*/data/zeek/*.log
 *.dmp
 *.mem
 *.vmem

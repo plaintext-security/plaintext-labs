@@ -5,25 +5,26 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It seeds a
-[LocalStack](https://localstack.cloud/) account with a multi-hop escalation scenario
-and analyses it with a bundled graph analyzer (`analyze.py`) alongside `pmapper`/`cloudfox` — no cloud
-account or real credentials.
+[floci](https://github.com/floci-io/floci) account (a free, MIT-licensed local AWS emulator) with a
+multi-hop escalation scenario and analyses it with a bundled graph analyzer (`analyze.py`) alongside
+`pmapper`/`cloudfox` — no cloud account or real credentials. (floci replaces LocalStack, whose
+community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/03-iam-attack-paths
-make up                          # build + seed the LocalStack escalation scenario
+make up                          # build + seed the floci escalation scenario
 make demo                        # worked path-finding walkthrough over the bundled graph
-make shell                       # drop into the container (pmapper + cloudfox + awslocal) to work
+make shell                       # drop into the container (pmapper + cloudfox + aws) to work
 make analyze GRAPH=data/graph.json   # run the path finder against any graph file
 make down                        # stop when done
 ```
 
-**What this lab is — and isn't (read this).** **LocalStack CE does not *enforce* IAM** — a denied
+**What this lab is — and isn't (read this).** **A local emulator does not *enforce* IAM** — a denied
 `AssumeRole` won't actually bounce, so you can't prove a chain by detonating it against the API. That's
 fine: privesc here is a **graph property, evaluated logically.** A pre-built `data/graph.json` (the
 pmapper-style graph for this account) ships with the lab so the reachability analysis is deterministic;
-you corroborate its edges against the live seeded policies with `awslocal`/`cloudfox`. So "she reaches
+you corroborate its edges against the live seeded policies with `aws`/`cloudfox`. So "she reaches
 admin" and later "the path is gone" are both **graph evaluations** over policies you can read, not lucky
 API calls. Honest tool, honest answer — mark any hop you can't detonate as *assessed from config*.
 
@@ -44,8 +45,8 @@ Each step runs the same rhythm: **Predict** (commit before you look) → **Do** 
 
 ### Part 1 — Predict the reach, then build the graph
 
-1. [ ] **Map the principals.** List users and roles (`awslocal iam list-users`,
-   `awslocal iam list-roles`) and read `dev-alice`'s attached policy. **Predict** before going further:
+1. [ ] **Map the principals.** List users and roles (`aws iam list-users`,
+   `aws iam list-roles`) and read `dev-alice`'s attached policy. **Predict** before going further:
    she has no obvious over-grant — is she safe? **Record:** her *only* notable permission is
    `sts:AssumeRole` on one role.
 
@@ -58,13 +59,13 @@ Each step runs the same rhythm: **Predict** (commit before you look) → **Do** 
 3. [ ] **Walk the chain end-to-end.** Read the path the analyzer printed:
    - **Hop 1** — `dev-alice → LambdaRole` via `sts:AssumeRole` (she's an explicit principal in
      the role's trust policy). **Predict then confirm** with
-     `awslocal iam get-role --role-name LambdaRole --query "Role.AssumeRolePolicyDocument"`.
+     `aws iam get-role --role-name LambdaRole --query "Role.AssumeRolePolicyDocument"`.
    - **Hop 2** — `LambdaRole → AdminRole` via `iam:PassRole` +
      `lambda:UpdateFunctionConfiguration`: update an existing Lambda's execution role to the admin role,
      invoke it, and the code runs as admin. **Record** which Rhino "21 methods" primitive each hop is.
 
 4. [ ] **Corroborate the edges against the live policies.** The graph is only trustworthy if it matches
-   reality. Use `cloudfox aws --profile localstack permissions` (or `awslocal iam get-role-policy` /
+   reality. Use `cloudfox aws --profile local permissions` (or `aws iam get-role-policy` /
    `list-attached-role-policies`) to confirm `LambdaRole` really holds `iam:PassRole` and
    `lambda:UpdateFunctionConfiguration`. **Record:** edge ↔ policy, so no hop is asserted on the model
    alone. Map each hop to its ATT&CK technique (T1078.004 for hop 1, T1548 for hop 2).
@@ -101,7 +102,7 @@ Naming the cut is the finding; **implementing it and proving the path is gone is
 ## Success criteria — you're done when
 - [ ] You enumerated every path from `dev-alice` to admin and named the escalation primitive (a Rhino
   "21 methods" entry) and ATT&CK technique at each hop.
-- [ ] You corroborated each graph edge against the live seeded policy with `cloudfox`/`awslocal` — no hop
+- [ ] You corroborated each graph edge against the live seeded policy with `cloudfox`/`aws` — no hop
   rests on the model alone.
 - [ ] You identified a **minimum cut-set**, wrote the corrected policy statement, and can say in one
   sentence why scoping the `iam:PassRole` *resource* (not deleting the role) is the minimal change.
@@ -150,5 +151,5 @@ which closes every breach hop as code gated by exactly this kind of check in CI.
 - Re-run the whole loop against a CloudGoat `iam_privesc_by_rollback` (or `iam_privesc_by_key_rotation`)
   scenario in a real free-tier account, where IAM is actually enforced — detonate the path, then apply
   your cut and confirm the privesc call now genuinely fails, not just disappears from the graph.
-- Write a graph builder (`build_graph.py`) that generates `graph.json` by calling `awslocal`/`cloudfox`
+- Write a graph builder (`build_graph.py`) that generates `graph.json` by calling `aws`/`cloudfox`
   instead of using the bundled file — the first step toward a self-updating IAM posture monitor.

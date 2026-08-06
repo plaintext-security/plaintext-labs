@@ -39,7 +39,7 @@ rotate-root:  ## Rotate the Postgres admin password Vault holds (one-way; operat
 		vault write -f database/rotate-root/postgres; \
 		echo "Rotated. The admin password is now known only to Vault."'
 
-aws-secrets:  ## The cloud-native variant: Secrets Manager + least-privilege IAM (LocalStack)
+aws-secrets:  ## The cloud-native variant: Secrets Manager + least-privilege IAM (floci)
 	docker compose run --rm lab bash data/setup-aws-secrets.sh
 
 demo:         ## Full worked example: detect → static store → dynamic creds → runtime app → AWS variant

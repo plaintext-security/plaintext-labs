@@ -31,11 +31,13 @@ model's output like any other untrusted upstream.
 
 ## Do
 
-1. [ ] **Expose `sift` as an MCP server.** Wrap the enrich/triage functions as `@mcp.tool()`s; let the
-   type hints and docstrings define the schema. Run it and drive it with the MCP Inspector.
-2. [ ] **Treat the LLM as an untrusted caller.** Validate every tool argument with Module 02's `pydantic`
-   models *inside* the tool. Prove it: pass a hostile argument (e.g. a non-indicator string / injection
-   payload) and confirm the tool rejects it rather than acting on it.
+1. [ ] **Expose `sift` as an MCP server.** Wrap the enrich/triage functions as `@mcp.tool()`s over the
+   real EVE-derived indicators `sift` already produces — a `src_ip`/`dest_ip` or a `signature` off a
+   validated `AlertEvent`. Let the type hints and docstrings define the schema; drive it with the MCP Inspector.
+2. [ ] **Treat the LLM as an untrusted caller.** Validate every tool argument with the canonical EVE
+   `pydantic` models *inside* the tool (an `IPvAnyAddress` for an IP indicator, `AlertEvent` for a whole
+   record). Prove it: pass a hostile argument (e.g. `"1.1.1.1; drop table"` or a non-IP string) and confirm
+   the tool rejects it rather than acting on it.
 3. [ ] **Keep tools read-only (or gate them).** Ensure the exposed tools don't mutate state; if one must,
    put a human-confirmation gate in front of it.
 4. [ ] **Validate the LLM's output.** Have `sift` call a model to classify an alert, and use `instructor`
@@ -75,3 +77,14 @@ classifier whose output has a stable, typed shape. Track 12 takes this into oper
 - Register the `sift` MCP server with a real MCP client (e.g. Claude Code) and call it end to end.
 - Add a second tool that would be dangerous if unguarded (a state-changer) and implement the
   human-confirmation gate, proving the model can't trigger it unattended.
+- **Dissector rung — a `dissect_eve_line` MCP tool.** Expose a tool that takes one **arbitrary raw
+  `eve.json` line** (a string the model supplies — maximally untrusted) and returns either the typed event
+  or a quarantine result. Route it through `sift`'s growing discriminated union (`alert` plus the dissector
+  members added in M02 `dns`, M03 `http`, M04 `tls`, M05 `flow`/`fileinfo`): validate with
+  `TypeAdapter(EveEvent)` *inside* the tool, and on any failure — non-JSON, an out-of-range
+  `alert.severity`, or an `event_type` with no union member — return a structured quarantine object rather
+  than raising to the model. This is untrusted-tool-argument validation at its purest: the model hands you
+  a whole line, and the same union that guards `sift`'s ingest now guards its MCP surface.
+  *Acceptance:* a well-formed line of a supported `event_type` returns the correct typed member; a
+  malformed or unhandled-`event_type` line returns a quarantine result (never an unhandled exception across
+  the tool boundary).

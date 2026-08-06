@@ -6,11 +6,11 @@ set -euo pipefail
 echo "==> Seeding  IAM (module 02 — Cloud Identity & IAM)..."
 
 # ---- Users ----
-awslocal iam create-user --user-name dev-alice 2>/dev/null || true
-awslocal iam create-user --user-name dev-bob   2>/dev/null || true
+aws iam create-user --user-name dev-alice 2>/dev/null || true
+aws iam create-user --user-name dev-bob   2>/dev/null || true
 
 # ---- Over-broad developer policy ----
-awslocal iam create-policy \
+aws iam create-policy \
   --policy-name DevPolicy \
   --policy-document '{
     "Version": "2012-10-17",
@@ -43,10 +43,10 @@ awslocal iam create-policy \
   }' 2>/dev/null || true
 
 DEV_POLICY_ARN="arn:aws:iam::000000000001:policy/DevPolicy"
-awslocal iam attach-user-policy --user-name dev-alice --policy-arn "$DEV_POLICY_ARN" 2>/dev/null || true
+aws iam attach-user-policy --user-name dev-alice --policy-arn "$DEV_POLICY_ARN" 2>/dev/null || true
 
 # ---- Admin role (the escalation target) ----
-awslocal iam create-role \
+aws iam create-role \
   --role-name AdminRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -57,12 +57,12 @@ awslocal iam create-role \
     }]
   }' 2>/dev/null || true
 
-awslocal iam attach-role-policy \
+aws iam attach-role-policy \
   --role-name AdminRole \
   --policy-arn arn:aws:iam::aws:policy/AdministratorAccess 2>/dev/null || true
 
 # ---- CI/CD deploy role (loose OIDC trust — any sub) ----
-awslocal iam create-role \
+aws iam create-role \
   --role-name CICDRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -79,7 +79,7 @@ awslocal iam create-role \
   }' 2>/dev/null || true
 # Note: no sub condition — any GitHub Actions workflow can assume this role.
 
-awslocal iam create-policy \
+aws iam create-policy \
   --policy-name CICDPolicy \
   --policy-document '{
     "Version": "2012-10-17",
@@ -93,12 +93,12 @@ awslocal iam create-policy \
     ]
   }' 2>/dev/null || true
 
-awslocal iam attach-role-policy \
+aws iam attach-role-policy \
   --role-name CICDRole \
   --policy-arn arn:aws:iam::000000000001:policy/CICDPolicy 2>/dev/null || true
 
 # ---- EC2 instance role (escalation target via PassRole) ----
-awslocal iam create-role \
+aws iam create-role \
   --role-name EC2AdminRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -109,7 +109,7 @@ awslocal iam create-role \
     }]
   }' 2>/dev/null || true
 
-awslocal iam attach-role-policy \
+aws iam attach-role-policy \
   --role-name EC2AdminRole \
   --policy-arn arn:aws:iam::aws:policy/AdministratorAccess 2>/dev/null || true
 

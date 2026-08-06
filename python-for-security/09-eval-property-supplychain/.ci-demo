@@ -1,1 +1,1 @@
-Validated: `make up && make demo && make down` green (eval gate recall=0.75, supply-chain hash, hypothesis props).
+Validated: `make up && make demo && make down` green (eval on 21 real Suricata alerts: precision=1.00 recall=0.93, gate recall>=0.90; supply-chain hash; 10 hypothesis/property tests). Offline.

@@ -14,33 +14,33 @@ down:      ## Stop and remove containers
 reset:     ## Tear down completely (containers + local images + volumes)
 	docker compose down --rmi local --volumes --remove-orphans
 
-shell:     ## Drop into the lab container (cloudfox + awslocal available)
+shell:     ## Drop into the lab container (cloudfox + aws available)
 	docker compose exec lab bash
 
 # --- Worked example: enumerate IAM with cloudfox ----------------------------
 demo:      ## Run the IAM enumeration walkthrough
 	@docker compose run --rm lab sh -c '\
-		echo "=== 1. List IAM users (awslocal) ==="; \
-		awslocal iam list-users --query "Users[*].UserName" --output table; \
+		echo "=== 1. List IAM users (aws) ==="; \
+		aws iam list-users --query "Users[*].UserName" --output table; \
 		echo; \
-		echo "=== 2. List IAM roles (awslocal) ==="; \
-		awslocal iam list-roles --query "Roles[*].[RoleName,AssumeRolePolicyDocument.Statement[0].Principal]" --output table; \
+		echo "=== 2. List IAM roles (aws) ==="; \
+		aws iam list-roles --query "Roles[*].[RoleName,AssumeRolePolicyDocument.Statement[0].Principal]" --output table; \
 		echo; \
 		echo "=== 3. cloudfox: enumerate permissions for dev-alice ==="; \
 		cloudfox aws \
-		  --endpoint http://localstack:4566 \
-		  --profile localstack \
+		  --endpoint http://floci:4566 \
+		  --profile local \
 		  permissions \
 		  --principal arn:aws:iam::000000000001:user/dev-alice \
 		  --output table 2>/dev/null || \
-		awslocal iam list-attached-user-policies --user-name dev-alice --output table; \
+		aws iam list-attached-user-policies --user-name dev-alice --output table; \
 		echo; \
 		echo "=== 4. AdminRole trust policy — spot the account-root trust ==="; \
-		awslocal iam get-role --role-name AdminRole \
+		aws iam get-role --role-name AdminRole \
 		  --query "Role.AssumeRolePolicyDocument" --output json; \
 		echo; \
 		echo "=== 5. CICD role trust — note missing sub condition ==="; \
-		awslocal iam get-role --role-name CICDRole \
+		aws iam get-role --role-name CICDRole \
 		  --query "Role.AssumeRolePolicyDocument" --output json; \
 		echo; \
 		echo "FINDING: dev-alice has iam:PassRole/* — can pass EC2AdminRole to a new EC2 instance."; \
@@ -64,8 +64,8 @@ check-fixed:      ## Check YOUR dev-alice-fixed-policy.json — aim for all PASS
 apply-fixed:      ## Apply your fixed policy to LocalStack as a new default version, then re-enumerate
 	@docker compose run --rm lab sh -c '\
 		ARN=arn:aws:iam::000000000001:policy/DevPolicy; \
-		awslocal iam create-policy-version --policy-arn $$ARN \
+		aws iam create-policy-version --policy-arn $$ARN \
 		  --policy-document file:///lab/data/dev-alice-fixed-policy.json --set-as-default >/dev/null && \
 		echo "Applied fixed policy as new default version."; \
 		echo "dev-alice attached policies now:"; \
-		awslocal iam list-attached-user-policies --user-name dev-alice --output table'
+		aws iam list-attached-user-policies --user-name dev-alice --output table'

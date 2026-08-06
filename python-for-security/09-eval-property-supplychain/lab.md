@@ -7,9 +7,9 @@
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
 `plaintext-labs/python-for-security/09-eval-property-supplychain/`: the hardened `sift` from Module 08,
-plus a **held-out labelled corpus** (`evals/holdout.jsonl` — alerts with ground-truth benign/malicious
-labels, generated separately from your tuning data), `pydantic-evals`, `hypothesis`, and `pip-audit`
-pinned in the lockfile.
+plus a **held-out labelled corpus** (`evals/holdout.jsonl` — real Suricata `alert` events from the anchor
+capture, each hand-labelled true-positive or false-positive, kept separate from your tuning data),
+`pydantic-evals`, `hypothesis`, and `pip-audit` pinned in the lockfile.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -41,9 +41,10 @@ lockfile from a file into an enforced supply-chain control.
 1. [ ] **Write the spec first.** Per the track workflow, spec this increment: the metric you'll optimize
    (precision/recall) and *why*, the pass thresholds, the validator property, and the two supply-chain
    gates. Name the held-out rule explicitly: the eval corpus is never used to tune.
-2. [ ] **Load the held-out corpus as a `pydantic-evals` `Dataset`.** Turn `holdout.jsonl` into `Case`s
-   (input alert → expected label). Confirm — in code or a comment — that nothing in your tuning/threshold
-   path reads this file. Held-out means held out.
+2. [ ] **Load the held-out corpus as a `pydantic-evals` `Dataset`.** Turn `holdout.jsonl` — the labelled
+   real `alert` events — into `Case`s (input EVE alert → expected true-positive/false-positive label).
+   Confirm — in code or a comment — that nothing in your tuning/threshold path reads this file. Held-out
+   means held out.
 3. [ ] **Write a scorer and run the scorecard.** Add an evaluator that compares `sift`'s triage verdict to
    the expected label and reports **precision and recall** (not accuracy). Run it; read the number *after*
    you committed to which metric matters.
@@ -51,10 +52,10 @@ lockfile from a file into an enforced supply-chain control.
    `precision >= 0.80`, `recall >= 0.90`) as a CI-failing check. Then deliberately break triage (loosen a
    rule, or swap in a worse prompt), watch the gate go **red**, and revert to green. You must demonstrate
    both.
-5. [ ] **Fuzz the M2 validator with `hypothesis`.** Write a `@given` property that generates arbitrary
-   input and asserts the validator *either* yields a well-formed `Alert` *or* raises `ValidationError` —
-   never a half-parsed object, never any other exception. Let it find a case your example tests missed;
-   fix the validator; keep the shrunk case as a regression test.
+5. [ ] **Fuzz the M2 EVE validator with `hypothesis`.** Write a `@given` property that generates arbitrary
+   EVE-shaped input and asserts the `AlertEvent`/union validator *either* yields a well-formed event *or*
+   raises `ValidationError` — never a half-parsed object, never any other exception. Let it find a case
+   your example tests missed; fix the validator; keep the shrunk case as a regression test.
 6. [ ] **Add the supply-chain gate.** Wire `pip-audit` over the **lockfile** into CI, and enforce a
    hash-locked install (`uv.lock` / `--require-hashes`). Prove it: introduce a known-vulnerable pinned
    version (or drift the lock) and watch the build fail; restore and confirm green.
@@ -66,7 +67,7 @@ lockfile from a file into an enforced supply-chain control.
 ## Success criteria — you're done when
 - [ ] A held-out `pydantic-evals` `Dataset` scores `sift`'s triage on **precision and recall**, and the repo states the corpus is never tuned against.
 - [ ] A CI regression gate asserts your justified thresholds and **fails on a planted regression** — you demonstrated red *and* green.
-- [ ] A `hypothesis` property fuzzes the M2 validator; it found (or provably can't find) a malformed input the validator mishandles, and the shrunk case is a committed regression test.
+- [ ] A `hypothesis` property fuzzes the M2 `AlertEvent`/union EVE validator; it found (or provably can't find) a malformed EVE input the validator mishandles, and the shrunk case is a committed regression test.
 - [ ] `pip-audit` runs over the lockfile in CI and a **hash-locked** install is enforced; both fail on a deliberate vulnerable/drifted dependency and pass when fixed.
 - [ ] The metric choice (precision vs recall) is written down *with its rationale*, decided before the number was read.
 
@@ -103,3 +104,16 @@ measured, fuzzed, and pinned.
   not just the absolute threshold — catch degradation the day a provider updates.
 - Reproduce the `torchtriton` class end-to-end: stand up a tiny private index, show an unpinned install
   resolving the public shadowing package, then show `pip-audit` + the hash-locked install refusing it.
+- **Dissector finale — prove the whole union is *total* (the thread's capstone rung).** The dissector
+  thread has grown the EVE union stretch by stretch — `dns` (M2), `http` (M3), `tls`/`ja3` (M4),
+  `flow`/`fileinfo` (M5). Now turn *this* module's skill back on the whole thing: write a `hypothesis`
+  property asserting the dissector is **total over every EVE line** — each generated/real line either
+  parses to a *known* event type **or** is quarantined, and it *never* crashes with an unhandled
+  exception. Then add **drift detection over the event-type mix**: snapshot the distribution of dissected
+  `event_type`s over the anchor `eve.json` and fail the build when a run surfaces a *new* or newly-frequent
+  type your union doesn't model — the same regression-gate shape you built for triage, pointed at coverage.
+  *Acceptance:* the property survives thousands of generated EVE-shaped inputs (partial dissection = a
+  bug), the quarantine path is exercised by an unmodelled `event_type`, and the drift gate goes red when
+  you feed it an `event_type` outside the snapshot and green once the union (or the snapshot) accounts for
+  it. This closes the growing union the dissector thread opened in M2. *(Objective only — derive the
+  property and the snapshot yourself; no transcribed solution.)*

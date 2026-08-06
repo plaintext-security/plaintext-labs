@@ -1,1 +1,3 @@
-Prowler scan over LocalStack exceeds the 12-min CI per-lab budget on amd64 runners (the demo is correct but slow). Run locally: make up && make demo.
+Prowler runs against the floci emulator locally (make up && make demo). Left CI-skipped because a full
+prowler scan can exceed the per-lab CI budget on amd64 runners, and real posture *depth* wants a real
+account anyway — floci covers the seeded misconfigs; production posture is the real-AWS fidelity route.

@@ -1,13 +1,10 @@
 # Module 05 — Posture & Misconfiguration Auditing
-# LocalStack (fake AWS) + prowler lab container.
-# `make up` starts both; `make demo` seeds misconfigs and runs prowler.
+# floci (free local AWS emulator) + prowler lab container.
+# `make up` starts both and seeds misconfigs; `make demo` runs prowler.
 services:
-  localstack:
-    image: localstack/localstack:3.4.0
+  floci:
+    image: floci/floci:1.5.34   # MIT-licensed LocalStack replacement; same :4566 endpoint
     environment:
-      - SERVICES=s3,iam,ec2,cloudtrail,sts
-      - DEBUG=0
-      - DEFAULT_REGION=us-east-1
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
@@ -26,11 +23,11 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
-      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ENDPOINT_URL=http://floci:4566
     working_dir: /lab
     volumes:
       - ./:/lab
     depends_on:
-      localstack:
+      floci:
         condition: service_healthy
     command: sleep infinity

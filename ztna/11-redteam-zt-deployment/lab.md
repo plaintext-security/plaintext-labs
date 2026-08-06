@@ -1,180 +1,275 @@
-# Lab 11 — Red-team Your Zero-Trust Deployment
+# Lab 11 — Red-team Your Zero-Trust Deployment: attack it, harden it, regression-test it
 
-*Hands-on lab · [← Back to the module concept](README.md)*
+> **Hands-on lab.** Objective: **attack the gated service you built in Modules 05/06,
+> document what it refuses, harden the one gap that lands, and freeze every attack into a regression
+> suite.** Target: **~2–3 hrs**, one finish line. This lab **reuses the Module 06 Pomerium environment**
+> you already stood up — it does *not* ship a new container stack. (Honor system: the committed report,
+> the hardening diff, and the re-runnable harness are the proof.)
 
-**Type 10 · Design → red-team-your-own-design → harden.** You already built the gated service (Modules
-05/06). Here you **attack your own design** with four probes, document the ones it refuses (the design
-held — that *is* the evidence), and for the one that lands against a deliberately-naive backend, harden
-it and re-attack until it fails too. The deliverable is the four documented attacks + the hardening
-diff. No grader; you verify your own work against the observable success criteria below. (Honor system:
-the committed report, the hardening diff, and the re-runnable harness are the proof.)
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This replaces re-reading the module.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **A control you haven't attacked is a hope.** | A green dashboard proves the happy path, never the deny path. |
+| 2 | **Enumerate the assumptions:** nothing listens · no unauth reach · no forged identity · no bypass. | Each promise is one attack; a design you can list you can regression-test. |
+| 3 | **Header forgery is the centerpiece.** | `curl -H "X-Forwarded-User: admin"` is free; a *signed* `X-Pomerium-Jwt-Assertion` needs the proxy's key. |
+| 4 | **The backend's rule:** trust only the signed assertion, verified vs JWKS + `aud`/`iss`/`exp`. | This is what CVE-2026-40575 (CVSS 9.1) got wrong — a client-set header trusted as truth. |
+| 5 | **A refused attack is a documented WIN.** | "I attacked this and it held" is the artifact a review asks for — the finding you land is the exercise working. |
+| 6 | **Every attack becomes a regression check.** | A gap found once but never re-tested ships again; the harness must fail *closed*. |
+
+*(If you can explain all six cold at the end — especially #6 — you've got the objective.)*
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [core idea + attack-surface table](README.md#the-core-idea) and the
+> [header-forgery centerpiece](README.md#the-centerpiece-identity-header-forgery).
+
+---
+
+## Warm-up — answer before you read on (2 min)
+
+*Don't look below. Being forced to retrieve is what builds the memory.*
+
+1. Your Module 06 Pomerium deployment returns a green health check and a `connected` tunnel. Name the
+   **four** things that being green does *not* prove — one per trust assumption.
+2. Why does `curl -H "X-Forwarded-User: admin@corp.com"` cost an attacker nothing, while forging
+   `X-Pomerium-Jwt-Assertion` is infeasible? What exactly does the attacker lack?
+
+---
 
 ## Setup
 
-This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It reuses the Module 06
-Pomerium environment and adds a second, deliberately-vulnerable backend plus an attack harness:
+This lab **reuses the environment you already built in Module 06** — the all-in-one Pomerium proxy in
+front of a `whoami` backend that has **no published port**. You do not stand up a new stack; you turn
+the deployment you own into a target.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
-cd plaintext-labs/ztna/redteam-zt-deployment
-make up       # Pomerium (all-in-one + mock IdP) + a VERIFYING backend + a NAIVE backend
-make attack   # run all four attacks and print a per-attack PASS (refused) / FAIL (got through) report
-make shell    # drop into the attacker container for manual probing
-make down     # stop everything
+cd plaintext-labs/ztna/06-identity-aware-access
+make up        # Pomerium on :8443 + a whoami backend reachable ONLY through Pomerium
 ```
 
-The environment starts:
-- **Pomerium** (all-in-one mode with a built-in mock IdP) on port 8443 — the same proxy you built in 06.
-- **`whoami-verifying`** — a small backend that fetches Pomerium's JWKS and validates
-  `X-Pomerium-Jwt-Assertion` (signature, `aud`, `iss`, `exp`) before trusting any identity. On an
-  internal Docker network with **no published port**.
-- **`whoami-naive`** — a deliberately-vulnerable backend that reads a *plain* `X-Forwarded-User`
-  header and believes it (the header-trust mistake from the module). Routed behind Pomerium too, so the
-  forgery attack has something to actually succeed against — the finding you harden.
-- An **attacker** container (with `nmap`/`curl`) on a separate network, used by `make attack`.
+To have something the identity-forgery attack can actually *succeed* against, you'll add a second,
+**deliberately-naive** route/backend yourself during Step 3 (attacker→fixer: you build the weakness so
+you can find and fix it). Keep it tiny — a `traefik/whoami` (which echoes every header it receives back
+in the body) behind a Pomerium route with `pass_identity_headers: true` is enough to *observe* a
+client-set header reaching the backend; the "naive backend" is the assumption that a real service would
+*act* on that echoed header. You run the attacks from a throwaway container with `nmap`/`curl`:
 
-> **Authorization note.** Every attack in this lab is aimed *only at your own lab deployment*, running
-> locally in Docker. Only ever scan or attempt to reach systems you own or have explicit written
-> permission to test. Do not point `attack.sh`, `nmap`, or any probe at a host you do not own.
+```bash
+docker run --rm -it --network ztna-lab_ztna-lab \
+  ghcr.io/plaintext-security/attacker:latest sh   # or any image with nmap + curl + jq
+```
+
+> **⚠ Authorization — read this before you scan anything.** Every probe in this lab is aimed **only at
+> your own local lab deployment**, running in Docker on your machine. Port-scanning, header-forging, or
+> bypass-probing a host you do **not** own — or do not have **explicit written permission** to test — is
+> an attack, and in most jurisdictions a crime. Do not point `nmap`, `curl`, or any harness at a
+> production system, a cloud endpoint, a coworker's box, or any address outside `ztna-lab`. The whole
+> value of this module is that the target is *yours*.
+
+---
 
 ## Scenario
 
-You stood up an identity-aware proxy (Module 06) and a no-inbound-ports published service (Module 05).
-Leadership says "we've deployed Zero Trust." Your job is to prove it — or find where it isn't. You will
-attack your own deployment the way an outsider would, and produce the evidence a security review asks
-for: the attacks it refused, and the one weakness you found and fixed. A refused attack is a documented
-win; the finding you land and harden is the exercise working.
+You stood up an identity-aware proxy (Module 06) in front of a no-inbound-ports published service
+(Module 05). Leadership says "we've deployed Zero Trust." Your job is to prove it — or find where it
+isn't. You'll attack your own deployment the way an outsider would, produce the evidence a security
+review asks for (the attacks it refused, and the one weakness you found and fixed), and — the part that
+outlives the report — leave behind a **regression suite** so a future config change that reopens a deny
+path fails loudly before it ships.
 
-## Do
+---
 
-Run each of the four attacks, record PASS (refused, with the evidence) or FAIL (got through), then
-harden the one that fails and re-attack until it's refused too.
+## Build it — read a little, do a little
 
-**Attack 1 — prove nothing listens (no inbound)**
-1. [ ] **External port scan.** From the attacker container (`make shell`), scan the proxy host and
-   confirm only the proxy's port answers — and crucially that the *backends* expose nothing:
-   ```bash
-   nmap -Pn -p- pomerium        # the proxy: 8443 open, expected
-   nmap -Pn -p- whoami-naive whoami-verifying   # the backends: NO open ports
-   ```
-   Record the result. The backends must have no published port — the connector/proxy is the only thing
-   that listens. (Goal: there is no service to fingerprint or reach around the proxy.)
+Run each attack, record **PASS** (refused, with the evidence) or **FINDING** (got through), then harden
+the one that lands and re-attack. As you go, write each probe into `attack.sh` — you are building the
+regression suite as you red-team, not after.
 
-**Attack 2 — prove an unauthenticated request is denied**
-2. [ ] **No-session request.** Send a request with no token and confirm it never reaches a backend:
-   ```bash
-   curl -sk https://pomerium:8443/ -o /dev/null -w "%{http_code}\n"
-   ```
-   You must get a redirect (302) or access-denied — **never a 200 with backend content**. Record the
-   code and (if any) the redirect target. (Goal: identity is required on every request, not once.)
+### Step 1 — Prove nothing listens (no inbound listener)
 
-**Attack 3 — forge the proxy's identity headers (the centerpiece)**
-3. [ ] **Forge a client-supplied identity header at both backends.** This is the CVE-2026-40575 class:
-   a header an attacker can also set, trusted as if the proxy set it. Send a forged identity and see
-   which backend believes it:
-   ```bash
-   # against the VERIFYING backend — must be refused
-   curl -sk https://pomerium:8443/verifying/ \
-     -H "X-Pomerium-Jwt-Assertion: forged.jwt.value" \
-     -H "X-Forwarded-User: admin@example.com"
-   # against the NAIVE backend — this is your finding
-   curl -sk https://pomerium:8443/naive/ \
-     -H "X-Forwarded-User: admin@example.com"
-   ```
-   Document for each backend: did your forged header reach it, and did it *act* on the identity? The
-   verifying backend must reject the forged assertion (it isn't signed by Pomerium's key); the naive
-   backend will impersonate `admin@example.com` — that is the finding you'll harden.
-4. [ ] **Name the rule and the finding.** In `redteam-report.md`, write the backend's rule in one
-   sentence: *trust the identity in `X-Pomerium-Jwt-Assertion` only after verifying its signature
-   against Pomerium's JWKS (`/.well-known/pomerium/jwks.json`) plus `aud`/`iss`/`exp`; never trust a
-   plain, client-supplied identity header.* Then record the finding: `whoami-naive` trusts an unsigned
-   `X-Forwarded-User`, so a free `curl -H` impersonates any user.
+**Concept (30 sec):** Flight-card #2. The backend dialed *out* or has no published port; the proxy is
+the only thing that answers. If a backend exposes a port, there's a service to fingerprint and reach
+*around* the proxy — and the whole model is moot.
 
-**Attack 4 — bypass the proxy straight to the backend**
-5. [ ] **Try to reach a backend directly.** From the attacker container, attempt to connect to the
-   backend on its service port without going through Pomerium:
-   ```bash
-   curl -s --max-time 5 http://whoami-naive/ -o /dev/null -w "%{http_code}\n" || echo "unreachable"
-   ```
-   It must be unreachable (no route / connection refused / timeout) — every path in goes through the
-   proxy. Record the result. (Goal: bypass is the dual of denial; a reachable backend makes the deny
-   path moot.)
+**Do it:** from the attacker container, scan the proxy and the backend. The proxy's `8443` should
+answer; the backend should expose **nothing**.
 
-**Harden the finding and re-attack**
-6. [ ] **Harden the naive backend.** Change `whoami-naive` so it verifies the signed assertion (or
-   strips/ignores the client `X-Forwarded-User` and reads only `X-Pomerium-Jwt-Assertion` after JWKS
-   verification). The lab ships a `data/verify_assertion.py` reference you can wire in — read it, don't
-   just paste it. `make down && make up`.
-7. [ ] **Re-attack until it fails.** Re-run Attack 3 against the now-hardened backend; the forged
-   `X-Forwarded-User` must no longer impersonate anyone. Capture the before (200 as `admin`) and after
-   (rejected) — that diff is the deliverable's core.
+```bash
+nmap -Pn -p- pomerium        # proxy: 8443 open, expected
+nmap -Pn -p- whoami          # backend: NO open ports
+```
 
-## Success criteria — you're done when
+> **▸ On track if:** `nmap` reports the backend with **no open ports** and only the proxy listening.
+> Record the raw output as evidence. If the backend shows an open port, you found Attack 4 early — note
+> it.
 
-- [ ] **Attack 1:** `nmap` shows the backends with **no open ports**; only the proxy listens. Recorded.
-- [ ] **Attack 2:** the no-session request returns a non-200 (redirect/denied), never backend content.
-- [ ] **Attack 3:** the **verifying** backend refuses the forged identity header; the **naive** backend
-      is shown to be fooled by it (the finding), and the backend's verify-the-signed-assertion rule is
-      written down.
-- [ ] **Attack 4:** a direct-to-backend request is unreachable — no proxy bypass exists.
-- [ ] **Harden + re-attack:** after hardening, the same forgery against the previously-naive backend is
-      refused; you captured the before/after.
-- [ ] `make attack` reports PASS for attacks 1, 2, 4 and the verifying half of 3 on the shipped design,
-      and goes **red** when pointed at the naive backend pre-hardening (proving the harness can tell).
+### Step 2 — Prove an unauthenticated request is denied (verify explicitly)
 
-*Honor system: there is no grader. These are observable — an `nmap` with no open backend ports, a
-non-200 unauth response, a forged-header impersonation that flips from succeed to refused after
-hardening, an unreachable direct-to-backend probe. Check your own work honestly against them.*
+**Concept (30 sec):** Flight-card #2. Identity is required on *every* request, not once at a login. A
+no-session request must land on a redirect or a drop — never a 200 with backend content.
+
+**Do it:** send a request with no token and read the status code.
+
+```bash
+curl -sk https://pomerium:8443/ -o /dev/null -w "%{http_code}\n"
+```
+
+> **▸ On track if:** you get a **302** (redirect to the IdP) or an access-denied — **never a 200** with
+> `whoami` content. Record the code and any redirect target. A 200 here means the deny path is open and
+> the later attacks don't matter yet — fix Module 06 first.
+
+### Step 3 — Forge the proxy's identity header (the centerpiece)
+
+**Concept (30 sec):** Flight-card #3 + #4. This is the CVE-2026-40575 class: a header the attacker can
+*also* set, trusted as if the proxy set it. A verifying backend checks the *signed* `X-Pomerium-Jwt-Assertion`
+against the JWKS; a naive backend believes a plain `X-Forwarded-User`.
+
+**Do it:** first add your deliberately-naive route (see Setup) so you have both a verifying and a naive
+target. Then send a forged identity to each and watch which one believes it.
+
+```bash
+# against a verifying route — must be refused (forged assertion isn't signed by Pomerium's key)
+curl -sk https://pomerium:8443/verifying/ \
+  -H "X-Pomerium-Jwt-Assertion: forged.jwt.value" \
+  -H "X-Forwarded-User: admin@example.com"
+# against your naive route — this is your finding
+curl -sk https://pomerium:8443/naive/ \
+  -H "X-Forwarded-User: admin@example.com"
+```
+
+Then, in `redteam-report.md`, write the backend's rule in one sentence: *trust the identity in
+`X-Pomerium-Jwt-Assertion` only after verifying its signature against Pomerium's JWKS
+(`/.well-known/pomerium/jwks.json`) plus `aud`/`iss`/`exp`; never trust a plain, client-supplied
+identity header.* Record the finding: the naive route echoes/acts on an unsigned `X-Forwarded-User`, so
+a free `curl -H` impersonates any user.
+
+> **▸ On track if:** the **verifying** route rejects the forged assertion, and the **naive** route is
+> shown to be fooled by the raw header (your finding). If *both* refuse it, your naive route isn't
+> actually reading the client header — re-check that `pass_identity_headers` is on and the backend reads
+> `X-Forwarded-User`. If *both* accept it, the proxy is stripping nothing — that's a bigger finding.
+
+### Step 4 — Bypass the proxy straight to the backend (the dual of denial)
+
+**Concept (30 sec):** Flight-card #2. Even a perfect deny path is decoration if the backend is reachable
+without traversing the proxy. Every path in must go through Pomerium.
+
+**Do it:** from a network the backend does *not* share (or by naming the backend service directly),
+attempt to reach it without the proxy.
+
+```bash
+curl -s --max-time 5 http://whoami/ -o /dev/null -w "%{http_code}\n" || echo "unreachable"
+```
+
+> **▸ On track if:** the direct request is **unreachable** (no route / connection refused / timeout) —
+> every path in goes through the proxy. If it answers, you've found a bypass: the backend is on a
+> reachable network or publishing a port. Record it and close it.
+
+### Step 5 — Harden the finding and re-attack
+
+**Concept (30 sec):** Flight-card #5. The finding is the exercise working. Hardening + re-attacking until
+the same forgery fails is the deliverable's core.
+
+**Do it:** change the naive route so it verifies the signed assertion (or strips/ignores the client
+`X-Forwarded-User` and reads only `X-Pomerium-Jwt-Assertion` after JWKS verification). A small
+PyJWT-based verifier that fetches `/.well-known/pomerium/jwks.json` and validates signature + `aud` /
+`iss` / `exp` is enough — *read* what it does, don't just paste it. Restart, then re-run the Step 3
+forgery.
+
+> **▸ On track if:** you captured the **before** (200 as `admin@example.com`) and the **after**
+> (rejected) of the exact same forged request. That diff is what proves the fix, not your say-so.
+
+---
+
+## Prove the control (your finish line)
+
+Assemble `redteam-report.md` (the four attacks, each with the command, the observed result, and a
+PASS / FINDING verdict; plus the header-trust rule and the before/after hardening diff). Then run the
+**one check that proves the whole thing is real**:
+
+> **Point your `attack.sh` harness at the *naive* route before you harden it and confirm it goes RED;
+> re-run it after hardening and confirm every should-fail attack is PASS.**
+
+That is the finish line: **every gap you found now has a committed regression check that (a) refuses the
+attack on the hardened design and (b) demonstrably went red against the known-vulnerable target.** A
+harness that stays green against the naive backend is a harness that would never catch a regression —
+so it is the harness, not the design, that failed. Fix it until it correctly goes red, then trust its
+green.
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Name the four trust assumptions and the one attack that tests each.
+2. What is the backend's exact rule for trusting an identity header, and which CVE this year is the
+   failure to follow it?
+3. What does "failing open" mean in a red-team harness, and why is it *worse* once the check is a
+   standing regression test?
+
+Missed one? Re-run the step that built it, or pull the [module core idea](README.md#the-core-idea) —
+then re-answer.
+
+---
 
 ## Deliverables
 
-- `redteam-report.md` — the four attacks, each with the command run, the observed result, and a
-  PASS (refused — the design held) / FINDING verdict. Include the backend's header-trust rule, the
-  naive-backend finding, and the before/after of the hardening.
-- The **hardening diff** — the change to `whoami-naive` (or its config) that makes it verify the signed
-  assertion / stop trusting the client header, committed alongside the report.
-- `attack.sh` + the `make attack` target (see *Automate & own it*).
+- **`redteam-report.md`** — the four attacks, each with the command run, the observed result, and a
+  PASS (refused — the design held) / FINDING verdict. Includes the backend's header-trust rule, the
+  naive-backend finding, and the before/after of the hardening. A portfolio artifact: it shows you can
+  attack a Zero-Trust deployment, distinguish a held design from a broken test, and fix what you find.
+- **The hardening diff** — the change that makes the naive route verify the signed assertion / stop
+  trusting the client header, committed alongside the report.
+- **`attack.sh` (the regression suite)** — the re-runnable harness (see *Automate & own it*).
 
-Commit all three. Lab artifacts (TLS material Pomerium generates at runtime, scan output dumps) stay
-out of commits — they're in `.gitignore`.
+Commit all three. Lab artifacts (TLS material Pomerium generates at runtime, `*.nmap` scan dumps,
+tokens) stay out of commits — they're in `.gitignore`.
 
 ## Automate & own it
 
-**Required — turn the four manual attacks into one re-runnable harness.** Write `attack.sh` that:
-1. Runs the external port scan and asserts the backends have **no open ports** (only the proxy listens).
+**Required — the regression suite *is* the automation.** Turn the four manual attacks into one
+re-runnable `attack.sh` that:
+
+1. Runs the external port scan and asserts the backend has **no open ports** (only the proxy listens).
 2. Asserts the unauthenticated request to the proxy is **NOT** a 200.
-3. Sends the forged identity header and asserts the **verifying** backend refuses it; runs the same
-   forgery against the **naive** backend and reports whether it was impersonated (the finding).
+3. Sends the forged identity header and asserts the **verifying** route refuses it; runs the same
+   forgery against the **naive** route and reports whether it was impersonated (the finding).
 4. Attempts the direct-to-backend bypass and asserts it is **unreachable**.
-5. Prints a per-attack PASS/FAIL/FINDING line and exits 0 only if every *should-fail* attack was refused.
+5. Prints a per-attack PASS / FINDING line and **exits non-zero if any should-fail attack got through**.
 
-Have a model draft it; **you read every line**, hunting the one failure mode that matters in a red-team
-harness: it must **fail closed**. A `curl` that returns `000`, times out, or hits an unexpected redirect
-must count as a result-to-investigate, never a silent PASS — otherwise the harness tells you the design
-held when your *test* broke. Prove the harness honest by pointing it at the naive backend before you
-harden it and confirming it goes red. Wire it as `make attack`: this is your deployment's standing
-red-team — a future config change that publishes a backend port, trusts a client header, or opens the
-unauth path must turn `make attack` red.
+Have a model draft it; then **you read every line**, hunting the one failure mode that matters in a
+red-team harness: it must **fail closed**. A `curl` that returns `000`, times out, or hits an unexpected
+redirect must count as a result-to-investigate, never a silent PASS — otherwise the harness tells you
+the design held when your *test* broke. Prove the harness honest by pointing it at the naive route
+before you harden it and confirming it goes red. This is your deployment's **standing red-team**: wire
+it so a future config change that publishes a backend port, trusts a client header, or reopens the
+unauth path turns `attack.sh` red before it merges.
 
-## AI acceleration
+## Definition of done (`redteam-zt` ✅)
 
-Ask a model to draft `attack.sh` and the forged-header payloads from a plain-English description of the
-four attacks — it's fast and mostly right. Then refuse to trust the green: review every assertion for
-fail-open behavior (a probe that errors must not report PASS), and confirm the harness actually
-distinguishes a held design from a broken test by running it against the deliberately-naive backend. The
-transferable skill isn't prompting for `nmap` flags; it's owning a red-team harness whose PASS you can
-defend — because you watched it correctly fail.
+- [ ] **Attack 1:** `nmap` shows the backend with **no open ports**; only the proxy listens. Recorded.
+- [ ] **Attack 2:** the no-session request returns a non-200 (redirect/denied), never backend content.
+- [ ] **Attack 3:** the verifying route refuses the forged header; the naive route is shown fooled (the
+  finding), and the backend's verify-the-signed-assertion rule is written down.
+- [ ] **Attack 4:** a direct-to-backend request is unreachable — no proxy bypass exists.
+- [ ] **Harden + re-attack:** after hardening, the same forgery is refused; you captured the before/after.
+- [ ] **`attack.sh`** reports PASS for the hardened design and demonstrably went **red** against the
+  naive route pre-hardening (the harness can tell a held design from a broken test), and fails closed.
+- [ ] `redteam-report.md` + the hardening diff + `attack.sh` are committed; you can explain all six
+  flight-card facts cold.
 
 ## Connects forward
 
 This module is the integration point for the deny-path discipline built across the track. The
 no-inbound-ports proof generalizes Module 05's external-probe step; the forged-header and bypass attacks
-generalize Module 06's `check-deny.sh` into a whole-deployment red-team. The signed-assertion rule you
+generalize Module 06's deny checks into a whole-deployment red-team. The signed-assertion rule you
 enforce here is what **Module 08 (Policy as Code / OPA)** evaluates for fine-grained authorization, and
-the standing `make attack` harness is the natural input to **Module 09 (Monitoring & Detection)** — each
-refused attack should also *fire a detection*. As a Phase-3, capstone-adjacent module, the
-`redteam-report.md` is the evidence artifact the track's capstone deployment is judged against.
+your standing `attack.sh` is the natural input to **Module 09 (Monitoring & Detection)** — each refused
+attack should also *fire a detection*. As the capstone-adjacent module, `redteam-report.md` is the
+evidence artifact the track's capstone deployment is judged against.
 
 ## Marketable proof
 
@@ -183,42 +278,16 @@ refused attack should also *fire a detection*. As a Phase-3, capstone-adjacent m
 > assertion and to bypass the proxy straight to the backend — and I document the attacks that failed as
 > evidence the design holds. When I find a backend that trusts a client-supplied identity header (the
 > CVE-2026-40575 class), I harden it to verify the proxy's signed assertion and re-attack until the
-> forgery fails, with a standing harness that goes red the moment the deny path reopens."
+> forgery fails — then I freeze every probe into a standing regression suite that goes red the moment a
+> deny path reopens."
 
 ## Stretch
 
 - **Forge a *signed* assertion the hard way.** Pull Pomerium's JWKS, observe you can read the public key
   but not the private one, and articulate precisely why you cannot mint a valid `X-Pomerium-Jwt-Assertion`
   — the asymmetry that makes the signed assertion the actual security boundary.
-- **Bypass via a flat network.** Add the naive backend to a shared Docker network with a published port
-  (simulating the "teammate ran `docker run -p` for convenience" mistake), prove the bypass now works,
-  then close it — the real-world way Attack 4 gets reintroduced after a clean deploy.
+- **Reintroduce the bypass.** Add the backend to a shared network with a published port (the "teammate
+  ran `docker run -p` for convenience" mistake), prove the bypass now works, close it — and confirm your
+  `attack.sh` catches the regression automatically.
 - **Chain to detection.** Tee `attack.sh`'s probes into Pomerium's access logs and write one Sigma rule
   that fires on the forged-header / direct-bypass pattern (the bridge into Module 09).
-
----
-
-## Lab-env spec — to build at promotion (`plaintext-labs/ztna/<NN>-redteam-zt/`)
-
-*This section is the build brief for the runnable environment; it is not learner-facing prose and is
-removed/relocated when the lab env is built and validated. Reuses the Module 06 Pomerium env.*
-
-**Layout** (`plaintext-labs/ztna/<NN>-redteam-zt/`):
-- `docker-compose.yml` — services:
-  - `pomerium` — reuse the Module 06 all-in-one Pomerium image + mock IdP (copy `06-identity-aware-access/data/config.yaml`), exposing **only** 8443. Add two routes: `/verifying/` → `whoami-verifying`, `/naive/` → `whoami-naive`, both with `pass_identity_headers: true`.
-  - `whoami-verifying` — a tiny backend (Python/Flask or a small Go service) that, on every request, fetches `https://pomerium:8443/.well-known/pomerium/jwks.json`, validates `X-Pomerium-Jwt-Assertion` (signature, `aud`, `iss`, `exp`), and returns 200 + identity only on a valid assertion; 401 otherwise. **No published port.**
-  - `whoami-naive` — the same shape but deliberately wrong: trusts a plain `X-Forwarded-User` header and echoes/acts on it with no verification. **No published port.** This is the target the forgery succeeds against.
-  - `attacker` — a small image with `nmap`, `curl`, `jq`, on a **separate** Docker network that can reach `pomerium:8443` but is **not** on the backends' internal network (so Attack 4's direct probe genuinely can't route).
-- `data/`:
-  - `config.yaml` — Pomerium config with the two routes (copied/adapted from 06).
-  - `verify_assertion.py` — the reference JWKS-verification helper the learner wires into `whoami-naive` during the hardening step (PyJWT + JWKS fetch; documented, reviewable).
-- `attack.sh` — the four-attack harness (also the learner deliverable target; ship a reference copy that **fails closed**).
-- `Makefile` — `up` / `down` / `reset` / `shell` / **`attack`** (runs `attack.sh` inside the `attacker` container and prints the per-attack PASS/FAIL/FINDING report) / `demo` (alias that runs `make up && make attack`).
-- `.gitignore` — Pomerium runtime TLS material, any `*.nmap`/scan dumps, tokens.
-
-**Validation bar (before promotion):** `make up && make attack && make down` runs green on a Linux
-runner with the **shipped** design (attacks 1, 2, 4 and the verifying half of 3 all refused); and
-`make attack` correctly reports the **FINDING** against `whoami-naive` pre-hardening and flips to PASS
-after the learner wires in `verify_assertion.py`. Because the lab includes a known-vulnerable backend,
-the harness is self-checking — it must distinguish a held design from a broken test. Add the `.ci-demo`
-marker only once the shipped-design run is green; the learner-hardening path stays a learner exercise.

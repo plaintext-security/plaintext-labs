@@ -21,8 +21,8 @@ shell:     ## Drop into the lab container
 demo:      ## Run the attack-path analysis against the bundled graph.json
 	@docker compose run --rm lab sh -c '\
 		echo "=== 1. IAM principals in the seeded account ==="; \
-		awslocal iam list-users --query "Users[*].UserName" --output table; \
-		awslocal iam list-roles --query "Roles[*].RoleName" --output table; \
+		aws iam list-users --query "Users[*].UserName" --output table; \
+		aws iam list-roles --query "Roles[*].RoleName" --output table; \
 		echo; \
 		echo "=== 2. Analyze the bundled graph for paths to admin ==="; \
 		python analyze.py data/graph.json; \

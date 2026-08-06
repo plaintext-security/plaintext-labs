@@ -1,136 +1,258 @@
-# Lab 08 — Encode the Verdict as a Gate: Policy that Fails Closed
+# Lab 08 — Encode the Verdict as a Gate: policy that fails closed
 
-*Type 8 · build-first, judgment-as-code. [← Back to the module concept](README.md)*
+> **Hands-on lab.** Environment: `plaintext-labs/ztna/08-policy-as-code`.
+> Objective: **write real OPA/Rego policy, prove the deny path fires, and leave behind a CI gate that
+> exits non-zero on a fail-open policy and zero on the fix.**
+> Target: **~90 min**, one finish line. This is a **reference lab — real `opa` in a container, no mocks.**
+
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This replaces re-reading the module.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **OPA is a decision point, not the enforcer.** PEP calls PDP; your code acts on the answer. | Policy is separable from the stack → testable in ms → gate-able in CI. |
+| 2 | **Rego is declarative — a rule whose condition is never true is *silently absent*.** | No error. The `deny` you "wrote" may deny nothing. |
+| 3 | **A deny that never fires defaults to allow → fail open.** | This is the whole module. Run the must-deny case and confirm it *fired*. |
+| 4 | **`default allow := false` + query the deny decision = absence fails *closed*.** | Structure, not vigilance, is what makes "no rule fired" mean *reject*. |
+| 5 | **K8s: deny explicit `runAsUser: 0` AND omitted `runAsUser`** (root by default). | The omitted-field case is the one AI drafts almost always miss. |
+| 6 | **The gate is the deliverable:** non-zero on broken, zero on fixed. | A test that only proves the allow path is theater; the flip is the proof. |
+
+*(If you can explain all six cold at the end — especially #2 and #3 — you've got the objective.)*
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [centerpiece section](README.md#the-centerpiece-a-rule-that-never-fires-is-silently-absent) and
+> [the gate is the deliverable](README.md#the-gate-is-the-deliverable).
+
+---
+
+## Warm-up — answer before you touch the container (2 min)
+
+*Don't look below. Being forced to retrieve is what builds the memory.*
+
+1. You wrote a `deny` rule but typo'd the claim — you check `input.user.roles` (plural) when the request
+   spells it `input.user.role`. You query `data.corp.access.deny` for the request that must be blocked.
+   What value comes back — and what happens if your enforcer treats "not denied" as "allow"?
+2. A pod spec omits `runAsUser` entirely — no `securityContext.runAsUser` at all. Is that pod root?
+   Should your policy deny it? Why do AI-drafted admission policies usually let it through?
+
+---
 
 ## Setup
 
 This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
+[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. The container bundles the
+**real `opa` binary** (pinned `openpolicyagent/opa:0.68.0`); every target runs real Rego evaluation.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/ztna/08-policy-as-code
-make up      # build + start the OPA container (real opa binary, pinned)
-make demo    # run both policy scenarios (allow + deny cases for each)
-make shell   # drop into the container to experiment with opa eval interactively
-make down    # stop it when you're done
+make up        # start the OPA container (real opa, pinned)
+make demo      # run both scenarios — allow + deny cases for each
+make test      # opa test over every policy in data/policies/ (-v)
+make eval POLICY=<path> INPUT=<path>   # one-off: eval a policy against an input
+make shell     # OPA REPL loaded with the lab policies (distroless — no shell, the REPL is the surface)
+make down      # stop it when you're done
 ```
 
-The container bundles `opa` (the real binary, not a simulator) and your policy/input files mounted from `data/`. Every `make` target runs `opa eval` / `opa test` with real Rego evaluation — no mocks.
+> **▸ On track if:** `make demo` prints the two scenario banners and, for each case, a JSON block whose
+> `"value"` matches the label — e.g. Case A analyst READ shows `"value": true` for
+> `data.corp.access.allow`; Case B analyst WRITE shows `"value": false` for `allow` **and**
+> `"value": true` for `data.corp.access.deny`. The policies you edit live in `data/policies/`; the
+> requests in `data/inputs/`.
 
-> Everything runs locally against bundled data you own. No external targets, no authorization needed.
+> **Authorization note.** Everything runs locally against bundled data you own — no external targets, no
+> authorization needed. (The Rego you write here can later gate a *real* proxy or cluster; there the rule
+> binds — only enforce against systems you own or have explicit written permission to test.)
 
-## Scenario
+---
 
-An internal platform team is replacing ad-hoc role checks scattered across three APIs — and a tribal "don't run containers as root" convention nobody enforces — with centralized OPA policy. Two immediate requirements:
+## Build it — read a little, do a little
 
-1. **Data access policy:** Analysts read financial records but can't write them. Admins do both. Service accounts behind automated reports are read-only. The policy evaluates JWT claims, not application-level session state.
-2. **Kubernetes admission policy:** No pod may run as root — neither an explicit `runAsUser: 0` nor an *omitted* `runAsUser` (which is root by default on most images). The team has eaten container-escape incidents that started with a root pod.
+### Step 1 — Read the policy, predict, then run both scenarios
 
-Your job is not "write two policies." It is to **leave behind a gate** that fails the bad state and passes the fix, *and to catch the policy that secretly fails open* — the deny rule that looks present but never fires. The scan finds the patterns; you render the verdict on whether the policy actually denies; the gate makes the verdict un-recurrable.
+**Concept (30 sec):** Flight-card #1. OPA answers; it doesn't enforce. `make demo` feeds four data-access
+requests and three pod specs through real `opa eval` and prints each decision. Predicting *before*
+running is how you find out whether you actually understand the rules.
 
-The rhythm each part: **write/read the policy → run the case that MUST be denied → confirm `{"deny": [...]}` not `{}` → wire it into a gate and prove the exit code flips.**
+**Do it:** open `data/policies/data-access.rego` — find `default allow := false`, the three `allow`
+rules (analyst-read, admin-any, service_account-read), and the two `deny` rules (analyst-write,
+service_account-write). Read the four `data/inputs/*.json` and **predict** each verdict. Then read
+`data/policies/k8s-admission.rego` and its three pod inputs. Run `make demo`.
 
-## Do
+> **▸ On track if:** your predictions match the output — analyst READ → `allow: true`; analyst WRITE →
+> `allow: false`, `deny: true`; admin WRITE → `allow: true`; service_account WRITE → `allow: false`,
+> `deny: true`; pod-root and pod-no-user → `deny: true`; pod-nonroot → `deny: false`. Where deny
+> overrides allow (analyst write), confirm the **deny** query returned `true` — not merely that allow
+> was false.
 
-### Part 1 — Data access by role
+### Step 2 — Add an `auditor` role with a deny the others don't have
 
-1. [ ] **Read the policy and inputs.** Open `data/policies/data-access.rego`. Identify `default allow = false`, the `allow` rule(s), and the `deny` rule(s), and note which JWT claims each checks (`input.user.role`, `input.action`, `input.path`). Then read the four inputs in `data/inputs/` (`analyst-read.json`, `analyst-write.json`, `admin-write.json`, `service-account-write.json`). **Predict** the verdict for each before you run anything.
+**Concept (30 sec):** Flight-card #2. Compliance wants an `auditor` who can **read** but can **never**
+hit `/export` (bulk download), regardless of action. That's an allow rule *and* a deny rule that
+overrides it — the exact shape where a silently-absent deny hurts.
 
-2. [ ] **`make demo`** — watch all four cases run. Confirm which produce `{"allow": true}` and which produce `{"allow": false}`, and that they match your prediction. Where deny overrides allow (analyst trying to write), confirm the *deny* fired, not just that allow was absent.
+**Do it:** in `data-access.rego`, uncomment/complete the lab-exercise block so `auditor` gets an
+`allow` (read) and a `deny` on `resource == "/export"`. Create `data/inputs/auditor-export.json`
+(`role: auditor`, `action: read`, `resource: /export`). Confirm the denial:
 
-3. [ ] **Add a new role with a deny the others don't have.** Compliance wants an `auditor` role that can read but **cannot** call the `/export` path (bulk download) regardless of action. Extend `data-access.rego` so `auditor` is denied on path `/export`. Add `data/inputs/auditor-export.json` and confirm the denial:
-   ```bash
-   make eval POLICY=data/policies/data-access.rego INPUT=data/inputs/auditor-export.json
-   ```
-   The output must be `{"deny": [...]}` (or `{"allow": false}` for an allow-shaped query) — **not** `{}`.
+```bash
+make eval POLICY=data/policies/data-access.rego INPUT=data/inputs/auditor-export.json
+```
 
-### Part 2 — The fail-open trap (the centerpiece)
+> **▸ On track if:** the emitted `data` document shows `corp.access.deny` as `true` for the
+> auditor-export request (allow may also be `true` — that's the point of *deny overrides allow*). If
+> `deny` is `false`, your rule isn't firing — check the claim name and the `/export` string exactly.
 
-4. [ ] **Plant a silently-absent deny, then catch it.** This is the lesson of the module. Make your new `auditor`/`export` deny rule subtly *wrong* in one of these realistic ways (pick one):
-   - typo the claim: check `input.user.roles` (plural) when the input uses `input.user.role`;
-   - flip a comparison: `input.path != "/export"` where you meant `==`;
-   - guard it behind a condition that's never true for the test input.
+### Step 3 — The fail-open trap: plant it, watch the deny vanish, catch it
 
-   Re-run the `auditor-export` eval. **The denial vanishes** — you'll get `{}` or `{"allow": true}`, because the rule never fires and the default applies. **Record what you saw** in one line. This is a policy that fails *open*: it looks complete, but the rule you "wrote" denies nothing.
+**Concept (30 sec):** Flight-card #3 — the centerpiece. A `deny` whose condition is never true isn't an
+error; it's a rule that quietly isn't there, and the default takes over.
 
-5. [ ] **Prove the structure that makes absence fail *closed*.** Confirm the policy uses `default allow = false` **and** that your evaluation queries the **deny set** (or an allow that is gated on no-deny), so "no rule fired" resolves to *deny*, never *allow*. Restore the correct deny rule from step 3. Re-run the eval and confirm the denial is back. The pair (broken → open, fixed → closed) is the proof you understand the trap, not the syntax.
+**Do it:** break your new auditor/`/export` deny in one realistic way — typo the claim
+(`input.user.roles`), flip the comparison (`!=` where you meant `==`), or guard it behind a field the
+input never carries. Re-run the exact `make eval` from step 2. **The denial disappears.** Record the
+one line you saw in `fail-open-proof.md`. Then restore the correct rule and confirm the deny is back.
 
-6. [ ] **Write the tests — for the deny path, explicitly.** Add at least three cases to `data/policies/data-access_test.rego`: `test_analyst_write_denied`, `test_auditor_export_denied`, and `test_analyst_read_allowed`. Run:
-   ```bash
-   make test
-   ```
-   All must pass. Then **re-plant the step-4 bug** and run `make test` again: the deny test must now **FAIL**. A test suite that stays green while the deny rule is broken is not testing the deny path — it's testing nothing. Fix the policy, confirm green, and keep this proof.
+> **▸ On track if:** with the bug planted, `corp.access.deny` for auditor-export drops to `false` (the
+> rule never fired, the default applied) — and `default allow := false` + querying the **deny** decision
+> is what makes that absence resolve to *reject* in your enforcer, not *allow*. Broken → open, fixed →
+> closed: that pair **is** the lesson, not the syntax.
 
-### Part 3 — Kubernetes admission (the omitted-field trap)
+!!! warning "This is the one that ships breaches"
+    A green demo with a silently-absent deny is *exactly* how Broken Access Control (OWASP A01) reaches
+    production. The policy looks complete; the hole is the rule you meant to write. The only defense is
+    running the must-deny case and confirming it fired — which is what step 4 makes automatic.
 
-7. [ ] **Read the admission policy.** Open `data/policies/k8s-admission.rego`. Note how it extracts `runAsUser` from the pod's `securityContext`, and that it must cover **two** cases: explicit `runAsUser: 0` *and* an omitted `runAsUser` (root by default). The omitted case is the one AI drafts usually miss.
+### Step 4 — Make the deny path a *test* (so the trap can't come back)
 
-8. [ ] **Test both deny cases and the allow case.**
-   ```bash
-   make eval POLICY=data/policies/k8s-admission.rego INPUT=data/inputs/pod-root.json
-   make eval POLICY=data/policies/k8s-admission.rego INPUT=data/inputs/pod-no-user.json
-   make eval POLICY=data/policies/k8s-admission.rego INPUT=data/inputs/pod-nonroot.json
-   ```
-   The first two must return `{"deny": [...]}`; the third must be empty/`allow`. If `pod-no-user.json` is **not** denied, the policy missed the omitted-field case — fix it and re-run. (This is the same fail-open trap as Part 2, wearing a Kubernetes costume.)
+**Concept (30 sec):** Flight-card #6. A discipline you have to remember is a discipline you'll forget.
+`opa test` turns "run the deny case" into a unit test that a machine runs on every change.
 
-9. [ ] **The AI-drafting exercise, deny-path-first.** Ask a model: *"Write an OPA Rego policy that denies Kubernetes pods that do not set `readOnlyRootFilesystem: true` in their container securityContext."* Paste it into `data/policies/readonly-fs.rego`. Then — before trusting it — write `data/inputs/pod-writable-fs.json` (the case that must be denied) and a test in `data/policies/readonly-fs_test.rego`. Run `make test`. If the deny case isn't covered, the AI wrote the allow path and left the hole; close it yourself. Validate the deny path before shipping — every time.
+**Do it:** in `data/policies/data-access_test.rego`, uncomment the `auditor` tests and confirm you have
+at least `test_analyst_write_denied`, `test_auditor_export_denied`, and `test_analyst_read_allowed`. Run
+`make test`. Then **re-plant the step-3 bug** and run `make test` again — the deny test must now go red.
+Fix the policy, confirm green, keep this proof.
 
-### Part 4 — Encode the verdict as the gate (the deliverable)
+> **▸ On track if:** `make test` prints `PASS` for every `test_` rule (data-access + k8s-admission,
+> summary `PASS: N/N`) with the policy correct — and with the bug re-planted, `test_auditor_export_denied`
+> flips to **FAIL**. A suite that stays all-green while the deny rule is broken is testing nothing.
 
-10. [ ] **Write the CI gate.** Add a `make ci` target that runs `opa test ./data/policies/` over every policy, and a GitHub Actions workflow `.github/workflows/opa-test.yml` (on `push` + `pull_request`) that runs it. Have a model draft the workflow; **read every line** and confirm the `opa test` invocation matches what you run locally. The gate's contract:
-    - it **fails** (exit non-zero) when any deny rule is broken — including the step-4 fail-open bug, the omitted-`runAsUser` miss, and a missing `readonly-fs` deny test;
-    - it **passes** (exit zero) only when every deny path is proven.
+### Step 5 — K8s admission: the omitted-field trap, and an AI-drafted policy you must break-test
 
-11. [ ] **Prove the gate flips.** Re-plant one fail-open bug, run the gate's exact command, and check `echo $?` — it must be non-zero. Restore the fix, re-run — it must be zero. A gate whose exit code doesn't change between broken and fixed isn't a gate; it's a report. This single assertion is the whole module.
+**Concept (30 sec):** Flight-card #5. "No root pods" means two cases: explicit `runAsUser: 0` **and** an
+*omitted* `runAsUser` (root by default). AI writes the first and forgets the second — the same fail-open
+trap wearing a Kubernetes costume.
 
-## Success criteria — you're done when
+**Do it:** confirm `k8s-admission.rego` denies both — `make eval` on `pod-root.json` and
+`pod-no-user.json` (both `deny: true`), and `pod-nonroot.json` (`deny: false`). Then run the
+AI-drafting exercise: ask a model for *"an OPA Rego policy that denies pods that don't set
+`readOnlyRootFilesystem: true`"*, save it as `data/policies/readonly-fs.rego`. **Before trusting it**,
+write `data/inputs/pod-writable-fs.json` (the case that must be denied) and a deny test in
+`data/policies/readonly-fs_test.rego`. Run `make test`.
 
-- [ ] `make demo` shows all labelled allow/deny cases for both scenarios, and you confirmed each deny *fired* (not merely that allow was absent).
-- [ ] The `auditor` role is denied on `/export`, with an input and a passing `opa test` case covering it.
-- [ ] You **caught a fail-open gap**: you planted a silently-absent deny rule, observed the denial vanish to `{}`/`allow`, and proved that `default allow = false` + querying the deny set makes absence fail *closed*.
-- [ ] `make test` passes; and you demonstrated that re-planting the deny bug turns a deny test **FAILED** (the test actually exercises the deny path).
-- [ ] The K8s admission policy denies **both** explicit-root and omitted-`runAsUser` pods; the AI-drafted `readonly-fs` policy has a passing deny-path test.
-- [ ] `opa-test.yml` / the gate command exits **non-zero on a broken (fail-open) policy and zero on the fixed one** — demonstrated with `$?`.
+> **▸ On track if:** `pod-no-user.json` returns `deny: true` (if it doesn't, the policy missed the
+> omitted-field case — fix it); and your `readonly-fs` deny test either passes, or fails and *exposes*
+> that the AI wrote only the allow path — in which case you close the hole yourself and re-prove green.
+
+---
+
+## Prove the control (your finish line)
+
+One assertion is the whole module: **the gate flips.** Add a `make ci` gate (the repo ships one — `opa
+test ./data/policies/`) and a GitHub Actions workflow `.github/workflows/opa-test.yml` (on `push` +
+`pull_request`) that runs it. Have a model draft the workflow; **read every line** and confirm its `opa
+test` invocation matches what you run locally.
+
+**The proof — run it both ways:**
+
+```bash
+# 1) with a fail-open bug planted (re-break the auditor/export deny):
+make ci ; echo "exit: $?"     # → tests fail, exit NON-ZERO
+
+# 2) restore the fix:
+make ci ; echo "exit: $?"     # → all tests pass, exit ZERO
+```
+
+Capture both `exit:` lines into `fail-open-proof.md`. *A gate whose exit code doesn't change between
+broken and fixed isn't a gate — it's a report.* That single flip, allow proven **and** deny proven, is
+what makes the policy a control instead of a hope.
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Why can you unit-test an OPA policy in milliseconds without standing up a proxy or a cluster?
+2. You query `deny` for a request that should be blocked and get `false`. Name two distinct reasons the
+   rule might not have fired — and why `default allow := false` alone doesn't save you.
+3. Name the two pod cases the admission policy must both deny, and say which one AI usually misses.
+
+Missed one? Re-run the step that built it, or pull the [module centerpiece](README.md#the-centerpiece-a-rule-that-never-fires-is-silently-absent) — then re-answer.
+
+---
 
 ## Deliverables
 
 Commit to your portfolio repo:
-- `data/policies/data-access.rego` — the extended policy with the auditor/export deny, structured to fail closed (`default allow = false`).
-- `data/policies/data-access_test.rego` — the test suite, including the explicit deny-path cases.
-- `data/policies/readonly-fs.rego` + `readonly-fs_test.rego` — the AI-drafted policy with *your* deny-path test.
-- `data/inputs/auditor-export.json` and `data/inputs/pod-writable-fs.json` — the new inputs.
-- `fail-open-proof.md` — the one-line record from step 4/5 (what the broken deny produced) plus the two terminal captures from step 11 (gate exit code: broken vs. fixed) proving the gate flips.
-- `.github/workflows/opa-test.yml` — the CI gate.
 
-Do **not** commit: raw `opa eval` JSON dumps, or `data/` files seeded by the lab repo that you didn't change.
+- **`data/policies/data-access.rego`** — extended with the `auditor` read-allow + `/export` deny, structured to fail closed (`default allow := false`).
+- **`data/policies/data-access_test.rego`** — the suite including the explicit deny-path cases (`test_auditor_export_denied`).
+- **`data/policies/readonly-fs.rego` + `readonly-fs_test.rego`** — the AI-drafted policy with *your* deny-path test.
+- **`data/inputs/auditor-export.json`** and **`data/inputs/pod-writable-fs.json`** — the new inputs.
+- **`fail-open-proof.md`** — the one-line record from step 3 (what the broken deny produced) plus the two `exit:` captures from the finish line (broken vs. fixed) proving the gate flips.
+- **`.github/workflows/opa-test.yml`** — the CI gate.
 
-The `git history` is the audit trail for who changed which policy and when — that is policy-as-code's whole point.
+Do **not** commit raw `opa eval` JSON dumps, or the `data/` files seeded by the lab that you didn't
+change. The `git history` is the audit trail for who changed which policy and when — that is
+policy-as-code's whole point.
 
 ## Automate & own it
 
-**Required — this is the judgment-as-code core of the module.** Your verdict is: *"these access rules must hold, and a deny rule that silently fails open must never pass review."* Encode it as a portable gate — `gate.sh`, a single script that:
+**Required — this is the judgment-as-code core of the module.** The policy tests **are** the automation.
+Your verdict is: *"these access rules must hold, and a deny rule that silently fails open must never pass
+review."* Encode it as a portable gate — `gate.sh`, one script that:
 
 1. runs `opa test ./data/policies/` (exit non-zero on any failing/erroring test), and
-2. runs `opa eval` on each must-deny input and **asserts the result is a real deny, not `{}`** — so a silently-absent deny rule fails the gate instead of sliding through as an empty (allow-reading) result, and
+2. runs `opa eval` on each must-deny input and **asserts the deny actually fired** (`deny == true`, not
+   an empty/`false` result) — so a silently-absent deny fails the gate instead of sliding through, and
 3. prints which policy/input combination blocked it.
 
-Then write the proof harness: with a fail-open bug planted, `gate.sh` exits 1; with it fixed, `gate.sh` exits 0; assert the flip. **Have a model draft the bash and the `opa eval` query/`jq` checks; review every line** — confirm an `opa` *error* doesn't read as a *clean pass*, and that the gate fails for the *right* reason (the missing deny), not an unrelated parse nit. This gate is your verdict made un-recurrable.
+Then prove the harness: with a fail-open bug planted `gate.sh` exits 1; with it fixed it exits 0; assert
+the flip. **Have a model draft the bash and the `jq`/`opa eval` checks; review every line** — confirm an
+`opa` *error* doesn't read as a *clean pass*, and that the gate fails for the *right* reason (the missing
+deny), not an unrelated parse nit. This gate is your verdict made un-recurrable.
 
-## AI acceleration
+## Definition of done (`policy-as-code` ✅)
 
-AI is fluent at Rego for RBAC, K8s admission, and JWT claim checks — and will draft the *allow* path beautifully while leaving the deny path you actually need unproven. Use it to draft policies, tests, and the workflow fast; then always run `opa eval` against at least one input that should be denied. If the output is `{}` (empty, no result) instead of a real deny, your rule never fired — the policy fails open, and this is the one gotcha the model won't warn you about. Adversarially test your own gate: ask the model to write a policy that *passes your test suite while granting a forbidden action*. If it can, your tests only cover the allow path — add the deny case and re-prove the flip.
+- [ ] `make demo` shows every labelled allow/deny case for both scenarios, and you confirmed each deny *fired* (not merely that allow was absent).
+- [ ] The `auditor` role is denied on `/export`, with an input and a passing `opa test` case covering it.
+- [ ] You **caught a fail-open gap**: planted a silently-absent deny, watched `deny` drop to `false`, and can explain why `default allow := false` + querying the deny decision makes absence fail *closed*.
+- [ ] `make test` is green; re-planting the deny bug turns `test_auditor_export_denied` **FAIL** (the test genuinely exercises the deny path).
+- [ ] The K8s policy denies **both** explicit-root and omitted-`runAsUser` pods; the AI-drafted `readonly-fs` policy has a passing deny-path test.
+- [ ] The gate exits **non-zero on the broken (fail-open) policy and zero on the fix** — captured with `$?`. You can explain all six flight-card facts cold.
 
 ## Connects forward
 
-OPA plugs into the **identity-aware proxy from module 06** as an external authorization provider: Pomerium (or OAuth2-Proxy) calls OPA on every request with the JWT claims, OPA returns allow/deny on fine-grained policy. Coarse authentication stays in the proxy; fine-grained, version-controlled, tested authorization lives in OPA. The gate you built here is what keeps that policy from silently failing open in production — and feeds **module 09**, where the same access decisions become the log stream you detect on and watch for drift.
+OPA plugs into the **identity-aware proxy from Module 06** as an external authorization provider:
+Pomerium (or OAuth2-Proxy) calls OPA on every request with the JWT claims, OPA returns allow/deny on
+fine-grained policy. Coarse authentication stays in the proxy; fine-grained, version-controlled, tested
+authorization lives in OPA. The gate you built here keeps that policy from silently failing open in
+production — and feeds **Module 09**, where the same access decisions become the log stream you detect
+on and watch for drift.
 
 ## Marketable proof
 
-> "I write and unit-test OPA Rego policies for RBAC and Kubernetes admission, version them in git with an `opa test` CI gate, and — the part that matters — I validate the *deny* path explicitly: I can show a policy that silently fails open (the deny rule that never fires), explain why `default allow = false` plus querying the deny set makes absence fail closed, and prove my CI gate exits non-zero on the broken policy and zero on the fix."
+> "I write and unit-test OPA Rego policies for RBAC and Kubernetes admission, version them in git with
+> an `opa test` CI gate, and — the part that matters — I validate the *deny* path explicitly: I can show
+> a policy that silently fails open (the deny rule that never fires), explain why `default allow := false`
+> plus querying the deny decision makes absence fail closed, and prove my CI gate exits non-zero on the
+> broken policy and zero on the fix."
 
 ## Stretch
 
 - Integrate OPA with Pomerium: write a `policy.rego` that Pomerium evaluates per-request instead of YAML `allow` stanzas — the production pattern for complex authorization, tested independently of proxy config.
-- Use OPA's `http.send` to fetch an external ACL (a JSON file served by a local nginx container) and evaluate access against live data rather than a bundled document — and prove the gate still fails closed when the ACL fetch *fails* (a network error must not read as "allow").
+- Convert `deny` from a boolean to a **partial set of reason strings** (`deny contains msg if { … }`) so a rejection tells the developer *why* — then confirm your gate still catches a member that's never added (a reason you never emit = a deny that never fired).
+- Use OPA's `http.send` to fetch an external ACL (a JSON file served by a local nginx container) and evaluate against live data — then prove the gate still fails **closed** when the ACL fetch *errors* (a network failure must not read as "allow").
 - Port one policy to **Gatekeeper** (`ConstraintTemplate` + `Constraint`) in a `kind` cluster and watch Kubernetes reject a root pod at admission time — the real enforcement point behind the `opa eval` you've been running.

@@ -1,8 +1,0 @@
-[
-  {"id": 4, "source": "suricata", "severity": "high", "indicator": {"kind": "ipv4", "value": "999.1.1.1"}},
-  {"id": 5, "source": "zeek", "severity": "SEV-9", "indicator": {"kind": "domain", "value": "ok.example"}},
-  {"id": 6, "source": "sysmon", "severity": "low", "indicator": {"kind": "sha256", "value": "not-a-hash"}},
-  {"id": 7, "source": "suricata", "severity": "high", "indicator": {"kind": "ipv4", "value": "10.0.0.1"}, "evil_extra": "drop table"},
-  {"id": "seven", "source": "zeek", "severity": "medium", "indicator": {"kind": "domain", "value": "cdn.example"}},
-  {"id": 9, "source": "sysmon", "severity": "high"}
-]

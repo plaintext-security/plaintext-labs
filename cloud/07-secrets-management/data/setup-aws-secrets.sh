@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # The cloud-native variant: store a secret in AWS Secrets Manager (simulated by
-# LocalStack) and author the least-privilege IAM policy that gates reading it.
-# Runs in the lab container; `awslocal` targets the LocalStack container.
+# floci) and author the least-privilege IAM policy that gates reading it.
+# Runs in the lab container; plain `aws` targets floci via AWS_ENDPOINT_URL.
 set -euo pipefail
 
 echo "== Storing the app's DB secret in Secrets Manager =="
-awslocal secretsmanager create-secret \
+aws secretsmanager create-secret \
     --name /app/db \
     --secret-string '{"username":"appuser","password":"rotate-me-via-secrets-manager"}' \
     >/dev/null 2>&1 || \
-awslocal secretsmanager put-secret-value \
+aws secretsmanager put-secret-value \
     --secret-id /app/db \
     --secret-string '{"username":"appuser","password":"rotate-me-via-secrets-manager"}' >/dev/null
 
-SECRET_ARN=$(awslocal secretsmanager describe-secret --secret-id /app/db \
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id /app/db \
     --query ARN --output text)
 echo "  secret ARN: ${SECRET_ARN}"
 
@@ -28,15 +28,15 @@ cat > /tmp/app-secret-ro.json <<JSON
   }]
 }
 JSON
-awslocal iam create-policy \
+aws iam create-policy \
     --policy-name app-secret-ro \
     --policy-document file:///tmp/app-secret-ro.json >/dev/null 2>&1 \
     || echo "  (policy already exists)"
 
 echo "== The app reads its secret at runtime (no hardcoded value) =="
-awslocal secretsmanager get-secret-value --secret-id /app/db \
+aws secretsmanager get-secret-value --secret-id /app/db \
     --query SecretString --output text
 
 echo
-echo "Note: LocalStack does not fully enforce IAM, so the read above is not *blocked* here —"
+echo "Note: floci does not fully enforce IAM, so the read above is not *blocked* here —"
 echo "the lesson is authoring the tight Resource-scoped policy that WOULD gate it in real AWS."

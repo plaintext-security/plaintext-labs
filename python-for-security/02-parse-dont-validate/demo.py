@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Reference demo for Lab 02 — Parse, Don't Validate.
+"""Reference demo for Lab 02 — Parse, Don't Validate (real Suricata EVE JSON).
 
-Shows the before/after that IS the lesson:
+Shows the before/after that IS the lesson, on real `eve.json` (newline-delimited events):
   1. the trusting starter (sift_starter/) works on the clean feed,
-  2. on the messy feed it either accepts garbage or crashes deep in triage —
-     it never *rejects* anything,
-  3. the typed boundary (sift_reference/) rejects every malformed record at
-     the door, with a field-level reason,
+  2. on the messy feed it trusts garbage or dies three calls deep — and a single
+     truncated line takes out the whole load. It never *rejects* anything,
+  3. the typed boundary (sift_reference/) turns each line into a typed `AlertEvent`
+     or refuses it: a JSON-decode failure is quarantined, a malformed event is
+     rejected with a field-level reason,
   4. secrets load via pydantic-settings, not hardcoding.
 """
 from __future__ import annotations
@@ -21,59 +22,72 @@ sys.path.insert(0, str(LAB / "sift_starter"))
 
 import triage as starter  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
-from sift.models import Alert  # noqa: E402
+from sift.models import AlertEvent  # noqa: E402
 from sift.settings import Settings  # noqa: E402
 
-DIVIDER = "─" * 60
+DIVIDER = "─" * 64
 
 
 def section(t: str) -> None:
     print(f"\n{DIVIDER}\n{t}\n{DIVIDER}")
 
 
-def main() -> int:
-    valid = json.loads((LAB / "data" / "alerts.json").read_text())
-    malformed = json.loads((LAB / "data" / "alerts_malformed.json").read_text())
+def raw_lines(name: str) -> list[str]:
+    return [ln for ln in (LAB / "data" / name).read_text().splitlines() if ln.strip()]
 
-    section("1. The starter on the CLEAN feed — looks fine")
-    for a in starter.triage(json.loads(json.dumps(valid))):
-        print(f"  [{a['severity']:>8}] #{a['id']} {a['source']}: {a['indicator']['value']}")
-    print(f"  triaged {len(valid)} alerts — 'it works'")
+
+def main() -> int:
+    clean = raw_lines("eve.json")
+    messy = raw_lines("eve_malformed.json")
+
+    section("1. The starter on the CLEAN eve.json — looks fine")
+    clean_events = [json.loads(ln) for ln in clean]
+    for e in starter.triage(clean_events):
+        print(f"  [sev {e['alert']['severity']}] {e['src_ip']}→{e['dest_ip']}: "
+              f"{e['alert']['signature']}")
+    print(f"  triaged {len(clean_events)} alert events — 'it works'")
 
     section("2. The starter on the MESSY feed — trusts garbage or dies, never rejects")
-    crashed = None
+    load_died = None
     try:
-        starter.triage(json.loads(json.dumps(malformed)))
-        print("  ✗ full feed triaged without error (should not happen!)")
-    except Exception as e:  # noqa: BLE001 — the crash is the point
-        crashed = e
-        print("  ✗ one poisoned record killed the whole run, three calls deep:")
-        print(f"      {type(e).__name__}: {e}")
-    accepted = 0
-    for r in malformed:
+        starter.load_events(str(LAB / "data" / "eve_malformed.json"))
+        print("  ✗ full feed loaded without error (should not happen!)")
+    except Exception as e:  # noqa: BLE001 — the truncated line killing the load is the point
+        load_died = e
+        print(f"  ✗ one truncated line killed the whole load: {type(e).__name__}")
+    accepted = crashed = 0
+    for ln in messy:
         try:
-            starter.triage([json.loads(json.dumps(r))])
+            obj = json.loads(ln)
+            starter.triage([obj])
             accepted += 1
-            print(f"  ✗ id={r.get('id')} ACCEPTED as-is (bad value trusted downstream)")
+            print(f"  ✗ flow={obj.get('flow_id')} ACCEPTED as-is (bad value trusted downstream)")
         except Exception as e:  # noqa: BLE001
-            print(f"  ✗ id={r.get('id')} crashed in triage: {type(e).__name__}")
-    print(f"  accepted {accepted}/{len(malformed)} malformed records; rejected: 0")
+            crashed += 1
+            print(f"  ✗ a messy line crashed the starter: {type(e).__name__}")
+    print(f"  accepted {accepted} malformed lines, crashed on {crashed}; deliberately rejected: 0")
 
-    section("3. The typed boundary — every malformed record REJECTED at the door")
-    alerts = [Alert.model_validate(r) for r in valid]
-    for a in alerts:
-        print(f"  ✓ Alert(id={a.id}, source={a.source!r}, {a.indicator.kind}={a.indicator.value!r})")
-    rejected = 0
-    for r in malformed:
+    section("3. The typed boundary — every messy line QUARANTINED or REJECTED at the door")
+    events = [AlertEvent.model_validate(json.loads(ln)) for ln in clean]
+    for a in events:
+        print(f"  ✓ AlertEvent(sev={a.alert.severity}, {a.src_ip}→{a.dest_ip}, "
+              f"sid={a.alert.signature_id})")
+    handled = 0
+    for ln in messy:
         try:
-            Alert.model_validate(r)
-            print(f"  ✗ id={r.get('id')} was ACCEPTED (should not happen!)")
+            obj = json.loads(ln)
+        except json.JSONDecodeError:
+            handled += 1
+            print("  ✓ quarantined: line is not valid JSON (truncated write)")
+            continue
+        try:
+            AlertEvent.model_validate(obj)
+            print(f"  ✗ flow={obj.get('flow_id')} was ACCEPTED (should not happen!)")
         except ValidationError as e:
             err = e.errors()[0]
-            print(f"  ✓ id={r.get('id')} rejected: {err['loc']} — {err['msg']}")
-            rejected += 1
-    all_rejected = rejected == len(malformed)
-    print(f"  parsed {len(alerts)} valid, rejected {rejected}/{len(malformed)} malformed")
+            handled += 1
+            print(f"  ✓ flow={obj.get('flow_id')} rejected: {err['loc']} — {err['msg']}")
+    print(f"  parsed {len(events)} valid, handled {handled}/{len(messy)} messy lines")
 
     section("4. Secrets via pydantic-settings (from the environment)")
     s = Settings()
@@ -81,12 +95,12 @@ def main() -> int:
 
     section("Result")
     ok = (
-        len(alerts) == len(valid)
-        and all_rejected
-        and crashed is not None
-        and accepted >= 4
+        len(events) == len(clean)
+        and handled == len(messy)
+        and load_died is not None
+        and accepted >= 2
     )
-    print("  the boundary rejects what the starter trusted or died on ✓" if ok
+    print("  the boundary rejects/quarantines what the starter trusted or died on ✓" if ok
           else "  DEMO FAILED — see above")
     return 0 if ok else 1
 

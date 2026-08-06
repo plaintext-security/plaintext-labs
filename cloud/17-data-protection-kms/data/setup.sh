@@ -3,9 +3,9 @@
 set -euo pipefail
 
 echo "==> Creating KMS key (module 17 — Data Protection & KMS)..."
-KEY_ID=$(awslocal kms create-key \
+KEY_ID=$(aws kms create-key \
   --description " data-at-rest key" \
   --query KeyMetadata.KeyId --output text)
-awslocal kms create-alias --alias-name alias/data --target-key-id "$KEY_ID" 2>/dev/null || true
+aws kms create-alias --alias-name alias/data --target-key-id "$KEY_ID" 2>/dev/null || true
 echo "$KEY_ID" > /lab/data/key-id.txt
 echo "==> KMS key ready: $KEY_ID  (alias/data)"

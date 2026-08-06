@@ -5,23 +5,27 @@
 ## Setup
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[LocalStack](https://localstack.cloud/) to simulate AWS locally — no cloud account or real credentials
-required.
+[floci](https://github.com/floci-io/floci), a free, MIT-licensed local AWS emulator, to simulate AWS on
+`localhost:4566` — no cloud account or real credentials required. (floci replaces LocalStack, whose
+community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/01-cloud-fundamentals
-make up         # start LocalStack + seed an account shaped like the breach
+make up         # start floci + seed an account shaped like the breach
+make demo       # run the enumeration walkthrough
 make shell      # drop into the lab container
 make down       # stop when done
 ```
 
 **What this lab is — and isn't (read this).** You are **not** re-exploiting Capital One. There is no
-SSRF, no live metadata service — and LocalStack does not *enforce* IAM, so a denied call won't bounce
-on its own. That's fine, because the skill here isn't exploitation; it's **judgment.** You'll reproduce
-the *responsibility conditions* of two hops in a local account and, where enforcement can't be shown
-live, reason about it with `awslocal iam simulate-principal-policy`, which evaluates AWS's real policy
-logic and tells you `allowed`/`denied` and *why*. Honest tools, honest answer.
+SSRF, no live metadata service — and floci does not *enforce* IAM, so a denied call won't bounce on its
+own. That's fine, because the skill here isn't exploitation; it's **judgment.** You'll reproduce the
+*responsibility conditions* of two hops in a local account and, where enforcement can't be shown live,
+reason about it with `aws iam simulate-principal-policy`, which evaluates AWS's real policy logic and
+tells you `allowed`/`denied` and *why*. (Because the lab drives plain `aws` via `AWS_ENDPOINT_URL`, you
+can later run the identical steps against a real AWS account you own to watch enforcement live.) Honest
+tools, honest answer.
 
 > Only test systems you own or have explicit written permission to test. Everything here runs locally
 > against a simulated account you own.
@@ -41,7 +45,7 @@ Each step below runs the same rhythm: **Predict** (commit to a verdict *before* 
 1. [ ] **Hop 2 — metadata handed out credentials.**
    **Predict:** the metadata service is an AWS feature. Write your verdict now: provider or customer?
    **Do:** inspect the EC2 instance role and its trust
-   (`awslocal iam get-role --role-name EC2InstanceRole`). Note that nothing scopes how powerful
+   (`aws iam get-role --role-name EC2InstanceRole`). Note that nothing scopes how powerful
    the role is, and that *enforcing IMDSv2* is an instance setting, not something AWS turns on for you.
    **Reveal:** the mechanism is Amazon's; **enforcing IMDSv2 and scoping the role are the customer's** —
    the line runs *through* the feature. **Record:** owner = customer; plane = control; breaking change =
@@ -51,16 +55,16 @@ Each step below runs the same rhythm: **Predict** (commit to a verdict *before* 
    **Predict:** an app server's role should reach only its own bucket. Will this one?
    **Do:** this is the heart of the breach — reproduce it. Confirm the role's policy
    (`DevPolicy`) grants `s3:*` on `*`, then prove the blast radius with
-   `awslocal iam simulate-principal-policy`: ask whether the role can `s3:GetObject` on
+   `aws iam simulate-principal-policy`: ask whether the role can `s3:GetObject` on
    `uploads-dev` **and** on a second, unrelated bucket you create
-   (`awslocal s3api create-bucket --bucket payroll-prod`). Both come back `allowed`.
+   (`aws s3api create-bucket --bucket payroll-prod`). Both come back `allowed`.
    **Reveal:** over-broad IAM is the customer control that turned one foothold into 100M records —
    identity (control plane) failing *into* data access (data plane). **Record:** owner = customer;
    plane = control→data; breaking change = scope the resource to the one bucket.
 
 3. [ ] **Hop 4 — the data was encrypted, and it didn't matter.**
    **Predict:** server-side encryption was on. Did it stop the exfiltration?
-   **Do:** check the bucket's encryption (`awslocal s3api get-bucket-encryption` — or note its absence
+   **Do:** check the bucket's encryption (`aws s3api get-bucket-encryption` — or note its absence
    and reason about the on case). Then re-read your hop-3 result: the role was *authorized*.
    **Reveal:** an authorized principal's reads are decrypted transparently — encryption-at-rest never
    engages. It defends against stolen media, not over-broad identity. **Record:** owner = customer

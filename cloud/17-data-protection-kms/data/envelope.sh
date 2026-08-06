@@ -12,7 +12,7 @@ printf 'ACCOUNT=ACC-001\nBALANCE=999999.00\nSSN=000-00-0001\n' | tee "$WORK/secr
 echo
 
 echo "== 1. Ask KMS for a data key — it returns the key in plaintext AND KMS-wrapped =="
-awslocal kms generate-data-key --key-id "$KEY_ID" --key-spec AES_256 \
+aws kms generate-data-key --key-id "$KEY_ID" --key-spec AES_256 \
   --query '[Plaintext,CiphertextBlob]' --output text > "$WORK/datakey.b64"
 cut -f1 "$WORK/datakey.b64" | base64 -d > "$WORK/datakey.bin"   # plaintext key (transient)
 cut -f2 "$WORK/datakey.b64" | base64 -d > "$WORK/datakey.wrapped"  # KMS-wrapped key (we keep this)
@@ -31,7 +31,7 @@ echo "  on disk now: secret.enc (ciphertext) + datakey.wrapped (useless without 
 echo
 
 echo "== 4. Decrypt: ask KMS to UNWRAP the data key, then decrypt locally =="
-awslocal kms decrypt --ciphertext-blob "fileb://$WORK/datakey.wrapped" \
+aws kms decrypt --ciphertext-blob "fileb://$WORK/datakey.wrapped" \
   --query Plaintext --output text | base64 -d > "$WORK/datakey.bin"
 openssl enc -d -aes-256-cbc -pbkdf2 -in "$WORK/secret.enc" \
   -out "$WORK/secret.dec" -pass "file:$WORK/datakey.bin"

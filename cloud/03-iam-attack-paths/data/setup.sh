@@ -6,10 +6,10 @@ set -euo pipefail
 echo "==> Seeding  IAM escalation scenario (module 03 — IAM Attack Paths)..."
 
 # ---- Users ----
-awslocal iam create-user --user-name dev-alice 2>/dev/null || true
+aws iam create-user --user-name dev-alice 2>/dev/null || true
 
 # ---- dev-alice policy: can assume the Lambda role ----
-awslocal iam create-policy \
+aws iam create-policy \
   --policy-name AlicePolicy \
   --policy-document '{
     "Version": "2012-10-17",
@@ -35,12 +35,12 @@ awslocal iam create-policy \
     ]
   }' 2>/dev/null || true
 
-awslocal iam attach-user-policy \
+aws iam attach-user-policy \
   --user-name dev-alice \
   --policy-arn arn:aws:iam::000000000001:policy/AlicePolicy 2>/dev/null || true
 
 # ---- AdminRole: the escalation target ----
-awslocal iam create-role \
+aws iam create-role \
   --role-name AdminRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -51,12 +51,12 @@ awslocal iam create-role \
     }]
   }' 2>/dev/null || true
 
-awslocal iam attach-role-policy \
+aws iam attach-role-policy \
   --role-name AdminRole \
   --policy-arn arn:aws:iam::aws:policy/AdministratorAccess 2>/dev/null || true
 
 # ---- LambdaRole: middle hop — has PassRole + UpdateFunctionConfiguration ----
-awslocal iam create-role \
+aws iam create-role \
   --role-name LambdaRole \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -74,7 +74,7 @@ awslocal iam create-role \
     ]
   }' 2>/dev/null || true
 
-awslocal iam create-policy \
+aws iam create-policy \
   --policy-name LambdaPolicy \
   --policy-document '{
     "Version": "2012-10-17",
@@ -105,7 +105,7 @@ awslocal iam create-policy \
     ]
   }' 2>/dev/null || true
 
-awslocal iam attach-role-policy \
+aws iam attach-role-policy \
   --role-name LambdaRole \
   --policy-arn arn:aws:iam::000000000001:policy/LambdaPolicy 2>/dev/null || true
 

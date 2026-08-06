@@ -9,10 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Python clients for the runtime-fetch app + the AWS Secrets Manager variant:
 #   hvac          — the official Vault API client (an app fetches its secret at runtime)
 #   psycopg2      — connect to Postgres with the dynamic credential Vault minted
-#   awscli        — the `aws` CLI (provides the binary awslocal wraps)
-#   awscli-local  — `awslocal` targets the LocalStack container
+#   awscli        — the `aws` CLI (v1, pure-Python; honors AWS_ENDPOINT_URL -> floci or real AWS)
 RUN pip install --no-cache-dir \
-      hvac==2.3.0 psycopg2-binary==2.9.9 awscli==1.33.44 awscli-local==0.22.0
+      hvac==2.3.0 psycopg2-binary==2.9.9 awscli==1.33.44
 
 # trufflehog — secrets scanner
 RUN curl -sSfL \

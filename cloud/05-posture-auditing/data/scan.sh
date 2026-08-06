@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# data/scan.sh — run Prowler against the seeded LocalStack account and print the
+# data/scan.sh — run Prowler against the seeded floci account and print the
 # HIGH/CRITICAL failures. Kept as a script (not inlined in the Makefile) so the
 # jq program isn't mangled by nested Make/shell quoting.
 #
-# Prowler reads the LocalStack endpoint from AWS_ENDPOINT_URL (set in
-# docker-compose.yml); the build-time patch in patch-prowler-localstack.py makes
+# Prowler reads the emulator endpoint from AWS_ENDPOINT_URL (set in
+# docker-compose.yml); the build-time patch in patch-prowler-endpoint.py makes
 # its STS credential check honour that endpoint too. Scoped to the four services
 # the lab seeds so the scan finishes in well under a minute.
 set -uo pipefail
@@ -13,7 +13,7 @@ OUT_DIR=/tmp/prowler-out
 OUT_NAME=prowler-demo
 OCSF="$OUT_DIR/${OUT_NAME}.ocsf.json"
 
-echo "== Running prowler posture scan against LocalStack (s3, ec2, iam, cloudtrail) =="
+echo "== Running prowler posture scan against floci (s3, ec2, iam, cloudtrail) =="
 # Prowler exits non-zero when it finds failing checks — that's success for us.
 prowler aws \
   --services s3 ec2 iam cloudtrail \

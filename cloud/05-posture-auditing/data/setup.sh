@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# data/setup.sh — seed a deliberately misconfigured LocalStack AWS account.
+# data/setup.sh — seed a deliberately misconfigured local AWS account (floci).
 # Run via: docker compose run --rm lab bash data/setup.sh
 # All resources use fake/example credentials — no real AWS account needed.
 set -euo pipefail
 
-ENDPOINT="http://localstack:4566"
+ENDPOINT="http://floci:4566"
 REGION="us-east-1"
-ALIAS="awslocal --endpoint-url $ENDPOINT --region $REGION"
+ALIAS="aws --endpoint-url $ENDPOINT --region $REGION"
 
 echo "== Seeding misconfigured Inherited account =="
 
@@ -82,7 +82,7 @@ echo "   -> CloudTrail trail created but logging is NOT started (CIS 3.1)"
 # ----- IAM: root account with no MFA (CIS 1.5) — simulated via account alias -
 echo "[5/5] Simulating root account with no MFA (account alias)..."
 $ALIAS iam create-account-alias --account-alias inherited 2>/dev/null || true
-echo "   -> Root MFA check will fail (LocalStack simulates no-MFA state)"
+echo "   -> Root MFA check will fail (emulator simulates no-MFA state)"
 
 echo ""
 echo "== Setup complete. Misconfigured resources:"
