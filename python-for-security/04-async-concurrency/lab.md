@@ -1,18 +1,53 @@
 # Lab 04 — A Bounded, Backoff-Aware Async Enricher
 
+> **Hands-on lab.** Environment: `plaintext-labs/python-for-security/04-async-concurrency` (your `sift`
+> project from Module 03 + a small **mock threat-intel API** that enforces a real rate limit — returns
+> `429` with `Retry-After` past its quota). Objective: **add an async enrichment stage to the *same*
+> `sift`** — pull the unique `src_ip` / `dest_ip` off your validated `AlertEvent`s and query the TI API
+> for each, with **bounded** concurrency, **`Retry-After`-honoring backoff**, and **per-indicator
+> partial-failure** handling. Target: **~2–3 hrs.**
+> *Intermediate-plus: the steps state objectives; you derive the `asyncio`/`httpx`/backoff code (with the copilot).*
+
 *[← Back to the module concept](README.md)*
+
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This lab grows `sift`, it does not start a new tool.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **Async is for waiting, not computing.** | Enrichment is I/O-bound — hundreds of ms *waiting on the network*; async overlaps the waits and collapses wall-clock. |
+| 2 | **Unbounded `gather` is the herd; `Semaphore(K)` is the fix.** | *K* comes from the API's published rate limit, not your CPU — cap in-flight requests or get `429`'d / banned. |
+| 3 | **A `429` is an instruction — obey it.** | Honor `Retry-After` with `await asyncio.sleep` (never `time.sleep` — it blocks the loop); else exponential backoff **with jitter**. |
+| 4 | **Design for partial failure.** | Every indicator returns `Ok`/`Err`; `asyncio.gather` without `return_exceptions` **cancels the whole batch** on the first raise. |
+| 5 | **One reused `httpx.AsyncClient`.** | A single connection-pooled client for the batch — not `requests`, not a fresh client per call. |
+| 6 | **Ephemeral async vs. durable queue.** | In-process `asyncio` loses in-flight work on a crash; `huey` makes each enrich a persisted, retryable job that survives a restart. |
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [core idea](README.md#the-core-idea) (semaphore, backoff, partial failure, task-queue distinction) and
+> the HTTPX / `tenacity` / `huey` primary sources.
+
+---
+
+## Warm-up — answer before you build (2 min)
+
+1. What is the maximum number of simultaneous requests `await asyncio.gather(*[enrich(i) for i in
+   indicators])` makes — and why is that the **bug**, not the feature?
+2. On a `429` with `Retry-After: 30`, what does a respectful client do — and why is `time.sleep(30)`
+   inside a coroutine wrong even though the *duration* is right?
+
+---
 
 ## Setup
 
-This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo at
-`plaintext-labs/python-for-security/04-async-concurrency/`: your `sift` project from Module 03, plus a
-small **mock threat-intel API** container that enforces a real rate limit (returns `429` with a
-`Retry-After` header past its quota) so you can prove your bound and backoff work *without* burning a real
-API key. The indicators aren't invented — you derive them from the corpus you already parse: the unique
-`src_ip` / `dest_ip` values pulled off the validated `AlertEvent`s in `eve.json`. The bundled capture yields a
-handful of unique IPs — enough to prove the bound and backoff bite; regenerate `eve.json` from a larger PCAP
-(or point at a live feed) when you want thousands.
+This is a **reference lab** — a one-command environment: your `sift` project plus a **mock TI API**
+container that returns `429` with a `Retry-After` header past its quota, so you can prove your bound and
+backoff work *without* burning a real API key. The indicators aren't invented — you derive them from the
+unique `src_ip` / `dest_ip` off the validated `AlertEvent`s in `eve.json`. The bundled capture yields a
+handful of unique IPs — enough for the bound and backoff to bite; regenerate `eve.json` from a larger
+PCAP when you want thousands.
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
@@ -23,84 +58,141 @@ make demo    # runs the async enricher against the mock API and prints the concu
 make down    # stop when done
 ```
 
-The lab **runs against a shipped mock API** — a small custom target — because the lesson is *rate-limit
-behavior under bounded concurrency*, and a mock that deterministically returns `429` is the only way to
-make the herd and the backoff *legible and reproducible* at zero cost.
+> **Authorization note.** Everything runs locally against the bundled mock API — only test systems you
+> own or have written permission to test. Never point this enricher at a real threat-intel API until
+> you've confirmed your bound respects its published rate limit.
 
-## Scenario
+---
 
-`sift` can now parse a large `eve.json` into typed `AlertEvent`s. The next job is enrichment: pull the
-unique `src_ip` / `dest_ip` off those alerts and, for each IP, ask a threat-intel API "is this known-bad,
-and what's the reputation?" The naive version — a sync loop, or
-`asyncio.gather` over everything — either takes an hour or gets your key banned in seconds against the
-mock's rate limit. You'll build the enricher that's both *fast* and *polite*.
+## Build it — objective, then a signal (intermediate-plus: you drive the code)
 
-> Only test systems you own or have explicit written permission to test. Everything here runs locally
-> against the bundled mock API — never point this enricher at a real threat-intel API until you've
-> confirmed your bound respects its published rate limit.
+### Step 1 — Derive the indicators, then feel the pain
 
-## Do
+**Concept (30 sec):** Flight-card #1. The sync loop is *safe* but serializes every network wait — that's
+the toil you're eliminating. Measure it before you fix it.
 
-1. [ ] **Derive the indicators, then feel the pain.** Extract the unique `src_ip` / `dest_ip` from your
-   parsed `AlertEvent`s (dedup — the same IP recurs across alerts). Run the shipped **sync** enricher
-   (`httpx.get` in a `for` loop) over that IP set and time it. Record the wall-clock — this is the toil
-   you're eliminating.
-2. [ ] **Write the spec.** Spec the async enricher: reuse one `httpx.AsyncClient`; concurrency bounded to
-   *K* (default from the mock's documented rate limit); on `429`, honor `Retry-After` then exponential
-   backoff *with jitter*; every indicator returns a typed result (`Ok`/`Err`); the batch always completes.
-3. [ ] **Watch the copilot build the herd.** Ask your copilot to "enrich all indicators concurrently."
-   Confirm it emits `asyncio.gather` with **no** semaphore and **no** `429` handling. Run it against the
-   mock and watch it get rate-limited (or banned). This is the failure-class — see it fail on purpose.
-4. [ ] **Bound the concurrency.** Add an `asyncio.Semaphore(K)` so at most *K* requests are in flight;
-   each enrich coroutine does `async with sem:` around its `await client.get(...)`. Instrument a
-   max-in-flight counter and prove it never exceeds *K*.
-5. [ ] **Handle the `429` respectfully.** On `429`, read `Retry-After` and `await asyncio.sleep(...)` for
-   it (**not** `time.sleep`, which blocks the loop); if absent, exponential backoff with jitter, capped at
-   a max retry budget. Use `tenacity` or hand-roll it — either way, prove the backoff *fires* under the
-   mock's rate limit and the batch still finishes.
-6. [ ] **Survive partial failure.** Make every task return a result object, not raise. Force a subset to
-   fail (bad indicators / injected timeouts) and prove the *other* results all come back — no
-   `gather`-cancels-the-batch. Log the failures as structured `sift` events (from Module 03).
-7. [ ] **Prove it's faster *and* polite.** Re-time the bounded async enricher vs. step 1's sync loop, and
-   show zero `429`-induced failures in the final run. Report: wall-clock, max concurrency observed, retries
-   fired, indicators failed.
-8. [ ] **Automate & own it.** Commit the enricher as `sift enrich`, wired into the pipeline behind the
-   Module 02 pydantic models. In the PR, note the copilot's herd version, the bound and backoff you added,
-   and the one blocking `time.sleep` (or unbounded `gather`) you had to fix.
+**Do:** extract the unique `src_ip` / `dest_ip` from your parsed `AlertEvent`s (dedup — the same IP
+recurs across alerts). Run the shipped **sync** enricher (`httpx.get` in a `for` loop) over that IP set
+and time it.
 
-## Success criteria — you're done when
-- [ ] The async enricher is measurably faster than the sync loop over the full indicator list.
-- [ ] Observed concurrency **never exceeds *K*** — you have the counter/log to prove it.
-- [ ] Under the mock's rate limit, the run shows the backoff **firing** and finishes with **zero** unhandled `429`s.
+> **▸ On track if:** you have a deduped indicator list off the `AlertEvent`s **and** a recorded sync
+> wall-clock to beat.
+
+### Step 2 — Spec it, then watch the copilot build the herd
+
+**Concept (30 sec):** Flight-card #2 + #4. Write the contract, then make the failure-class visible on
+purpose before you fix it.
+
+**Do:** spec the async enricher (reuse one `httpx.AsyncClient`; bound to *K*; honor `Retry-After` then
+backoff with jitter; every indicator returns `Ok`/`Err`; batch always completes). Then ask your copilot
+to "enrich all indicators concurrently" and run *its* version against the mock.
+
+> **▸ On track if:** the copilot's draft emits `asyncio.gather` with **no** semaphore and **no** `429`
+> handling — and you watched it get rate-limited against the mock. You've seen the herd fail on purpose.
+
+### Step 3 — Bound the concurrency
+
+**Concept (30 sec):** Flight-card #2. At most *K* requests in flight, ever. *K* comes from the mock's
+documented rate limit.
+
+**Do:** add an `asyncio.Semaphore(K)` — each enrich coroutine does `async with sem:` around its
+`await client.get(...)`. Instrument a max-in-flight counter.
+
+> **▸ On track if:** `sift` enriches the indicator list concurrently and the observed max-in-flight
+> **never exceeds *K*** — you have the counter/log to prove it, and the shared results are updated
+> without a race.
+
+### Step 4 — Handle the `429` respectfully
+
+**Concept (30 sec):** Flight-card #3. The server told you to slow down; obey with the loop-friendly sleep.
+
+**Do:** on `429`, read `Retry-After` and `await asyncio.sleep(...)` for it (**not** `time.sleep`); if
+absent, exponential backoff with jitter, capped at a max retry budget. Hand-roll it or use `tenacity`.
+
+> **▸ On track if:** under the mock's rate limit the backoff **fires** (you can see the retries in the
+> log), no `time.sleep` sits inside a coroutine, and the batch still finishes with **zero** unhandled
+> `429`s.
+
+### Step 5 — Survive partial failure
+
+**Concept (30 sec):** Flight-card #4. One bad call must not sink 499 good ones.
+
+**Do:** make every task return a result object, not raise. Force a subset to fail (bad indicators /
+injected timeouts) and log the failures as structured `sift` events (from Module 03).
+
+> **▸ On track if:** a forced subset of failures does **not** cancel the batch — every indicator comes
+> back `Ok` or `Err`, and the failures are recorded as structured events.
+
+### Step 6 — Prove it's faster *and* polite
+
+**Concept (30 sec):** Flight-card #1–#3 together. Fast alone is the herd; the win is fast *and* bounded.
+
+**Do:** re-time the bounded async enricher vs. Step 1's sync loop. Emit a report: wall-clock, max
+concurrency observed, retries fired, indicators failed.
+
+> **▸ On track if:** the bounded async run is **measurably faster** than the sync loop **and** shows
+> zero `429`-induced failures.
+
+---
+
+## Prove the control (your finish line)
+
+Wire the enricher into `sift` as `sift enrich` and confirm the control holds — you're done when:
+
+- [ ] `sift enrich` is measurably **faster** than the sync loop over the full indicator list.
+- [ ] Observed concurrency **never exceeds *K*** — the counter/log proves it, and no race corrupts the shared results.
+- [ ] Under the mock's rate limit the run shows the backoff **firing** and finishes with **zero** unhandled `429`s.
 - [ ] A forced subset of failures does **not** sink the batch — every indicator returns `Ok` or `Err`.
-- [ ] No `time.sleep` inside a coroutine; one reused `httpx.AsyncClient`; the spec is satisfied by the implementation.
+- [ ] No `time.sleep` inside a coroutine; **one reused** `httpx.AsyncClient`; the implementation satisfies the spec.
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Why does async win for enrichment but *not* for a CPU-bound hashing loop?
+2. Where does the correct *K* come from — and why can't you fix the herd by "just setting a high limit"?
+3. `sift` dies after enriching 6,000 of 10,000 indicators. With the in-process async batch, what happens
+   to the other 4,000 — and how does moving enrichment onto a `huey` task queue change the answer?
+
+---
 
 ## Deliverables
-The `sift enrich` module: the bounded async enricher (`httpx.AsyncClient` + `asyncio.Semaphore` + backoff),
-the typed per-indicator result model, the enrichment spec, and the timing/concurrency report proving the
-bound and backoff hold. Commit all of it. Do **not** commit any real TI API key — load it via
-`pydantic-settings` (Module 02); the lab uses the mock.
 
-## AI acceleration
-Delegate the `async`/`await` scaffolding to the copilot, then review for exactly two omissions: the
-concurrency **bound** and the `429` **backoff**. The high-value catches: an `asyncio.gather` with no
-semaphore (the herd), a `time.sleep` inside a coroutine (blocks the whole loop), a `gather` without
-`return_exceptions` (one failure cancels the batch), and a fresh `AsyncClient` per call (throws away the
-pool). Ask the model "what's the max concurrent requests here?" — if it can't answer with a number, the
-bound isn't there.
+The `sift enrich` module: the bounded async enricher (`httpx.AsyncClient` + `asyncio.Semaphore` +
+backoff), the typed per-indicator result model, the enrichment spec, and the timing/concurrency report
+proving the bound and backoff hold. Commit all of it. **Do not** commit any real TI API key — load it via
+`pydantic-settings` (Module 02); the lab uses the mock. Lab *artifacts* (raw API responses, logs) stay
+out of commits.
+
+## Automate & own it
+
+**Required.** Commit the enricher as `sift enrich`, wired into the pipeline behind the Module 02 pydantic
+models. In the PR, note the copilot's herd version, the **bound** and **backoff** you added, and the one
+blocking `time.sleep` (or unbounded `gather`) you had to fix. Ask the model "what's the max concurrent
+requests here?" — if it can't answer with a *number*, the bound isn't there. Reviewing the AI's
+concurrency is where this class of risk lives.
+
+## Definition of done (`async-concurrency` ✅)
+
+- [ ] `sift enrich` is committed: bounded async enricher + typed result model + spec + timing/concurrency report.
+- [ ] The bound holds (max in-flight ≤ *K*), the backoff fires under the mock's `429`, and partial failure never sinks the batch.
+- [ ] You can explain all six flight-card facts cold — including async-ephemeral vs. task-queue-durable.
 
 ## Connects forward
-The reused-client, bounded-concurrency muscle returns in Module 06 when `sift` becomes a `FastAPI` service
-(async endpoints, shared client lifespan) and in Module 07's MCP server, whose tools call this same
-enricher. Rate-limit-respect and backoff reappear anywhere `sift` talks to an external API — including the
-LLM in Module 07, which has its *own* `429`s.
+
+The reused-client, bounded-concurrency muscle returns in **Module 06** when `sift` becomes a `FastAPI`
+service (async endpoints, shared client lifespan) and in **Module 07**'s MCP server, whose tools call
+this same enricher. Rate-limit-respect and backoff reappear anywhere `sift` talks to an external API —
+including the LLM in Module 07, which has its *own* `429`s.
 
 ## Marketable proof
+
 > "I build async enrichment pipelines in Python that call threat-intel APIs with bounded concurrency,
 > `Retry-After`-honoring backoff, and per-item partial-failure handling — fast enough to scale, polite
 > enough not to get the key banned."
 
 ## Stretch (optional)
+
 - Replace the semaphore with an `anyio` task group + capacity limiter and compare the ergonomics of
   structured concurrency (cancellation propagates cleanly) against raw `asyncio`.
 - Add a token-bucket rate limiter (requests-per-second, not just in-flight count) so you respect a
