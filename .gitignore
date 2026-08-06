@@ -29,6 +29,7 @@ python-for-security/*/_gen/
 *.log
 # Track 09: committed Zeek TSV seed logs are curated sample data, not generated artifacts
 !python-for-security/*/data/zeek/*.log
+!cloud/04-cloud-network-security/data/vpc-flow-logs.log
 *.dmp
 *.mem
 *.vmem
