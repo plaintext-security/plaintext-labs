@@ -7,7 +7,7 @@
 
 ---
 
-## ✈ Flight card — the 6 things to hold
+## ✈ Flight card — the 7 things to hold
 
 *Glance here when you lose the thread. This replaces re-reading the module.*
 
@@ -19,8 +19,9 @@
 | 4 | **Scope to a single `aud` + minimal claims.** | Blocks cross-app replay; a 40-role JWT is VPN access re-packaged as JSON. |
 | 5 | **Federation broker: the upstream group→role map IS the trust decision.** | Wrong map hands your authz to the upstream IdP; Golden SAML (T1606.002) forges that seam. |
 | 6 | **The real handles:** realm `corp`, client `corp-app` / secret `corp-app-secret`, users `analyst` / `analyst123` and `admin` / `admin456`. | These are the exact strings you type; the module prose used placeholders. |
+| 7 | **Two grants, opposite trust:** the **password grant** hands the *app* the user's password; **Authorization Code** sends it only to Keycloak. | ROPC is the shortcut (and OAuth 2.1-deprecated); the redirect flow is what real apps use. The `client_secret` proves the *app*, not the user. |
 
-*(If you can explain all six cold at the end — especially #1 and #2 — you've got the objective.)*
+*(If you can explain all seven cold at the end — especially #1 and #2 — you've got the objective.)*
 
 > **↳ Go deeper — pull only when a step doesn't click:** the module's
 > [OIDC token flow](README.md#oidc-the-token-flow-youre-about-to-run), the
@@ -37,6 +38,9 @@
    that not a validator at all**, and which one line of the module's validation flowchart does it skip?
 2. Name the **two** numbers in this realm that bound blast radius, and say what each one limits when a
    token is stolen. (Hint: one is on the clock, one is on the destination.)
+3. Two OAuth grants show up in this lab: one sends the user's password **through the application**,
+   the other sends it **only to the IdP**. Name which is which — and say why the second is the
+   default for a real app.
 
 ---
 
@@ -111,7 +115,46 @@ differ.
 > to roles including **both `analyst` and `admin`**. If the two role sets look identical, you decoded the
 > same token twice — re-run with the admin credentials.
 
-### Step 3 — Find the blast-radius controls in the realm
+### Step 3 — Run the flow a real app uses (Authorization Code)
+
+**Concept (30 sec):** Steps 1–2 used the **password grant** (`grant_type=password`) — the
+*shortcut*: you handed the user's password straight to `curl` playing the client. Real apps must
+**never** see the password. The **Authorization Code flow** is how they avoid it — the password
+goes only to Keycloak, and the app gets back a one-time `code` it redeems, with its
+`client_secret`, on a back channel. Watch where the password goes in each leg.
+
+**Do it:** start the callback app and walk the four legs.
+
+```bash
+make webapp    # serves http://localhost:3000 (Ctrl-C to stop when done)
+```
+
+1. **The redirect out.** Open `http://localhost:3000` and click **Log in with Keycloak**. The app
+   builds an `/auth?response_type=code&client_id=corp-app&redirect_uri=…&scope=openid&state=…` URL
+   and redirects your *browser* to Keycloak. The app never touches your credentials; `state` is a
+   CSRF token it will re-check on the way back.
+2. **Login at the IdP.** You land on the **real Keycloak login page** — note the URL is on `:8080`
+   (Keycloak), not `:3000` (the app). Log in as **`analyst` / `analyst123`**. Your password went
+   **to Keycloak, never to the app.** That is the whole difference from Steps 1–2.
+3. **The redirect back.** Keycloak sends your browser to `http://localhost:3000/callback?code=…`.
+   The app's page shows exactly what it received: a **`code`** and your `state` — and **no
+   password**. That `code` is single-use, expires in ~60 s, and is **useless to anyone without
+   `corp-app`'s `client_secret`.**
+4. **The back-channel exchange.** Copy the pre-filled `curl` the page shows and run it. It POSTs
+   `code` + `client_secret` + `redirect_uri` to the token endpoint and returns the tokens. This
+   server-to-server call is where the secret proves the app — the browser never makes it.
+
+Decode the `access_token` and compare it to your Step 2 analyst token: **same claims, same
+signature, and it passes the same `validate-token.py`.** The token is identical — what changed is
+that the app never saw the password. *That* is what the redirect flow buys you.
+
+> **▸ On track if:** the login page you typed into was served by Keycloak on `:8080`; the app's
+> callback page showed a `code` but **no password**; and the exchange `curl` returned an
+> `access_token` whose claims match your Step 2 analyst token. If the exchange returns
+> `invalid_grant`, the code expired (>60 s) or was already spent — click **Log in** again for a
+> fresh one.
+
+### Step 4 — Find the blast-radius controls in the realm
 
 **Concept (30 sec):** Flight-card #3. Token lifetime and client scope aren't cosmetic — they are the
 numbers that decide how long a stolen token lives and how far it reaches. You're going to *defend* them,
@@ -127,7 +170,7 @@ of 60 s and that `directAccessGrantsEnabled` is `false`. Write one sentence defe
 > **60 s**, that federation is **not yet configured** (empty `identityProviders`), and that brute-force
 > protection is on. These are the facts your memo and validator lean on.
 
-### Step 4 — Reason about the two abuses: stolen token vs stolen key
+### Step 5 — Reason about the two abuses: stolen token vs stolen key
 
 **Concept (30 sec):** Flight-card #1 + #5. This is the module's spine. A stolen *token* is bounded by
 `exp` and `aud`; a stolen *signing key* is bounded by nothing you can revoke fast — that is the
@@ -171,6 +214,9 @@ it reject the forgery is your self-check. Assemble `oidc-analysis.md` alongside 
    which caught the `alg: none` one?
 3. Stolen token vs stolen signing key: which is bounded by `exp`/`aud`, which is bounded by nothing you
    can revoke fast, and which incident proved the second?
+4. In the Authorization Code flow, your password reached exactly one party and the app received
+   exactly one thing. Name both — and say what makes the `code` useless to a thief who does not
+   have the `client_secret`.
 
 Missed one? Re-run the step that built it, or pull the [validation-gates section](README.md#validation-is-a-chain-of-gates-not-a-base64-decode) — then re-answer.
 
@@ -181,8 +227,11 @@ Missed one? Re-run the step that built it, or pull the [validation-gates section
 - **`oidc-analysis.md`** — containing: the decoded claims for **both** `analyst` and `admin` (keep the
   payload, redact the signature); which claims differ and the access decision each produces; your defense
   of the `accessTokenLifespan: 300` setting; the token-abuse scenario with your stolen-token mitigation
-  **and** the stolen-signing-key contrast (step 4b); and the Okta federation paragraph (step 4c), labelled
+  **and** the stolen-signing-key contrast (step 5b); and the Okta federation paragraph (step 5c), labelled
   assessed-from-config.
+  Add a short **Authorization Code walkthrough** — the four legs (redirect out, login at the IdP,
+  redirect back with the `code`, back-channel exchange) and, for each grant, **where the user's
+  password went**.
 - **`validate-token.py`** — the working validator from *Automate & own it*, committed with it.
 
 *Lab artifacts — raw tokens, the realm export, keys — stay out of commits. Never commit a live JWT.*
@@ -210,6 +259,9 @@ is what lets you say you own it.
   plus the JWKS key (RS256).
 - [ ] You have manually minted and decoded tokens for **both** users via `curl` and can list the claims
   that differ and the access decision each drives.
+- [ ] You ran the **Authorization Code flow** in the browser (`make webapp`), logged in on
+  Keycloak's own page, and **redeemed the `code` by hand** — and can say where your password went
+  in each grant.
 - [ ] Your memo defends `accessTokenLifespan: 300`, contrasts a stolen token (bounded by `exp`/`aud`)
   with a stolen signing key (Storm-0558 / Golden SAML), and names what would have to leak from *this*
   realm for the key scenario to apply.
@@ -217,7 +269,7 @@ is what lets you say you own it.
   T1606.002.
 - [ ] `validate-token.py` accepts a real token and you have **watched it reject** both a tampered token
   and an `alg: none` token.
-- [ ] `oidc-analysis.md` + `validate-token.py` are committed; you can explain all six flight-card facts cold.
+- [ ] `oidc-analysis.md` + `validate-token.py` are committed; you can explain all seven flight-card facts cold.
 
 ## Connects forward
 
@@ -230,9 +282,11 @@ is what lets you say you own it.
 
 ## Marketable proof
 
-> "I can deploy an OIDC identity broker, walk a JWT token flow end-to-end *including signature validation
-> against the JWKS endpoint*, and reason about token-abuse and signing-key-compromise blast radius and
-> federation trust risk — the core skills for a Zero Trust identity architect or IAM engineer."
+> "I can deploy an OIDC identity broker, walk a JWT token flow end-to-end — *both the password grant and the
+> Authorization Code redirect flow, and why the redirect flow is the secure default* — including
+> signature validation against the JWKS endpoint, and reason about token-abuse and signing-key-compromise
+> blast radius and federation trust risk — the core skills for a Zero Trust identity architect or IAM
+> engineer."
 
 ## Stretch
 
@@ -244,3 +298,8 @@ is what lets you say you own it.
   error response.
 - **Map to ATT&CK.** Tie your two abuse scenarios to **T1528** (Steal Application Access Token) and
   **T1606.002** (Golden SAML), and write one sentence on which realm setting is the control for each.
+- **PKCE for public clients.** `corp-app` is a *confidential* client — it proves itself with
+  `client_secret`. A **public** client (an SPA or mobile app) can't keep a secret. Add
+  `code_challenge` / `code_verifier` (PKCE) to the Authorization Code request and explain what PKCE
+  puts in the secret's place, and why that closes the code-interception gap for clients that can't
+  hold a secret.

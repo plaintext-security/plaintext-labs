@@ -3,7 +3,7 @@
 # Recipes use bash features (substring expansion ${VAR:0:80}); force bash so they
 # don't break under dash, which is /bin/sh on Debian/Ubuntu CI runners.
 SHELL := /bin/bash
-.PHONY: up down reset demo
+.PHONY: up down reset demo webapp
 
 KEYCLOAK_URL = http://localhost:8080
 REALM        = corp
@@ -105,3 +105,7 @@ print('  stops cross-app token replay. That is flight-card #4: one aud, minimal 
 	@echo "  Note 'exp' — token expires in 300 seconds (ZT discipline)."
 	@echo "  Note 'aud' — token is bound to a single audience, corp-app (Step 4)."
 	@echo "============================================================"
+
+webapp: ## Run the Authorization Code callback app on :3000 (Ctrl-C to stop)
+	@echo "Callback app starting — open http://localhost:3000 in your browser."
+	python3 webapp/app.py
