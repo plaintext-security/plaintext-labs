@@ -3,7 +3,7 @@
 # Recipes use bash features (substring expansion ${VAR:0:80}); force bash so they
 # don't break under dash, which is /bin/sh on Debian/Ubuntu CI runners.
 SHELL := /bin/bash
-.PHONY: up down reset demo webapp
+.PHONY: up down reset demo
 
 KEYCLOAK_URL = http://localhost:8080
 REALM        = corp
@@ -32,6 +32,7 @@ up:    ## Start Keycloak with the Corp realm pre-loaded
 	@echo "Keycloak is ready."
 	@echo "  Admin console : http://localhost:8080/admin  (admin / admin)"
 	@echo "  Corp realm: http://localhost:8080/realms/corp"
+	@echo "  Auth-code app : http://localhost:3000  (Step 3 — the callback app)"
 
 down:  ## Stop Keycloak
 	docker compose down
@@ -106,6 +107,3 @@ print('  stops cross-app token replay. That is flight-card #4: one aud, minimal 
 	@echo "  Note 'aud' — token is bound to a single audience, corp-app (Step 4)."
 	@echo "============================================================"
 
-webapp: ## Run the Authorization Code callback app on :3000 (Ctrl-C to stop)
-	@echo "Callback app starting — open http://localhost:3000 in your browser."
-	python3 webapp/app.py

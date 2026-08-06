@@ -140,4 +140,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print(f"Callback app on http://localhost:{PORT}  (Ctrl-C to stop)")
-    HTTPServer(("localhost", PORT), Handler).serve_forever()
+    # Bind all interfaces (0.0.0.0), not just loopback: the app runs in a
+    # container and Docker's published port only reaches a service that listens
+    # on the container's external interface. You still open it at localhost:3000.
+    HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

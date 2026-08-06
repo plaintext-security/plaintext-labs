@@ -33,3 +33,19 @@ services:
       timeout: 5s
       retries: 30
       start_period: 45s
+
+  # The Authorization Code callback app (Step 3). It comes up with the realm so
+  # http://localhost:3000 is ready as soon as `make up` finishes — no separate
+  # command. Stdlib-only Python, so it runs straight from the slim image with the
+  # source mounted read-only; no build step, no dependencies. The app never calls
+  # Keycloak server-side — it only builds the browser redirect URL and shows you
+  # the exchange curl — so it needs nothing but its own published port.
+  webapp:
+    image: python:3.12-slim
+    command: ["python", "/app/app.py"]
+    volumes:
+      - ./webapp:/app:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - keycloak

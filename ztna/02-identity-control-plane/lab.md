@@ -123,11 +123,8 @@ differ.
 goes only to Keycloak, and the app gets back a one-time `code` it redeems, with its
 `client_secret`, on a back channel. Watch where the password goes in each leg.
 
-**Do it:** start the callback app and walk the four legs.
-
-```bash
-make webapp    # serves http://localhost:3000 (Ctrl-C to stop when done)
-```
+**Do it:** the callback app came up with `make up` — it's already serving at `http://localhost:3000`.
+Walk the four legs.
 
 1. **The redirect out.** Open `http://localhost:3000` and click **Log in with Keycloak**. The app
    builds an `/auth?response_type=code&client_id=corp-app&redirect_uri=…&scope=openid&state=…` URL
@@ -144,9 +141,11 @@ make webapp    # serves http://localhost:3000 (Ctrl-C to stop when done)
    `code` + `client_secret` + `redirect_uri` to the token endpoint and returns the tokens. This
    server-to-server call is where the secret proves the app — the browser never makes it.
 
-Decode the `access_token` and compare it to your Step 2 analyst token: **same claims, same
-signature, and it passes the same `validate-token.py`.** The token is identical — what changed is
-that the app never saw the password. *That* is what the redirect flow buys you.
+Decode the `access_token` and compare it to your Step 2 analyst token: **same claims, same shape** —
+nothing about validation changes, because a token is a token regardless of which grant minted it. (The
+signature differs — it's a freshly minted token — but the validator you build in *Automate & own it*
+accepts it exactly the same way.) What changed is that the app never saw the password. *That* is what
+the redirect flow buys you.
 
 > **▸ On track if:** the login page you typed into was served by Keycloak on `:8080`; the app's
 > callback page showed a `code` but **no password**; and the exchange `curl` returned an
@@ -189,6 +188,36 @@ abuses. Label this a config-level design, not something you stood up.
 > stolen-key answer names the **realm signing key** as the thing that must not leak, and your federation
 > paragraph ends on the **group→role mapping** as the trust decision — not on the OIDC endpoints.
 
+### Step 6 — Verify the signature yourself (the gate that matters)
+
+**Concept (30 sec):** Flight-card #1 + #2. Everything so far read the *easy* gates — decode the claims,
+eyeball the `alg`, reason about `exp`/`aud`. **None of that is validation.** The load-bearing gate is the
+one you haven't run: **verify the RS256 signature against the realm's public key.** A base64 decode
+proves nothing — a forged `alg: none` token decodes to perfect-looking claims. This is the Storm-0558
+line, so know exactly what "correct" is *before* you (or a model) write `validate-token.py` next.
+
+**Do it (understand it here; build it in *Automate & own it*):** a real validator runs four gates, in
+order. Softening or skipping any one is how a "validator" becomes a decoder:
+
+1. **Algorithm — reject before any crypto.** Read the header `alg` and refuse anything that isn't
+   `RS256`. This single check kills `alg: none` *and* the RS256→HS256 key-confusion trick. The fatal
+   mistake is trusting the token's own `alg`; you **hard-code** the algorithm you accept.
+2. **Key — fetch the realm's *public* key from JWKS**, selected by the token header's `kid` (the
+   `…/openid-connect/certs` endpoint from Step 1's demo). You hold no shared secret — verification uses
+   the public half of the realm's signing key.
+3. **Signature — verify the RSA signature over `header.payload`.** One changed byte fails it. In Python
+   that is `jwt.decode(token, public_key, algorithms=["RS256"], …)` — with `algorithms` **pinned by you,
+   never read from the token**.
+4. **Claims — enforce `exp`, `aud`, `iss`** (and require they are present), only *after* the signature
+   verifies.
+
+> **▸ On track if:** you can name the four gates and say why pinning `algorithms=["RS256"]` (not the
+> token's `alg`) is what defeats both `alg: none` and HMAC confusion. One thing worth knowing before you
+> test it: the honest way to forge a *tampered* token is to **edit a claim and reuse the old signature**
+> (e.g. self-grant `admin`) — that deterministically fails the signature gate. Flipping a random
+> character is a weaker test: it usually corrupts the base64/JSON so the token is rejected as *malformed*
+> before the signature is ever checked (and a flipped padding bit changes nothing at all).
+
 ---
 
 ## Prove the control (your finish line)
@@ -197,7 +226,8 @@ One check proves you built a **validator**, not a decoder. Run `validate-token.p
 against your running realm and *watch* the outcomes:
 
 > 1. a **real** token minted in step 2 → **accepted**, claims printed;
-> 2. a token with one character flipped in the payload → **rejected** (signature fails);
+> 2. a token with an **edited claim** (self-grant `admin`, reuse the original signature) → **rejected**
+>    (the signature no longer covers the changed bytes — *this* is the gate that matters);
 > 3. a hand-crafted **`alg: none`** token → **rejected** (weak algorithm refused).
 
 **The proof is the two rejections.** A script that prints claims from a real token but *also* accepts the
@@ -259,9 +289,9 @@ is what lets you say you own it.
   plus the JWKS key (RS256).
 - [ ] You have manually minted and decoded tokens for **both** users via `curl` and can list the claims
   that differ and the access decision each drives.
-- [ ] You ran the **Authorization Code flow** in the browser (`make webapp`), logged in on
-  Keycloak's own page, and **redeemed the `code` by hand** — and can say where your password went
-  in each grant.
+- [ ] You ran the **Authorization Code flow** in the browser (the callback app comes up with `make up`
+  at `http://localhost:3000`), logged in on Keycloak's own page, and **redeemed the `code` by hand** —
+  and can say where your password went in each grant.
 - [ ] Your memo defends `accessTokenLifespan: 300`, contrasts a stolen token (bounded by `exp`/`aud`)
   with a stolen signing key (Storm-0558 / Golden SAML), and names what would have to leak from *this*
   realm for the key scenario to apply.
