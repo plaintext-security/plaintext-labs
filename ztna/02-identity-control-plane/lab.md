@@ -78,14 +78,15 @@ command: it authenticates two users, prints their decoded JWTs, and lists the re
 the claims like an enforcer would — the token *is* the access decision.
 
 **Do it:** run `make demo`. In the analyst payload, locate `preferred_username`, `azp`,
-`realm_access.roles`, and `exp`. Then paste the raw analyst token (grab it yourself in step 2, or from
-the demo output) into [jwt.io](https://jwt.io/) and confirm the header names an **asymmetric** algorithm
-(RS256), not `none` or an HMAC.
+`realm_access.roles`, `aud`, and `exp`. Then paste the raw analyst token (grab it yourself in step 2, or
+from the demo output) into [jwt.io](https://jwt.io/) and confirm the header names an **asymmetric**
+algorithm (RS256), not `none` or an HMAC.
 
 > **▸ On track if:** the demo banner reads *"Lab 02 — OIDC Token Demo: Corp realm"*, the analyst payload
-> shows `realm_access.roles` containing **`analyst`**, `azp` is **`corp-app`**, and the closing lines note
-> the token **expires in 300 seconds**. Step 3 of the demo prints the JWKS **Key ID** and **Alg: RS256** —
-> that public key is what your validator will fetch.
+> shows `realm_access.roles` containing **`analyst`**, `azp` is **`corp-app`**, and a single `aud` of
+> **`corp-app`** (Step 4 calls this out — the token is audience-bound, not a catch-all), and the closing
+> lines note the token **expires in 300 seconds**. Step 3 of the demo prints the JWKS **Key ID** and
+> **Alg: RS256** — that public key is what your validator will fetch.
 
 ### Step 2 — Mint a token yourself, then diff analyst vs admin
 

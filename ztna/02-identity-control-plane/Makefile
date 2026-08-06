@@ -80,8 +80,28 @@ print(json.dumps(json.loads(base64.urlsafe_b64decode(pad).decode()), indent=2))"
 	@curl -s $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/certs \
 		| python3 -c "import sys,json; keys=json.load(sys.stdin)['keys']; [print('Key ID:', k['kid'], '  Alg:', k['alg']) for k in keys]"
 	@echo ""
+	@echo "--- Step 4: Audience restriction (the 'aud' claim) ---"
+	@AUD_TOKEN=$$(curl -sf -X POST $(TOKEN_URL) \
+		-d "grant_type=password" \
+		-d "client_id=$(CLIENT_ID)" \
+		-d "client_secret=$(CLIENT_SECRET)" \
+		-d "username=analyst" \
+		-d "password=analyst123" \
+		-d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])"); \
+	echo "$$AUD_TOKEN" | python3 -c "\
+import sys, base64, json; \
+p = sys.stdin.read().strip().split('.')[1]; \
+claims = json.loads(base64.urlsafe_b64decode(p + '==' * (4 - len(p) % 4)).decode()); \
+print('  aud (who may accept this token):', claims.get('aud', '<MISSING — bound to nothing!>')); \
+print('  azp (which client requested it):', claims.get('azp')); \
+print(''); \
+print('  The token is scoped to a SINGLE audience (corp-app). A resource server'); \
+print('  that expects a different aud — e.g. corp-api — rejects it, which is what'); \
+print('  stops cross-app token replay. That is flight-card #4: one aud, minimal claims.')"
+	@echo ""
 	@echo "============================================================"
 	@echo "  Demo complete. Inspect the claims above."
 	@echo "  Compare 'realm_access.roles' between analyst and admin."
 	@echo "  Note 'exp' — token expires in 300 seconds (ZT discipline)."
+	@echo "  Note 'aud' — token is bound to a single audience, corp-app (Step 4)."
 	@echo "============================================================"
