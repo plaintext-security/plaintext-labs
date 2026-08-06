@@ -12,7 +12,11 @@ CLIENT_SECRET = corp-app-secret
 TOKEN_URL    = $(KEYCLOAK_URL)/realms/$(REALM)/protocol/openid-connect/token
 
 up:    ## Start Keycloak with the Corp realm pre-loaded
-	docker compose up -d
+	@# --force-recreate so a container that crashed on a previous boot (e.g. a
+	@# transient hostname-resolution failure in H2 startup) is replaced with a
+	@# fresh one instead of merely restarted — a plain `up` restarts the dead
+	@# container and would loop here forever.
+	docker compose up -d --force-recreate --remove-orphans
 	@echo "Waiting for Keycloak + the corp realm to be ready (realm import + boot can take ~60s)..."
 	@# Probe the actual token endpoint (from the host, which has curl) until it issues a
 	@# token — this is exactly what `make demo` does, so it guarantees users/clients are

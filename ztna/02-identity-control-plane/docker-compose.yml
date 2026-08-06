@@ -5,6 +5,16 @@
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.5
+    # Keycloak's dev-mode H2 database calls InetAddress.getLocalHost() while
+    # taking its file lock, so the container must be able to resolve its own
+    # hostname. Docker normally writes that into /etc/hosts, but a transient
+    # resolver hiccup at boot makes getLocalHost() throw
+    # UnknownHostException -> "Failed to obtain JDBC connection" and Keycloak
+    # exits. Pin a stable hostname and hard-map it to loopback so self-
+    # resolution can never depend on Docker populating /etc/hosts in time.
+    hostname: keycloak
+    extra_hosts:
+      - "keycloak:127.0.0.1"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
