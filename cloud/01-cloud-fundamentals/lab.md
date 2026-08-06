@@ -1,133 +1,186 @@
-# Lab 01 — Render the Verdict: Reproducing a Real Breach's Responsibility Chain
+# Lab 01 — Render the Verdict: reproduce a real breach's responsibility chain
 
-*Variant D · breach-driven, interleaved. [← Back to the module concept](README.md)*
+> **Hands-on lab.** Environment: `plaintext-labs/cloud/01-cloud-fundamentals` (runs on **floci**, a free
+> local AWS emulator — no cloud account). Objective: **render a per-hop responsibility verdict on the
+> Capital One chain and encode the fix as a CI guardrail.** Target: **~90 min**, one finish line.
+
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This replaces re-reading the module.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **The line runs *through* a service, not between services.** | AWS owns the mechanism; you own its configuration. Judge each control on that split. |
+| 2 | **Encryption at rest is silent against an authorized principal.** | The reads decrypt transparently — the failed control was **identity**, not crypto. |
+| 3 | **Over-broad IAM turned one foothold into 100M records.** | `s3:*` on `*` for a server role = control-plane failure bleeding into the data plane. |
+| 4 | **The metadata service is AWS's; enforcing IMDSv2 + scoping the role is yours.** | Provider mechanism, customer configuration — same feature, your side of the line. |
+| 5 | **CloudTrail records; the customer detects.** | A trail with no alert is a customer gap, not a provider one. |
+| 6 | **Across all five hops, zero were Amazon's.** | "The default is not secure" — breaches that *look* like provider failures are customer settings. |
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [model, revealed](README.md#the-model-revealed).
+
+---
+
+## Warm-up — answer before you build (2 min)
+
+*Don't look below. Being forced to retrieve is what builds the memory.*
+
+1. The Capital One data was **encrypted at rest** and still read in plaintext. Which control actually
+   failed — and why did encryption do nothing?
+2. The stolen credentials came from **AWS's** metadata service. Name the two settings that made this
+   hop the *customer's* failure.
+
+---
 
 ## Setup
-This is a **reference lab** — it ships a one-command environment in the companion
-[`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo. It uses
-[floci](https://github.com/floci-io/floci), a free, MIT-licensed local AWS emulator, to simulate AWS on
-`localhost:4566` — no cloud account or real credentials required. (floci replaces LocalStack, whose
-community edition sunset in March 2026.)
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/01-cloud-fundamentals
-make up         # start floci + seed an account shaped like the breach
-make demo       # run the enumeration walkthrough
-make shell      # drop into the lab container
-make down       # stop when done
+make up      # floci + seed an account shaped like the breach
+make demo    # enumeration walkthrough
 ```
 
-**What this lab is — and isn't (read this).** You are **not** re-exploiting Capital One. There is no
-SSRF, no live metadata service — and floci does not *enforce* IAM, so a denied call won't bounce on its
-own. That's fine, because the skill here isn't exploitation; it's **judgment.** You'll reproduce the
-*responsibility conditions* of two hops in a local account and, where enforcement can't be shown live,
-reason about it with `aws iam simulate-principal-policy`, which evaluates AWS's real policy logic and
-tells you `allowed`/`denied` and *why*. (Because the lab drives plain `aws` via `AWS_ENDPOINT_URL`, you
-can later run the identical steps against a real AWS account you own to watch enforcement live.) Honest
-tools, honest answer.
+**What this lab is — and isn't.** You are **not** re-exploiting Capital One (no SSRF, no live metadata
+service). floci does **not enforce** IAM, so a denied call won't bounce on its own — the skill here is
+**judgment**, not exploitation. You reproduce the *responsibility conditions* of two hops and, where
+enforcement can't be shown live, reason with `aws iam simulate-principal-policy`, which evaluates AWS's
+real policy logic (`allowed`/`denied` + why). Because the lab drives plain `aws` via `AWS_ENDPOINT_URL`,
+the identical steps later run against a **real AWS account you own** to watch enforcement live.
 
-> Only test systems you own or have explicit written permission to test. Everything here runs locally
-> against a simulated account you own.
+> **▸ On track if:** `make demo` prints `dev-alice`, the `DevPolicy` document (with `s3:*` / `Resource: "*"`),
+> and the `EC2InstanceRole` trust policy — the seeded account is live.
+
+> **Authorization note.** Only test systems you own or have written permission to test. Everything here
+> runs locally against a simulated account you own.
+
+---
 
 ## Scenario
-You're the post-incident analyst. The chain from the module brief is on your desk, and a finance company
-(call it ) has just realized their account is shaped exactly like Capital One's was: a server
-role that can read every bucket, encryption-at-rest switched on, and CloudTrail running with nobody
-watching. Your deliverable is a **verdict memo** — the artifact a real cloud-IR or GRC analyst writes:
-for each hop, the owner of the failed control, its plane, and the one change that breaks the chain there.
 
-Each step below runs the same rhythm: **Predict** (commit to a verdict *before* touching anything) →
-**Do** (gather the evidence) → **Reveal** (check your call) → **Record** (one line in the memo).
+You're the post-incident analyst. A mid-size finance company has realized their account is shaped
+exactly like Capital One's: a server role that can read every bucket, encryption-at-rest on, and
+CloudTrail running with nobody watching. Your deliverable is a **verdict memo** — the artifact a real
+cloud-IR/GRC analyst writes: per hop, the owner of the failed control, its plane, and the one change
+that breaks the chain. Each step runs the same rhythm: **Predict → Do → Reveal → Record.**
 
-## Do
+---
 
-1. [ ] **Hop 2 — metadata handed out credentials.**
-   **Predict:** the metadata service is an AWS feature. Write your verdict now: provider or customer?
-   **Do:** inspect the EC2 instance role and its trust
-   (`aws iam get-role --role-name EC2InstanceRole`). Note that nothing scopes how powerful
-   the role is, and that *enforcing IMDSv2* is an instance setting, not something AWS turns on for you.
-   **Reveal:** the mechanism is Amazon's; **enforcing IMDSv2 and scoping the role are the customer's** —
-   the line runs *through* the feature. **Record:** owner = customer; plane = control; breaking change =
-   require IMDSv2 + least-privilege the role.
+## Build it — read a little, do a little
 
-2. [ ] **Hop 3 — the role could read *every* bucket.**
-   **Predict:** an app server's role should reach only its own bucket. Will this one?
-   **Do:** this is the heart of the breach — reproduce it. Confirm the role's policy
-   (`DevPolicy`) grants `s3:*` on `*`, then prove the blast radius with
-   `aws iam simulate-principal-policy`: ask whether the role can `s3:GetObject` on
-   `uploads-dev` **and** on a second, unrelated bucket you create
-   (`aws s3api create-bucket --bucket payroll-prod`). Both come back `allowed`.
-   **Reveal:** over-broad IAM is the customer control that turned one foothold into 100M records —
-   identity (control plane) failing *into* data access (data plane). **Record:** owner = customer;
-   plane = control→data; breaking change = scope the resource to the one bucket.
+### Step 1 — Hop 2: the metadata service handed out credentials
 
-3. [ ] **Hop 4 — the data was encrypted, and it didn't matter.**
-   **Predict:** server-side encryption was on. Did it stop the exfiltration?
-   **Do:** check the bucket's encryption (`aws s3api get-bucket-encryption` — or note its absence
-   and reason about the on case). Then re-read your hop-3 result: the role was *authorized*.
-   **Reveal:** an authorized principal's reads are decrypted transparently — encryption-at-rest never
-   engages. It defends against stolen media, not over-broad identity. **Record:** owner = customer
-   (the identity scope, not the encryption); plane = data; breaking change = least-privilege + scope
-   who can use the key (you'll go deep on this in the KMS module).
+**Concept (30 sec):** Flight-card #4. The mechanism is Amazon's; *enforcing IMDSv2* and *scoping the
+role's power* are instance/identity settings you own.
 
-4. [ ] **Hop 5 — it was all in the logs; nobody looked.**
-   **Predict:** CloudTrail was on. Whose job was it to catch this?
-   **Do:** confirm the account *has* an audit trail concept (CloudTrail records API calls); note there's
-   no alerting wired to "a role listed every bucket." **Reveal:** AWS *records*; the customer *detects*.
-   A trail with no detection is a customer gap, not a provider one. **Record:** owner = customer; plane =
-   detective; breaking change = an alert on anomalous `s3:List*`/cross-bucket access (your Track-02 and
-   module-15 skill).
+**Predict, then do:** write your verdict (provider or customer?), then inspect the role:
+`aws iam get-role --role-name EC2InstanceRole --query Role.AssumeRolePolicyDocument`.
 
-5. [ ] **Tally and render.** Count the verdicts. Confirm what the module predicted: **zero hops were
-   Amazon's.** Write the memo: a row per hop (owner · plane · breaking change) and a two-sentence
-   bottom line a CISO could read.
+> **▸ On track if:** the trust policy returns, and you can state that **nothing here scopes how powerful
+> the role is** — that's a customer setting, not something AWS turns on. **Record:** owner = customer;
+> plane = control; fix = require IMDSv2 + least-privilege the role.
 
-## Success criteria — you're done when
-- [ ] You've reproduced hop 3 concretely: `simulate-principal-policy` shows the role `allowed` to read a
-  bucket it has no business touching.
-- [ ] Your `verdict-memo.md` has a verdict for all four reproduced/assessed hops, each with owner +
-  plane + the one breaking change.
-- [ ] You correctly conclude **zero hops were the provider's**, and can explain the two that most people
-  get wrong (encryption, metadata) in one sentence each.
-- [ ] You scored your three "Call it" predictions from the README against the reveals and noted which you
-  missed.
+### Step 2 — Hop 3: the role could read *every* bucket (the heart of it)
+
+**Concept (30 sec):** Flight-card #3. This is the hop that turned one server into 100M records. Prove
+the blast radius with policy logic, not exploitation.
+
+**Do it:** confirm `DevPolicy` grants `s3:*` on `*`, create an unrelated bucket, then ask AWS's evaluator
+whether the role can read it:
+```bash
+aws s3api create-bucket --bucket payroll-prod
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::000000000000:role/EC2InstanceRole \
+  --action-names s3:GetObject \
+  --resource-arns arn:aws:s3:::uploads-dev/x arn:aws:s3:::payroll-prod/x \
+  --query 'EvaluationResults[*].[EvalResourceName,EvalDecision]' --output table
+```
+
+> **▸ On track if:** **both** resources evaluate `allowed` — the role can read a bucket it has no
+> business touching. That `allowed` on `payroll-prod` **is** the breach. **Record:** owner = customer;
+> plane = control→data; fix = scope the resource to the one bucket.
+
+### Step 3 — Hop 4: the data was encrypted, and it didn't matter
+
+**Concept (30 sec):** Flight-card #2. An authorized principal's reads decrypt transparently.
+
+**Do it:** check the bucket's encryption (`aws s3api get-bucket-encryption --bucket uploads-dev`, or note
+its absence and reason about the *on* case), then re-read Step 2: the role was **authorized**.
+
+> **▸ On track if:** you can state in one line that encryption-at-rest never engages against an
+> authorized principal — it defends against stolen media, not over-broad identity. **Record:** owner =
+> customer (identity scope, not encryption); plane = data; fix = least-privilege + scope who uses the key.
+
+### Step 4 — Hop 5: it was all in the logs; nobody looked
+
+**Do it:** note that CloudTrail *records* API calls but nothing alerts on "a role listed every bucket."
+
+> **▸ On track if:** your verdict is **owner = customer; plane = detective; fix = an alert on anomalous
+> `s3:List*`/cross-bucket access.** AWS records; the customer detects.
+
+---
+
+## Prove the control (your finish line)
+
+Two artifacts, re-checked against the honesty bar:
+
+1. **`verdict-memo.md`** — a row per hop (owner · plane · breaking change) + a two-sentence CISO bottom
+   line. Confirm the tally: **zero hops were Amazon's.**
+2. **The guardrail flips** — your `Automate & own it` rule (below) **fails** the broken `DevPolicy` and
+   **passes** the scoped version. If it doesn't flip, the verdict isn't yet code.
+
+Score your three README "Call it" predictions against the reveals; note which you missed.
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Why didn't encryption-at-rest stop the exfiltration, and what control actually failed?
+2. The metadata service is AWS's — name the two customer settings that made hop 2 the customer's failure.
+3. How many of the five hops were Amazon's, and what does that tell you about "provider-looking" breaches?
+
+---
 
 ## Deliverables
-`verdict-memo.md` — the per-hop responsibility finding. This is a genuine cloud-IR/GRC artifact, not a
-worksheet; write it like one. Commit it alongside the seed data. Do not commit credentials, the test
-buckets' contents, or any real account data.
+
+- **`verdict-memo.md`** — the per-hop responsibility finding (a genuine cloud-IR/GRC artifact; write it
+  like one). *Do not commit credentials, the test buckets' contents, or any real account data.*
 
 ## Automate & own it
-**Required — but not the usual "script your keystrokes."** Your verdict on hop 3 is a *judgment*; turn it
-into a **guardrail.** Write the control that would have caught Capital One in CI: a small policy-as-code
-check (an OPA/Rego or Checkov-style rule, or a `simulate-principal-policy` assertion in a script) that
-**fails** any IAM policy granting `s3:*` or `Resource: "*"` to an instance role, and **passes** the
-scoped version. Run it against both the broken `DevPolicy` and your fixed policy and show it
-flips. Have a model draft the rule; you review every line and confirm it fails the bad policy for the
-*right* reason. This is judgment-as-code — your verdict, encoded so it can never silently recur — and a
+
+**Required — turn your hop-3 judgment into a guardrail.** Write the control that would have caught Capital
+One in CI: a small policy-as-code check (OPA/Rego or Checkov-style, or a `simulate-principal-policy`
+assertion) that **fails** any IAM policy granting `s3:*` or `Resource: "*"` to an instance role and
+**passes** the scoped version. Run it against both `DevPolicy` and your fix and show it flips. Have a
+model draft the rule; you confirm it fails the bad policy for the *right* reason. Judgment-as-code — a
 direct preview of module 06 (IaC Security).
 
-## AI acceleration
-Before writing your memo, ask a model to render the per-hop verdict from the public post-mortem, then
-audit it. It will likely claim the encryption protected the data (hop 4 — false) and drift toward
-blaming the AWS metadata service (hop 2 — wrong owner). Catching and correcting those two is the entire
-skill. Paste your guardrail rule in too and ask it to find a policy that sneaks past — if it can, your
-rule is too narrow.
+## Definition of done (`cloud-fundamentals` ✅)
+
+- [ ] `simulate-principal-policy` shows the role `allowed` to read a bucket it has no business touching (hop 3 reproduced).
+- [ ] `verdict-memo.md` has owner + plane + breaking change for all four assessed hops.
+- [ ] You conclude **zero hops were the provider's** and can explain the encryption and metadata ones in one sentence each.
+- [ ] The guardrail fails `DevPolicy` and passes the scoped policy.
+- [ ] You can explain all six flight-card facts cold.
 
 ## Connects forward
-Every hop you verdicted is a later module: the over-broad role → IAM attack paths (03) and posture
-auditing (05); the guardrail you wrote → IaC security (06); "encrypt but scope the key" → the KMS/data-
-protection work; "logged but not detected" → cloud logging & detection (15) and incident response (16).
-This memo is the map of the whole track, drawn from one real breach.
+
+Every hop is a later module: over-broad role → **IAM attack paths (03)** + **posture auditing (05)**; the
+guardrail → **IaC security (06)**; "encrypt but scope the key" → **KMS/data protection (17)**; "logged but
+not detected" → **cloud logging & detection (15)** + **incident response (16)**. This memo is the map of
+the whole track, drawn from one real breach.
 
 ## Marketable proof
+
 > "Given a real cloud breach chain, I can render a per-hop responsibility verdict — owner, plane, and the
-> control that breaks the chain — and encode the fix as a CI guardrail. I can explain why encryption-at-
-> rest didn't help and why the metadata service wasn't AWS's fault."
+> control that breaks the chain — and encode the fix as a CI guardrail. I can explain why encryption-at-rest
+> didn't help and why the metadata service wasn't AWS's fault."
 
 ## Stretch
-- Re-render the verdict for a *different* real cloud breach (e.g. a public S3-exposure post-mortem from
-  the [CSA breach database](https://cloudsecurityalliance.org/) or a documented CloudGoat scenario) and
-  compare which hops shift to the provider's side, if any.
-- Extend your guardrail to also fail a role that doesn't enforce IMDSv2, closing hop 2 in code too.
+
+- Re-render the verdict for a *different* real cloud breach (a public S3-exposure post-mortem, or a
+  documented CloudGoat scenario) and compare which hops, if any, shift to the provider's side.
+- Extend the guardrail to also fail a role that doesn't enforce IMDSv2 — closing hop 2 in code too.

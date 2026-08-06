@@ -1,93 +1,184 @@
 # Lab 10 — "It Runs — What Else Is In It?": Scan, Triage, and Rebuild Clean
 
+> **Hands-on lab.** Environment: `plaintext-labs/cloud/10-container-image-security` (runs **local &
+> offline** after `make up` — `trivy` + `grype` in a scanner container, no cloud account). Objective:
+> **render a verdict on what's hidden in a working image, harden it, and make the fix a CI gate.**
+> Target: **~90 min**, one finish line.
+
 *Variant D · breach-driven, predict-then-reveal verdict. [← Back to the module concept](README.md)*
 
+---
+
+## ✈ Flight card — the 6 things to hold
+
+*Glance here when you lose the thread. This replaces re-reading the module.*
+
+| # | Fact | Why it matters |
+|---|------|----------------|
+| 1 | **`FROM` inherits the base's CVEs.** | You ship someone else's decisions — audit the whole chain above you, not just your code. |
+| 2 | **Fixability, not count, is the verdict.** | Gate on severity-*and*-fixable; a Critical with no patch is *track*, not *block*. |
+| 3 | **"Scanned clean of CVEs" ≠ "clean."** | A CVE scan is blind to miners, reverse shells, secrets-in-layers, and a root/`--privileged` container. |
+| 4 | **Layers remember what the running container hides.** | `docker history`/`inspect` reveal baked-in secrets and deleted files — that's how Codecov's attacker got in. |
+| 5 | **One scanner is one opinion.** | `trivy` and `grype` source their CVE DBs differently — run both, reconcile the edges. |
+| 6 | **The fix is a multi-stage rebuild to a minimal, pinned base — not a patch.** | Ship the artifact, not the toolchain → smaller SBOM → fewer inherited CVEs → smaller blast radius. |
+
+> **↳ Go deeper — pull only when a step doesn't click:** the module's
+> [verdict, revealed](README.md#the-verdict-revealed) and the [scan/hygiene diagram](README.md#the-verdict-revealed).
+
+---
+
+## Warm-up — answer before you build (2 min)
+
+*Don't look below. Being forced to retrieve is what builds the memory.*
+
+1. Your `FROM python:3.8-slim` base "just works." Whose CVEs are you now shipping — and roughly how many
+   (none, a handful, dozens)?
+2. A `trivy image` scan comes back clean of HIGH/CRITICAL CVEs. Name **two** dangerous things still
+   dormant in the image that that report never ruled out.
+
+---
+
 ## Setup
+
 This is a **reference lab** — it ships a one-command environment in the companion
 [`plaintext-labs`](https://github.com/plaintext-security/plaintext-labs) repo:
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
 cd plaintext-labs/cloud/10-container-image-security
-make up         # pull scanner images (trivy + grype); no build required
-make demo       # scan the vulnerable image + grype + node:14 + trivy config on Dockerfile.bad
-make shell      # drop into a scanner shell to run your own commands
-make down       # stop when done
+make up             # pull trivy + grype scanners, build the lab container (no app build)
+make demo           # worked pipeline: trivy + grype on the vuln image, trivy config on both Dockerfiles
+make shell          # drop into the scanner shell to run your own commands
+make scan-trivy IMAGE=python:3.8-slim   # trivy CVE scan of any image
+make scan-grype IMAGE=python:3.8-slim   # grype second opinion
+make sbom IMAGE=python:3.8-slim         # write a CycloneDX SBOM to sbom.json
+make harden-verify  # the graded gate: Dockerfile.bad fails, Dockerfile.fixed passes
+make down           # stop when done
 ```
 
-The environment provides `trivy` and `grype` pre-pulled in a scanner container, plus
-`data/Dockerfile.bad` (an image with the seven classic hygiene failures — `FROM latest`, secrets in
-`ENV`, root user, debug port, fat install) and `data/Dockerfile.fixed` (the hardened reference; **try
-the rebuild yourself before reading it**). `make demo` is deterministic and runs offline after `make up`.
+The container ships `trivy` and `grype` pre-pulled, plus `data/Dockerfile.bad` (the target account's
+image — seven classic hygiene failures: `FROM latest`, secrets in `ENV`, `COPY .`, root user, debug
+port `5678`, fat install) and `data/Dockerfile.fixed` (the hardened reference — **try the rebuild
+yourself before you read it**). `make demo` is deterministic and runs offline after `make up`.
 
-> Everything runs locally against images you pull. No external targets, no authorization required.
+> **▸ On track if:** `make demo` prints a **trivy HIGH/CRITICAL table for `python:3.8-slim` with dozens
+> of rows** (not zero — EOL base), a **grype** count for the same image, and a **`trivy config`** block
+> for `Dockerfile.bad` flagging the root user, the `latest` tag, and the secrets in `ENV`. The env is live.
+
+> **Authorization note.** Everything runs locally against images you pull. No external targets, no
+> authorization required.
+
+---
 
 ## Scenario
+
 The target account pushed three images to production six months ago with no scanning, and a compliance
 review just flagged them — the same posture that let `docker123321`'s images sit on Docker Hub for ten
 months and a credential sit in a Codecov layer for months. Your deliverable is a **verdict on what's
 hidden in a working image**, the **hardened rebuild** that closes it, and the **CI gate** that stops it
-recurring. Each step runs the rhythm: **Predict** (commit before you scan) → **Do** → **Reveal** →
+recurring. Each step runs the same rhythm: **Predict** (commit before you scan) → **Do** → **Reveal** →
 **Record** (one line in the report).
 
-## Do
+---
 
-### Part 1 — Call what's hidden, then prove it
+## Build it — read a little, do a little
 
-1. [ ] **Predict the inherited CVEs.** Before scanning, write your call for `python:3.8-slim`: roughly
-   how many fixable HIGH/CRITICAL CVEs does a "clean slim base you didn't write" carry — none, a
-   handful, dozens? Then run `trivy image --severity HIGH,CRITICAL python:3.8-slim`.
-   **Reveal & Record:** the actual count, and how many are **fixable** vs. unfixed. The fixable ones are
-   "rebuild now"; note that the count is dozens, not zero — these are the base's decisions, now yours.
+### Step 1 — The inherited CVEs (whose decisions are you shipping?)
 
-2. [ ] **One scanner is one opinion.** Run `grype python:3.8-slim` and reconcile against trivy. Where do
-   the counts disagree, and why (different DB sources)? **Record:** one line on what disagreement means
-   for trusting a single tool.
+**Concept (30 sec):** Flight-card #1. `python:3.8-slim` is a frozen Debian rootfs + Python + their
+transitive packages. Its CVEs are yours the moment you write `FROM`.
 
-3. [ ] **Triage by fixability, not severity.** From your trivy output, separate fixable-HIGH/CRITICAL
-   from unfixed. **Reveal:** gating on raw severity would block your pipeline on CVEs you *cannot* fix;
-   the correct gate is severity-and-fixable. **Record:** the top three fixable CVEs and the minimum base
-   bump that clears the most of them.
+**Predict, then do:** write your count (none / handful / dozens), then scan:
+`make scan-trivy IMAGE=python:3.8-slim`.
 
-4. [ ] **What a CVE scan never sees.** Run `trivy config /lab/data/Dockerfile.bad` and read every
-   finding. This is the `docker123321`/Codecov class — config and secrets, not CVEs.
-   **Predict then Reveal:** which findings would a `trivy image` CVE scan have *missed* entirely?
-   (The secrets in `ENV`, the root `USER`, `FROM latest`, the debug port — none are package CVEs.)
-   **Record:** map each finding to the risk it represents, and note that **"scanned clean" ≠ "clean."**
+> **▸ On track if:** the table returns **dozens of HIGH/CRITICAL rows** (an EOL slim base — not zero,
+> not a handful), each with a `Library`, `Installed Version`, and a `Fixed Version` column. **Record:**
+> the total, and that these are the base's decisions, now yours.
 
-### Part 2 — Rebuild clean, and prove the rebuild
+### Step 2 — Fixability, not count (and a second opinion)
 
-The triage is the finding; **the rebuild is the fix** — and the fix is a *rebuild*, not a patch.
+**Concept (30 sec):** Flight-cards #2 and #5. The count is a distraction; **fixable HIGH/CRITICAL** is
+the verdict. And one scanner is one opinion.
 
-5. [ ] **Author the hardened multi-stage rebuild.** Open `data/Dockerfile.bad` and write your own
-   hardened version (compare to `data/Dockerfile.fixed` only after). Apply the README's rulebook:
-   **pin the base by digest** (not `latest`); use a **minimal/distroless or `-slim` final stage** via a
-   **multi-stage build** so build tools and the package manager never ship; **secrets out of the image**
-   (runtime injection, not `ENV`); `--no-install-recommends` and a cleaned apt cache; **copy only the
-   artifact**, not the whole context; a **non-root `USER`**; drop the debug port.
+**Do it:** re-read the trivy table — every row with a non-empty **`Fixed Version`** is "rebuild now";
+the blanks are "track, don't gate." Then run the second opinion: `make scan-grype IMAGE=python:3.8-slim`.
 
-6. [ ] **Prove the rebuild measurably cut the surface (graded step).** Run `make harden-verify`: it runs
-   `trivy config` on both Dockerfiles and **gates on MEDIUM+** — `Dockerfile.bad` **fails** (two HIGH:
-   no `USER`, missing `--no-install-recommends`, plus the tag finding), the hardened file **passes**
-   (only a LOW remains). The drop from "2 HIGH" to "0 HIGH" is the rebuild's measurable result.
-   Re-scan the rebuilt image for CVEs too and **Record** the before/after fixable-CVE count — the
-   smaller SBOM should carry fewer inherited CVEs.
+> **▸ On track if:** you can split the trivy rows into **fixable vs. unfixed**, and grype's total
+> **disagrees at the edges** with trivy's (different DB sources — NVD · GHSA · distro vs. the Anchore
+> feed). **Record:** the top three fixable CVEs, the minimum base bump that clears the most, and one
+> line on why a single scanner is one opinion.
 
-7. [ ] **Generate the SBOM.** Run `trivy image --format cyclonedx --output sbom.json python:3.8-slim`.
-   **Record:** what the SBOM lets you answer that the CVE report alone can't (e.g. "was Log4Shell in
-   anything we shipped last November?" — retrospective queries without rebuilding old images).
+### Step 3 — What a CVE scan never sees (the docker123321 / Codecov class)
 
-## Success criteria — you're done when
-- [ ] You have trivy *and* grype CVE counts for `python:3.8-slim` (and `node:14`) with a fixable-vs-unfixed
-  breakdown, and you predicted the count before scanning.
-- [ ] You can name three `trivy config` findings in `Dockerfile.bad` that a CVE scan would have missed, and
-  state in one sentence why "scanned clean" ≠ "clean."
-- [ ] Your hardened Dockerfile passes `make harden-verify` (0 HIGH, down from 2) and is a **multi-stage**
-  build on a **digest-pinned minimal base** with a non-root `USER` and no secrets in any layer.
-- [ ] You recorded the before/after fixable-CVE count showing the rebuild shrank the inherited surface.
-- [ ] You have `sbom.json` on disk and scored your three "Call it" predictions against the reveals.
+**Concept (30 sec):** Flight-card #3. This is the hygiene axis — config and secrets, not packages. A
+clean CVE report says nothing here.
+
+**Predict, then do:** name two findings you expect, then run `make shell` and
+`trivy config /lab/data/Dockerfile.bad` (or read it in `make demo`'s step 4).
+
+> **▸ On track if:** the config scan flags — **none of these are package CVEs** — the missing non-root
+> `USER` (**runs as root**), `FROM ...:latest`, `apt-get install` without `--no-install-recommends`, and
+> you can *also* eyeball two things `trivy config` alone under-weights: the **`DB_PASSWORD` /
+> `AWS_SECRET_ACCESS_KEY` baked into `ENV`** and the **debug port `EXPOSE 5678`**. **Record:** map each
+> finding to its risk and write the one sentence — *"scanned clean" ≠ "clean."*
+
+### Step 4 — Rebuild clean (the fix is a rebuild, not a patch)
+
+**Concept (30 sec):** Flight-card #6. You can't `apt upgrade` out of an inherited base — you rebuild
+from a minimal, current, **pinned** base, copying only the artifact.
+
+**Do it:** open `data/Dockerfile.bad` and author your own hardened version (compare to
+`data/Dockerfile.fixed` **only after**). Apply the rulebook: **pin the base by digest** (not `latest`);
+**multi-stage** so build tools / the package manager never ship; **secrets out of the image** (runtime
+injection, not `ENV`); `--no-install-recommends` + cleaned apt cache; **copy only the artifact**; a
+**non-root `USER`**; drop the debug port.
+
+> **▸ On track if:** your Dockerfile pins `FROM ...@sha256:...`, declares a `USER`, has no secret in any
+> `ENV`/`ARG`, and exposes only the app port. If any of those is missing, it won't pass the gate below.
+
+### Step 5 — Prove the rebuild (graded), and generate the SBOM
+
+**Concept (30 sec):** the triage is the finding; the **measurable drop** is the proof.
+
+**Do it:** run `make harden-verify`, then `make sbom IMAGE=python:3.8-slim`.
+
+> **▸ On track if:** `harden-verify` shows **`Dockerfile.bad` FAILS** (non-zero exit — two HIGH: no
+> `USER`, missing `--no-install-recommends`, plus the `latest`-tag finding) and **`Dockerfile.fixed`
+> PASSES** (exit 0 — only a LOW remains). That **2 HIGH → 0 HIGH** flip *is* the rebuild's result.
+> `sbom.json` lands on disk in CycloneDX. **Record:** the before/after — the smaller SBOM carries fewer
+> inherited CVEs — and what the SBOM answers that a CVE report can't (*"was Log4Shell in anything we
+> shipped last November?"* without rebuilding old images).
+
+---
+
+## Prove the control (your finish line)
+
+One motion, verified two ways:
+
+1. **The scan surfaces the hidden, the rebuild reduces it.** `Dockerfile.bad`'s CVEs + hygiene findings
+   are on the page; your hardened rebuild **passes `make harden-verify` (0 HIGH, down from 2)** and
+   re-scans to a **smaller fixable-CVE count**. If the gate doesn't flip, the fix isn't proven.
+2. **The verdict becomes code.** Your `Automate & own it` CI gate **fails** the bad image and **passes**
+   the rebuild — the verdict made un-recurrable.
+
+Score your two warm-up predictions (and the README's three "Call it" questions) against the reveals; note
+which you missed.
+
+---
+
+## Recall check — close the doc, answer from memory (3 min)
+
+1. Your `FROM python:3.8-slim` "just works" — whose CVEs are you shipping, and why doesn't writing clean
+   code reduce that count?
+2. A `trivy image` scan is clean of fixable HIGH/CRITICAL. Name two dangerous things that report still
+   does not rule out — and the tool that *would* catch them.
+3. Why is the fix a multi-stage rebuild rather than `apt upgrade`, and what does the final stage *not*
+   contain?
+
+---
 
 ## Deliverables
+
 - `verdict-report.md` — the per-image finding: predicted vs. actual CVE count, fixable-vs-unfixed triage,
   the `trivy config` hygiene findings a CVE scan missed, and the before/after the rebuild.
 - `Dockerfile.fixed` — your hardened multi-stage, digest-pinned rebuild that passes `make harden-verify`.
@@ -96,6 +187,7 @@ The triage is the finding; **the rebuild is the fix** — and the fix is a *rebu
 Commit these three. Lab artifacts (`*.tar`, exported layers, pulled images) stay out of the commit.
 
 ## Automate & own it
+
 **Required — judgment-as-code, not keystroke scripting.** Your verdict is "a working image can ship
 inherited CVEs and a non-minimal base." Encode it as a **CI scan gate that fails the bad state and
 passes the rebuild**: a GitHub Actions workflow (`ci-image-scan.yml`, `on: pull_request`) that builds
@@ -107,14 +199,20 @@ applied to your own pipeline — see the repo's own Actions-hardening, T23), con
 so the gate is actionable, and verify it fails for the *right* reason. This is your verdict made
 un-recurrable — and the gate the capstone reuses.
 
-## AI acceleration
-Point a model at `trivy image --format json` output and `docker history` and ask it to rank findings by
-exploitability for "an internet-facing Python API running as non-root." It produces a useful triage
-order — but verify each CVE's NVD page before trusting the rank, and remember it sees the SBOM, not the
-call graph: it can't tell you the vulnerable path is reachable, and it won't flag a planted miner or a
-secret-in-a-layer the CVE feed doesn't list. You own the reachability call and the rebuild.
+## Definition of done (`container-image-security` ✅)
+
+- [ ] You have **trivy *and* grype** CVE counts for `python:3.8-slim` with a fixable-vs-unfixed split, and
+  you predicted the count before scanning.
+- [ ] You can name three `trivy config` findings in `Dockerfile.bad` that a CVE scan would have missed,
+  and state in one sentence why "scanned clean" ≠ "clean."
+- [ ] Your hardened Dockerfile **passes `make harden-verify` (0 HIGH, down from 2)** and is a
+  **multi-stage** build on a **digest-pinned minimal base** with a non-root `USER` and no secrets in any layer.
+- [ ] You recorded the before/after fixable-CVE count showing the rebuild shrank the inherited surface.
+- [ ] `sbom.json` is on disk, and the CI gate flips (fails `Dockerfile.bad`, passes `Dockerfile.fixed`).
+- [ ] You can explain all six flight-card facts cold.
 
 ## Connects forward
+
 - Module 08 (CI/CD security) is where this gate lives in the pipeline; the pinned-action discipline you
   applied here is the same supply-chain lesson one layer up.
 - Module 11 (Container Escape & Runtime) shows what happens when the runtime protections a scan *can't*
@@ -123,6 +221,7 @@ secret-in-a-layer the CVE feed doesn't list. You own the reachability call and t
   the scan can't even start.
 
 ## Marketable proof
+
 > "Given a working container image, I can render the verdict on what's hidden in it — inherited CVEs
 > triaged by fixability, plus the hygiene and secrets a CVE scan misses — author a hardened multi-stage,
 > digest-pinned rebuild that measurably shrinks the attack surface, and encode it as a CI scan gate that
@@ -130,6 +229,7 @@ secret-in-a-layer the CVE feed doesn't list. You own the reachability call and t
 > orthogonal."
 
 ## Stretch
+
 - Rebuild the final stage on **distroless** (`gcr.io/distroless/python3`) and compare the SBOM and CVE
   count to the `-slim` rebuild — quantify the shell-and-package-manager removal.
 - Add `hadolint` to `ci-image-scan.yml` for additional Dockerfile best-practice coverage, and a `trivy
