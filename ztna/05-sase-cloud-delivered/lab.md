@@ -270,3 +270,70 @@ verifies the *signature* but skips the *audience* is fooled by a perfectly valid
 - Configure **Cloudflare Gateway** DNS filtering: add a DNS policy blocking the managed "Malware"
   category and verify it blocks a test lookup — the **SWG** slice of the broader SASE stack you read
   about in the module.
+
+---
+
+### Stretch+ — Bring your own enterprise IdP (Okta), then go passwordless
+
+*Bigger, and unapologetically not-OSS — this is the **marketable** one. It needs a free Okta org on
+top of your Cloudflare tenant, so it's strictly opt-in; the required lab above stays 100% free and
+local. Everything here is **your own** org and **your own** app — the same authorization rule holds.*
+
+> **⚠ Status: doc-verified, not yet run end-to-end.** These steps are written against the current
+> Okta and Cloudflare Zero Trust docs but haven't been walked through a live tenant, so dashboard
+> navigation and field labels may have drifted. Treat it as a guided path, not a validated one — and
+> if you run it, note any correction (a moved menu, a renamed field) and send a PR. The rest of this
+> lab (the required, non-stretch part) **is** validated.
+
+**Why bother.** The main lab gated on an *email you typed into Cloudflare*. Real enterprises gate on
+**group membership in the company IdP**. This swaps Cloudflare's built-in email-OTP for **Okta as the
+OIDC identity provider**, and moves the access decision onto an **Okta group** — the exact federation
+seam [Module 02](../02-identity-control-plane/lab.md) had you design on paper (its Step 4c: Okta
+`groups` → your app's authz, the Golden SAML / **T1606.002** seam). Here you *run* it.
+
+**A — Okta as the OIDC IdP behind the edge.**
+- Create a free **Okta Integrator** org — <https://developer.okta.com/signup> (no card, no expiry).
+- In Okta: **Applications → Create App Integration → OIDC → Web Application**. Set the redirect URI to
+  `https://<your-team>.cloudflareaccess.com/cdn-cgi/access/callback`, and set the **Groups claim
+  filter** to *Matches regex* `.*` so group membership rides in the token. Copy the **Client ID**,
+  **Client secret**, and your **Okta domain**.
+- Create an Okta group (e.g. `corp-eng`) and put **only one** of your two test users in it.
+- In Cloudflare: **Zero Trust → Integrations → Identity providers** (older dashboards:
+  *Settings → Authentication → Login methods*) → **Add new → Okta**. Paste **App ID** (the Client ID),
+  **Client secret**, and **Okta account URL**; test the connection.
+- Re-point your Access application's policy: replace `include → Emails → your address` with
+  `include → Okta groups → corp-eng`.
+
+> **▸ On track if:** browsing the hostname now bounces you to **Okta's** login (not Cloudflare's email
+> OTP), and after Okta auth the app loads — *only* for the user in `corp-eng`. **The proof is the
+> denial:** log in as the user you left **out** of the group → Okta authenticates them fine, but
+> **Cloudflare denies at the policy**. Identity ≠ authorization; the group is the decision. Screenshot
+> that denial — it's the stretch's spine, same as the unauth denial was the main lab's.
+
+**B — Add MFA (Google Authenticator / TOTP).** In Okta → **Security → Authenticators**, add **Google
+Authenticator** and require it in the app's sign-on policy. Log in again: Okta now demands the 6-digit
+code before it will assert your identity to Cloudflare. **The lesson:** the *factor* decision moved to
+the **IdP** — **Cloudflare's config didn't change at all.** The edge just consumes whatever assurance
+Okta vouches for.
+
+**C — Go fully passwordless (passkey).** *Additional.* In the same authenticator settings, enable
+**WebAuthn** (passkey) / **Okta FastPass** and make it the primary factor. Re-login with a platform
+passkey — no shared secret ever crosses the wire. One line in your write-up on why phishing-resistant
+passwordless is the endgame the whole ZT identity story walks toward.
+
+**The reused insight — no new script needed.** Your `verify-access.py` from *Automate & own it* **still
+passes unchanged.** Why? Cloudflare mints its *own* Access JWT after brokering Okta, so your validator
+never sees an Okta token — it checks the same Cloudflare `aud` + signature as before. That's the
+architect's point worth writing down: **the edge normalizes identity**, so the IdP behind it is
+swappable without touching the app or its token checks.
+
+**Deliverable (stretch).** A short **`okta-federation.md`** addendum: the Okta-brokered login
+screenshot, the **group-based denial** capture (the user left out of `corp-eng`), and 2–3 sentences
+tying it to the Module 02 seam — *the Okta-group → Access-policy map is where authorization actually
+lives; whoever controls Okta group membership controls your app.* Don't commit the Okta client secret
+or any JWT.
+
+> **Marketable proof (if you did this stretch):** "I integrated **Okta** as the enterprise identity
+> provider into a Zero Trust edge over OIDC, gated application access on **Okta group membership** (not
+> just email), and enforced **phishing-resistant passwordless** login — and I can explain why the
+> edge's own Access token means the IdP behind it is swappable without changing the protected app."
