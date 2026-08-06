@@ -1,0 +1,26 @@
+# Teleport node — a stand-in for a privileged production host (labeled
+# env=production, app=ledger). It runs ONLY ssh_service and joins the cluster
+# by dialing OUT to the proxy (teleport.proxy_server below) — this is IoT/
+# tunnel-mode join, and it means the node never opens an inbound SSH listener
+# at all. That is what makes "connect directly, skip the proxy" refused rather
+# than merely firewalled: there is nothing here to bypass into.
+version: v3
+
+teleport:
+  nodename: app-prod-01
+  data_dir: /var/lib/teleport
+  proxy_server: teleport-auth:3080
+  log:
+    output: stderr
+    severity: INFO
+
+auth_service:
+  enabled: false
+proxy_service:
+  enabled: false
+
+ssh_service:
+  enabled: true
+  labels:
+    env: production
+    app: ledger

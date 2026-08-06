@@ -1,0 +1,17 @@
+# help-desk-staging — mallory's role. This is a REAL, legitimately scoped role
+# (staging-only access), not a placeholder "no access" stub — which is the
+# point: mallory isn't a intruder with zero privileges, she's a normal
+# operator whose role simply does not cover app-prod-01 (env=production).
+# RBAC denies her the same way it would deny anyone whose role doesn't match
+# this node's labels.
+kind: role
+version: v7
+metadata:
+  name: help-desk-staging
+spec:
+  allow:
+    logins: ["ubuntu"]
+    node_labels:
+      env: ["staging"]
+  options:
+    max_session_ttl: 15m

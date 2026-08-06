@@ -1,0 +1,5 @@
+{
+  "user": {"role": "analyst", "email": "alice@corp.com"},
+  "action": "read",
+  "record": {"record_id": "rec-001", "classification": "public"}
+}

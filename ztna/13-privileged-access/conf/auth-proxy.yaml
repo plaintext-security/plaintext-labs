@@ -1,0 +1,35 @@
+# Teleport auth + proxy — the corp cluster's certificate authority, RBAC engine,
+# and the ONLY network path to any node. Issues short-lived certificates to
+# authenticated identities and records every SSH session that crosses it.
+version: v3
+
+teleport:
+  nodename: teleport-auth
+  data_dir: /var/lib/teleport
+  log:
+    output: stderr
+    severity: INFO
+
+auth_service:
+  enabled: true
+  cluster_name: "corp"
+  listen_addr: 0.0.0.0:3025
+  # Standard SSH session recording (this line) is a Community Edition feature —
+  # it streams the terminal recording node -> auth -> local disk, no S3 or
+  # external storage required. "node-sync" means recording happens on the node
+  # in real time (as opposed to enhanced/BPF-level recording, which IS
+  # Enterprise-only and this lab does not use).
+  session_recording: node-sync
+
+proxy_service:
+  enabled: true
+  listen_addr: 0.0.0.0:3023
+  tunnel_listen_addr: 0.0.0.0:3024
+  web_listen_addr: 0.0.0.0:3080
+  # Lab convenience: with no https_keypairs configured, Teleport self-signs a
+  # cert for the web listener on first start. Clients must pass --insecure to
+  # skip verifying it. Never do that against a real cluster — pin the actual
+  # CA or use a certificate a client will trust.
+
+ssh_service:
+  enabled: false

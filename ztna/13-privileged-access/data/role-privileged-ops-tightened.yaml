@@ -1,0 +1,16 @@
+# privileged-ops, AFTER Step 5's tightening — least privilege for the fleet
+# this lab actually has: the one login the job needs (not root), the one
+# environment it needs (not every host in the cluster). Apply with:
+#   make tighten
+# (which runs `tctl create -f ... --force` to update the existing role).
+kind: role
+version: v7
+metadata:
+  name: privileged-ops
+spec:
+  allow:
+    logins: ["ubuntu"]
+    node_labels:
+      env: ["production"]
+  options:
+    max_session_ttl: 15m

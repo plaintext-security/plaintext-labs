@@ -1,0 +1,5 @@
+{
+  "user": {"role": "data-officer", "email": "dpatel@corp.com"},
+  "action": "read",
+  "record": {"record_id": "rec-003", "classification": "restricted"}
+}

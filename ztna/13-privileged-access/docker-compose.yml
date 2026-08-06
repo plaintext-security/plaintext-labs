@@ -1,0 +1,63 @@
+# Module 13 — Privileged Access (Teleport Community Edition)
+# teleport-auth runs the CA, RBAC engine, and proxy (the only network path
+# in). `make up` execs the bootstrap script INTO teleport-auth once it's
+# healthy — `tctl` administers the cluster locally that way, the same as
+# "SSH into the Auth Service host and run tctl" in Teleport's own docs;
+# no separate admin socket/volume plumbing needed. teleport-node runs
+# ssh_service and joins by dialing OUT to the proxy — it publishes no ports,
+# so there is nothing to connect to directly; its entrypoint just waits for
+# the join token bootstrap drops in the shared volume. client stands in for
+# an operator's laptop: `tsh` runs from here, `tctl` from teleport-auth.
+#
+# All services run from one locally-built image (Dockerfile) that carries the
+# Teleport binaries plus bash/curl/jq/nc, so the daemon, the bootstrap step,
+# and the operator scripts all stay legible.
+services:
+  teleport-auth:
+    build: .
+    image: plaintext/ztna-teleport
+    hostname: teleport-auth
+    command: ["teleport", "start", "--config=/etc/teleport/auth-proxy.yaml"]
+    volumes:
+      - ./conf/auth-proxy.yaml:/etc/teleport/auth-proxy.yaml:ro
+      - ./data:/opt/teleport/data:ro
+      - ./workload:/opt/teleport/workload:ro
+      - teleport-auth-data:/var/lib/teleport
+      - shared:/opt/teleport/shared
+    healthcheck:
+      test: ["CMD", "curl", "-fsk", "https://localhost:3080/webapi/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  teleport-node:
+    build: .
+    image: plaintext/ztna-teleport
+    hostname: app-prod-01
+    depends_on:
+      - teleport-auth
+    entrypoint: ["bash", "/opt/teleport/workload/node-entrypoint.sh"]
+    volumes:
+      - ./conf/node.yaml:/etc/teleport/node.yaml:ro
+      - ./workload:/opt/teleport/workload:ro
+      - teleport-node-data:/var/lib/teleport
+      - shared:/opt/teleport/shared
+    # No published ports, and no `expose:` either — ssh_service dials OUT to
+    # the proxy over a reverse tunnel. There is no inbound listener here for
+    # a "direct SSH, skip the proxy" attempt to reach. (The entrypoint waits
+    # for the join token bootstrap writes, so start order doesn't matter.)
+
+  client:
+    image: plaintext/ztna-teleport
+    hostname: client
+    depends_on:
+      - teleport-node
+    entrypoint: ["bash", "-c", "echo '[client] ready.' && sleep infinity"]
+    volumes:
+      - ./workload:/opt/teleport/workload:ro
+      - shared:/opt/teleport/shared
+
+volumes:
+  teleport-auth-data:
+  teleport-node-data:
+  shared:

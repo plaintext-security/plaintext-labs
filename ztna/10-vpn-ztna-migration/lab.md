@@ -152,6 +152,30 @@ when the gate is fully green.
 > **▸ On track if:** decommission is explicitly gated on *all* apps green, is placed **last**, and its
 > proof is "all apps still 200 via proxy **and** zero direct flat reach anywhere" — not just "turn the VPN off."
 
+### Step 6 — The legacy 20%: apps that can't speak OIDC
+
+**Concept (30 sec):** Every brownfield estate has apps the happy path can't migrate — a thick client,
+a Kerberos/NTLM intranet app, `admin.internal`'s old admin tool, the vendor on a fixed source range.
+"Just put OIDC in front of it" fails when the app *can't* consume an OIDC token. An honest migration
+names these and gives each a real home instead of leaving them on the flat net forever.
+
+**Do it:** in the runbook, add a **legacy cohort** and route each of its apps to one of two patterns —
+and say which and why:
+
+- **Header-injection SSO at the proxy** — the identity-aware proxy authenticates the user (OIDC) and
+  passes a *signed* identity header to an app that only understands "trust this header" (the
+  `X-Pomerium-Jwt-Assertion` machinery from [Module 06](../06-identity-aware-access/lab.md)). The app
+  never learns OIDC; the proxy is the seam. Note the risk you inherit: the app must be reachable *only*
+  through the proxy, or the header is forgeable.
+- **Shrinking mesh segment** — an app that can't sit behind an HTTP proxy at all (raw TCP, thick client)
+  stays on a **default-deny, identity-scoped mesh** ([Module 03](../03-device-trust-posture/lab.md)
+  device identity + [Module 07](../07-microsegmentation/lab.md) segmentation) that you *shrink* over
+  time, rather than a flat VPN subnet. It's still segmented and identity-gated — just not proxy-fronted.
+
+> **▸ On track if:** your legacy cohort names at least one app per pattern with a one-line *why*, the
+> header-injection app is explicitly "reachable only via the proxy," and the mesh-segment app is
+> default-deny and identity-scoped — so "we couldn't migrate it" never means "we left it flat."
+
 ---
 
 ## Prove the control (your finish line)

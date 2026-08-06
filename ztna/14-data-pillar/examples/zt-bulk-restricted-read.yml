@@ -1,0 +1,46 @@
+title: Zero Trust — Bulk Read of Restricted-Classification Data in One Session
+id: 3c7e9a20-5b1f-4d2e-9a6c-1f8e2d4b6c90
+status: experimental
+description: >
+  Detects a single session reading more than five restricted-classification records —
+  a volume/behavioral signal, not a geography or new-device signal. A stolen-but-valid
+  credential (Snowflake customer breaches, 2024: no MFA, credentials from infostealer
+  logs) authenticates and authorizes exactly like the legitimate user, from the same
+  device, the same country, sometimes the same hour of day the account normally works.
+  The one thing that does not look normal is the READ VOLUME against the most sensitive
+  classification tier in one sitting. This rule does not care where the request came
+  from — only how many restricted records one session touched.
+references:
+  - https://attack.mitre.org/techniques/T1567/
+  - https://attack.mitre.org/techniques/T1530/
+  - https://cloud.google.com/blog/topics/threat-intelligence/unc5537-snowflake-data-theft-extortion
+  - https://www.cisa.gov/sites/default/files/2023-04/zero_trust_maturity_model_v2_508.pdf
+author: Plaintext (reference lab)
+logsource:
+  # ZT access logs: Pomerium/Cloudflare Access-shaped JSONL, extended with the
+  # classification label the OPA policy in ../data/policies/ used to make its call.
+  product: ztna
+  category: access
+detection:
+  selection:
+    event_type: "access_allowed"
+    classification: "restricted"
+  # Aggregation, not a simple field match: group the selection-matching events by
+  # session_id and fire only for a session whose restricted-read count exceeds the
+  # threshold. The bundled offline matcher (detect.py) implements this specific
+  # `selection | count() by <field> > <N>` form; a real SIEM backend (Splunk `stats
+  # count by session_id`, Elastic EQL sequence-with-count) handles the full grammar.
+  condition: selection | count() by session_id > 5
+falsepositives:
+  - A data-officer running a legitimate bulk report job — tune the threshold to the
+    org's real p99 restricted-read count per session, and prefer a service-account
+    allowlist over raising the threshold for everyone.
+  - A single very active investigation session (e.g. an incident responder or an
+    auditor with time-boxed elevated access) pulling many restricted records in
+    sequence — correlate with a change-ticket or break-glass approval before alerting.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1567
+  - attack.collection
+  - attack.t1530

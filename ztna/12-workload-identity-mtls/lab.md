@@ -1,6 +1,6 @@
 # Lab 12 — Workload Identity & mTLS with SPIFFE/SPIRE
 
-> **Hands-on lab.** Environment: `plaintext-labs/ztna/10-workload-identity-mtls`.
+> **Hands-on lab.** Environment: `plaintext-labs/ztna/12-workload-identity-mtls`.
 > Objective: **issue each workload a short-lived SPIFFE identity, prove service-to-service mTLS keyed
 > on it, and prove an unregistered workload gets nothing.** Target: **~90 min**, one finish line. This
 > is a **reference lab — a one-command Docker environment** (SPIRE server + agent + two workloads).
@@ -47,7 +47,7 @@ server, a one-shot bootstrap, an agent, and two workloads. No cloud account requ
 
 ```bash
 git clone https://github.com/plaintext-security/plaintext-labs
-cd plaintext-labs/ztna/10-workload-identity-mtls
+cd plaintext-labs/ztna/12-workload-identity-mtls
 make up        # build + start SPIRE (server, agent), bootstrap entries, start the workloads
 make mtls      # client fetches its SVID and makes a mutual-TLS call to the backend
 make deny      # prove an unregistered workload is refused an identity

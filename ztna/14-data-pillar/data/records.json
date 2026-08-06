@@ -1,0 +1,50 @@
+[
+  {
+    "_comment": "Corp — fictional labeled data corpus. The `classification` field IS an access-control input to data-classification.rego, not descriptive metadata. For Lab 14 use only.",
+    "record_id": "rec-001",
+    "title": "Company blog post — Q3 product roadmap (published)",
+    "classification": "public"
+  },
+  {
+    "record_id": "rec-002",
+    "title": "Engineering wiki — deployment runbook",
+    "classification": "internal"
+  },
+  {
+    "record_id": "rec-003",
+    "title": "Customer billing records — full PII export",
+    "classification": "restricted"
+  },
+  {
+    "record_id": "rec-004",
+    "title": "Legacy customer contract archive, migrated from an acquired company",
+    "classification": null,
+    "_note": "Label was lost in the migration. This is the fail-closed proof record: no policy may ever treat a missing label as 'public'. See data-classification_test.rego."
+  },
+  {
+    "record_id": "rec-005",
+    "title": "Customer support call transcripts",
+    "classification": "restricted"
+  },
+  {
+    "record_id": "rec-006",
+    "title": "All-hands meeting notes, Q3 planning",
+    "classification": "internal"
+  },
+  {
+    "record_id": "rec-007",
+    "title": "Public API reference documentation",
+    "classification": "public"
+  },
+  {
+    "record_id": "rec-008",
+    "title": "HR compensation bands by level",
+    "classification": "restricted"
+  },
+  {
+    "record_id": "rec-009",
+    "title": "Vendor security questionnaire (draft), typo'd label from a copy-paste",
+    "classification": "Restricted",
+    "_note": "Wrong case — 'Restricted' is not in the known set {public, internal, restricted}. Rego string matching is case-sensitive: this record ALSO fails closed, exactly like a missing label. Same lesson, different way to reach it."
+  }
+]

@@ -1,0 +1,7 @@
+# Lab-generated identity artifacts — never commit certs, keys, or the join token.
+*.pem
+*.key
+*-identity.pem
+join-token
+data/server/
+findings.md

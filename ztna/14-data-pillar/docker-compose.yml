@@ -1,0 +1,39 @@
+# Lab 14 — Data, the Last Pillar
+# Two engines, reused as-is from earlier modules: real OPA (Module 08's toolchain) for
+# label-based authorization, and the sigma-cli/PyYAML image (Module 09's toolchain) for
+# the bulk-restricted-read detection. No new heavy tool for the Data pillar.
+services:
+  # OPA server — same pinned image and invocation as Module 08.
+  opa:
+    image: openpolicyagent/opa:0.68.0
+    container_name: data-pillar-opa
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data:ro
+      - ./:/lab
+    command: ["run", "--server", "--log-level=error", "/lab/data/policies/"]
+    ports:
+      - "8181:8181"
+
+  # Helper service: runs opa eval / opa test one-shots in the same image (Module 08's
+  # `lab` service pattern). The OPA image is distroless — the idle `run --server` on a
+  # separate port only exists so `docker compose up` has something to start; every
+  # demo/eval/test target overrides this command via `docker compose run`.
+  opa-lab:
+    image: openpolicyagent/opa:0.68.0
+    container_name: data-pillar-opa-lab
+    working_dir: /lab
+    volumes:
+      - ./data:/lab/data
+      - ./:/lab
+    command: ["run", "--server", "--log-level=error", "--addr=0.0.0.0:8282"]
+
+  # Sigma tooling + detect.py — same build as Module 09.
+  sigma:
+    build: .
+    image: plaintext/zt-data-pillar
+    container_name: data-pillar-sigma
+    working_dir: /lab
+    volumes:
+      - ./:/lab
+    command: sleep infinity

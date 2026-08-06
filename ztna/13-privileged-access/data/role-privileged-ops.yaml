@@ -1,0 +1,16 @@
+# privileged-ops — alice's starting role. DELIBERATELY over-broad on purpose:
+# logins include root (not just the one login actually needed), and node_labels
+# is a wildcard (every host in the fleet, not just the one this lab has).
+# Tightening this to least privilege is the lab's Step 5 judgment call — see
+# role-privileged-ops-tightened.yaml for the after state.
+kind: role
+version: v7
+metadata:
+  name: privileged-ops
+spec:
+  allow:
+    logins: ["root", "ubuntu"]
+    node_labels:
+      "*": "*"
+  options:
+    max_session_ttl: 15m

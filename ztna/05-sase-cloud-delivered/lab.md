@@ -270,6 +270,13 @@ verifies the *signature* but skips the *audience* is fooled by a perfectly valid
 - Configure **Cloudflare Gateway** DNS filtering: add a DNS policy blocking the managed "Malware"
   category and verify it blocks a test lookup — the **SWG** slice of the broader SASE stack you read
   about in the module.
+- **Third-party / contractor access (the lab you already built, reframed).** The Access policy you stood
+  up *is* clientless third-party access — no VPN, no agent on their laptop. Add a second app/route and a
+  policy that admits an **external auditor** by email for a **time-boxed** window (Access session
+  duration / purpose-justification), gated on identity only — *not* device posture, since you don't
+  manage their machine. Then prove the boundary: from that auditor identity you reach the audit app but
+  are **denied** the admin route. This is one of the most common enterprise ZTNA purchase drivers —
+  granting outsiders scoped access with **no network foothold**.
 
 ---
 
