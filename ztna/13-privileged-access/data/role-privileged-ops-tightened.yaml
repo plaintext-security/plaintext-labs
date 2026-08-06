@@ -12,5 +12,10 @@ spec:
     logins: ["ubuntu"]
     node_labels:
       env: ["production"]
+    # Least privilege narrows logins and nodes, but the operator still needs to
+    # replay their own sessions — keep the recording read rule.
+    rules:
+      - resources: ["session"]
+        verbs: ["list", "read"]
   options:
     max_session_ttl: 15m

@@ -12,5 +12,10 @@ spec:
     logins: ["root", "ubuntu"]
     node_labels:
       "*": "*"
+    # Let the operator list and replay session recordings — `make play` (and the
+    # audit-trail deliverable) reads them as alice, not as an admin.
+    rules:
+      - resources: ["session"]
+        verbs: ["list", "read"]
   options:
     max_session_ttl: 15m

@@ -22,7 +22,9 @@ echo "== Authorized identity must be ALLOWED (control anchor) =="
 mint alice 15m
 op alice login >/dev/null 2>&1
 out="$(op alice ssh whoami 2>&1)"; rc=$?
-if [ "$rc" -eq 0 ] && echo "$out" | grep -q "^ubuntu$"; then
+# strip the PTY's carriage returns before matching (the session is interactive
+# so the recording is replayable — see operate.sh)
+if [ "$rc" -eq 0 ] && echo "$out" | tr -d '\r' | grep -qx ubuntu; then
   ok "alice (privileged-ops) -> ubuntu@app-prod-01 succeeded"
 else
   bad "alice should have reached app-prod-01 as ubuntu (rc=${rc}), got: ${out}"
@@ -32,7 +34,7 @@ echo "== Unauthorized identity must be DENIED =="
 mint mallory 15m
 op mallory login >/dev/null 2>&1
 out="$(op mallory ssh whoami 2>&1)"; rc=$?
-if [ "$rc" -ne 0 ] && ! echo "$out" | grep -q "^ubuntu$"; then
+if [ "$rc" -ne 0 ] && ! echo "$out" | tr -d '\r' | grep -qx ubuntu; then
   ok "mallory (help-desk-staging, env=staging) denied access to app-prod-01 (env=production)"
 else
   bad "mallory should have been denied (rc=${rc}), got: ${out}"

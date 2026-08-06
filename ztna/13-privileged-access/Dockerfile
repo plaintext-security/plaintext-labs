@@ -8,7 +8,7 @@
 # The Teleport binaries are copied out of the official upstream image; the
 # runtime is plain debian-slim so we have bash/curl/jq/nc for the workload and
 # bootstrap scripts (the upstream image alone has no shell to run those in).
-FROM public.ecr.aws/gravitational/teleport:18.10.0 AS teleport
+FROM public.ecr.aws/gravitational/teleport-distroless:18.7.3 AS teleport
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \

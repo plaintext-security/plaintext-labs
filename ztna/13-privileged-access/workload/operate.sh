@@ -29,7 +29,10 @@ case "$ACTION" in
   ssh)
     # "$@" is passed as ONE remote command string (e.g. "whoami; hostname"),
     # same as plain `ssh host 'cmd1; cmd2'` — the remote shell interprets it.
-    tsh ssh "ubuntu@${NODE}" -- "$@"
+    # -t forces a PTY so the session is INTERACTIVE and produces a replayable
+    # recording: Teleport retrieves interactive session recordings via `tsh
+    # play`, whereas a bare non-interactive command run leaves nothing to replay.
+    tsh ssh -t "ubuntu@${NODE}" -- "$@"
     ;;
   recordings)
     tsh recordings ls
@@ -40,17 +43,17 @@ case "$ACTION" in
     # across Teleport releases — if this doesn't find one, run
     # `tsh recordings ls` yourself and `tsh play <id>` directly; that manual
     # path is always the source of truth for this step.
-    sid="$(tsh recordings ls --format=json 2>/dev/null \
-      | jq -r '(.[0].id // .[0].ID // .[0].sid // .[0].session_id // empty)' 2>/dev/null || true)"
-    if [ -z "$sid" ]; then
-      sid="$(tsh recordings ls 2>/dev/null | awk 'NR==2{print $1}')"
-    fi
+    # The newest recording id. JSON field names drift across releases (that's
+    # the seam), so parse the stable text table: skip the header + separator
+    # rows and take the first GUID-shaped token.
+    sid="$(tsh recordings ls 2>/dev/null \
+      | awk '$1 ~ /^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$/ {print $1; exit}')"
     if [ -z "$sid" ]; then
       echo "[operate] no recordings found yet — run 'tsh recordings ls' by hand." >&2
       exit 1
     fi
     echo "[operate] playing session ${sid} ..."
-    tsh play "$sid"
+    tsh play --format=text "$sid"
     ;;
   play)
     tsh play "${1:?usage: operate.sh <user> play <session-id>}"

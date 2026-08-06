@@ -220,7 +220,7 @@ always passes is worse than no check. Commit it as `verify-recording.sh`.
 
 > **Seam, labeled honestly:** the exact JSON field layout of `tsh recordings ls --format=json` and
 > `tsh play --format=json` has shifted across Teleport releases, and this lab pins one specific version
-> (18.10.0) rather than chasing every schema. `workload/operate.sh`'s `play-latest` action already
+> (18.7.3) rather than chasing every schema. `workload/operate.sh`'s `play-latest` action already
 > defends against a couple of likely field names; if your Teleport version's schema differs, inspect one
 > real event stream with `jq .` first and adjust the filter — that's a five-minute fix, not a redesign.
 

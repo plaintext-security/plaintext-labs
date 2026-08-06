@@ -26,6 +26,13 @@ proxy_service:
   listen_addr: 0.0.0.0:3023
   tunnel_listen_addr: 0.0.0.0:3024
   web_listen_addr: 0.0.0.0:3080
+  # Advertise reachable addresses so a tunnel-mode node dials `teleport-auth`
+  # instead of the localhost (`[::1]`) it would otherwise derive from a
+  # 0.0.0.0 listener — without these the node's reverse tunnel to :3024 is
+  # refused and it never registers.
+  public_addr: teleport-auth:3080
+  tunnel_public_addr: teleport-auth:3024
+  ssh_public_addr: teleport-auth:3023
   # Lab convenience: with no https_keypairs configured, Teleport self-signs a
   # cert for the web listener on first start. Clients must pass --insecure to
   # skip verifying it. Never do that against a real cluster — pin the actual
