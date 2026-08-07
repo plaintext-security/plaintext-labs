@@ -206,10 +206,35 @@ order. Softening or skipping any one is how a "validator" becomes a decoder:
    `…/openid-connect/certs` endpoint from Step 1's demo). You hold no shared secret — verification uses
    the public half of the realm's signing key.
 3. **Signature — verify the RSA signature over `header.payload`.** One changed byte fails it. In Python
-   that is `jwt.decode(token, public_key, algorithms=["RS256"], …)` — with `algorithms` **pinned by you,
-   never read from the token**.
+   that is `jwt.decode(token, public_key, algorithms=["RS256"], …)`; with the `step` CLI it's
+   `step crypto jwt verify --alg RS256` — either way the `algorithms`/`--alg` you accept is **pinned by
+   you, never read from the token**.
 4. **Claims — enforce `exp`, `aud`, `iss`** (and require they are present), only *after* the signature
    verifies.
+
+**Two ways to build this — pick one, but know the four gates either way.**
+
+- **Python (`validate-token.py`).** You write the gates explicitly: read `alg`, fetch the JWKS key by
+  `kid`, `jwt.decode(..., algorithms=["RS256"])`, then check the claims. More code — but every gate is
+  visible on the page, so you can *see* exactly where a softened check would let a forgery through.
+  Build it in *Automate & own it*.
+- **`step` (smallstep CLI) — no Python.** One command enforces all four gates through flags:
+
+  ```bash
+  echo "$TOKEN" | step crypto jwt verify \
+    --jwks <(curl -s http://localhost:8080/realms/corp/protocol/openid-connect/certs) \
+    --iss http://localhost:8080/realms/corp --aud corp-app --alg RS256
+  ```
+
+  `--alg RS256` is gate 1 (the accepted algorithm pinned by *you*, not the token); `--jwks` is gates
+  2–3 (fetch the realm's public key by `kid`, verify the signature); `--iss`/`--aud` — plus `exp`,
+  checked automatically — is gate 4. It prints the decoded JWT and exits `0` on success, and exits
+  **non-zero** on a bad signature or a failed claim. That non-zero exit is your rejection proof.
+
+The tradeoff: `step` *hides* the gates behind flags — the faster path, but the weaker teacher. If you
+take it, make sure you can still name what each flag enforces and why pinning `--alg` (rather than
+trusting the token's own `alg`) is what defeats both `alg: none` and RS256→HS256 confusion. Install with
+`brew install step`; see the [smallstep CLI docs](https://smallstep.com/docs/step-cli/).
 
 > **▸ On track if:** you can name the four gates and say why pinning `algorithms=["RS256"]` (not the
 > token's `alg`) is what defeats both `alg: none` and HMAC confusion. One thing worth knowing before you
@@ -222,8 +247,9 @@ order. Softening or skipping any one is how a "validator" becomes a decoder:
 
 ## Prove the control (your finish line)
 
-One check proves you built a **validator**, not a decoder. Run `validate-token.py` (below) three times
-against your running realm and *watch* the outcomes:
+One check proves you built a **validator**, not a decoder. Run your validator — `validate-token.py`
+(below), or the `step crypto jwt verify` one-liner from Step 6 — three times against your running realm
+and *watch* the outcomes:
 
 > 1. a **real** token minted in step 2 → **accepted**, claims printed;
 > 2. a token with an **edited claim** (self-grant `admin`, reuse the original signature) → **rejected**
@@ -262,7 +288,8 @@ Missed one? Re-run the step that built it, or pull the [validation-gates section
   Add a short **Authorization Code walkthrough** — the four legs (redirect out, login at the IdP,
   redirect back with the `code`, back-channel exchange) and, for each grant, **where the user's
   password went**.
-- **`validate-token.py`** — the working validator from *Automate & own it*, committed with it.
+- **`validate-token.py`** — the working validator from *Automate & own it*, committed with it. (Took the
+  no-Python route? Commit your `step`-based `verify.sh` here instead — either satisfies this deliverable.)
 
 *Lab artifacts — raw tokens, the realm export, keys — stay out of commits. Never commit a live JWT.*
 
@@ -283,6 +310,13 @@ failure mode. **Before you commit, prove it both ways** (the finish line above):
 and *rejects* a base64-tampered one and an `alg: none` one. That observed rejection — not clean syntax —
 is what lets you say you own it.
 
+> **No-Python route (`step`).** If you'd rather not build a Python validator, wrap the `step crypto jwt
+> verify` one-liner from Step 6 in a small `verify.sh` (mint the token with `curl`, pipe it into `step`
+> with `--alg RS256 --jwks … --iss … --aud …`) and commit that as your validator instead. It still owes
+> you the same proof: watched acceptance of a real token and *non-zero-exit rejection* of both a tampered
+> token and an `alg: none` one. The point of the exercise isn't the language — it's that you can state,
+> and demonstrate, which gate catches each forgery.
+
 ## Definition of done (`identity-control-plane` ✅)
 
 - [ ] `make up` reports `Keycloak is ready.` and `make demo` prints decoded JWTs for analyst and admin
@@ -297,9 +331,9 @@ is what lets you say you own it.
   realm for the key scenario to apply.
 - [ ] The Okta federation paragraph names the group→role mapping as the trust decision and cites
   T1606.002.
-- [ ] `validate-token.py` accepts a real token and you have **watched it reject** both a tampered token
-  and an `alg: none` token.
-- [ ] `oidc-analysis.md` + `validate-token.py` are committed; you can explain all seven flight-card facts cold.
+- [ ] Your validator — `validate-token.py` **or** the `step`-based `verify.sh` — accepts a real token and
+  you have **watched it reject** both a tampered token and an `alg: none` token.
+- [ ] `oidc-analysis.md` + your validator are committed; you can explain all seven flight-card facts cold.
 
 ## Connects forward
 
