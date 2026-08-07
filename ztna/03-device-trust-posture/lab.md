@@ -18,7 +18,7 @@
 | 3 | **Control plane ≠ data plane.** | headscale distributes keys + ACLs; WireGuard carries traffic peer-to-peer. Two different jobs. |
 | 4 | **Default-deny is the ZT judgment.** | An enrolled-reaches-everything mesh is a flatter VPN. The win is the tag→service allow-list; the trap is the implicit default-allow. |
 | 5 | **Prove the *deny*, not just the allow.** | An off-mesh container reaching the target means the boundary is a hole — a syntax check never catches that. |
-| 6 | **Posture is *assessed*, not demonstrated here.** | Patch/EDR/disk-encryption come from MDM/EDR you can't self-host free. Map the policy to production controls; label it honestly. |
+| 6 | **Posture is *assessed*, not demonstrated here — a scope choice, not a limit.** | Free self-hosted tools *can* enforce posture (osquery/Fleet read state; NetBird gates access on it); only a vendor *score* (CrowdStrike ZTA) is paywalled. Map the policy to production controls; label it honestly. |
 
 *(If you can explain all six cold at the end — especially #1 and #5 — you've got the objective.)*
 
@@ -152,7 +152,12 @@ stanza into your deliverable.
     Flight-card #6. `data/device-posture-policy.json` is the checks a production deployment (Cloudflare
     Access + CrowdStrike) enforces: CrowdStrike ZTA score ≥70, minimum OS build, disk encryption
     enabled, firewall/screen-lock warnings — plus a weaker contractor-BYOD tier and a
-    `default_posture: deny_all`. None of it runs here; you *reason* about it.
+    `default_posture: deny_all`. None of it runs here; you *reason* about it. That's a scope choice, not
+    a limit: reading these signals is free with **osquery**, and **NetBird** (open-source WireGuard) can
+    *enforce* them — revoking a peer that fails a **Fleet**/osquery compliance check. Only the vendor
+    *score* (CrowdStrike ZTA) is paywalled. And note the honest ceiling: osquery is **self-attestation** —
+    a rooted host can lie to it — so posture is hygiene, not proof, until it's hardware-attested
+    (TPM/Secure Enclave), the device analog of the FIDO2 key in Step 6.
 
 **Do it:** for each `required_check`, name the device-trust gap it closes and map it to the **LastPass**
 failure it would have caught (the unpatched Plex host → `os_version`; no EDR on a personal box →
